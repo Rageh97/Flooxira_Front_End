@@ -53,6 +53,27 @@ export default function AppLayout({ children }: PropsWithChildren) {
               </Link>
             </div>
           )}
+          <div className="pt-3">
+            <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Legal</div>
+            <Link
+              href="/privacy-policy"
+              className={clsx(
+                "block rounded-md px-3 py-2 text-sm",
+                pathname === '/privacy-policy' ? "bg-gray-900 text-white" : "hover:bg-gray-100"
+              )}
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms"
+              className={clsx(
+                "block rounded-md px-3 py-2 text-sm",
+                pathname === '/terms' ? "bg-gray-900 text-white" : "hover:bg-gray-100"
+              )}
+            >
+              Terms of Service
+            </Link>
+          </div>
         </nav>
       </aside>
       <div className="flex flex-col min-h-screen">
