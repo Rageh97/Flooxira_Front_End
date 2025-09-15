@@ -12,6 +12,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
     (headers as Record<string, string>)["Authorization"] = `Bearer ${options.authToken}`;
   }
   
+
   const url = `${API_URL}${path}`;
   const res = await fetch(url, { ...options, headers });
   const text = await res.text();
