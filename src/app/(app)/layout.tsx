@@ -2,10 +2,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PropsWithChildren } from "react";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/plans", label: "Plans" },
   { href: "/create-post", label: "Create Post" },
   { href: "/schedule", label: "Schedule" },
   { href: "/whatsapp", label: "WhatsApp Bot" },
@@ -16,6 +20,8 @@ const navItems = [
 
 export default function AppLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading, signOut } = useAuth();
   return (
     <div className="min-h-screen grid grid-cols-[240px_1fr] bg-gray-50 text-gray-900">
       <aside className="hidden md:block border-r border-gray-200 bg-white">
@@ -33,12 +39,33 @@ export default function AppLayout({ children }: PropsWithChildren) {
               {item.label}
             </Link>
           ))}
+          {user?.role === 'admin' && (
+            <div className="pt-3">
+              <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Admin</div>
+              <Link
+                href="/admin"
+                className={clsx(
+                  "block rounded-md px-3 py-2 text-sm",
+                  pathname.startsWith('/admin') ? "bg-gray-900 text-white" : "hover:bg-gray-100"
+                )}
+              >
+                Admin Home
+              </Link>
+            </div>
+          )}
         </nav>
       </aside>
       <div className="flex flex-col min-h-screen">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4">
           <div className="md:hidden font-semibold">Social Manage</div>
-          <div className="text-sm text-gray-500">MVP</div>
+          <div className="flex items-center gap-3 text-sm text-gray-700">
+            {!loading && user && <span className="font-medium">{user.name || user.email}</span>}
+            {!loading && user && (
+              <Button size="sm" variant="secondary" onClick={() => { signOut(); router.push('/sign-in'); }}>
+                Logout
+              </Button>
+            )}
+          </div>
         </header>
         <main className="flex-1 p-4 md:p-6">
           {children}
