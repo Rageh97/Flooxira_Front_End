@@ -12,7 +12,14 @@ export default function PlansAdminPage() {
   const [items, setItems] = useState<EditablePlan[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
-  const token = useMemo(() => localStorage.getItem("auth_token") || "", []);
+  const [token, setToken] = useState<string>("");
+
+  // Read token from localStorage only on the client
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setToken(localStorage.getItem("auth_token") || "");
+    }
+  }, []);
 
   useEffect(() => {
     setLoading(true);
