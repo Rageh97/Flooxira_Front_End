@@ -206,6 +206,15 @@ export default function CreatePostPage() {
                 />
                 <span>💼 LinkedIn</span>
               </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={platforms.includes('pinterest')}
+                  onChange={() => togglePlatform('pinterest')}
+                  className="rounded"
+                />
+                <span>📌 Pinterest</span>
+              </label>
             </div>
             {platforms.length === 0 && (
               <p className="text-sm text-red-600 mt-1">Please select at least one platform</p>

@@ -23,7 +23,7 @@ interface FacebookAccount {
 interface FacebookPage {
   id: string;
   name: string;
-  accessToken: string;
+  accessToken: string; // deprecated when using Make
   hasInstagram: boolean;
   instagramAccount?: {
     id: string;
@@ -160,6 +160,7 @@ export default function SettingsPage() {
       handleSallaOAuthCallback(sallaCode);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+    
     if (error === 'linkedin_oauth_failed') {
       setMessage(`LinkedIn OAuth failed${messageParam ? `: ${messageParam}` : ''}`);
       // clean up
@@ -514,7 +515,7 @@ export default function SettingsPage() {
         authToken: authToken,
         body: JSON.stringify({
           pageId: page.id,
-          accessToken: page.accessToken
+          pageName: page.name
         })
       });
       
@@ -754,8 +755,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Settings</h1>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+      <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
       
       {/* User Info */}
       <Card>
@@ -772,6 +773,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold">Facebook Integration</h2>
+          <p className="text-sm text-muted-foreground">Connect your Facebook to manage Pages, Groups, and Instagram.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {!facebookAccount?.connected ? (
@@ -987,6 +989,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold">WhatsApp Business</h2>
+          <p className="text-sm text-muted-foreground">Connect Meta WhatsApp Business and manage webhook access.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -1002,7 +1005,7 @@ export default function SettingsPage() {
             </div>
             <Button onClick={connectWhatsApp} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white">Connect Meta</Button>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Phone Number ID</label>
               <Input value={wabaPhoneNumberId} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWabaPhoneNumberId(e.target.value)} placeholder="123456789012345" />
@@ -1012,7 +1015,7 @@ export default function SettingsPage() {
               <Input value={wabaAccessToken} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWabaAccessToken(e.target.value)} placeholder="EAAD..." />
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
             <div className="space-y-2">
               <label className="block text-sm font-medium">Webhook Verify Token (optional)</label>
               <Input value={wabaVerifyToken} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWabaVerifyToken(e.target.value)} placeholder="my-verify-token" />
@@ -1057,6 +1060,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold">TikTok</h2>
+          <p className="text-sm text-muted-foreground">Connect TikTok to post and manage your content.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {!tiktokAccount ? (
@@ -1095,6 +1099,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold">Salla Store</h2>
+          <p className="text-sm text-muted-foreground">Integrate your Salla store to sync data and actions.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {!sallaAccount ? (
@@ -1151,6 +1156,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <h2 className="text-lg font-semibold">LinkedIn</h2>
+          <p className="text-sm text-muted-foreground">Connect LinkedIn to enable analytics and posting.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           {!linkedinAccount ? (
