@@ -23,7 +23,7 @@ interface FacebookAccount {
 interface FacebookPage {
   id: string;
   name: string;
-  accessToken: string;
+  accessToken: string; // deprecated when using Make
   hasInstagram: boolean;
   instagramAccount?: {
     id: string;
@@ -515,7 +515,7 @@ export default function SettingsPage() {
         authToken: authToken,
         body: JSON.stringify({
           pageId: page.id,
-          accessToken: page.accessToken
+          pageName: page.name
         })
       });
       
