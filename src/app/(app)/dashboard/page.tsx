@@ -10,6 +10,8 @@ interface PostStats {
   failed: number;
   facebookPosts: number;
   instagramPosts: number;
+  linkedinPosts: number;
+  pinterestPosts: number;
 }
 
 export default function DashboardPage() {
@@ -112,6 +114,22 @@ export default function DashboardPage() {
                 <span className="text-sm font-medium">Instagram</span>
               </div>
               <span className="text-2xl font-bold">{stats?.instagramPosts || 0}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                <span className="text-sm font-medium">LinkedIn</span>
+              </div>
+              <span className="text-2xl font-bold">{stats?.linkedinPosts || 0}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <span className="text-sm font-medium">Pinterest</span>
+              </div>
+              <span className="text-2xl font-bold">{stats?.pinterestPosts || 0}</span>
             </div>
           </CardContent>
         </Card>
