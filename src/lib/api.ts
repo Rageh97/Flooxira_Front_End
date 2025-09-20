@@ -92,6 +92,14 @@ export async function selectFacebookGroup(token: string, groupId: string, name?:
   });
 }
 
+export async function selectInstagramAccount(token: string, pageId: string, instagramId: string, accessToken?: string) {
+  return apiFetch<{ success: boolean; message: string; instagramId: string; username: string }>("/api/facebook/select-instagram", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ pageId, instagramId, accessToken }),
+  });
+}
+
 // Plans API
 export type Plan = { id: number; name: string; priceCents: number; interval: 'monthly' | 'yearly'; features?: any; isActive: boolean };
 
