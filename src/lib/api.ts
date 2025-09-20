@@ -1,4 +1,4 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.flooxira.com';
 
 type FetchOptions = RequestInit & { authToken?: string };
 
@@ -71,11 +71,11 @@ export async function getFacebookPages(token: string) {
   return apiFetch<{ pages: Array<{ pageId: string; name: string; accessToken?: string }> }>(`/api/facebook/pages?t=${bust}` as string, { authToken: token });
 }
 
-export async function selectFacebookPage(token: string, pageId: string, pageAccessToken: string, name?: string, pictureUrl?: string) {
-  return apiFetch<{ account: any }>("/api/facebook/select-page", {
+export async function selectFacebookPage(token: string, pageId: string, pageName?: string) {
+  return apiFetch<{ success: boolean; pageId: string; pageName: string }>("/api/facebook/select-page", {
     method: "POST",
     authToken: token,
-    body: JSON.stringify({ pageId, pageAccessToken, name, pictureUrl }),
+    body: JSON.stringify({ pageId, pageName }),
   });
 }
 
