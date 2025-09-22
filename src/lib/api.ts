@@ -398,3 +398,14 @@ export async function connectFacebook(authCode: string, facebookUserId?: string)
   }
 }
 
+export async function inviteFacebookTester(facebookUserId: string): Promise<ConnectFacebookResult> {
+  try {
+    return await apiFetch<ConnectFacebookResult>(`/connect-facebook/invite`, {
+      method: 'POST',
+      body: JSON.stringify({ facebookUserId }),
+    });
+  } catch (e: any) {
+    return { status: 'error', message: e?.message || 'Failed to invite tester' };
+  }
+}
+
