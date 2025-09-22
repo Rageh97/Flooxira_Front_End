@@ -380,3 +380,21 @@ export async function getLinkedInCompanies(token: string) {
 
 
 
+// Facebook connect flow (handles tester auto add)
+export type ConnectFacebookResult =
+  | { status: 'success'; user: { id: string; name?: string; email?: string } }
+  | { status: 'pending'; message: string }
+  | { status: 'invite'; message: string; acceptUrl?: string }
+  | { status: 'error'; message: string };
+
+export async function connectFacebook(authCode: string, facebookUserId?: string): Promise<ConnectFacebookResult> {
+  try {
+    return await apiFetch<ConnectFacebookResult>(`/connect-facebook`, {
+      method: 'POST',
+      body: JSON.stringify({ authCode, facebookUserId }),
+    });
+  } catch (e: any) {
+    return { status: 'error', message: e?.message || 'Failed to connect Facebook' };
+  }
+}
+
