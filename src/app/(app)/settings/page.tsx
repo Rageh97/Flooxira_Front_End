@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
-import { startSallaOAuth, exchangeSallaCode, getSallaAccount, disconnectSalla, testSalla, startLinkedInOAuth, exchangeLinkedInCode, getLinkedInAccount, disconnectLinkedIn, testLinkedIn } from "@/lib/api";
+import { startSallaOAuth, exchangeSallaCode, getSallaAccount, disconnectSalla, testSalla, startLinkedInOAuth, exchangeLinkedInCode, getLinkedInAccount, disconnectLinkedIn, testLinkedIn, inviteFacebookTester } from "@/lib/api";
 
 interface FacebookAccount {
   connected: boolean;
@@ -111,6 +111,8 @@ export default function SettingsPage() {
   const [wabaVerifyToken, setWabaVerifyToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [fbUserId, setFbUserId] = useState("");
+  const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
     loadFacebookAccount();
@@ -782,6 +784,61 @@ export default function SettingsPage() {
               <Button onClick={connectFacebook} disabled={loading}>
                 Connect Facebook Account
               </Button>
+              <div className="mt-6 p-4 border rounded-lg bg-gray-50">
+                <p className="font-medium mb-2">هل ترى رسالة أن التطبيق غير متاح أو في وضع التطوير؟</p>
+                <p className="text-sm text-gray-600">سجّل حسابك كمطور أولاً، ثم سنضيفك كتستر تلقائياً.</p>
+                <div className="mt-3 flex gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => window.open("https://developers.facebook.com/settings/developer/", "_blank")}
+                  >
+                    سجل كمطور الآن
+                  </Button>
+                </div>
+                <ol className="list-decimal list-inside text-sm text-gray-600 mt-3 space-y-1">
+                  <li>اضغط على Get Started ووافق على الشروط.</li>
+                  <li>أكمل التحقق (SMS/Email) إن طُلب.</li>
+                  <li>ارجع واضغط أدناه لإضافتك كتستر ثم أعد محاولة تسجيل الدخول.</li>
+                </ol>
+                <div className="mt-4 grid gap-2 md:grid-cols-3 items-end">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm text-gray-700 mb-1">Facebook User ID (رقم المستخدم)</label>
+                    <Input
+                      value={fbUserId}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFbUserId(e.target.value)}
+                      placeholder="123456789012345"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      if (!fbUserId) { setMessage("يرجى إدخال Facebook User ID الرقمي"); return; }
+                      setInviting(true);
+                      try {
+                        const res = await inviteFacebookTester(fbUserId);
+                        if (res.status === 'pending') {
+                          setMessage('تمت إضافتك كتستر.. أعد المحاولة بعد قليل');
+                        } else if (res.status === 'invite') {
+                          setMessage('تمت دعوتك كتستر. افتح رابط الدعوات ثم أعد المحاولة');
+                          if (res.acceptUrl) window.open(res.acceptUrl, '_blank');
+                        } else if (res.status === 'error') {
+                          setMessage(res.message || 'فشل إرسال الدعوة');
+                        } else {
+                          setMessage('تم تجهيز حسابك. حاول تسجيل الدخول الآن');
+                        }
+                      } catch (e: any) {
+                        setMessage(e?.message || 'فشل إرسال الدعوة');
+                      } finally {
+                        setInviting(false);
+                      }
+                    }}
+                    disabled={inviting}
+                  >
+                    أضفني كتستر
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
