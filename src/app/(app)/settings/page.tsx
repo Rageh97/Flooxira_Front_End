@@ -838,6 +838,15 @@ export default function SettingsPage() {
                     أضفني كتستر
                   </Button>
                 </div>
+                <div className="mt-3 flex gap-2 flex-wrap">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => window.open('https://developers.facebook.com/settings/developer/requests/', '_blank')}
+                  >
+                    افتح صفحة الدعوات لقبول الطلب
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
