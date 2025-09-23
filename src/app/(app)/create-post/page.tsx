@@ -17,6 +17,7 @@ export default function CreatePostPage() {
   const [hashtags, setHashtags] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [platforms, setPlatforms] = useState<string[]>(['facebook']);
+  const [pinterestBoardId, setPinterestBoardId] = useState<string>("");
   
   const mutation = useMutation({
     mutationFn: async () => {
@@ -113,7 +114,8 @@ export default function CreatePostPage() {
         hashtags,
         format,
         scheduledAt,
-        platforms
+        platforms,
+        pinterestBoardId: platforms.includes('pinterest') ? (pinterestBoardId || undefined) : undefined
       });
       
       const res = await apiFetch<{ post: any }>("/api/posts", {
@@ -126,7 +128,8 @@ export default function CreatePostPage() {
           hashtags, 
           format, 
           scheduledAt,
-          platforms
+          platforms,
+          pinterestBoardId: platforms.includes('pinterest') ? (pinterestBoardId || undefined) : undefined
         }),
         authToken: token,
       });
@@ -140,6 +143,7 @@ export default function CreatePostPage() {
       setImage(null);
       setLinkUrl("");
       setHashtags("");
+      setPinterestBoardId("");
     },
   });
 
@@ -252,6 +256,18 @@ export default function CreatePostPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
+
+          {platforms.includes('pinterest') && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Pinterest Board ID</label>
+              <Input
+                placeholder="e.g. 1234567890"
+                value={pinterestBoardId}
+                onChange={(e) => setPinterestBoardId(e.target.value)}
+              />
+              <p className="text-xs text-gray-500 mt-1">Required to publish to Pinterest. You can fetch IDs from Pinterest page.</p>
+            </div>
+          )}
           
           {type === 'link' && (
             <div>
