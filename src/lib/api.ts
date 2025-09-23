@@ -397,7 +397,12 @@ export async function getPinterestAccount(token: string) {
 }
 
 export async function listPinterestBoards(token: string) {
-  return apiFetch<{ boards: Array<{ id: string; name: string }> }>("/api/pinterest/boards", { authToken: token });
+  try {
+    return await apiFetch<{ boards: Array<{ id: string; name: string }> }>("/api/pinterest/boards", { authToken: token });
+  } catch (e: any) {
+    // Surface message but return empty list structure so UI doesn't break
+    return { boards: [] } as any;
+  }
 }
 
 
