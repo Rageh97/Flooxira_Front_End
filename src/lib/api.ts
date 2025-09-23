@@ -380,6 +380,20 @@ export async function getLinkedInCompanies(token: string) {
 
 
 
+// Pinterest API helpers
+export async function exchangePinterestCode(token: string, code: string) {
+  return apiFetch<{ success: boolean; message: string; account?: any }>("/api/pinterest/exchange", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ code })
+  });
+}
+
+export async function getPinterestAccount(token: string) {
+  return apiFetch<{ connected: boolean; username?: string; fullName?: string }>("/api/pinterest/account", { authToken: token });
+}
+
+
 // Facebook connect flow (handles tester auto add)
 export type ConnectFacebookResult =
   | { status: 'success'; user: { id: string; name?: string; email?: string } }

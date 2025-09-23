@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
-import { startSallaOAuth, exchangeSallaCode, getSallaAccount, disconnectSalla, testSalla, startLinkedInOAuth, exchangeLinkedInCode, getLinkedInAccount, disconnectLinkedIn, testLinkedIn, inviteFacebookTester } from "@/lib/api";
+import { startSallaOAuth, exchangeSallaCode, getSallaAccount, disconnectSalla, testSalla, startLinkedInOAuth, exchangeLinkedInCode, getLinkedInAccount, disconnectLinkedIn, testLinkedIn, inviteFacebookTester, exchangePinterestCode, getPinterestAccount } from "@/lib/api";
 
 interface FacebookAccount {
   connected: boolean;
@@ -132,6 +132,7 @@ export default function SettingsPage() {
     const waCode = urlParams.get('wa_code');
     const sallaCode = urlParams.get('salla_code');
     const linkedinCode = urlParams.get('linkedin_code');
+    const pinterestCode = urlParams.get('pinterest_code');
     const error = urlParams.get('error');
     const messageParam = urlParams.get('message');
     
@@ -169,6 +170,11 @@ export default function SettingsPage() {
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (linkedinCode && platform === 'linkedin') {
       handleLinkedInOAuthCallback(linkedinCode);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    if (pinterestCode && platform === 'pinterest') {
+      handlePinterestOAuthCallback(pinterestCode);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -750,6 +756,24 @@ export default function SettingsPage() {
       await loadLinkedInAccount();
     } catch (e: any) {
       const msg = e?.message ? String(e.message) : 'Failed to complete LinkedIn connection';
+      setMessage(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePinterestOAuthCallback = async (code: string) => {
+    try {
+      setLoading(true);
+      setMessage("Completing Pinterest connection...");
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) return;
+      const res = await exchangePinterestCode(authToken, code);
+      setMessage(res.message || 'Pinterest connected');
+      // Optionally reload account info
+      try { await getPinterestAccount(authToken); } catch {}
+    } catch (e: any) {
+      const msg = e?.message ? String(e.message) : 'Failed to complete Pinterest connection';
       setMessage(msg);
     } finally {
       setLoading(false);
