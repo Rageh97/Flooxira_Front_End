@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -151,6 +151,9 @@ export default function CreatePostPage() {
   const togglePlatform = (platform: string) => {
     if (platforms.includes(platform)) {
       setPlatforms(platforms.filter(p => p !== platform));
+      if (platform === 'pinterest') {
+        setPinterestBoardId("");
+      }
     } else {
       setPlatforms([...platforms, platform]);
     }
@@ -167,6 +170,14 @@ export default function CreatePostPage() {
       if (!pinterestBoardId && res.boards?.length) setPinterestBoardId(res.boards[0].id);
     } catch {}
   };
+
+  // Auto-load boards when Pinterest is selected
+  useEffect(() => {
+    if (platforms.includes('pinterest')) {
+      loadPinterestBoards();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platforms.includes('pinterest')]);
 
   return (
     <div className="space-y-6">
@@ -282,7 +293,7 @@ export default function CreatePostPage() {
                 onChange={(e) => setPinterestBoardId(e.target.value)}
                 onFocus={() => { if (pinterestBoards.length === 0) loadPinterestBoards(); }}
               >
-                <option value="">Select a board...</option>
+                <option value="">{pinterestBoards.length ? 'Select a board...' : 'No boards found (create one in Pinterest)'}</option>
                 {pinterestBoards.map(b => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
