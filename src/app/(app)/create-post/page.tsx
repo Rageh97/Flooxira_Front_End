@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, listPinterestBoards } from "@/lib/api";
 
 export default function CreatePostPage() {
   const [text, setText] = useState("");
@@ -18,6 +18,7 @@ export default function CreatePostPage() {
   const [message, setMessage] = useState<string>("");
   const [platforms, setPlatforms] = useState<string[]>(['facebook']);
   const [pinterestBoardId, setPinterestBoardId] = useState<string>("");
+  const [pinterestBoards, setPinterestBoards] = useState<Array<{ id: string; name: string }>>([]);
   
   const mutation = useMutation({
     mutationFn: async () => {
@@ -155,6 +156,18 @@ export default function CreatePostPage() {
     }
   };
 
+  // Load Pinterest boards when Pinterest is selected
+  const loadPinterestBoards = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      if (!token) return;
+      const res = await listPinterestBoards(token);
+      setPinterestBoards(res.boards || []);
+      // if no current selection, preselect first
+      if (!pinterestBoardId && res.boards?.length) setPinterestBoardId(res.boards[0].id);
+    } catch {}
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Create Post</h1>
@@ -259,13 +272,22 @@ export default function CreatePostPage() {
 
           {platforms.includes('pinterest') && (
             <div>
-              <label className="block text-sm font-medium mb-1">Pinterest Board ID</label>
-              <Input
-                placeholder="e.g. 1234567890"
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium mb-1">Pinterest Board</label>
+                <Button size="sm" variant="outline" onClick={loadPinterestBoards}>Refresh Boards</Button>
+              </div>
+              <select
+                className="h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm"
                 value={pinterestBoardId}
                 onChange={(e) => setPinterestBoardId(e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1">Required to publish to Pinterest. You can fetch IDs from Pinterest page.</p>
+                onFocus={() => { if (pinterestBoards.length === 0) loadPinterestBoards(); }}
+              >
+                <option value="">Select a board...</option>
+                {pinterestBoards.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">Required to publish to Pinterest.</p>
             </div>
           )}
           

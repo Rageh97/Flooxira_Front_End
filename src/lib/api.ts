@@ -396,6 +396,10 @@ export async function getPinterestAccount(token: string) {
   return apiFetch<{ connected: boolean; username?: string; fullName?: string }>("/api/pinterest/account", { authToken: token });
 }
 
+export async function listPinterestBoards(token: string) {
+  return apiFetch<{ boards: Array<{ id: string; name: string }> }>("/api/pinterest/boards", { authToken: token });
+}
+
 
 // Facebook connect flow (handles tester auto add)
 export type ConnectFacebookResult =
