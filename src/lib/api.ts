@@ -143,18 +143,42 @@ export async function deletePostRequest(token: string, id: number) {
   return apiFetch<{ ok: boolean }>(`/api/posts/${id}`, { method: "DELETE", authToken: token });
 }
 
-// WhatsApp Business API
-export type WabaStatus = { phoneNumberId: string; phoneNumber?: string; wabaId?: string; isActive: boolean; lastSyncAt?: string };
+// WhatsApp Web API functions
+export async function startWhatsAppSession(token: string) {
+  return apiFetch<{ success: boolean; message: string; qrCode?: string; status: string }>("/api/whatsapp/start", {
+    method: "POST",
+    authToken: token
+  });
+}
 
 export async function getWhatsAppStatus(token: string) {
-  return apiFetch<WabaStatus>("/api/whatsapp/status", { authToken: token });
+  return apiFetch<{ success: boolean; status: string; message: string; initializing?: boolean }>("/api/whatsapp/status", { authToken: token });
+}
+
+export async function getWhatsAppQRCode(token: string) {
+  return apiFetch<{ success: boolean; qrCode?: string; message: string }>("/api/whatsapp/qr", { authToken: token });
+}
+
+export async function stopWhatsAppSession(token: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/whatsapp/stop", {
+    method: "POST",
+    authToken: token
+  });
+}
+
+export async function sendWhatsAppMessage(token: string, to: string, message: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/whatsapp/send", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ to, message })
+  });
 }
 
 export async function uploadKnowledgeBase(token: string, file: File) {
   const formData = new FormData();
   formData.append('file', file);
   
-  return apiFetch<{ message: string; entriesCount: number }>("/api/whatsapp/knowledge/upload", {
+  return apiFetch<{ success: boolean; message: string; count: number }>("/api/whatsapp/knowledge/upload", {
     method: "POST",
     authToken: token,
     body: formData,
@@ -163,19 +187,29 @@ export async function uploadKnowledgeBase(token: string, file: File) {
 }
 
 export async function getKnowledgeBase(token: string) {
-  return apiFetch<{ entries: Array<{ id: number; keyword: string; answer: string; isActive: boolean }> }>("/api/whatsapp/knowledge", { authToken: token });
+  return apiFetch<{ success: boolean; entries: Array<{ id: number; keyword: string; answer: string; isActive: boolean; createdAt: string }> }>("/api/whatsapp/knowledge", { authToken: token });
 }
 
 export async function deleteKnowledgeEntry(token: string, id: number) {
-  return apiFetch<{ message: string }>(`/api/whatsapp/knowledge/${id}`, { method: "DELETE", authToken: token });
+  return apiFetch<{ success: boolean; message: string }>(`/api/whatsapp/knowledge/${id}`, { method: "DELETE", authToken: token });
 }
 
-export async function sendWhatsAppMessage(token: string, to: string, text: string) {
-  return apiFetch<{ success: boolean; data?: any }>("/api/whatsapp/send", {
-    method: "POST",
-    authToken: token,
-    body: JSON.stringify({ to, text })
-  });
+// Chat Management API functions
+export async function getChatHistory(token: string, contactNumber?: string, limit = 50, offset = 0) {
+  const params = new URLSearchParams();
+  if (contactNumber) params.set('contactNumber', contactNumber);
+  params.set('limit', limit.toString());
+  params.set('offset', offset.toString());
+  
+  return apiFetch<{ success: boolean; chats: Array<{ id: number; contactNumber: string; messageType: 'incoming' | 'outgoing'; messageContent: string; responseSource: string; knowledgeBaseMatch: string | null; timestamp: string }> }>(`/api/whatsapp/chats?${params}`, { authToken: token });
+}
+
+export async function getChatContacts(token: string) {
+  return apiFetch<{ success: boolean; contacts: Array<{ contactNumber: string; messageCount: number; lastMessageTime: string }> }>("/api/whatsapp/contacts", { authToken: token });
+}
+
+export async function getBotStats(token: string) {
+  return apiFetch<{ success: boolean; stats: { totalMessages: number; incomingMessages: number; outgoingMessages: number; totalContacts: number; knowledgeBaseResponses: number; openaiResponses: number; fallbackResponses: number } }>("/api/whatsapp/stats", { authToken: token });
 }
 
 

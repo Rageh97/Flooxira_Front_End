@@ -7,17 +7,32 @@ import {
   uploadKnowledgeBase, 
   getKnowledgeBase, 
   deleteKnowledgeEntry,
-  sendWhatsAppMessage
+  sendWhatsAppMessage,
+  startWhatsAppSession,
+  getWhatsAppQRCode,
+  stopWhatsAppSession,
+  getChatHistory,
+  getChatContacts,
+  getBotStats
 } from "@/lib/api";
 
 export default function WhatsAppPage() {
+  const [activeTab, setActiveTab] = useState<'connection' | 'bot' | 'chats' | 'stats'>('connection');
   const [status, setStatus] = useState<any>(null);
+  const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
   const [knowledgeEntries, setKnowledgeEntries] = useState<Array<{ id: number; keyword: string; answer: string; isActive: boolean }>>([]);
   const [file, setFile] = useState<File | null>(null);
   const [testPhoneNumber, setTestPhoneNumber] = useState("");
   const [testMessage, setTestMessage] = useState("");
+  
+  // Chat management state
+  const [chats, setChats] = useState<Array<{ id: number; contactNumber: string; messageType: 'incoming' | 'outgoing'; messageContent: string; responseSource: string; knowledgeBaseMatch: string | null; timestamp: string }>>([]);
+  const [contacts, setContacts] = useState<Array<{ contactNumber: string; messageCount: number; lastMessageTime: string }>>([]);
+  const [selectedContact, setSelectedContact] = useState<string | null>(null);
+  const [botStats, setBotStats] = useState<any>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
@@ -25,8 +40,32 @@ export default function WhatsAppPage() {
     if (token) {
       checkStatus();
       loadKnowledgeBase();
+      loadBotStats();
     }
   }, [token]);
+
+  // Auto-refresh QR code and status
+  useEffect(() => {
+    if (token) {
+      const interval = setInterval(() => {
+        checkStatus();
+        if (status?.status === 'qr_generated') {
+          refreshQRCode();
+        }
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [token, status?.status]);
+
+  // Load chat data when switching to chats tab
+  useEffect(() => {
+    if (activeTab === 'chats' && token) {
+      loadChatContacts();
+      if (selectedContact) {
+        loadChatHistory(selectedContact);
+      }
+    }
+  }, [activeTab, token, selectedContact]);
 
   async function checkStatus() {
     try {
@@ -34,6 +73,57 @@ export default function WhatsAppPage() {
       setStatus(statusData);
     } catch (e: any) {
       setError(e.message);
+    }
+  }
+
+  async function refreshQRCode() {
+    try {
+      const qrData = await getWhatsAppQRCode(token);
+      if (qrData.success && qrData.qrCode) {
+        setQrCode(qrData.qrCode);
+      }
+    } catch (e: any) {
+      console.error('QR Code refresh error:', e);
+    }
+  }
+
+  async function startSession() {
+    try {
+      setLoading(true);
+      setError("");
+      const result = await startWhatsAppSession(token);
+      if (result.success) {
+        setStatus(result);
+        if (result.qrCode) {
+          setQrCode(result.qrCode);
+        }
+        setSuccess("WhatsApp session started! Scan the QR code with your phone.");
+      } else {
+        setError(result.message);
+      }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function stopSession() {
+    try {
+      setLoading(true);
+      setError("");
+      const result = await stopWhatsAppSession(token);
+      if (result.success) {
+        setStatus({ status: 'disconnected', message: 'Session stopped' });
+        setQrCode("");
+        setSuccess("WhatsApp session stopped successfully!");
+      } else {
+        setError(result.message);
+      }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -46,7 +136,38 @@ export default function WhatsAppPage() {
     }
   }
 
-  // No session start needed with Cloud API
+  async function loadChatContacts() {
+    try {
+      const data = await getChatContacts(token);
+      if (data.success) {
+        setContacts(data.contacts);
+      }
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function loadChatHistory(contactNumber: string) {
+    try {
+      const data = await getChatHistory(token, contactNumber);
+      if (data.success) {
+        setChats(data.chats);
+      }
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function loadBotStats() {
+    try {
+      const data = await getBotStats(token);
+      if (data.success) {
+        setBotStats(data.stats);
+      }
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
 
   async function handleFileUpload() {
     if (!file) return;
@@ -60,6 +181,7 @@ export default function WhatsAppPage() {
       // Reset file input
       const fileInput = document.getElementById('file-input') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
+      setSuccess("Knowledge base uploaded successfully!");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -71,6 +193,7 @@ export default function WhatsAppPage() {
     try {
       await deleteKnowledgeEntry(token, id);
       await loadKnowledgeBase();
+      setSuccess("Knowledge base entry deleted successfully!");
     } catch (e: any) {
       setError(e.message);
     }
@@ -86,9 +209,13 @@ export default function WhatsAppPage() {
       setLoading(true);
       setError("");
       const result = await sendWhatsAppMessage(token, testPhoneNumber, testMessage);
-      console.log('Send message result:', result);
-      setError("Message sent successfully!");
+      
+      if (result.success) {
+        setSuccess("Message sent successfully!");
       setTestMessage("");
+      } else {
+        setError(result.message || "Failed to send message");
+      }
     } catch (e: any) {
       console.error('Send message error:', e);
       setError(`Send failed: ${e.message}`);
@@ -99,26 +226,110 @@ export default function WhatsAppPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">WhatsApp Bot</h1>
+      <h1 className="text-2xl font-semibold">WhatsApp Bot Management</h1>
       
+      {/* Status Messages */}
       {error && (
-        <div className={`rounded-md p-4 ${error.includes('successfully') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+        <div className="rounded-md p-4 bg-red-50 text-red-700">
           {error}
         </div>
       )}
 
-      {/* WhatsApp Business Connection */}
+      {success && (
+        <div className="rounded-md p-4 bg-green-50 text-green-700">
+          {success}
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        <button
+          onClick={() => setActiveTab('connection')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'connection'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Connection
+        </button>
+        <button
+          onClick={() => setActiveTab('bot')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'bot'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Bot Settings
+        </button>
+        <button
+          onClick={() => setActiveTab('chats')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'chats'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Chat History
+        </button>
+        <button
+          onClick={() => setActiveTab('stats')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'stats'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Statistics
+        </button>
+      </div>
+
+      {/* Connection Tab */}
+      {activeTab === 'connection' && (
+        <div className="space-y-6">
+          {/* WhatsApp Connection */}
       <Card>
-        <CardHeader>WhatsApp Business</CardHeader>
+            <CardHeader>WhatsApp Connection</CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <p className="text-sm text-gray-600">
-                {status ? `Configured • Phone Number ID: ${status.phoneNumberId}` : 'Not configured. Go to Settings → WhatsApp Business to configure.'}
+                    Status: {status?.status || 'Unknown'} • {status?.message || 'No session'}
               </p>
             </div>
-            <Button onClick={checkStatus} disabled={loading}>Refresh</Button>
+                <div className="flex gap-2">
+                  <Button onClick={checkStatus} disabled={loading} variant="outline">
+                    Refresh
+                  </Button>
+                  {status?.status === 'disconnected' || !status ? (
+                    <Button onClick={startSession} disabled={loading}>
+                      {loading ? 'Starting...' : 'Start Session'}
+                    </Button>
+                  ) : (
+                    <Button onClick={stopSession} disabled={loading} variant="destructive">
+                      {loading ? 'Stopping...' : 'Stop Session'}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              {/* QR Code Display */}
+              {qrCode && status?.status === 'qr_generated' && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Scan this QR code with your WhatsApp mobile app to connect:
+                  </p>
+                  <div className="flex justify-center">
+                    <img 
+                      src={qrCode} 
+                      alt="WhatsApp QR Code" 
+                      className="border border-gray-300 rounded-lg"
+                      style={{ maxWidth: '300px', height: 'auto' }}
+                    />
+                  </div>
           </div>
+              )}
         </CardContent>
       </Card>
 
@@ -157,15 +368,20 @@ export default function WhatsAppPage() {
           </Button>
         </CardContent>
       </Card>
+        </div>
+      )}
 
+      {/* Bot Settings Tab */}
+      {activeTab === 'bot' && (
+        <div className="space-y-6">
       {/* Knowledge Base Upload */}
       <Card>
-        <CardHeader>Knowledge Base</CardHeader>
+            <CardHeader>Knowledge Base Management</CardHeader>
         <CardContent className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">Upload Excel File</label>
             <p className="mb-2 text-xs text-gray-500">
-              Upload an Excel file with "keyword" and "answer" columns. The bot will use this data to respond to messages.
+                  Upload an Excel file with "keyword" and "answer" columns. The bot will prioritize this data over OpenAI responses.
             </p>
             <div className="flex gap-2">
               <input
@@ -213,26 +429,184 @@ export default function WhatsAppPage() {
         </Card>
       )}
 
-      {/* Bot Features Info */}
+          {/* Bot Response Priority Info */}
       <Card>
-        <CardHeader>Bot Features</CardHeader>
+            <CardHeader>Response Priority</CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
-              <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-gray-900" />
-              <span>Basic Plan: Responds using your knowledge base only</span>
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
+                  <span><strong>1. Knowledge Base:</strong> Exact and fuzzy matches from your Excel file</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-gray-900" />
-              <span>Pro Plan: Uses knowledge base + OpenAI for unknown queries</span>
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
+                  <span><strong>2. OpenAI:</strong> AI responses for unknown queries</span>
             </div>
             <div className="flex items-start gap-2">
-              <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-gray-900" />
-              <span>Fuzzy matching finds similar keywords automatically</span>
+                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-gray-500" />
+                  <span><strong>3. Fallback:</strong> Default responses when all else fails</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Chat History Tab */}
+      {activeTab === 'chats' && (
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* Contacts List */}
+            <Card>
+              <CardHeader>Contacts ({contacts.length})</CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {contacts.map((contact) => (
+                    <div
+                      key={contact.contactNumber}
+                      onClick={() => {
+                        setSelectedContact(contact.contactNumber);
+                        loadChatHistory(contact.contactNumber);
+                      }}
+                      className={`p-3 rounded-md cursor-pointer transition-colors ${
+                        selectedContact === contact.contactNumber
+                          ? 'bg-blue-50 border border-blue-200'
+                          : 'hover:bg-gray-50 border border-transparent'
+                      }`}
+                    >
+                      <div className="font-medium text-sm">{contact.contactNumber}</div>
+                      <div className="text-xs text-gray-500">
+                        {contact.messageCount} messages • {new Date(contact.lastMessageTime).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Chat Messages */}
+            <div className="md:col-span-2">
+              <Card>
+                <CardHeader>
+                  {selectedContact ? `Chat with ${selectedContact}` : 'Select a contact to view messages'}
+                </CardHeader>
+                <CardContent>
+                  {selectedContact ? (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {chats.map((chat) => (
+                        <div
+                          key={chat.id}
+                          className={`flex ${chat.messageType === 'outgoing' ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-xs p-3 rounded-lg ${
+                              chat.messageType === 'outgoing'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 text-gray-900'
+                            }`}
+                          >
+                            <div className="text-sm">{chat.messageContent}</div>
+                            <div className="text-xs mt-1 opacity-70">
+                              {new Date(chat.timestamp).toLocaleTimeString()}
+                              {chat.responseSource && (
+                                <span className="ml-2">
+                                  ({chat.responseSource === 'knowledge_base' ? 'KB' : chat.responseSource === 'openai' ? 'AI' : 'FB'})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-8">Select a contact to view chat history</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Statistics Tab */}
+      {activeTab === 'stats' && (
+        <div className="space-y-6">
+          {botStats && (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-2xl font-bold">{botStats.totalMessages}</div>
+                  <p className="text-xs text-gray-600">Total Messages</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-2xl font-bold">{botStats.totalContacts}</div>
+                  <p className="text-xs text-gray-600">Total Contacts</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-2xl font-bold">{botStats.incomingMessages}</div>
+                  <p className="text-xs text-gray-600">Incoming Messages</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-2xl font-bold">{botStats.outgoingMessages}</div>
+                  <p className="text-xs text-gray-600">Bot Responses</p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {botStats && (
+            <Card>
+              <CardHeader>Response Sources</CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Knowledge Base</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full" 
+                          style={{ width: `${(botStats.knowledgeBaseResponses / botStats.outgoingMessages) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-600">{botStats.knowledgeBaseResponses}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">OpenAI</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full" 
+                          style={{ width: `${(botStats.openaiResponses / botStats.outgoingMessages) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-600">{botStats.openaiResponses}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Fallback</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-gray-500 h-2 rounded-full" 
+                          style={{ width: `${(botStats.fallbackResponses / botStats.outgoingMessages) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-gray-600">{botStats.fallbackResponses}</span>
+                    </div>
             </div>
           </div>
         </CardContent>
       </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }
