@@ -362,9 +362,9 @@ export default function WhatsAppPage() {
     }
   }
 
-  async function handleAdminAssign(chatId: number) {
+  async function handleAdminAssign(chatId: number, assigneeId?: number) {
     try {
-      const res = await adminAssignChat(token, chatId, adminSelectedAssignee);
+      const res = await adminAssignChat(token, chatId, assigneeId);
       if (res.success) {
         setSuccess('Chat updated');
         await handleAdminFilter();
@@ -879,19 +879,79 @@ export default function WhatsAppPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <h3 className="text-lg font-semibold">Admin Management</h3>
-              <p className="text-sm text-gray-600">Manage WhatsApp chats and assign agents</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Admin Management</h3>
+                  <p className="text-sm text-gray-600">Manage WhatsApp chats and assign agents</p>
+                </div>
+                <Button onClick={handleAdminLoad} variant="secondary" size="sm">
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No chats available yet.</p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Connect WhatsApp and send/receive some messages to see chat data here.
-                  </p>
-            </div>
-          </div>
-        </CardContent>
+                {adminChats.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No chats available yet.</p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Connect WhatsApp and send/receive some messages to see chat data here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Chats ({adminChats.length})</h4>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Filter by contact number"
+                          value={adminFilterContact}
+                          onChange={(e) => setAdminFilterContact(e.target.value)}
+                          className="px-3 py-1 border rounded-md text-sm"
+                        />
+                        <Button onClick={handleAdminFilter} variant="secondary" size="sm">
+                          Filter
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {adminChats.map((chat: any) => (
+                        <div key={chat.id} className="border rounded-lg p-3 bg-gray-50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{chat.contactNumber}</p>
+                              <p className="text-xs text-gray-600">
+                                {chat.messageType === 'incoming' ? '📥' : '📤'} 
+                                {chat.messageContent?.slice(0, 50)}...
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(chat.timestamp).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={chat.assigneeId || ''}
+                                onChange={(e) => handleAdminAssign(chat.id, e.target.value ? parseInt(e.target.value) : undefined)}
+                                className="text-xs border rounded px-2 py-1"
+                              >
+                                <option value="">Unassigned</option>
+                                {adminAgents.map(agent => (
+                                  <option key={agent.id} value={agent.id}>
+                                    {agent.name || agent.email}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
       </Card>
         </div>
       )}
