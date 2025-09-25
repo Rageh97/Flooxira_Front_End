@@ -493,7 +493,12 @@ export async function exchangePinterestCode(token: string, code: string) {
 }
 
 export async function getPinterestAccount(token: string) {
-  return apiFetch<{ connected: boolean; username?: string; fullName?: string }>("/api/pinterest/account", { authToken: token });
+  try {
+    return await apiFetch<{ connected: boolean; username?: string; fullName?: string }>("/api/pinterest/account", { authToken: token });
+  } catch (e) {
+    // Gracefully handle 404 or non-JSON responses in environments without Pinterest backend
+    return { connected: false } as any;
+  }
 }
 
 export async function listPinterestBoards(token: string) {
