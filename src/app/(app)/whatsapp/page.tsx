@@ -407,7 +407,7 @@ export default function WhatsAppPage() {
                 <div>
                   <label className="block text-sm font-medium mb-2">Message Template</label>
                   <textarea className="w-full px-3 py-2 border border-gray-300 rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
-                  <p className="text-xs text-gray-500 mt-1">Use {{name}} placeholder.</p>
+                  <p className="text-xs text-gray-500 mt-1">Use {'{{name}}'} placeholder.</p>
                 </div>
               </div>
               <div>

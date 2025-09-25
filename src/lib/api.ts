@@ -256,6 +256,28 @@ export async function startWhatsAppCampaign(token: string, file: File, messageTe
   });
 }
 
+// Admin API
+export async function adminListAgents(token: string) {
+  return apiFetch<{ success: boolean; agents: Array<{ id: number; name?: string; email: string }> }>("/api/admin/agents", { authToken: token });
+}
+
+export async function adminListChats(token: string, params: { contactNumber?: string; assigneeId?: number; limit?: number; offset?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.contactNumber) qs.set('contactNumber', params.contactNumber);
+  if (params.assigneeId) qs.set('assigneeId', String(params.assigneeId));
+  if (params.limit) qs.set('limit', String(params.limit));
+  if (params.offset) qs.set('offset', String(params.offset));
+  return apiFetch<{ success: boolean; chats: any[] }>(`/api/admin/chats?${qs.toString()}`, { authToken: token });
+}
+
+export async function adminAssignChat(token: string, chatId: number, assigneeId?: number) {
+  return apiFetch<{ success: boolean }>("/api/admin/chats/assign", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ chatId, assigneeId })
+  });
+}
+
 
 // Salla API helpers
 export async function startSallaOAuth() {
