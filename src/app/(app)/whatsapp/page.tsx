@@ -18,7 +18,8 @@ import {
   sendToWhatsAppGroup,
   exportGroupMembers,
   postWhatsAppStatus,
-  startWhatsAppCampaign
+  startWhatsAppCampaign,
+  API_URL
 } from "@/lib/api";
 
 export default function WhatsAppPage() {
@@ -465,6 +466,26 @@ export default function WhatsAppPage() {
           }`}
         >
           Statistics
+        </button>
+        <button
+          onClick={() => setActiveTab('groups')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'groups'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Groups & Status
+        </button>
+        <button
+          onClick={() => setActiveTab('campaigns')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'campaigns'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Campaigns
         </button>
       </div>
 
