@@ -19,11 +19,14 @@ import {
   exportGroupMembers,
   postWhatsAppStatus,
   startWhatsAppCampaign,
-  API_URL
+  API_URL,
+  adminListAgents,
+  adminListChats,
+  adminAssignChat
 } from "@/lib/api";
 
 export default function WhatsAppPage() {
-  const [activeTab, setActiveTab] = useState<'connection' | 'bot' | 'chats' | 'stats' | 'groups' | 'campaigns'>('connection');
+  const [activeTab, setActiveTab] = useState<'connection' | 'bot' | 'chats' | 'stats' | 'groups' | 'campaigns' | 'admin'>('connection');
   const [status, setStatus] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -51,6 +54,12 @@ export default function WhatsAppPage() {
   const [campaignFile, setCampaignFile] = useState<File | null>(null);
   const [campaignTemplate, setCampaignTemplate] = useState<string>("مرحبا {{name}} …");
   const [campaignThrottle, setCampaignThrottle] = useState<number>(3000);
+
+  // Admin state
+  const [adminAgents, setAdminAgents] = useState<Array<{ id: number; name?: string; email: string }>>([]);
+  const [adminChats, setAdminChats] = useState<any[]>([]);
+  const [adminFilterContact, setAdminFilterContact] = useState<string>("");
+  const [adminSelectedAssignee, setAdminSelectedAssignee] = useState<number | undefined>(undefined);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
@@ -88,6 +97,13 @@ export default function WhatsAppPage() {
   useEffect(() => {
     if (activeTab === 'groups' && token) {
       handleListGroups();
+    }
+  }, [activeTab, token]);
+
+  // Load admin data on admin tab
+  useEffect(() => {
+    if (activeTab === 'admin' && token) {
+      handleAdminLoad();
     }
   }, [activeTab, token]);
 
@@ -319,6 +335,41 @@ export default function WhatsAppPage() {
       setError(e.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAdminLoad() {
+    try {
+      setError("");
+      const [agentsRes, chatsRes] = await Promise.all([
+        adminListAgents(token),
+        adminListChats(token, { limit: 50 })
+      ]);
+      if (agentsRes.success) setAdminAgents(agentsRes.agents);
+      if (chatsRes.success) setAdminChats(chatsRes.chats);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function handleAdminFilter() {
+    try {
+      const res = await adminListChats(token, { contactNumber: adminFilterContact || undefined, limit: 50 });
+      if (res.success) setAdminChats(res.chats);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function handleAdminAssign(chatId: number) {
+    try {
+      const res = await adminAssignChat(token, chatId, adminSelectedAssignee);
+      if (res.success) {
+        setSuccess('Chat updated');
+        await handleAdminFilter();
+      }
+    } catch (e: any) {
+      setError(e.message);
     }
   }
 
