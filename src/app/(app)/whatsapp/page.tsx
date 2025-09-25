@@ -538,6 +538,16 @@ export default function WhatsAppPage() {
         >
           Campaigns
         </button>
+        <button
+          onClick={() => setActiveTab('admin')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'admin'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Admin
+        </button>
       </div>
 
       {/* Connection Tab */}
