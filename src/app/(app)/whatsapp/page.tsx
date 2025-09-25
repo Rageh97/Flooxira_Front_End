@@ -61,7 +61,7 @@ export default function WhatsAppPage() {
   const [adminFilterContact, setAdminFilterContact] = useState<string>("");
   const [adminSelectedAssignee, setAdminSelectedAssignee] = useState<number | undefined>(undefined);
 
-  
+
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
@@ -392,7 +392,7 @@ export default function WhatsAppPage() {
             <CardHeader>Groups</CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
-                <Button onClick={handleListGroups} variant="outline" disabled={loading}>Refresh</Button>
+                <Button onClick={handleListGroups} variant="secondary" disabled={loading}>Refresh</Button>
                 <span className="text-sm text-gray-600">{groups.length} groups</span>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
@@ -421,7 +421,7 @@ export default function WhatsAppPage() {
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSendToGroup} disabled={loading || !selectedGroupName || !groupMessage}>Send to Group</Button>
-                <Button onClick={handleExportGroupMembers} variant="outline" disabled={loading || !selectedGroupName}>Export Members</Button>
+                <Button onClick={handleExportGroupMembers} variant="secondary" disabled={loading || !selectedGroupName}>Export Members</Button>
               </div>
             </CardContent>
           </Card>
@@ -565,7 +565,7 @@ export default function WhatsAppPage() {
               </p>
             </div>
                 <div className="flex gap-2">
-                  <Button onClick={checkStatus} disabled={loading} variant="outline">
+                  <Button onClick={checkStatus} disabled={loading} variant="secondary">
                     Refresh
                   </Button>
                   {status?.status === 'disconnected' || !status ? (
@@ -871,6 +871,28 @@ export default function WhatsAppPage() {
         </CardContent>
       </Card>
           )}
+        </div>
+      )}
+
+      {/* Admin Tab */}
+      {activeTab === 'admin' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold">Admin Management</h3>
+              <p className="text-sm text-gray-600">Manage WhatsApp chats and assign agents</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No chats available yet.</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Connect WhatsApp and send/receive some messages to see chat data here.
+                  </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
         </div>
       )}
     </div>
