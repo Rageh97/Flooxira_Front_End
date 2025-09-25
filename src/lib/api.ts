@@ -212,6 +212,50 @@ export async function getBotStats(token: string) {
   return apiFetch<{ success: boolean; stats: { totalMessages: number; incomingMessages: number; outgoingMessages: number; totalContacts: number; knowledgeBaseResponses: number; openaiResponses: number; fallbackResponses: number } }>("/api/whatsapp/stats", { authToken: token });
 }
 
+// Groups & Status
+export async function listWhatsAppGroups(token: string) {
+  return apiFetch<{ success: boolean; groups: Array<{ id: string; name: string; participantsCount: number }> }>("/api/whatsapp/groups", { authToken: token });
+}
+
+export async function sendToWhatsAppGroup(token: string, groupName: string, message: string) {
+  return apiFetch<{ success: boolean; message?: string }>("/api/whatsapp/groups/send", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ groupName, message })
+  });
+}
+
+export async function exportGroupMembers(token: string, groupName: string) {
+  const url = `/api/whatsapp/groups/export?groupName=${encodeURIComponent(groupName)}`;
+  return apiFetch<{ success: boolean; file?: string; message?: string }>(url, { authToken: token });
+}
+
+export async function postWhatsAppStatus(token: string, image: File, caption?: string) {
+  const formData = new FormData();
+  formData.append('image', image);
+  if (caption) formData.append('caption', caption);
+  return apiFetch<{ success: boolean; message?: string }>("/api/whatsapp/status/post", {
+    method: "POST",
+    authToken: token,
+    body: formData,
+    headers: {}
+  });
+}
+
+// Campaigns
+export async function startWhatsAppCampaign(token: string, file: File, messageTemplate: string, throttleMs = 3000) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('messageTemplate', messageTemplate);
+  formData.append('throttleMs', String(throttleMs));
+  return apiFetch<{ success: boolean; summary?: { sent: number; failed: number; total: number }; message?: string }>("/api/whatsapp/campaigns/start", {
+    method: "POST",
+    authToken: token,
+    body: formData,
+    headers: {}
+  });
+}
+
 
 // Salla API helpers
 export async function startSallaOAuth() {

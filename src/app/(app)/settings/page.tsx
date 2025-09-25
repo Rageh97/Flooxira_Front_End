@@ -795,6 +795,41 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* YouTube Integration - Always visible */}
+      <Card>
+        <CardHeader>
+          <h2 className="text-lg font-semibold">YouTube</h2>
+          <p className="text-sm text-muted-foreground">Connect your YouTube account to upload and schedule videos.</p>
+        </CardHeader>
+        <CardContent>
+          {!youtubeAccount ? (
+            <div className="space-y-3">
+              <Button onClick={connectYouTube} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white">
+                ▶️ Connect YouTube
+              </Button>
+            </div>
+          ) : (
+            <div className="p-3 border rounded-lg bg-green-50 border-green-200">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-medium text-green-800">{youtubeAccount.channelTitle || youtubeAccount.email}</p>
+                  <p className="text-sm text-green-700">Channel ID: {youtubeAccount.channelId}</p>
+                </div>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={disconnectYouTube} 
+                  disabled={loading}
+                  className="text-red-600 border-red-300 hover:bg-red-50"
+                >
+                  Disconnect
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Facebook Integration */}
       <Card>
         <CardHeader>
@@ -1040,35 +1075,7 @@ export default function SettingsPage() {
 
                 
 
-                <div>
-                  <h3 className="font-medium mb-2">YouTube Account</h3>
-                  {!youtubeAccount ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-600">Connect your YouTube account to upload and schedule videos.</p>
-                      <Button onClick={connectYouTube} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white">
-                        ▶️ Connect YouTube
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="p-3 border rounded-lg bg-green-50 border-green-200">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium text-green-800">{youtubeAccount.channelTitle || youtubeAccount.email}</p>
-                          <p className="text-sm text-green-700">Channel ID: {youtubeAccount.channelId}</p>
-                        </div>
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          onClick={disconnectYouTube} 
-                          disabled={loading}
-                          className="text-red-600 border-red-300 hover:bg-red-50"
-                        >
-                          Disconnect
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* YouTube block moved out to always show */}
               </div>
             </div>
           )}

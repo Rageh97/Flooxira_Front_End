@@ -13,11 +13,16 @@ import {
   stopWhatsAppSession,
   getChatHistory,
   getChatContacts,
-  getBotStats
+  getBotStats,
+  listWhatsAppGroups,
+  sendToWhatsAppGroup,
+  exportGroupMembers,
+  postWhatsAppStatus,
+  startWhatsAppCampaign
 } from "@/lib/api";
 
 export default function WhatsAppPage() {
-  const [activeTab, setActiveTab] = useState<'connection' | 'bot' | 'chats' | 'stats'>('connection');
+  const [activeTab, setActiveTab] = useState<'connection' | 'bot' | 'chats' | 'stats' | 'groups' | 'campaigns'>('connection');
   const [status, setStatus] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -34,6 +39,18 @@ export default function WhatsAppPage() {
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [botStats, setBotStats] = useState<any>(null);
 
+  // Groups/Status state
+  const [groups, setGroups] = useState<Array<{ id: string; name: string; participantsCount: number }>>([]);
+  const [selectedGroupName, setSelectedGroupName] = useState<string>("");
+  const [groupMessage, setGroupMessage] = useState<string>("");
+  const [statusImage, setStatusImage] = useState<File | null>(null);
+  const [statusCaption, setStatusCaption] = useState<string>("");
+
+  // Campaigns state
+  const [campaignFile, setCampaignFile] = useState<File | null>(null);
+  const [campaignTemplate, setCampaignTemplate] = useState<string>("مرحبا {{name}} …");
+  const [campaignThrottle, setCampaignThrottle] = useState<number>(3000);
+
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
@@ -49,9 +66,8 @@ export default function WhatsAppPage() {
     if (token) {
       const interval = setInterval(() => {
         checkStatus();
-        if (status?.status === 'qr_generated') {
-          refreshQRCode();
-        }
+        // Always try to refresh QR while not connected
+        if (!status || status?.status !== 'CONNECTED') refreshQRCode();
       }, 3000);
       return () => clearInterval(interval);
     }
@@ -66,6 +82,13 @@ export default function WhatsAppPage() {
       }
     }
   }, [activeTab, token, selectedContact]);
+
+  // Load groups on groups tab
+  useEffect(() => {
+    if (activeTab === 'groups' && token) {
+      handleListGroups();
+    }
+  }, [activeTab, token]);
 
   async function checkStatus() {
     try {
@@ -224,6 +247,80 @@ export default function WhatsAppPage() {
     }
   }
 
+  async function handleListGroups() {
+    try {
+      const res = await listWhatsAppGroups(token);
+      if (res.success) setGroups(res.groups);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function handleSendToGroup() {
+    if (!selectedGroupName || !groupMessage) {
+      setError('Select group and enter message');
+      return;
+    }
+    try {
+      setLoading(true);
+      setError("");
+      const res = await sendToWhatsAppGroup(token, selectedGroupName, groupMessage);
+      if (res.success) setSuccess('Message sent to group');
+      else setError(res.message || 'Failed');
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleExportGroupMembers() {
+    if (!selectedGroupName) {
+      setError('Select a group');
+      return;
+    }
+    try {
+      const res = await exportGroupMembers(token, selectedGroupName);
+      if (res.success && res.file) {
+        window.open(`${API_URL}${res.file}`, '_blank');
+      } else {
+        setError(res.message || 'Export failed');
+      }
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
+  async function handlePostStatus() {
+    if (!statusImage) { setError('Select an image'); return; }
+    try {
+      setLoading(true);
+      setError("");
+      const res = await postWhatsAppStatus(token, statusImage, statusCaption);
+      if (res.success) setSuccess('Status posted');
+      else setError(res.message || 'Failed');
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleStartCampaign() {
+    if (!campaignFile || !campaignTemplate) { setError('Upload file and enter template'); return; }
+    try {
+      setLoading(true);
+      setError("");
+      const res = await startWhatsAppCampaign(token, campaignFile, campaignTemplate, campaignThrottle);
+      if (res.success) setSuccess(`Campaign done: sent ${res.summary?.sent}/${res.summary?.total}`);
+      else setError(res.message || 'Campaign failed');
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">WhatsApp Bot Management</h1>
@@ -235,6 +332,92 @@ export default function WhatsAppPage() {
         </div>
       )}
 
+      {/* Groups & Status Tab */}
+      {activeTab === 'groups' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>Groups</CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Button onClick={handleListGroups} variant="outline" disabled={loading}>Refresh</Button>
+                <span className="text-sm text-gray-600">{groups.length} groups</span>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Select Group</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    value={selectedGroupName}
+                    onChange={(e) => setSelectedGroupName(e.target.value)}
+                  >
+                    <option value="">-- Select --</option>
+                    {groups.map(g => (
+                      <option key={g.id} value={g.name}>{g.name} ({g.participantsCount})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Group Message</label>
+                  <input
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    value={groupMessage}
+                    onChange={(e) => setGroupMessage(e.target.value)}
+                    placeholder="Your message to the group"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSendToGroup} disabled={loading || !selectedGroupName || !groupMessage}>Send to Group</Button>
+                <Button onClick={handleExportGroupMembers} variant="outline" disabled={loading || !selectedGroupName}>Export Members</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>Post Status</CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Image</label>
+                  <input type="file" accept="image/*" onChange={(e) => setStatusImage(e.target.files?.[0] || null)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Caption</label>
+                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={statusCaption} onChange={(e) => setStatusCaption(e.target.value)} />
+                </div>
+              </div>
+              <Button onClick={handlePostStatus} disabled={loading || !statusImage}>Post Status</Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Campaigns Tab */}
+      {activeTab === 'campaigns' && (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>Start Campaign</CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Upload Excel (columns: phone, name, message)</label>
+                  <input type="file" accept=".xlsx" onChange={(e) => setCampaignFile(e.target.files?.[0] || null)} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Message Template</label>
+                  <textarea className="w-full px-3 py-2 border border-gray-300 rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
+                  <p className="text-xs text-gray-500 mt-1">Use {{name}} placeholder.</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Throttle (ms between messages)</label>
+                <input type="number" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '3000'))} />
+              </div>
+              <Button onClick={handleStartCampaign} disabled={loading || !campaignFile || !campaignTemplate}>Start Campaign</Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {success && (
         <div className="rounded-md p-4 bg-green-50 text-green-700">
           {success}
@@ -315,7 +498,7 @@ export default function WhatsAppPage() {
               </div>
               
               {/* QR Code Display */}
-              {qrCode && status?.status === 'qr_generated' && (
+              {qrCode && status?.status !== 'CONNECTED' && (
                 <div className="text-center">
                   <p className="text-sm text-gray-600 mb-4">
                     Scan this QR code with your WhatsApp mobile app to connect:
