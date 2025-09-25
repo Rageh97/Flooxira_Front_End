@@ -61,6 +61,7 @@ export default function WhatsAppPage() {
   const [adminFilterContact, setAdminFilterContact] = useState<string>("");
   const [adminSelectedAssignee, setAdminSelectedAssignee] = useState<number | undefined>(undefined);
 
+  
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
