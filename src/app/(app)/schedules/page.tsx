@@ -35,7 +35,9 @@ export default function SchedulesPage() {
     if (!token) return;
     try {
       setLoading(true);
+      console.log('Loading schedules for:', currentMonth, currentYear);
       const response = await getMonthlySchedules(token, currentMonth, currentYear);
+      console.log('Schedules response:', response);
       if (response.success) {
         setMonthlySchedules({
           whatsapp: response.whatsapp || [],
@@ -175,6 +177,8 @@ export default function SchedulesPage() {
   const daysInMonth = getDaysInMonth(currentMonth, currentYear);
   const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
 
+  console.log('Rendering calendar with:', { currentMonth, currentYear, daysInMonth, firstDay, monthlySchedules });
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
@@ -204,34 +208,41 @@ export default function SchedulesPage() {
               <div className="text-gray-500">Loading schedules...</div>
             </div>
           ) : (
-            <div className="grid grid-cols-7 gap-1">
-              {/* Day headers */}
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-2 text-center font-semibold text-gray-600 border-b">
-                  {day}
-                </div>
-              ))}
-              
-              {/* Empty cells for days before month starts */}
-              {Array.from({ length: firstDay }).map((_, index) => (
-                <div key={`empty-${index}`} className="p-2 h-20 border"></div>
-              ))}
-              
-              {/* Days of the month */}
-              {Array.from({ length: daysInMonth }, (_, index) => {
-                const day = index + 1;
-                const daySchedules = getSchedulesForDay(day);
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600">
+                Total WhatsApp schedules: {monthlySchedules.whatsapp.length} | 
+                Total posts: {monthlySchedules.posts.length}
+              </div>
+              <div className="text-xs text-gray-500">
+                Calendar: {daysInMonth} days, starts on day {firstDay}
+              </div>
+              <div className="grid grid-cols-7 gap-2 border rounded-lg p-4 bg-gray-50">
+                {/* Day headers */}
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="p-3 text-center font-semibold text-gray-700 bg-white rounded border">
+                    {day}
+                  </div>
+                ))}
                 
-                return (
-                  <div
-                    key={day}
-                    className="p-2 h-20 border cursor-pointer hover:bg-gray-50 relative"
-                    onClick={() => handleDayClick(day)}
-                  >
-                    <div className="font-semibold">{day}</div>
-                    {daySchedules.length > 0 && (
-                      <div className="absolute bottom-1 left-1 right-1">
-                        <div className="flex flex-wrap gap-1">
+                {/* Empty cells for days before month starts */}
+                {Array.from({ length: firstDay }).map((_, index) => (
+                  <div key={`empty-${index}`} className="p-3 h-16 bg-white border rounded"></div>
+                ))}
+                
+                {/* Days of the month */}
+                {Array.from({ length: daysInMonth }, (_, index) => {
+                  const day = index + 1;
+                  const daySchedules = getSchedulesForDay(day);
+                  
+                  return (
+                    <div
+                      key={day}
+                      className="p-3 h-16 bg-white border rounded cursor-pointer hover:bg-blue-50 relative flex flex-col"
+                      onClick={() => handleDayClick(day)}
+                    >
+                      <div className="font-semibold text-sm">{day}</div>
+                      {daySchedules.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
                           {daySchedules.slice(0, 2).map((schedule, idx) => (
                             <div
                               key={idx}
@@ -248,11 +259,11 @@ export default function SchedulesPage() {
                             <div className="text-xs text-gray-500">+{daySchedules.length - 2}</div>
                           )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </CardContent>
