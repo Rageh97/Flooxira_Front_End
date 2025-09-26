@@ -39,10 +39,16 @@ export default function SchedulePage() {
       const response = await getMonthlySchedules(token, currentMonth, currentYear);
       console.log('Schedules response:', response);
       if (response.success) {
+        console.log('Setting monthly schedules:', {
+          whatsapp: response.whatsapp || [],
+          posts: response.posts || []
+        });
         setMonthlySchedules({
           whatsapp: response.whatsapp || [],
           posts: response.posts || []
         });
+      } else {
+        console.log('API response not successful:', response);
       }
     } catch (error) {
       console.error('Failed to load monthly schedules:', error);
@@ -152,20 +158,27 @@ export default function SchedulePage() {
   const getSchedulesForDay = (day: number) => {
     const daySchedules: any[] = [];
     
+    console.log('Getting schedules for day:', day);
+    console.log('WhatsApp schedules:', monthlySchedules.whatsapp);
+    console.log('Posts:', monthlySchedules.posts);
+    
     monthlySchedules.whatsapp.forEach((schedule: any) => {
       const scheduleDate = new Date(schedule.scheduledAt);
+      console.log('WhatsApp schedule date:', scheduleDate, 'Day:', scheduleDate.getDate(), 'Target day:', day);
       if (scheduleDate.getDate() === day) {
-        daySchedules.push(schedule);
+        daySchedules.push({ type: 'whatsapp', item: schedule });
       }
     });
     
     monthlySchedules.posts.forEach((post: any) => {
       const postDate = new Date(post.scheduledAt);
+      console.log('Post date:', postDate, 'Day:', postDate.getDate(), 'Target day:', day);
       if (postDate.getDate() === day) {
-        daySchedules.push(post);
+        daySchedules.push({ type: 'post', item: post });
       }
     });
     
+    console.log('Day schedules for day', day, ':', daySchedules);
     return daySchedules;
   };
 
@@ -217,6 +230,16 @@ export default function SchedulePage() {
                 Total WhatsApp schedules: {monthlySchedules.whatsapp.length} | 
                 Total posts: {monthlySchedules.posts.length}
               </div>
+              {monthlySchedules.whatsapp.length > 0 && (
+                <div className="text-xs text-green-600">
+                  WhatsApp schedules: {monthlySchedules.whatsapp.map(w => new Date(w.scheduledAt).getDate()).join(', ')}
+                </div>
+              )}
+              {monthlySchedules.posts.length > 0 && (
+                <div className="text-xs text-blue-600">
+                  Posts: {monthlySchedules.posts.map(p => new Date(p.scheduledAt).getDate()).join(', ')}
+                </div>
+              )}
               <div className="text-xs text-gray-500">
                 Calendar: {daysInMonth} days, starts on day {firstDay}
               </div>
