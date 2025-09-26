@@ -23,22 +23,60 @@ export default function SchedulePage() {
   const [editScheduleMedia, setEditScheduleMedia] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null;
+  
+  // Debug localStorage
+  if (typeof window !== 'undefined') {
+    console.log('LocalStorage keys:', Object.keys(localStorage));
+    console.log('Token found:', !!token);
+    console.log('Token value:', token ? token.substring(0, 20) + '...' : 'null');
+  }
 
   useEffect(() => {
     if (token) {
       handleLoadMonthlySchedules();
+      // Also test direct API calls
+      testDirectAPIs();
     }
   }, [currentMonth, currentYear, token]);
 
+  const testDirectAPIs = async () => {
+    try {
+      console.log('Testing direct API calls...');
+      
+      // Test posts API
+      const postsResponse = await fetch('/api/posts', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const postsData = await postsResponse.json();
+      console.log('Direct posts API response:', postsData);
+      
+      // Test WhatsApp schedules API
+      const schedulesResponse = await fetch('/api/whatsapp/schedules', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const schedulesData = await schedulesResponse.json();
+      console.log('Direct WhatsApp schedules API response:', schedulesData);
+      
+    } catch (error) {
+      console.error('Direct API test failed:', error);
+    }
+  };
+
   const handleLoadMonthlySchedules = async () => {
-    if (!token) return;
+    if (!token) {
+      console.log('No token found');
+      return;
+    }
     try {
       setLoading(true);
       console.log('Loading schedules for:', currentMonth, currentYear);
+      console.log('Token:', token.substring(0, 20) + '...');
+      
       const response = await getMonthlySchedules(token, currentMonth, currentYear);
-      console.log('Schedules response:', response);
-      if (response.success) {
+      console.log('Full API response:', response);
+      
+      if (response && response.success) {
         console.log('Setting monthly schedules:', {
           whatsapp: response.whatsapp || [],
           posts: response.posts || []
@@ -49,9 +87,20 @@ export default function SchedulePage() {
         });
       } else {
         console.log('API response not successful:', response);
+        // Try to fetch all posts to see if there are any
+        try {
+          const allPostsResponse = await fetch('/api/posts', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const allPosts = await allPostsResponse.json();
+          console.log('All posts response:', allPosts);
+        } catch (e) {
+          console.log('Failed to fetch all posts:', e);
+        }
       }
     } catch (error) {
       console.error('Failed to load monthly schedules:', error);
+      console.error('Error details:', error.message, error.stack);
     } finally {
       setLoading(false);
     }

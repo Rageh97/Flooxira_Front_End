@@ -11,7 +11,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/plans", label: "Plans" },
   { href: "/create-post", label: "Create Post" },
-  { href: "/schedules", label: "Schedules" },
+  { href: "/schedule", label: "Schedules" },
   { href: "/whatsapp", label: "WhatsApp Bot" },
   { href: "/pinterest", label: "Pinterest" },
   { href: "/analytics", label: "Analytics" },
