@@ -217,16 +217,24 @@ export default function SchedulePage() {
     
     monthlySchedules.whatsapp.forEach((schedule: any) => {
       const scheduleDate = new Date(schedule.scheduledAt);
-      console.log('WhatsApp schedule date:', scheduleDate, 'Day:', scheduleDate.getDate(), 'Target day:', day);
-      if (scheduleDate.getDate() === day) {
+      // Get the date in local timezone
+      const localDate = new Date(scheduleDate.getFullYear(), scheduleDate.getMonth(), scheduleDate.getDate());
+      const targetDate = new Date(currentYear, currentMonth - 1, day);
+      console.log('WhatsApp schedule date:', scheduleDate, 'Local date:', localDate.getDate(), 'Target day:', day);
+      console.log('Date comparison:', localDate.getTime(), '===', targetDate.getTime(), '?', localDate.getTime() === targetDate.getTime());
+      if (localDate.getTime() === targetDate.getTime()) {
         daySchedules.push({ type: 'whatsapp', item: schedule });
       }
     });
     
     monthlySchedules.posts.forEach((post: any) => {
       const postDate = new Date(post.scheduledAt);
-      console.log('Post date:', postDate, 'Day:', postDate.getDate(), 'Target day:', day);
-      if (postDate.getDate() === day) {
+      // Get the date in local timezone
+      const localDate = new Date(postDate.getFullYear(), postDate.getMonth(), postDate.getDate());
+      const targetDate = new Date(currentYear, currentMonth - 1, day);
+      console.log('Post date:', postDate, 'Local date:', localDate.getDate(), 'Target day:', day);
+      console.log('Date comparison:', localDate.getTime(), '===', targetDate.getTime(), '?', localDate.getTime() === targetDate.getTime());
+      if (localDate.getTime() === targetDate.getTime()) {
         daySchedules.push({ type: 'post', item: post });
       }
     });
