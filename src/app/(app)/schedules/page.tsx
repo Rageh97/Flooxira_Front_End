@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { 
   getMonthlySchedules, 
   updateWhatsAppSchedule, 
@@ -185,9 +185,9 @@ export default function SchedulesPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>
+            <h2 className="text-xl font-semibold">
               {monthNames[currentMonth - 1]} {currentYear}
-            </CardTitle>
+            </h2>
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={() => navigateMonth('prev')}>
                 ← Previous
