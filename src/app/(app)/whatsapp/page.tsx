@@ -24,15 +24,10 @@ import {
   adminListAgents,
   adminListChats,
   adminAssignChat,
-  getMonthlySchedules,
-  updateWhatsAppSchedule,
-  deleteWhatsAppSchedule,
-  updatePlatformPostSchedule,
-  deletePlatformPostSchedule
 } from "@/lib/api";
 
 export default function WhatsAppPage() {
-  const [activeTab, setActiveTab] = useState<'connection' | 'bot' | 'chats' | 'stats' | 'groups' | 'campaigns' | 'schedules' | 'admin'>('connection');
+  const [activeTab, setActiveTab] = useState<'connection' | 'bot' | 'chats' | 'stats' | 'groups' | 'campaigns' | 'admin'>('connection');
   const [status, setStatus] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -73,14 +68,6 @@ export default function WhatsAppPage() {
   const [adminFilterContact, setAdminFilterContact] = useState<string>("");
   const [adminSelectedAssignee, setAdminSelectedAssignee] = useState<number | undefined>(undefined);
 
-  // Schedules state
-  const today = new Date();
-  const [schedYear, setSchedYear] = useState<number>(today.getFullYear());
-  const [schedMonth, setSchedMonth] = useState<number>(today.getMonth() + 1);
-  const [monthlySchedules, setMonthlySchedules] = useState<{ whatsapp: any[]; posts: any[] }>({ whatsapp: [], posts: [] });
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [dayItems, setDayItems] = useState<any[]>([]);
-  const [showSchedModal, setShowSchedModal] = useState<boolean>(false);
 
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
@@ -129,12 +116,6 @@ export default function WhatsAppPage() {
     }
   }, [activeTab, token]);
 
-  // Load schedules on schedules tab
-  useEffect(() => {
-    if (activeTab === 'schedules' && token) {
-      loadMonthlySchedules(schedYear, schedMonth);
-    }
-  }, [activeTab, token, schedYear, schedMonth]);
 
   async function checkStatus() {
     try {
@@ -351,62 +332,9 @@ export default function WhatsAppPage() {
     }
   }
 
-  async function loadMonthlySchedules(year: number, month: number) {
-    try {
-      const res = await getMonthlySchedules(token, year, month);
-      if (res.success) setMonthlySchedules({ whatsapp: res.whatsapp || [], posts: res.posts || [] });
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
 
-  function daysInMonth(year: number, month: number) {
-    return new Date(year, month, 0).getDate();
-  }
 
-  function openDayModal(dateISO: string) {
-    setSelectedDate(dateISO);
-    const dayStart = new Date(dateISO);
-    const dayEnd = new Date(dateISO);
-    dayEnd.setHours(23, 59, 59, 999);
-    const items: any[] = [];
-    for (const w of monthlySchedules.whatsapp) {
-      const d = new Date(w.scheduledAt);
-      if (d >= dayStart && d <= dayEnd) items.push({ type: 'whatsapp', item: w });
-    }
-    for (const p of monthlySchedules.posts) {
-      const d = new Date(p.scheduledAt);
-      if (d >= dayStart && d <= dayEnd) items.push({ type: 'post', item: p });
-    }
-    setDayItems(items);
-    setShowSchedModal(true);
-  }
 
-  async function handleUpdateSchedule(id: number, scheduledAt: string, payload?: any) {
-    try {
-      const res = await updateWhatsAppSchedule(token, id, { scheduledAt, payload });
-      if (res.success) {
-        setSuccess('Schedule updated');
-        await loadMonthlySchedules(schedYear, schedMonth);
-        openDayModal(selectedDate!);
-      }
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
-  async function handleDeleteSchedule(id: number) {
-    try {
-      const res = await deleteWhatsAppSchedule(token, id);
-      if (res.success) {
-        setSuccess('Schedule deleted');
-        await loadMonthlySchedules(schedYear, schedMonth);
-        openDayModal(selectedDate!);
-      }
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
 
   async function handleStartCampaign() {
     if (!campaignFile || !campaignTemplate) { setError('Upload file and enter template'); return; }
@@ -599,71 +527,6 @@ export default function WhatsAppPage() {
         </div>
       )}
 
-      {/* Schedules Tab */}
-      {activeTab === 'schedules' && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>Monthly Schedules</CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <input type="number" className="w-28 px-2 py-1 border rounded" value={schedYear} onChange={(e) => setSchedYear(parseInt(e.target.value || String(new Date().getFullYear())))} />
-                <input type="number" className="w-20 px-2 py-1 border rounded" value={schedMonth} onChange={(e) => setSchedMonth(parseInt(e.target.value || String(new Date().getMonth()+1)))} />
-                <Button variant="secondary" onClick={() => loadMonthlySchedules(schedYear, schedMonth)}>Refresh</Button>
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {Array.from({ length: daysInMonth(schedYear, schedMonth) }, (_, i) => i + 1).map((day) => {
-                  const count = monthlySchedules.whatsapp.filter(w => new Date(w.scheduledAt).getFullYear() === schedYear && (new Date(w.scheduledAt).getMonth()+1) === schedMonth && new Date(w.scheduledAt).getDate() === day).length + monthlySchedules.posts.filter(p => new Date(p.scheduledAt).getFullYear() === schedYear && (new Date(p.scheduledAt).getMonth()+1) === schedMonth && new Date(p.scheduledAt).getDate() === day).length;
-                  return (
-                    <div key={day} className="border rounded p-2 hover:bg-gray-50 cursor-pointer" onClick={() => openDayModal(new Date(schedYear, schedMonth - 1, day).toISOString())}>
-                      <div className="text-sm font-medium">{day}</div>
-                      <div className="text-xs text-gray-500">{count} item(s)</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {showSchedModal && selectedDate && (
-            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-              <div className="bg-white w-full max-w-2xl rounded-lg p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Schedules for {new Date(selectedDate).toLocaleDateString()}</h3>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedModal(false)}>Close</Button>
-                </div>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {dayItems.length === 0 && (
-                    <div className="text-sm text-gray-500">No items.</div>
-                  )}
-                  {dayItems.map(({ type, item }) => (
-                    <div key={`${type}_${item.id}`} className="border rounded p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium">{type === 'whatsapp' ? 'WhatsApp' : 'Post'} #{item.id}</div>
-                          <div className="text-xs text-gray-500">{new Date(item.scheduledAt).toLocaleString()}</div>
-                        </div>
-                        {type === 'whatsapp' ? (
-                          <div className="flex items-center gap-2">
-                            <input type="datetime-local" className="px-2 py-1 border rounded text-sm" onChange={(e) => (item.__newDate = e.target.value)} />
-                            <Button size="sm" onClick={() => item.__newDate ? handleUpdateSchedule(item.id, item.__newDate) : null}>Update</Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDeleteSchedule(item.id)}>Delete</Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <input type="datetime-local" className="px-2 py-1 border rounded text-sm" onChange={(e) => (item.__newDate = e.target.value)} />
-                            <Button size="sm" onClick={() => item.__newDate ? updatePlatformPostSchedule(token, item.id, { scheduledAt: item.__newDate }) : null}>Update</Button>
-                            <Button size="sm" variant="destructive" onClick={() => deletePlatformPostSchedule(token, item.id)}>Delete</Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
       {success && (
         <div className="rounded-md p-4 bg-green-50 text-green-700">
           {success}
@@ -731,16 +594,6 @@ export default function WhatsAppPage() {
           }`}
         >
           Campaigns
-        </button>
-        <button
-          onClick={() => setActiveTab('schedules')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'schedules'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Schedules
         </button>
         <button
           onClick={() => setActiveTab('admin')}
