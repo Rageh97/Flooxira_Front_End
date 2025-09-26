@@ -101,6 +101,10 @@ export default function SchedulePage() {
     } catch (error) {
       console.error('Failed to load monthly schedules:', error);
       console.error('Error details:', error.message, error.stack);
+      
+      // Show error to user
+      setMonthlySchedules({ whatsapp: [], posts: [] });
+      alert(`Failed to load schedules: ${error.message}`);
     } finally {
       setLoading(false);
     }

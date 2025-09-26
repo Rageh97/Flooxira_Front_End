@@ -260,8 +260,8 @@ export async function postWhatsAppStatus(token: string, image: File, caption?: s
 }
 
 // Schedules API (WhatsApp + Posts)
-export async function getMonthlySchedules(token: string, year: number, month: number) {
-  const qs = new URLSearchParams({ year: String(year), month: String(month) });
+export async function getMonthlySchedules(token: string, month: number, year: number) {
+  const qs = new URLSearchParams({ month: String(month), year: String(year) });
   return apiFetch<{ success: boolean; month: number; year: number; whatsapp: any[]; posts: any[] }>(`/api/whatsapp/schedules/monthly?${qs.toString()}`, { authToken: token });
 }
 
