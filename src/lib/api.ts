@@ -230,6 +230,23 @@ export async function exportGroupMembers(token: string, groupName: string) {
   return apiFetch<{ success: boolean; file?: string; message?: string }>(url, { authToken: token });
 }
 
+export async function sendToWhatsAppGroupsBulk(
+  token: string,
+  params: { groupNames: string[]; message?: string; mediaFile?: File | null; scheduleAt?: string | null }
+) {
+  const form = new FormData();
+  form.append('groupNames', JSON.stringify(params.groupNames));
+  if (params.message) form.append('message', params.message);
+  if (params.mediaFile) form.append('media', params.mediaFile);
+  if (params.scheduleAt) form.append('scheduleAt', params.scheduleAt);
+  return apiFetch<{ success: boolean; message?: string }>(`/api/whatsapp/groups/send-bulk`, {
+    method: 'POST',
+    authToken: token,
+    body: form,
+    headers: {}
+  });
+}
+
 export async function postWhatsAppStatus(token: string, image: File, caption?: string) {
   const formData = new FormData();
   formData.append('image', image);

@@ -16,6 +16,7 @@ import {
   getBotStats,
   listWhatsAppGroups,
   sendToWhatsAppGroup,
+  sendToWhatsAppGroupsBulk,
   exportGroupMembers,
   postWhatsAppStatus,
   startWhatsAppCampaign,
@@ -45,8 +46,10 @@ export default function WhatsAppPage() {
 
   // Groups/Status state
   const [groups, setGroups] = useState<Array<{ id: string; name: string; participantsCount: number }>>([]);
-  const [selectedGroupName, setSelectedGroupName] = useState<string>("");
+  const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([]);
   const [groupMessage, setGroupMessage] = useState<string>("");
+  const [groupMedia, setGroupMedia] = useState<File | null>(null);
+  const [groupScheduleAt, setGroupScheduleAt] = useState<string>("");
   const [statusImage, setStatusImage] = useState<File | null>(null);
   const [statusCaption, setStatusCaption] = useState<string>("");
 
@@ -275,16 +278,18 @@ export default function WhatsAppPage() {
   }
 
   async function handleSendToGroup() {
-    if (!selectedGroupName || !groupMessage) {
-      setError('Select group and enter message');
-      return;
-    }
     try {
       setLoading(true);
       setError("");
-      const res = await sendToWhatsAppGroup(token, selectedGroupName, groupMessage);
-      if (res.success) setSuccess('Message sent to group');
-      else setError(res.message || 'Failed');
+      if (!selectedGroupNames.length) throw new Error('Please select at least one group');
+      if (!groupMessage && !groupMedia) throw new Error('Enter message or attach media');
+      const res = await sendToWhatsAppGroupsBulk(token, {
+        groupNames: selectedGroupNames,
+        message: groupMessage || undefined,
+        mediaFile: groupMedia,
+        scheduleAt: groupScheduleAt || undefined
+      });
+      if (res.success) setSuccess(res.message || 'Sent');
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -293,12 +298,9 @@ export default function WhatsAppPage() {
   }
 
   async function handleExportGroupMembers() {
-    if (!selectedGroupName) {
-      setError('Select a group');
-      return;
-    }
     try {
-      const res = await exportGroupMembers(token, selectedGroupName);
+      if (selectedGroupNames.length !== 1) { setError('Select exactly one group to export'); return; }
+      const res = await exportGroupMembers(token, selectedGroupNames[0]);
       if (res.success && res.file) {
         window.open(`${API_URL}${res.file}`, '_blank');
       } else {
@@ -397,31 +399,45 @@ export default function WhatsAppPage() {
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Select Group</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={selectedGroupName}
-                    onChange={(e) => setSelectedGroupName(e.target.value)}
-                  >
-                    <option value="">-- Select --</option>
+                  <label className="block text-sm font-medium mb-2">Select Groups</label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={selectedGroupNames.length === groups.length && groups.length > 0} onChange={(e) => setSelectedGroupNames(e.target.checked ? groups.map(g => g.name) : [])} />
+                      <span className="text-sm">Select All</span>
+                    </div>
                     {groups.map(g => (
-                      <option key={g.id} value={g.name}>{g.name} ({g.participantsCount})</option>
+                      <label key={g.id} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedGroupNames.includes(g.name)}
+                          onChange={(e) => {
+                            const next = new Set(selectedGroupNames);
+                            if (e.target.checked) next.add(g.name); else next.delete(g.name);
+                            setSelectedGroupNames(Array.from(next));
+                          }}
+                        />
+                        <span>{g.name} ({g.participantsCount})</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Group Message</label>
-                  <input
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    value={groupMessage}
-                    onChange={(e) => setGroupMessage(e.target.value)}
-                    placeholder="Your message to the group"
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Message</label>
+                    <textarea className="w-full px-3 py-2 border border-gray-300 rounded-md" rows={3} placeholder="Type your message... (optional if media attached)" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Media (image/video)</label>
+                    <input type="file" accept="image/*,video/*" onChange={(e) => setGroupMedia(e.target.files?.[0] || null)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Schedule (optional)</label>
+                    <input type="datetime-local" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={groupScheduleAt} onChange={(e) => setGroupScheduleAt(e.target.value)} />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSendToGroup} disabled={loading || !selectedGroupName || !groupMessage}>Send to Group</Button>
-                <Button onClick={handleExportGroupMembers} variant="secondary" disabled={loading || !selectedGroupName}>Export Members</Button>
+                <Button onClick={handleSendToGroup} disabled={loading || selectedGroupNames.length === 0 || (!groupMessage && !groupMedia)}>Send</Button>
               </div>
             </CardContent>
           </Card>
