@@ -1,65 +1,364 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { apiFetch, deletePostRequest, updatePostRequest } from "@/lib/api";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { 
+  getMonthlySchedules, 
+  updateWhatsAppSchedule, 
+  deleteWhatsAppSchedule,
+  updatePlatformPostSchedule,
+  deletePlatformPostSchedule
+} from "@/lib/api";
 
 export default function SchedulePage() {
-  const [items, setItems] = useState<Array<{ id: number; content: string; scheduledAt?: string | null }>>([]);
-  const [error, setError] = useState<string>("");
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [monthlySchedules, setMonthlySchedules] = useState<any>({ whatsapp: [], posts: [] });
+  const [selectedDaySchedules, setSelectedDaySchedules] = useState<any[]>([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<any>(null);
+  const [editScheduleDate, setEditScheduleDate] = useState("");
+  const [editScheduleMessage, setEditScheduleMessage] = useState("");
+  const [editScheduleMedia, setEditScheduleMedia] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
   useEffect(() => {
-    const token = localStorage.getItem("auth_token") || "";
-    apiFetch<{ posts: any[] }>("/api/posts?status=scheduled", { authToken: token })
-      .then((res) => setItems(res.posts))
-      .catch((e) => setError(e.message));
-  }, []);
-  async function saveOne(id: number, scheduledAt: string) {
-    try {
-      const token = localStorage.getItem("auth_token") || "";
-      await updatePostRequest(token, id, { scheduledAt, status: "scheduled" });
-      setItems((cur) => cur.map((p) => (p.id === id ? { ...p, scheduledAt } : p)));
-    } catch (e: any) {
-      setError(e.message);
+    if (token) {
+      handleLoadMonthlySchedules();
     }
-  }
-  async function deleteOne(id: number) {
+  }, [currentMonth, currentYear, token]);
+
+  const handleLoadMonthlySchedules = async () => {
+    if (!token) return;
     try {
-      const token = localStorage.getItem("auth_token") || "";
-      await deletePostRequest(token, id);
-      setItems((cur) => cur.filter((p) => p.id !== id));
-    } catch (e: any) {
-      setError(e.message);
+      setLoading(true);
+      console.log('Loading schedules for:', currentMonth, currentYear);
+      const response = await getMonthlySchedules(token, currentMonth, currentYear);
+      console.log('Schedules response:', response);
+      if (response.success) {
+        setMonthlySchedules({
+          whatsapp: response.whatsapp || [],
+          posts: response.posts || []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load monthly schedules:', error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const handleDayClick = (day: number) => {
+    const daySchedules: any[] = [];
+    
+    // Add WhatsApp schedules for this day
+    monthlySchedules.whatsapp.forEach((schedule: any) => {
+      const scheduleDate = new Date(schedule.scheduledAt);
+      if (scheduleDate.getDate() === day) {
+        daySchedules.push({ type: 'whatsapp', item: schedule });
+      }
+    });
+    
+    // Add platform posts for this day
+    monthlySchedules.posts.forEach((post: any) => {
+      const postDate = new Date(post.scheduledAt);
+      if (postDate.getDate() === day) {
+        daySchedules.push({ type: 'post', item: post });
+      }
+    });
+    
+    setSelectedDaySchedules(daySchedules);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateSchedule = async (id: number, newDate: string) => {
+    if (!token) return;
+    try {
+      await updateWhatsAppSchedule(token, id, newDate);
+      handleLoadMonthlySchedules();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update schedule:', error);
+    }
+  };
+
+  const handleDeleteSchedule = async (id: number) => {
+    if (!token) return;
+    try {
+      await deleteWhatsAppSchedule(token, id);
+      handleLoadMonthlySchedules();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to delete schedule:', error);
+    }
+  };
+
+  const handleUpdatePost = async (id: number, newDate: string) => {
+    if (!token) return;
+    try {
+      await updatePlatformPostSchedule(token, id, { scheduledAt: newDate });
+      handleLoadMonthlySchedules();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update post:', error);
+    }
+  };
+
+  const handleDeletePost = async (id: number) => {
+    if (!token) return;
+    try {
+      await deletePlatformPostSchedule(token, id);
+      handleLoadMonthlySchedules();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+    }
+  };
+
+  const handleCancelSchedule = () => {
+    setIsEditModalOpen(false);
+    setSelectedDaySchedules([]);
+  };
+
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (month: number, year: number) => {
+    return new Date(year, month - 1, 1).getDay();
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      if (currentMonth === 1) {
+        setCurrentMonth(12);
+        setCurrentYear(currentYear - 1);
+      } else {
+        setCurrentMonth(currentMonth - 1);
+      }
+    } else {
+      if (currentMonth === 12) {
+        setCurrentMonth(1);
+        setCurrentYear(currentYear + 1);
+      } else {
+        setCurrentMonth(currentMonth + 1);
+      }
+    }
+  };
+
+  const getSchedulesForDay = (day: number) => {
+    const daySchedules: any[] = [];
+    
+    monthlySchedules.whatsapp.forEach((schedule: any) => {
+      const scheduleDate = new Date(schedule.scheduledAt);
+      if (scheduleDate.getDate() === day) {
+        daySchedules.push(schedule);
+      }
+    });
+    
+    monthlySchedules.posts.forEach((post: any) => {
+      const postDate = new Date(post.scheduledAt);
+      if (postDate.getDate() === day) {
+        daySchedules.push(post);
+      }
+    });
+    
+    return daySchedules;
+  };
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+  const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
+
+  console.log('Rendering calendar with:', { currentMonth, currentYear, daysInMonth, firstDay, monthlySchedules });
+  
+  // Debug: Check what day January 1st is
+  const jan1 = new Date(currentYear, currentMonth - 1, 1);
+  console.log(`January 1, ${currentYear}:`, jan1.toDateString(), 'Day of week:', jan1.getDay());
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Schedule</h1>
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Schedules</h1>
+        <p className="text-gray-600">Manage your scheduled WhatsApp messages and platform posts</p>
+      </div>
+
       <Card>
-        <CardHeader>Upcoming posts</CardHeader>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              {monthNames[currentMonth - 1]} {currentYear}
+            </h2>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => navigateMonth('prev')}>
+                ← Previous
+              </Button>
+              <Button variant="outline" onClick={() => navigateMonth('next')}>
+                Next →
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
         <CardContent>
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {items.length === 0 ? (
-            <p className="text-sm text-gray-600">No scheduled posts.</p>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="text-gray-500">Loading schedules...</div>
+            </div>
           ) : (
-            <ul className="space-y-2">
-              {items.map((p) => (
-                <li key={p.id} className="rounded-md border border-gray-200 bg-white p-3 text-sm">
-                  <div className="font-medium line-clamp-2">{p.content}</div>
-                  <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div className="text-gray-500">{p.scheduledAt ? new Date(p.scheduledAt).toLocaleString() : "—"}</div>
-                    <div className="flex items-center gap-2">
-                      <Input type="datetime-local" defaultValue={p.scheduledAt ? new Date(p.scheduledAt).toISOString().slice(0, 16) : ""} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, scheduledAt: e.target.value ? new Date(e.target.value).toISOString() : null } : x)))} />
-                      <Button size="sm" onClick={() => saveOne(p.id, p.scheduledAt || new Date().toISOString())}>Save</Button>
-                      <Button size="sm" variant="destructive" onClick={() => deleteOne(p.id)}>Delete</Button>
-                    </div>
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600">
+                Total WhatsApp schedules: {monthlySchedules.whatsapp.length} | 
+                Total posts: {monthlySchedules.posts.length}
+              </div>
+              <div className="text-xs text-gray-500">
+                Calendar: {daysInMonth} days, starts on day {firstDay}
+              </div>
+              <div className="grid grid-cols-7 gap-2 border rounded-lg p-4 bg-gray-50">
+                {/* Day headers */}
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="p-3 text-center font-semibold text-gray-700 bg-white rounded border">
+                    {day}
                   </div>
-                </li>
-              ))}
-            </ul>
+                ))}
+                
+                {/* Empty cells for days before month starts */}
+                {Array.from({ length: firstDay }).map((_, index) => (
+                  <div key={`empty-${index}`} className="p-3 h-16 bg-white border rounded"></div>
+                ))}
+                
+                {/* Days of the month */}
+                {Array.from({ length: daysInMonth }, (_, index) => {
+                  const day = index + 1;
+                  const daySchedules = getSchedulesForDay(day);
+                  const isToday = day === new Date().getDate() && 
+                                 currentMonth === new Date().getMonth() + 1 && 
+                                 currentYear === new Date().getFullYear();
+                  
+                  return (
+                    <div
+                      key={day}
+                      className={`p-3 h-16 border rounded cursor-pointer hover:bg-blue-50 relative flex flex-col ${
+                        isToday ? 'bg-blue-100 border-blue-300' : 'bg-white'
+                      }`}
+                      onClick={() => handleDayClick(day)}
+                    >
+                      <div className={`font-semibold text-sm ${isToday ? 'text-blue-800' : ''}`}>
+                        {day} {isToday ? '(Today)' : ''}
+                      </div>
+                      {daySchedules.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {daySchedules.slice(0, 2).map((schedule, idx) => (
+                            <div
+                              key={idx}
+                              className={`text-xs px-1 py-0.5 rounded ${
+                                schedule.type === 'whatsapp' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}
+                            >
+                              {schedule.type === 'whatsapp' ? 'WA' : 'Post'}
+                            </div>
+                          ))}
+                          {daySchedules.length > 2 && (
+                            <div className="text-xs text-gray-500">+{daySchedules.length - 2}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Scheduled Items</h3>
+              <Button variant="outline" onClick={handleCancelSchedule}>
+                Close
+              </Button>
+            </div>
+            
+            {selectedDaySchedules.length === 0 ? (
+              <p className="text-gray-500">No scheduled items for this day</p>
+            ) : (
+              <div className="space-y-4">
+                {selectedDaySchedules.map(({ type, item }) => (
+                  <div key={`${type}_${item.id}`} className="border rounded p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">
+                          {type === 'whatsapp' ? 'WhatsApp' : 'Post'} #{item.id}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(item.scheduledAt).toLocaleString()}
+                        </div>
+                        {type === 'whatsapp' && item.payload?.message && (
+                          <div className="text-xs text-gray-600 mt-1">
+                            {item.payload.message.substring(0, 50)}...
+                          </div>
+                        )}
+                        {type === 'post' && item.content && (
+                          <div className="text-xs text-gray-600 mt-1">
+                            {item.content.substring(0, 50)}...
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="datetime-local" 
+                          className="px-2 py-1 border rounded text-sm" 
+                          defaultValue={new Date(item.scheduledAt).toISOString().slice(0, 16)}
+                          onChange={(e) => (item.__newDate = e.target.value)} 
+                        />
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            if (item.__newDate) {
+                              if (type === 'whatsapp') {
+                                handleUpdateSchedule(item.id, item.__newDate);
+                              } else {
+                                handleUpdatePost(item.id, item.__newDate);
+                              }
+                            }
+                          }}
+                        >
+                          Update
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => {
+                            if (type === 'whatsapp') {
+                              handleDeleteSchedule(item.id);
+                            } else {
+                              handleDeletePost(item.id);
+                            }
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
