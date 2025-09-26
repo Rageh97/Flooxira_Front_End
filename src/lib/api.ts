@@ -259,12 +259,52 @@ export async function postWhatsAppStatus(token: string, image: File, caption?: s
   });
 }
 
+// Schedules API (WhatsApp + Posts)
+export async function getMonthlySchedules(token: string, year: number, month: number) {
+  const qs = new URLSearchParams({ year: String(year), month: String(month) });
+  return apiFetch<{ success: boolean; month: number; year: number; whatsapp: any[]; posts: any[] }>(`/api/whatsapp/schedules/monthly?${qs.toString()}`, { authToken: token });
+}
+
+export async function updateWhatsAppSchedule(token: string, id: number, updates: { scheduledAt?: string; payload?: any }) {
+  return apiFetch<{ success: boolean; schedule: any }>(`/api/whatsapp/schedules/${id}`, {
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify(updates)
+  });
+}
+
+export async function deleteWhatsAppSchedule(token: string, id: number) {
+  return apiFetch<{ success: boolean }>(`/api/whatsapp/schedules/${id}`, {
+    method: 'DELETE',
+    authToken: token
+  });
+}
+
+export async function updatePlatformPostSchedule(token: string, id: number, updates: { scheduledAt?: string; content?: string; platforms?: string[]; format?: string }) {
+  return apiFetch<{ success: boolean; post: any }>(`/api/whatsapp/schedules/post/${id}`, {
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify(updates)
+  });
+}
+
+export async function deletePlatformPostSchedule(token: string, id: number) {
+  return apiFetch<{ success: boolean }>(`/api/whatsapp/schedules/post/${id}`, {
+    method: 'DELETE',
+    authToken: token
+  });
+}
+
 // Campaigns
-export async function startWhatsAppCampaign(token: string, file: File, messageTemplate: string, throttleMs = 3000) {
+export async function startWhatsAppCampaign(token: string, file: File, messageTemplate: string, throttleMs = 3000, mediaFile?: File | null, scheduleAt?: string | null, dailyCap?: number | null, perNumberDelayMs?: number | null) {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('messageTemplate', messageTemplate);
   formData.append('throttleMs', String(throttleMs));
+  if (mediaFile) formData.append('media', mediaFile);
+  if (scheduleAt) formData.append('scheduleAt', scheduleAt);
+  if (dailyCap) formData.append('dailyCap', String(dailyCap));
+  if (perNumberDelayMs) formData.append('perNumberDelayMs', String(perNumberDelayMs));
   return apiFetch<{ success: boolean; summary?: { sent: number; failed: number; total: number }; message?: string }>("/api/whatsapp/campaigns/start", {
     method: "POST",
     authToken: token,
