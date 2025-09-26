@@ -60,12 +60,6 @@ export default function WhatsAppPage() {
   const [adminChats, setAdminChats] = useState<any[]>([]);
   const [adminFilterContact, setAdminFilterContact] = useState<string>("");
   const [adminSelectedAssignee, setAdminSelectedAssignee] = useState<number | undefined>(undefined);
-  
-  // Team management state
-  const [supportNumbers, setSupportNumbers] = useState<Array<{ id: number; name: string; phoneNumber: string; isActive: boolean }>>([]);
-  const [newSupportName, setNewSupportName] = useState<string>("");
-  const [newSupportPhone, setNewSupportPhone] = useState<string>("");
-  const [showAddSupport, setShowAddSupport] = useState<boolean>(false);
 
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
@@ -111,7 +105,6 @@ export default function WhatsAppPage() {
   useEffect(() => {
     if (activeTab === 'admin' && token) {
       handleAdminLoad();
-      loadSupportNumbers();
     }
   }, [activeTab, token]);
 
@@ -376,71 +369,6 @@ export default function WhatsAppPage() {
         setSuccess('Chat updated');
         await handleAdminFilter();
       }
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
-  // Support team management functions
-  async function loadSupportNumbers() {
-    try {
-      // For now, we'll use a simple local storage approach
-      // In production, this would be an API call
-      const stored = localStorage.getItem('supportNumbers');
-      if (stored) {
-        setSupportNumbers(JSON.parse(stored));
-      }
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
-  async function addSupportNumber() {
-    try {
-      if (!newSupportName || !newSupportPhone) {
-        setError('Name and phone number are required');
-        return;
-      }
-
-      const newSupport = {
-        id: Date.now(),
-        name: newSupportName,
-        phoneNumber: newSupportPhone,
-        isActive: true
-      };
-
-      const updated = [...supportNumbers, newSupport];
-      setSupportNumbers(updated);
-      localStorage.setItem('supportNumbers', JSON.stringify(updated));
-      
-      setNewSupportName('');
-      setNewSupportPhone('');
-      setShowAddSupport(false);
-      setSuccess('Support number added successfully');
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
-  async function toggleSupportStatus(id: number) {
-    try {
-      const updated = supportNumbers.map(support => 
-        support.id === id ? { ...support, isActive: !support.isActive } : support
-      );
-      setSupportNumbers(updated);
-      localStorage.setItem('supportNumbers', JSON.stringify(updated));
-      setSuccess('Support status updated');
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }
-
-  async function deleteSupportNumber(id: number) {
-    try {
-      const updated = supportNumbers.filter(support => support.id !== id);
-      setSupportNumbers(updated);
-      localStorage.setItem('supportNumbers', JSON.stringify(updated));
-      setSuccess('Support number deleted');
     } catch (e: any) {
       setError(e.message);
     }
@@ -949,97 +877,12 @@ export default function WhatsAppPage() {
       {/* Admin Tab */}
       {activeTab === 'admin' && (
         <div className="space-y-6">
-          {/* Support Team Management */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">Support Team Management</h3>
-                  <p className="text-sm text-gray-600">Add and manage support phone numbers</p>
-                </div>
-                <Button onClick={() => setShowAddSupport(!showAddSupport)} variant="secondary" size="sm">
-                  {showAddSupport ? 'Cancel' : 'Add Support'}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {showAddSupport && (
-                <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Support Name</label>
-                      <input
-                        type="text"
-                        value={newSupportName}
-                        onChange={(e) => setNewSupportName(e.target.value)}
-                        placeholder="e.g., Ahmed Support"
-                        className="w-full px-3 py-2 border rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Phone Number</label>
-                      <input
-                        type="text"
-                        value={newSupportPhone}
-                        onChange={(e) => setNewSupportPhone(e.target.value)}
-                        placeholder="e.g., +201234567890"
-                        className="w-full px-3 py-2 border rounded-md"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={addSupportNumber} size="sm">Add Support</Button>
-                    <Button onClick={() => setShowAddSupport(false)} variant="secondary" size="sm">Cancel</Button>
-                  </div>
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <h4 className="font-medium">Support Numbers ({supportNumbers.length})</h4>
-                {supportNumbers.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No support numbers added yet</p>
-                ) : (
-                  <div className="space-y-2">
-                    {supportNumbers.map((support) => (
-                      <div key={support.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${support.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                          <div>
-                            <p className="font-medium">{support.name}</p>
-                            <p className="text-sm text-gray-600">{support.phoneNumber}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button 
-                            onClick={() => toggleSupportStatus(support.id)} 
-                            variant="secondary" 
-                            size="sm"
-                          >
-                            {support.isActive ? 'Deactivate' : 'Activate'}
-                          </Button>
-                          <Button 
-                            onClick={() => deleteSupportNumber(support.id)} 
-                            variant="destructive" 
-                            size="sm"
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Chat Management */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Chat Management</h3>
-                  <p className="text-sm text-gray-600">Assign customer chats to support team</p>
+                  <h3 className="text-lg font-semibold">Admin Management</h3>
+                  <p className="text-sm text-gray-600">Manage WhatsApp chats and assign agents</p>
                 </div>
                 <Button onClick={handleAdminLoad} variant="secondary" size="sm">
                   Refresh
@@ -1094,9 +937,9 @@ export default function WhatsAppPage() {
                                 className="text-xs border rounded px-2 py-1"
                               >
                                 <option value="">Unassigned</option>
-                                {supportNumbers.filter(s => s.isActive).map(support => (
-                                  <option key={support.id} value={support.id}>
-                                    {support.name} ({support.phoneNumber})
+                                {adminAgents.map(agent => (
+                                  <option key={agent.id} value={agent.id}>
+                                    {agent.name || agent.email}
                                   </option>
                                 ))}
                               </select>
