@@ -217,24 +217,46 @@ export default function SchedulePage() {
     
     monthlySchedules.whatsapp.forEach((schedule: any) => {
       const scheduleDate = new Date(schedule.scheduledAt);
-      // Get the date in local timezone
-      const localDate = new Date(scheduleDate.getFullYear(), scheduleDate.getMonth(), scheduleDate.getDate());
-      const targetDate = new Date(currentYear, currentMonth - 1, day);
-      console.log('WhatsApp schedule date:', scheduleDate, 'Local date:', localDate.getDate(), 'Target day:', day);
-      console.log('Date comparison:', localDate.getTime(), '===', targetDate.getTime(), '?', localDate.getTime() === targetDate.getTime());
-      if (localDate.getTime() === targetDate.getTime()) {
+      // Compare just the date parts (year, month, day) ignoring time
+      const scheduleYear = scheduleDate.getFullYear();
+      const scheduleMonth = scheduleDate.getMonth() + 1; // getMonth() returns 0-11, we need 1-12
+      const scheduleDay = scheduleDate.getDate();
+      
+      console.log('WhatsApp schedule:', {
+        original: schedule.scheduledAt,
+        parsed: scheduleDate.toISOString(),
+        year: scheduleYear,
+        month: scheduleMonth,
+        day: scheduleDay,
+        targetYear: currentYear,
+        targetMonth: currentMonth,
+        targetDay: day
+      });
+      
+      if (scheduleYear === currentYear && scheduleMonth === currentMonth && scheduleDay === day) {
         daySchedules.push({ type: 'whatsapp', item: schedule });
       }
     });
     
     monthlySchedules.posts.forEach((post: any) => {
       const postDate = new Date(post.scheduledAt);
-      // Get the date in local timezone
-      const localDate = new Date(postDate.getFullYear(), postDate.getMonth(), postDate.getDate());
-      const targetDate = new Date(currentYear, currentMonth - 1, day);
-      console.log('Post date:', postDate, 'Local date:', localDate.getDate(), 'Target day:', day);
-      console.log('Date comparison:', localDate.getTime(), '===', targetDate.getTime(), '?', localDate.getTime() === targetDate.getTime());
-      if (localDate.getTime() === targetDate.getTime()) {
+      // Compare just the date parts (year, month, day) ignoring time
+      const postYear = postDate.getFullYear();
+      const postMonth = postDate.getMonth() + 1; // getMonth() returns 0-11, we need 1-12
+      const postDay = postDate.getDate();
+      
+      console.log('Post schedule:', {
+        original: post.scheduledAt,
+        parsed: postDate.toISOString(),
+        year: postYear,
+        month: postMonth,
+        day: postDay,
+        targetYear: currentYear,
+        targetMonth: currentMonth,
+        targetDay: day
+      });
+      
+      if (postYear === currentYear && postMonth === currentMonth && postDay === day) {
         daySchedules.push({ type: 'post', item: post });
       }
     });
