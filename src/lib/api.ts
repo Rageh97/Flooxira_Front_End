@@ -238,7 +238,12 @@ export async function sendToWhatsAppGroupsBulk(
   form.append('groupNames', JSON.stringify(params.groupNames));
   if (params.message) form.append('message', params.message);
   if (params.mediaFile) form.append('media', params.mediaFile);
-  if (params.scheduleAt) form.append('scheduleAt', params.scheduleAt);
+  if (params.scheduleAt) {
+    form.append('scheduleAt', params.scheduleAt);
+    // Include user's timezone offset
+    const timezoneOffset = new Date().getTimezoneOffset();
+    form.append('timezoneOffset', timezoneOffset.toString());
+  }
   return apiFetch<{ success: boolean; message?: string }>(`/api/whatsapp/groups/send-bulk`, {
     method: 'POST',
     authToken: token,
@@ -265,15 +270,24 @@ export async function getMonthlySchedules(token: string, month: number, year: nu
   return apiFetch<{ success: boolean; month: number; year: number; whatsapp: any[]; posts: any[] }>(`/api/whatsapp/schedules/monthly?${qs.toString()}`, { authToken: token });
 }
 
-export async function updateWhatsAppSchedule(token: string, id: number, scheduledAt: string, newContent?: string) {
-  const updates: { scheduledAt?: string; payload?: any } = { scheduledAt };
+export async function updateWhatsAppSchedule(token: string, id: number, scheduledAt: string, newContent?: string, newMedia?: File | null) {
+  const form = new FormData();
+  form.append('scheduledAt', scheduledAt);
+  form.append('timezoneOffset', new Date().getTimezoneOffset().toString());
+  
   if (newContent) {
-    updates.payload = { message: newContent };
+    form.append('payload', JSON.stringify({ message: newContent }));
   }
+  
+  if (newMedia) {
+    form.append('media', newMedia);
+  }
+  
   return apiFetch<{ success: boolean; schedule: any }>(`/api/whatsapp/schedules/${id}`, {
     method: 'PUT',
     authToken: token,
-    body: JSON.stringify(updates)
+    body: form,
+    headers: {}
   });
 }
 
@@ -284,11 +298,36 @@ export async function deleteWhatsAppSchedule(token: string, id: number) {
   });
 }
 
-export async function updatePlatformPostSchedule(token: string, id: number, updates: { scheduledAt?: string; content?: string; platforms?: string[]; format?: string }) {
+export async function updatePlatformPostSchedule(token: string, id: number, updates: { scheduledAt?: string; content?: string; platforms?: string[]; format?: string; media?: File }) {
+  const form = new FormData();
+  
+  if (updates.scheduledAt) {
+    form.append('scheduledAt', updates.scheduledAt);
+    // Include user's timezone offset
+    form.append('timezoneOffset', new Date().getTimezoneOffset().toString());
+  }
+  
+  if (updates.content) {
+    form.append('content', updates.content);
+  }
+  
+  if (updates.platforms) {
+    form.append('platforms', JSON.stringify(updates.platforms));
+  }
+  
+  if (updates.format) {
+    form.append('format', updates.format);
+  }
+  
+  if (updates.media) {
+    form.append('media', updates.media);
+  }
+  
   return apiFetch<{ success: boolean; post: any }>(`/api/whatsapp/schedules/post/${id}`, {
     method: 'PUT',
     authToken: token,
-    body: JSON.stringify(updates)
+    body: form,
+    headers: {}
   });
 }
 
@@ -306,7 +345,12 @@ export async function startWhatsAppCampaign(token: string, file: File, messageTe
   formData.append('messageTemplate', messageTemplate);
   formData.append('throttleMs', String(throttleMs));
   if (mediaFile) formData.append('media', mediaFile);
-  if (scheduleAt) formData.append('scheduleAt', scheduleAt);
+  if (scheduleAt) {
+    formData.append('scheduleAt', scheduleAt);
+    // Include user's timezone offset
+    const timezoneOffset = new Date().getTimezoneOffset();
+    formData.append('timezoneOffset', timezoneOffset.toString());
+  }
   if (dailyCap) formData.append('dailyCap', String(dailyCap));
   if (perNumberDelayMs) formData.append('perNumberDelayMs', String(perNumberDelayMs));
   return apiFetch<{ success: boolean; summary?: { sent: number; failed: number; total: number }; message?: string }>("/api/whatsapp/campaigns/start", {

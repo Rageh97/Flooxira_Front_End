@@ -133,10 +133,10 @@ export default function SchedulePage() {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateSchedule = async (id: number, newDate: string, newContent?: string) => {
+  const handleUpdateSchedule = async (id: number, newDate: string, newContent?: string, newMedia?: File | null) => {
     if (!token) return;
     try {
-      await updateWhatsAppSchedule(token, id, newDate, newContent);
+      await updateWhatsAppSchedule(token, id, newDate, newContent, newMedia);
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -155,12 +155,13 @@ export default function SchedulePage() {
     }
   };
 
-  const handleUpdatePost = async (id: number, newDate: string, newContent?: string) => {
+  const handleUpdatePost = async (id: number, newDate: string, newContent?: string, newMedia?: File | null) => {
     if (!token) return;
     try {
       await updatePlatformPostSchedule(token, id, { 
         scheduledAt: newDate,
-        ...(newContent && { content: newContent })
+        ...(newContent && { content: newContent }),
+        ...(newMedia && { media: newMedia })
       });
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
@@ -429,6 +430,27 @@ export default function SchedulePage() {
                       />
                     </div>
                     
+                    {/* Media editing */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Media File</label>
+                      <div className="space-y-2">
+                        {item.mediaPath && (
+                          <div className="text-xs text-gray-500">
+                            Current media: {item.mediaPath.split('/').pop()}
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          onChange={(e) => (item.__newMedia = e.target.files?.[0] || null)}
+                        />
+                        <div className="text-xs text-gray-500">
+                          Leave empty to keep current media, or select new file to replace
+                        </div>
+                      </div>
+                    </div>
+                    
                     {/* Time editing */}
                     <div>
                       <label className="block text-sm font-medium mb-1">Schedule Time</label>
@@ -455,9 +477,9 @@ export default function SchedulePage() {
                         size="sm" 
                         onClick={() => {
                           if (type === 'whatsapp') {
-                            handleUpdateSchedule(item.id, item.__newDate || item.scheduledAt, item.__newContent);
+                            handleUpdateSchedule(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
                           } else {
-                            handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent);
+                            handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
                           }
                         }}
                       >
