@@ -265,7 +265,11 @@ export async function getMonthlySchedules(token: string, month: number, year: nu
   return apiFetch<{ success: boolean; month: number; year: number; whatsapp: any[]; posts: any[] }>(`/api/whatsapp/schedules/monthly?${qs.toString()}`, { authToken: token });
 }
 
-export async function updateWhatsAppSchedule(token: string, id: number, updates: { scheduledAt?: string; payload?: any }) {
+export async function updateWhatsAppSchedule(token: string, id: number, scheduledAt: string, newContent?: string) {
+  const updates: { scheduledAt?: string; payload?: any } = { scheduledAt };
+  if (newContent) {
+    updates.payload = { message: newContent };
+  }
   return apiFetch<{ success: boolean; schedule: any }>(`/api/whatsapp/schedules/${id}`, {
     method: 'PUT',
     authToken: token,

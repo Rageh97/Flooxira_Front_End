@@ -133,10 +133,10 @@ export default function SchedulePage() {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateSchedule = async (id: number, newDate: string) => {
+  const handleUpdateSchedule = async (id: number, newDate: string, newContent?: string) => {
     if (!token) return;
     try {
-      await updateWhatsAppSchedule(token, id, newDate);
+      await updateWhatsAppSchedule(token, id, newDate, newContent);
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -155,10 +155,13 @@ export default function SchedulePage() {
     }
   };
 
-  const handleUpdatePost = async (id: number, newDate: string) => {
+  const handleUpdatePost = async (id: number, newDate: string, newContent?: string) => {
     if (!token) return;
     try {
-      await updatePlatformPostSchedule(token, id, { scheduledAt: newDate });
+      await updatePlatformPostSchedule(token, id, { 
+        scheduledAt: newDate,
+        ...(newContent && { content: newContent })
+      });
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -325,7 +328,7 @@ export default function SchedulePage() {
               )}
               <div className="text-xs text-gray-500">
                 Calendar: {daysInMonth} days, starts on day {firstDay}
-              </div>
+                    </div>
               <div className="grid grid-cols-7 gap-2 border rounded-lg p-4 bg-gray-50">
                 {/* Day headers */}
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -402,8 +405,8 @@ export default function SchedulePage() {
             ) : (
               <div className="space-y-4">
                 {selectedDaySchedules.map(({ type, item }) => (
-                  <div key={`${type}_${item.id}`} className="border rounded p-3">
-                    <div className="flex items-center justify-between">
+                  <div key={`${type}_${item.id}`} className="border rounded p-4 space-y-3">
+                    <div className="flex justify-between items-start">
                       <div>
                         <div className="text-sm font-medium">
                           {type === 'whatsapp' ? 'WhatsApp' : 'Post'} #{item.id}
@@ -411,61 +414,68 @@ export default function SchedulePage() {
                         <div className="text-xs text-gray-500">
                           {new Date(item.scheduledAt).toLocaleString()}
                         </div>
-                        {type === 'whatsapp' && item.payload?.message && (
-                          <div className="text-xs text-gray-600 mt-1">
-                            {item.payload.message.substring(0, 50)}...
-                          </div>
-                        )}
-                        {type === 'post' && item.content && (
-                          <div className="text-xs text-gray-600 mt-1">
-                            {item.content.substring(0, 50)}...
-                          </div>
-                        )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <input 
-                          type="datetime-local" 
-                          className="px-2 py-1 border rounded text-sm" 
-                          defaultValue={(() => {
-                            const date = new Date(item.scheduledAt);
-                            // Convert to local timezone for datetime-local input
-                            const year = date.getFullYear();
-                            const month = String(date.getMonth() + 1).padStart(2, '0');
-                            const day = String(date.getDate()).padStart(2, '0');
-                            const hours = String(date.getHours()).padStart(2, '0');
-                            const minutes = String(date.getMinutes()).padStart(2, '0');
-                            return `${year}-${month}-${day}T${hours}:${minutes}`;
-                          })()}
-                          onChange={(e) => (item.__newDate = e.target.value)} 
-                        />
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            if (item.__newDate) {
-                              if (type === 'whatsapp') {
-                                handleUpdateSchedule(item.id, item.__newDate);
-                              } else {
-                                handleUpdatePost(item.id, item.__newDate);
-                              }
-                            }
-                          }}
-                        >
-                          Update
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="destructive" 
-                          onClick={() => {
-                            if (type === 'whatsapp') {
-                              handleDeleteSchedule(item.id);
-                            } else {
-                              handleDeletePost(item.id);
-                            }
-                          }}
-                        >
-                          Delete
-                        </Button>
-                      </div>
+                    </div>
+                    
+                    {/* Content editing */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Message Content</label>
+                      <textarea
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        rows={3}
+                        defaultValue={type === 'whatsapp' ? (item.payload?.message || '') : (item.content || '')}
+                        onChange={(e) => (item.__newContent = e.target.value)}
+                        placeholder="Enter message content..."
+                      />
+                    </div>
+                    
+                    {/* Time editing */}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Schedule Time</label>
+                      <input 
+                        type="datetime-local" 
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" 
+                        defaultValue={(() => {
+                          const date = new Date(item.scheduledAt);
+                          // Get local time components (this handles timezone correctly)
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          const hours = String(date.getHours()).padStart(2, '0');
+                          const minutes = String(date.getMinutes()).padStart(2, '0');
+                          return `${year}-${month}-${day}T${hours}:${minutes}`;
+                        })()}
+                        onChange={(e) => (item.__newDate = e.target.value)} 
+                      />
+                    </div>
+                    
+                    {/* Action buttons */}
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => {
+                          if (type === 'whatsapp') {
+                            handleUpdateSchedule(item.id, item.__newDate || item.scheduledAt, item.__newContent);
+                          } else {
+                            handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent);
+                          }
+                        }}
+                      >
+                        Update
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="destructive" 
+                        onClick={() => {
+                          if (type === 'whatsapp') {
+                            handleDeleteSchedule(item.id);
+                          } else {
+                            handleDeletePost(item.id);
+                          }
+                        }}
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 ))}
