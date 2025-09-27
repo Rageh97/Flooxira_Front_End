@@ -129,6 +129,7 @@ export default function CreatePostPage() {
           hashtags, 
           format, 
           scheduledAt,
+          timezoneOffset: scheduledAt ? new Date().getTimezoneOffset() : undefined,
           platforms,
           pinterestBoardId: platforms.includes('pinterest') ? (pinterestBoardId || undefined) : undefined
         }),
