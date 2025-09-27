@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 export default function AnalyticsAdminPage() {
   return (
     <div className="space-y-6">
+      <h2 className="text-lg font-semibold">System Analytics</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">

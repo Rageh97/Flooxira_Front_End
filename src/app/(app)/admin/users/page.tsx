@@ -7,6 +7,7 @@ type User = {
   id: number;
   name?: string;
   email: string;
+  phone?: string;
   role: 'user' | 'admin';
   isActive: boolean;
   createdAt: string;
@@ -68,12 +69,14 @@ export default function UsersAdminPage() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">User Management</h2>
+        <span className="text-sm text-gray-500">{users.length} total users</span>
+      </div>
+      
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">All Users</h3>
-            <span className="text-sm text-gray-500">{users.length} total users</span>
-          </div>
+          <h3 className="text-lg font-semibold">All Users</h3>
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
@@ -86,6 +89,7 @@ export default function UsersAdminPage() {
                     <th className="text-left py-3 px-4 font-medium text-gray-700">ID</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Email</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Phone</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Role</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Created</th>
@@ -100,6 +104,7 @@ export default function UsersAdminPage() {
                         {user.name || 'No name'}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{user.phone || 'No phone'}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           user.role === 'admin' 

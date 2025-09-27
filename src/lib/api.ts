@@ -27,7 +27,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
   return data as T;
 }
 
-export type AuthUser = { id: number; name?: string | null; email: string; role?: 'user' | 'admin' };
+export type AuthUser = { id: number; name?: string | null; email: string; phone?: string | null; role?: 'user' | 'admin' };
 
 export async function signInRequest(email: string, password: string) {
   return apiFetch<{ user: AuthUser; token: string }>("/api/auth/sign-in", {
@@ -36,10 +36,10 @@ export async function signInRequest(email: string, password: string) {
   });
 }
 
-export async function signUpRequest(name: string, email: string, password: string) {
+export async function signUpRequest(name: string, email: string, phone: string, password: string) {
   return apiFetch<{ user: AuthUser; token: string }>("/api/auth/sign-up", {
     method: "POST",
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, phone, password }),
   });
 }
 
@@ -384,7 +384,7 @@ export async function adminAssignChat(token: string, chatId: number, assigneeId?
 }
 
 export async function getAllUsers(token: string) {
-  return apiFetch<{ success: boolean; users: Array<{ id: number; name?: string; email: string; role: 'user' | 'admin'; isActive: boolean; createdAt: string; updatedAt: string }> }>("/api/admin/users", { authToken: token });
+  return apiFetch<{ success: boolean; users: Array<{ id: number; name?: string; email: string; phone?: string; role: 'user' | 'admin'; isActive: boolean; createdAt: string; updatedAt: string }> }>("/api/admin/users", { authToken: token });
 }
 
 

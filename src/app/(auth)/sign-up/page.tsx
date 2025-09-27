@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button";
 export default function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
   const mutation = useMutation({
-    mutationFn: () => signUpRequest(name, email, password),
+    mutationFn: () => signUpRequest(name, email, phone, password),
     onSuccess: (data) => {
       localStorage.setItem("auth_token", data.token);
       // After successful sign up, require explicit sign in
@@ -36,6 +37,10 @@ export default function SignUpPage() {
         <div>
           <label className="block text-sm font-medium mb-1">Email</label>
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Phone Number</label>
+          <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1234567890" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Password</label>

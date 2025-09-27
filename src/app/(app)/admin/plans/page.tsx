@@ -98,6 +98,8 @@ export default function PlansAdminPage() {
 
   return (
     <div className="space-y-8">
+      <h2 className="text-lg font-semibold">Plan Management</h2>
+      
       <Card>
         <CardHeader>Create a new plan</CardHeader>
         <CardContent className="space-y-3">

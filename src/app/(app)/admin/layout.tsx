@@ -1,0 +1,47 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { PropsWithChildren } from "react";
+import { clsx } from "clsx";
+
+const adminTabs = [
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/plans", label: "Plans" },
+  { href: "/admin/analytics", label: "Analytics" },
+];
+
+export default function AdminLayout({ children }: PropsWithChildren) {
+  const pathname = usePathname();
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
+        <p className="text-sm text-gray-600">Administrative tools and settings.</p>
+      </div>
+      
+      <div className="pt-2">
+        <div className="mb-4 flex gap-2">
+          {adminTabs.map((tab) => (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              className={clsx(
+                "rounded-md px-3 py-2 text-sm",
+                pathname === tab.href 
+                  ? "bg-gray-900 text-white" 
+                  : "bg-gray-100 hover:bg-gray-200"
+              )}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+        
+        <div>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
