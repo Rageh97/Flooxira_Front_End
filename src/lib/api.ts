@@ -383,6 +383,10 @@ export async function adminAssignChat(token: string, chatId: number, assigneeId?
   });
 }
 
+export async function getAllUsers(token: string) {
+  return apiFetch<{ success: boolean; users: Array<{ id: number; name?: string; email: string; role: 'user' | 'admin'; isActive: boolean; createdAt: string; updatedAt: string }> }>("/api/admin/users", { authToken: token });
+}
+
 
 // Salla API helpers
 export async function startSallaOAuth() {
