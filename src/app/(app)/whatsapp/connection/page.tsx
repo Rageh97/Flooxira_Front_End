@@ -10,7 +10,7 @@ import {
   stopWhatsAppSession,
 } from "@/lib/api";
 
-export default function WhatsAppPage() {
+export default function WhatsAppConnectionPage() {
   const [status, setStatus] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);

@@ -10,7 +10,7 @@ import {
   stopTelegramBot,
 } from "@/lib/api";
 
-export default function TelegramPage() {
+export default function TelegramConnectionPage() {
   const [status, setStatus] = useState<any>(null);
   const [botInfo, setBotInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);

@@ -71,7 +71,7 @@ export async function getFacebookAccount(token: string) {
 
 export async function getFacebookPages(token: string) {
   const bust = Date.now();
-  return apiFetch<{ pages: Array<{ pageId: string; name: string; accessToken?: string }> }>(`/api/facebook/pages?t=${bust}` as string, { authToken: token });
+  return apiFetch<{ pages: Array<{ id: string; name: string; accessToken?: string; hasInstagram?: boolean; instagramAccount?: { id: string; username: string } }> }>(`/api/facebook/pages?t=${bust}` as string, { authToken: token });
 }
 
 export async function selectFacebookPage(token: string, pageId: string, pageName?: string) {
@@ -95,11 +95,17 @@ export async function selectFacebookGroup(token: string, groupId: string, name?:
   });
 }
 
-export async function selectInstagramAccount(token: string, pageId: string, instagramId: string, accessToken?: string) {
+export async function getInstagramAccounts(token: string) {
+  return apiFetch<{ instagramAccounts: Array<{ pageId: string; pageName: string; instagramId: string; username: string; mediaCount: number; pageAccessToken: string }> }>("/api/facebook/instagram-accounts", {
+    authToken: token,
+  });
+}
+
+export async function selectInstagramAccount(token: string, instagramId: string, username: string) {
   return apiFetch<{ success: boolean; message: string; instagramId: string; username: string }>("/api/facebook/select-instagram", {
     method: "POST",
     authToken: token,
-    body: JSON.stringify({ pageId, instagramId, accessToken }),
+    body: JSON.stringify({ instagramId, username }),
   });
 }
 
@@ -584,6 +590,20 @@ export async function exchangeYouTubeCode(token: string, code: string) {
     method: "POST",
     authToken: token,
     body: JSON.stringify({ code })
+  });
+}
+
+export async function getYouTubeChannels(token: string) {
+  return apiFetch<{ channels: Array<{ id: string; title: string; description: string; thumbnail?: string; subscriberCount: number; videoCount: number }> }>("/api/youtube/channels", {
+    authToken: token,
+  });
+}
+
+export async function selectYouTubeChannel(token: string, channelId: string, channelTitle: string) {
+  return apiFetch<{ success: boolean; message: string; channel: { id: string; title: string } }>("/api/youtube/select-channel", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ channelId, channelTitle }),
   });
 }
 

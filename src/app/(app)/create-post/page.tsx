@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { apiFetch, listPinterestBoards, checkPlatformConnections } from "@/lib/api";
+import FacebookPageSelection from "@/components/FacebookPageSelection";
+import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
 // Platform configuration with icons and supported content types
 const PLATFORMS = {
@@ -44,13 +46,20 @@ const PLATFORMS = {
     supportedFormats: ['feed'],
     color: "from-blue-700 to-blue-900"
   },
-  pinterest: {
-    name: "Pinterest",
-    icon: "📌",
-    supportedTypes: ['photo', 'link'],
-    supportedFormats: ['feed'],
-    color: "from-red-600 to-pink-600"
-  }
+   pinterest: {
+     name: "Pinterest",
+     icon: "📌",
+     supportedTypes: ['photo', 'link'],
+     supportedFormats: ['feed'],
+     color: "from-red-600 to-pink-600"
+   },
+   telegram: {
+     name: "Telegram",
+     icon: "✈️",
+     supportedTypes: ['photo', 'video', 'text', 'link'],
+     supportedFormats: ['feed', 'channel'],
+     color: "from-blue-500 to-blue-700"
+   }
 };
 
 export default function CreatePostPage() {
@@ -68,6 +77,8 @@ export default function CreatePostPage() {
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState<boolean>(true);
   const [isDevelopment, setIsDevelopment] = useState<boolean>(false);
+  const [showFacebookSelection, setShowFacebookSelection] = useState<boolean>(false);
+  const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
 
   // Helper function to get all platforms (for initial display)
   const getAllPlatforms = () => {
@@ -230,6 +241,16 @@ export default function CreatePostPage() {
       }
     } else {
       setPlatforms([...platforms, platform]);
+      
+      // If Facebook is selected and connected, show page selection modal
+      if (platform === 'facebook' && isPlatformConnected('facebook')) {
+        setShowFacebookSelection(true);
+      }
+      
+      // If YouTube is selected and connected, show channel selection modal
+      if (platform === 'youtube' && isPlatformConnected('youtube')) {
+        setShowYouTubeSelection(true);
+      }
     }
   };
 
@@ -424,6 +445,131 @@ export default function CreatePostPage() {
                   );
                 })}
           </div>
+          
+          {/* Platform Details */}
+          {platforms.length > 0 && (
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-800 mb-3">تفاصيل المنصات المحددة</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Facebook Page and Instagram */}
+                {platforms.includes('facebook') && isPlatformConnected('facebook') && (
+                  <>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-xl">👥</div>
+                      <div>
+                        <div className="text-sm font-medium text-blue-900">صفحة Facebook</div>
+                        <div className="text-xs text-blue-700">محددة تلقائياً للنشر</div>
+                      </div>
+                      <div className="ml-auto">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      <div className="text-xl">📷</div>
+                      <div>
+                        <div className="text-sm font-medium text-blue-900">حساب Instagram</div>
+                        <div className="text-xs text-blue-700">مرتبط بصفحة Facebook</div>
+                      </div>
+                      <div className="ml-auto">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      </div>
+                    </div>
+                  </>
+                )}
+                
+                {/* Pinterest Board */}
+                {platforms.includes('pinterest') && isPlatformConnected('pinterest') && (
+                  <div className="flex items-center space-x-3">
+                    <div className="text-xl">📌</div>
+                    <div>
+                      <div className="text-sm font-medium text-blue-900">لوحة Pinterest</div>
+                      <div className="text-xs text-blue-700">محددة تلقائياً للنشر</div>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* YouTube Channel */}
+                {platforms.includes('youtube') && isPlatformConnected('youtube') && (
+                  <div className="flex items-center space-x-3">
+                    <div className="text-xl">▶️</div>
+                    <div>
+                      <div className="text-sm font-medium text-blue-900">قناة YouTube</div>
+                      <div className="text-xs text-blue-700">اختر القناة للنشر</div>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* LinkedIn Company */}
+                {platforms.includes('linkedin') && isPlatformConnected('linkedin') && (
+                  <div className="flex items-center space-x-3">
+                    <div className="text-xl">💼</div>
+                    <div>
+                      <div className="text-sm font-medium text-blue-900">شركة LinkedIn</div>
+                      <div className="text-xs text-blue-700">محددة تلقائياً للنشر</div>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    </div>
+                  </div>
+                )}
+                
+                 {/* TikTok Account */}
+                 {platforms.includes('tiktok') && isPlatformConnected('tiktok') && (
+                   <div className="flex items-center space-x-3">
+                     <div className="text-xl">🎵</div>
+                     <div>
+                       <div className="text-sm font-medium text-blue-900">حساب TikTok</div>
+                       <div className="text-xs text-blue-700">محدد تلقائياً للنشر</div>
+                     </div>
+                     <div className="ml-auto">
+                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                     </div>
+                   </div>
+                 )}
+                 
+                 {/* Telegram Channel */}
+                 {platforms.includes('telegram') && isPlatformConnected('telegram') && (
+                   <div className="flex items-center space-x-3">
+                     <div className="text-xl">✈️</div>
+                     <div>
+                       <div className="text-sm font-medium text-blue-900">قناة Telegram</div>
+                       <div className="text-xs text-blue-700">محددة تلقائياً للنشر</div>
+                     </div>
+                     <div className="ml-auto">
+                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                     </div>
+                   </div>
+                 )}
+              </div>
+            </div>
+          )}
+          
+          {/* Facebook Page Selection Modal */}
+          <FacebookPageSelection
+            isOpen={showFacebookSelection}
+            onClose={() => setShowFacebookSelection(false)}
+            onComplete={() => {
+              setShowFacebookSelection(false);
+              // Optionally refresh platform connections
+            }}
+          />
+          
+          {/* YouTube Channel Selection Modal */}
+          <YouTubeChannelSelection
+            isOpen={showYouTubeSelection}
+            onClose={() => setShowYouTubeSelection(false)}
+            onComplete={() => {
+              setShowYouTubeSelection(false);
+              // Optionally refresh platform connections
+            }}
+          />
           
               {platforms.length === 0 && (
                 <div className="mt-4 text-center">

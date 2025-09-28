@@ -12,6 +12,8 @@ import {
   exchangeTikTokCode,
   exchangeSallaCode
 } from "@/lib/api";
+import FacebookPageSelection from "@/components/FacebookPageSelection";
+import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
 const PLATFORMS = {
   facebook: { name: "Facebook", icon: "👥", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
@@ -27,6 +29,8 @@ function SettingsContent() {
   const [loading, setLoading] = useState<boolean>(true);
   const [token, setToken] = useState<string>("");
   const [processing, setProcessing] = useState<string | null>(null);
+  const [showFacebookSelection, setShowFacebookSelection] = useState<boolean>(false);
+  const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -103,8 +107,17 @@ function SettingsContent() {
 
         if (result?.message) {
           console.log(`${platform} connection:`, result.message);
-          // Refresh platform connections
-          loadPlatformConnections();
+          
+          // If Facebook connection, show page selection modal
+          if (platform === 'facebook' || platform === 'instagram') {
+            setShowFacebookSelection(true);
+          } else if (platform === 'youtube') {
+            // If YouTube connection, show channel selection modal
+            setShowYouTubeSelection(true);
+          } else {
+            // For other platforms, just refresh connections
+            loadPlatformConnections();
+          }
         }
       } catch (error) {
         console.error(`Error connecting ${platform}:`, error);
@@ -272,6 +285,132 @@ function SettingsContent() {
             </div>
         </CardContent>
       </Card>
+
+      {/* Platform Details Section */}
+      {(isPlatformConnected('facebook') || isPlatformConnected('pinterest') || isPlatformConnected('youtube') || isPlatformConnected('linkedin')) && (
+        <Card className="bg-card border-none">
+          <CardHeader className="border-text-primary/50 text-primary">
+            <h2 className="text-lg font-semibold">تفاصيل المنصات المحددة</h2>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Facebook Page and Instagram */}
+              {isPlatformConnected('facebook') && (
+                <>
+                  <div className="p-4 bg-light-custom rounded-lg">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="text-2xl">👥</div>
+                      <div>
+                        <h3 className="font-semibold text-primary">صفحة Facebook</h3>
+                        <p className="text-sm text-gray-300">اختر الصفحة للنشر</p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>متصل - اختر الصفحة</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-light-custom rounded-lg">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="text-2xl">📷</div>
+                      <div>
+                        <h3 className="font-semibold text-primary">حساب Instagram</h3>
+                        <p className="text-sm text-gray-300">اختر الحساب للنشر</p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <span>متصل - اختر الحساب</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* Pinterest Board */}
+              {isPlatformConnected('pinterest') && (
+                <div className="p-4 bg-light-custom rounded-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="text-2xl">📌</div>
+                    <div>
+                      <h3 className="font-semibold text-primary">لوحة Pinterest</h3>
+                      <p className="text-sm text-gray-300">اللوحة المحددة للنشر</p>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-300">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>متصل ومحدد تلقائياً</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* YouTube Channel */}
+              {isPlatformConnected('youtube') && (
+                <div className="p-4 bg-light-custom rounded-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="text-2xl">▶️</div>
+                    <div>
+                      <h3 className="font-semibold text-primary">قناة YouTube</h3>
+                      <p className="text-sm text-gray-300">اختر القناة للنشر</p>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-300">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span>متصل - اختر القناة</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* LinkedIn Company */}
+              {isPlatformConnected('linkedin') && (
+                <div className="p-4 bg-light-custom rounded-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="text-2xl">💼</div>
+                    <div>
+                      <h3 className="font-semibold text-primary">شركة LinkedIn</h3>
+                      <p className="text-sm text-gray-300">الشركة المحددة للنشر</p>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-300">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>متصل ومحدد تلقائياً</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Facebook Page Selection Modal */}
+      <FacebookPageSelection
+        isOpen={showFacebookSelection}
+        onClose={() => setShowFacebookSelection(false)}
+        onComplete={() => {
+          setShowFacebookSelection(false);
+          loadPlatformConnections();
+        }}
+      />
+
+      {/* YouTube Channel Selection Modal */}
+      <YouTubeChannelSelection
+        isOpen={showYouTubeSelection}
+        onClose={() => setShowYouTubeSelection(false)}
+        onComplete={() => {
+          setShowYouTubeSelection(false);
+          loadPlatformConnections();
+        }}
+      />
 
       <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">
