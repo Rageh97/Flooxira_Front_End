@@ -1,8 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { checkPlatformConnections } from "@/lib/api";
+import { 
+  checkPlatformConnections, 
+  exchangeLinkedInCode, 
+  exchangePinterestCode,
+  exchangeFacebookCode,
+  exchangeYouTubeCode,
+  exchangeTikTokCode,
+  exchangeSallaCode
+} from "@/lib/api";
 
 const PLATFORMS = {
   facebook: { name: "Facebook", icon: "👥", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
@@ -17,6 +26,8 @@ export default function SettingsPage() {
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [token, setToken] = useState<string>("");
+  const [processing, setProcessing] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -24,20 +35,110 @@ export default function SettingsPage() {
     }
   }, []);
 
+  // Handle OAuth callbacks
   useEffect(() => {
+    if (!token) return;
+
+    const platform = searchParams.get('platform');
+    const linkedinCode = searchParams.get('linkedin_code');
+    const pinterestCode = searchParams.get('pinterest_code');
+    const facebookCode = searchParams.get('fb_code');
+    const youtubeCode = searchParams.get('youtube_code');
+    const tiktokCode = searchParams.get('tiktok_code');
+    const sallaCode = searchParams.get('salla_code');
+    const error = searchParams.get('error');
+    const message = searchParams.get('message');
+
+    if (error) {
+      console.error('OAuth error:', error, message);
+      alert(`OAuth Error: ${message || error}`);
+      return;
+    }
+
+    const handleOAuthCallback = async () => {
+      if (!platform) return;
+
+      setProcessing(platform);
+      
+      try {
+        let result;
+        switch (platform) {
+          case 'linkedin':
+            if (linkedinCode) {
+              result = await exchangeLinkedInCode(token, linkedinCode);
+            }
+            break;
+          case 'pinterest':
+            if (pinterestCode) {
+              result = await exchangePinterestCode(token, pinterestCode);
+            }
+            break;
+          case 'facebook':
+            if (facebookCode) {
+              result = await exchangeFacebookCode(token, facebookCode);
+            }
+            break;
+          case 'instagram':
+            if (facebookCode) {
+              result = await exchangeFacebookCode(token, facebookCode);
+            }
+            break;
+          case 'youtube':
+            if (youtubeCode) {
+              result = await exchangeYouTubeCode(token, youtubeCode);
+            }
+            break;
+          case 'tiktok':
+            if (tiktokCode) {
+              result = await exchangeTikTokCode(token, tiktokCode);
+            }
+            break;
+          case 'salla':
+            if (sallaCode) {
+              result = await exchangeSallaCode(token, sallaCode);
+            }
+            break;
+        }
+
+        if (result?.message) {
+          console.log(`${platform} connection:`, result.message);
+          // Refresh platform connections
+          loadPlatformConnections();
+        }
+      } catch (error) {
+        console.error(`Error connecting ${platform}:`, error);
+        alert(`Error connecting ${platform}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setProcessing(null);
+        // Clean up URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    };
+
+    handleOAuthCallback();
+  }, [token, searchParams]);
+
+  const loadPlatformConnections = async () => {
     if (!token) return;
     
     setLoading(true);
-    checkPlatformConnections(token)
-      .then((res) => {
-        if (res.success) {
-          const connected = Object.entries(res.connections)
-            .filter(([_, isConnected]) => isConnected)
-            .map(([platform, _]) => platform);
-          setConnectedPlatforms(connected);
-        }
-      })
-      .finally(() => setLoading(false));
+    try {
+      const res = await checkPlatformConnections(token);
+      if (res.success) {
+        const connected = Object.entries(res.connections)
+          .filter(([_, isConnected]) => isConnected)
+          .map(([platform, _]) => platform);
+        setConnectedPlatforms(connected);
+      }
+    } catch (error) {
+      console.error('Error loading platform connections:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPlatformConnections();
   }, [token]);
 
   const isPlatformConnected = (platformKey: string) => {
@@ -48,6 +149,23 @@ export default function SettingsPage() {
     const platform = PLATFORMS[platformKey as keyof typeof PLATFORMS];
     if (platform) {
       window.location.href = platform.connectUrl;
+    }
+  };
+
+  const handleDisconnect = async (platformKey: string) => {
+    if (!token) return;
+    
+    setProcessing(platformKey);
+    try {
+      // Add disconnect API calls here when needed
+      console.log(`Disconnecting ${platformKey}...`);
+      // For now, just refresh the connections
+      await loadPlatformConnections();
+    } catch (error) {
+      console.error(`Error disconnecting ${platformKey}:`, error);
+      alert(`Error disconnecting ${platformKey}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setProcessing(null);
     }
   };
 
@@ -117,8 +235,14 @@ export default function SettingsPage() {
                     <div className="space-y-2 ">
                       {isConnected ? (
                         <div className="space-y-2 ">
-                          <Button variant="secondary" size="sm" className="w-full">
-                            قطع الاتصال
+                          <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => handleDisconnect(key)}
+                            disabled={processing === key}
+                          >
+                            {processing === key ? 'جاري قطع الاتصال...' : 'قطع الاتصال'}
                           </Button>
                           <p className="text-xs text-green-600 text-center">
                             يمكنك الآن النشر على {platform.name}
@@ -130,13 +254,14 @@ export default function SettingsPage() {
                             size="sm" 
                             className="w-full button-primary"
                             onClick={() => handleConnect(key)}
+                            disabled={processing === key}
                           >
-                            ربط الحساب
+                            {processing === key ? 'جاري المعالجة...' : 'ربط الحساب'}
                           </Button>
                           <p className="text-xs text-gray-500 text-center">
                             قم بربط حسابك للنشر على {platform.name}
-                  </p>
-                </div>
+                          </p>
+                        </div>
                       )}
                     </div>
                   </CardContent>

@@ -571,6 +571,30 @@ export async function exchangeLinkedInCode(token: string, code: string) {
   });
 }
 
+export async function exchangeFacebookCode(token: string, code: string) {
+  return apiFetch<{ message: string; account?: any }>("/api/facebook/exchange", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ code })
+  });
+}
+
+export async function exchangeYouTubeCode(token: string, code: string) {
+  return apiFetch<{ message: string; account?: any }>("/api/youtube/exchange", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ code })
+  });
+}
+
+export async function exchangeTikTokCode(token: string, code: string) {
+  return apiFetch<{ message: string; account?: any }>("/api/tiktok/exchange", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ code })
+  });
+}
+
 export async function getLinkedInAccount(token: string) {
   return apiFetch<{ connected: boolean; account?: any }>("/api/linkedin/account", { authToken: token });
 }
