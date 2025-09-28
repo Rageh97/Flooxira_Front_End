@@ -79,6 +79,7 @@ function SettingsContent() {
             }
             break;
           case 'instagram':
+            // Instagram uses Facebook OAuth, so use the same exchange function
             if (facebookCode) {
               result = await exchangeFacebookCode(token, facebookCode);
             }
