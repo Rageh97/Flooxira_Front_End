@@ -100,11 +100,11 @@ export default function SchedulePage() {
       }
     } catch (error) {
       console.error('Failed to load monthly schedules:', error);
-      console.error('Error details:', error.message, error.stack);
+      console.error('Error details:', (error as Error).message, (error as Error).stack);
       
       // Show error to user
       setMonthlySchedules({ whatsapp: [], posts: [] });
-      alert(`Failed to load schedules: ${error.message}`);
+      alert(`Failed to load schedules: ${(error as Error).message}`);
     } finally {
       setLoading(false);
     }
@@ -286,21 +286,21 @@ export default function SchedulePage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Schedules</h1>
+        <h1 className="text-3xl font-bold text-white">Schedules</h1>
         <p className="text-gray-600">Manage your scheduled WhatsApp messages and platform posts</p>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-white">
               {monthNames[currentMonth - 1]} {currentYear}
             </h2>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => navigateMonth('prev')}>
+              <Button className="text-primary" variant="secondary" onClick={() => navigateMonth('prev')}>
                 ← Previous
               </Button>
-              <Button variant="outline" onClick={() => navigateMonth('next')}>
+              <Button className="text-primary" variant="secondary" onClick={() => navigateMonth('next')}>
                 Next →
               </Button>
             </div>
@@ -313,53 +313,89 @@ export default function SchedulePage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="text-sm text-gray-600">
+              {/* Color Legend */}
+              <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-200 border-2 border-green-400 rounded"></div>
+                  <span className="text-white">Today</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-200 border-2 border-red-300 rounded"></div>
+                  <span className="text-white">Past Days</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-yellow-200 border-2 border-yellow-300 rounded"></div>
+                  <span className="text-white">Future Days</span>
+                </div>
+              </div>
+              
+              <div className="text-sm text-primary">
                 Total WhatsApp schedules: {monthlySchedules.whatsapp.length} | 
                 Total posts: {monthlySchedules.posts.length}
               </div>
               {monthlySchedules.whatsapp.length > 0 && (
                 <div className="text-xs text-green-600">
-                  WhatsApp schedules: {monthlySchedules.whatsapp.map(w => new Date(w.scheduledAt).getDate()).join(', ')}
+                  WhatsApp schedules: {monthlySchedules.whatsapp.map((w: any) => new Date(w.scheduledAt).getDate()).join(', ')}
                 </div>
               )}
               {monthlySchedules.posts.length > 0 && (
                 <div className="text-xs text-blue-600">
-                  Posts: {monthlySchedules.posts.map(p => new Date(p.scheduledAt).getDate()).join(', ')}
+                  Posts: {monthlySchedules.posts.map((p: any) => new Date(p.scheduledAt).getDate()).join(', ')}
                 </div>
               )}
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-white">
                 Calendar: {daysInMonth} days, starts on day {firstDay}
                     </div>
-              <div className="grid grid-cols-7 gap-2 border rounded-lg p-4 bg-gray-50">
+              <div className="grid grid-cols-7 gap-2  rounded-lg p-4 bg-light-custom">
                 {/* Day headers */}
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="p-3 text-center font-semibold text-gray-700 bg-white rounded border">
+                  <div key={day} className="p-3 text-center font-semibold text-primary bg-dark-custom rounded ">
                     {day}
                   </div>
                 ))}
                 
                 {/* Empty cells for days before month starts */}
                 {Array.from({ length: firstDay }).map((_, index) => (
-                  <div key={`empty-${index}`} className="p-3 h-16 bg-white border rounded"></div>
+                  <div key={`empty-${index}`} className="p-3 h-16 bg-semidark-custom  rounded"></div>
                 ))}
                 
                 {/* Days of the month */}
                 {Array.from({ length: daysInMonth }, (_, index) => {
                   const day = index + 1;
                   const daySchedules = getSchedulesForDay(day);
-                  const isToday = day === new Date().getDate() && 
-                                 currentMonth === new Date().getMonth() + 1 && 
-                                 currentYear === new Date().getFullYear();
+                  const currentDate = new Date();
+                  const cellDate = new Date(currentYear, currentMonth - 1, day);
+                  
+                  // Determine day status
+                  const isToday = day === currentDate.getDate() && 
+                                 currentMonth === currentDate.getMonth() + 1 && 
+                                 currentYear === currentDate.getFullYear();
+                  
+                  const isPast = cellDate < new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+                  const isFuture = cellDate > new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+                  
+                  // Set colors based on day status
+                  let cellColorClass = '';
+                  let textColorClass = '';
+                  
+                  if (isToday) {
+                    cellColorClass = 'bg-green-200 border-green-400';
+                    textColorClass = 'text-green-800';
+                  } else if (isPast) {
+                    cellColorClass = 'bg-red-200 border-red-300';
+                    textColorClass = 'text-red-800';
+                  } else if (isFuture) {
+                    cellColorClass = 'bg-yellow-200 border-yellow-300';
+                    textColorClass = 'text-yellow-800';
+                  }
                   
                   return (
                     <div
                       key={day}
-                      className={`p-3 h-16 border rounded cursor-pointer hover:bg-blue-50 relative flex flex-col ${
-                        isToday ? 'bg-blue-100 border-blue-300' : 'bg-white'
-                      }`}
+                      className={`p-3 h-16 rounded cursor-pointer hover:opacity-80 relative flex flex-col border-2 ${cellColorClass}`}
                       onClick={() => handleDayClick(day)}
                     >
-                      <div className={`font-semibold text-sm ${isToday ? 'text-blue-800' : ''}`}>
+                      <div className={`font-semibold text-sm ${textColorClass}`}>
                         {day} {isToday ? '(Today)' : ''}
                       </div>
                       {daySchedules.length > 0 && (
@@ -367,17 +403,19 @@ export default function SchedulePage() {
                           {daySchedules.slice(0, 2).map((schedule, idx) => (
                             <div
                               key={idx}
-                              className={`text-xs px-1 py-0.5 rounded ${
+                              className={`text-xs px-1 py-0.5 rounded font-medium ${
                                 schedule.type === 'whatsapp' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-blue-100 text-blue-800'
+                                  ? 'bg-green-600 text-white' 
+                                  : 'bg-blue-600 text-white'
                               }`}
                             >
                               {schedule.type === 'whatsapp' ? 'WA' : 'Post'}
                             </div>
                           ))}
                           {daySchedules.length > 2 && (
-                            <div className="text-xs text-gray-500">+{daySchedules.length - 2}</div>
+                            <div className={`text-xs px-1 py-0.5 rounded bg-gray-600 text-white font-medium`}>
+                              +{daySchedules.length - 2}
+                            </div>
                           )}
                         </div>
                       )}
@@ -396,7 +434,7 @@ export default function SchedulePage() {
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Scheduled Items</h3>
-              <Button variant="outline" onClick={handleCancelSchedule}>
+              <Button variant="secondary" onClick={handleCancelSchedule}>
                 Close
               </Button>
             </div>

@@ -40,6 +40,13 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Custom color scheme */
+  --color-bg-dark: #0f1827;
+  --color-bg-semidark: #122f29;
+  --color-bg-light: #134a2b;
+  --color-text-primary: #08c47d;
+  --color-bg-card: #0f1827;
 }
 
 :root {
@@ -117,5 +124,35 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-custom {
+    background: linear-gradient(200deg, var(--color-bg-dark) 0%, var(--color-bg-semidark) 50%, var(--color-bg-light) 100%);
+  }
+  
+  .text-primary {
+    color: var(--color-text-primary);
+  }
+
+  
+  .bg-dark-custom {
+    background-color: var(--color-bg-dark);
+  }
+  
+  .bg-semidark-custom {
+    background-color: var(--color-bg-semidark);
+  }
+  
+  .bg-light-custom {
+    background-color: var(--color-bg-light);
+  }
+  .bg-card{
+    background-color: var(--color-bg-card);
+  }
+  .button-primary{
+    background-color: var(--color-bg-light);
+   
   }
 }

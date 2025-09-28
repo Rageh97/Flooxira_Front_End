@@ -71,20 +71,20 @@ export default function SallaPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Salla Store Management</h1>
+      <h1 className="text-2xl font-semibold text-white">Salla Store Management</h1>
       
-      <Card>
-        <CardHeader>
+      <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50 text-primary">
           <h2 className="text-lg font-semibold">Connection</h2>
         </CardHeader>
         <CardContent className="space-y-4">
           {!account ? (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">Not connected</p>
+              <p className="text-sm text-gray-300">Not connected</p>
               <Button onClick={() => startSallaOAuth()} disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white">Connect Salla</Button>
             </div>
           ) : (
-            <div className="p-3 border rounded-lg bg-green-50 border-green-200">
+            <div className="p-3 border rounded-lg bg-green-200 border-green-200">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="font-medium text-green-800">{account.storeName || 'Salla Store'}</p>
@@ -104,7 +104,7 @@ export default function SallaPage() {
       {account && (
         <>
           {/* Tab Navigation */}
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-600">
             <nav className="-mb-px flex space-x-8">
               {tabs.map((tab) => (
                 <button
@@ -112,8 +112,8 @@ export default function SallaPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
-                      ? 'border-indigo-500 text-indigo-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-orange-500 text-orange-400'
+                      : 'border-transparent text-gray-300 hover:text-white hover:border-gray-400'
                   }`}
                 >
                   <span className="mr-2">{tab.icon}</span>
@@ -139,7 +139,7 @@ export default function SallaPage() {
       )}
 
       {message && (
-        <div className={`p-4 rounded-lg ${message.includes('Failed') ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-green-50 text-green-800 border border-green-200'}`}>
+        <div className={`p-4 rounded-lg ${message.includes('Failed') ? 'bg-red-200 text-red-800 border border-red-200' : 'bg-green-200 text-green-800 border border-green-200'}`}>
           {message}
         </div>
       )}

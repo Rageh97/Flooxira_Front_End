@@ -387,6 +387,22 @@ export async function getAllUsers(token: string) {
   return apiFetch<{ success: boolean; users: Array<{ id: number; name?: string; email: string; phone?: string; role: 'user' | 'admin'; isActive: boolean; createdAt: string; updatedAt: string }> }>("/api/admin/users", { authToken: token });
 }
 
+// Platform connection status
+export async function checkPlatformConnections(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    connections: {
+      facebook: boolean;
+      instagram: boolean;
+      youtube: boolean;
+      tiktok: boolean;
+      linkedin: boolean;
+      pinterest: boolean;
+    };
+    mode?: 'development' | 'production';
+  }>("/api/platforms/connections", { authToken: token });
+}
+
 
 // Salla API helpers
 export async function startSallaOAuth() {
@@ -647,5 +663,164 @@ export async function inviteFacebookTester(facebookUserId: string): Promise<Conn
   } catch (e: any) {
     return { status: 'error', message: e?.message || 'Failed to invite tester' };
   }
+}
+
+// ===== TELEGRAM API FUNCTIONS =====
+
+export async function createTelegramBot(token: string, botToken: string) {
+  return apiFetch<{ success: boolean; message: string; botInfo?: any }>("/api/telegram/create", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ botToken })
+  });
+}
+
+export async function getTelegramStatus(token: string) {
+  return apiFetch<{ success: boolean; status: string; message: string; botInfo?: any }>("/api/telegram/status", { authToken: token });
+}
+
+export async function getTelegramBotInfo(token: string) {
+  return apiFetch<{ success: boolean; botInfo?: any; message?: string }>("/api/telegram/info", { authToken: token });
+}
+
+export async function stopTelegramBot(token: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram/stop", { method: "POST", authToken: token });
+}
+
+export async function sendTelegramMessage(token: string, chatId: string, message: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram/send", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ chatId, message })
+  });
+}
+
+export async function listTelegramGroups(token: string) {
+  return apiFetch<{ success: boolean; groups: Array<{ id: string; name: string; type: string; messageCount: number }> }>("/api/telegram/groups", { authToken: token });
+}
+
+export async function sendToTelegramGroup(token: string, groupId: string, message: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram/groups/send", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ groupId, message })
+  });
+}
+
+export async function sendToTelegramGroupsBulk(
+  token: string,
+  data: {
+    groupIds: string[];
+    message?: string;
+    mediaFile?: File | null;
+    scheduleAt?: string;
+  }
+) {
+  const formData = new FormData();
+  formData.append('groupIds', JSON.stringify(data.groupIds));
+  if (data.message) formData.append('message', data.message);
+  if (data.mediaFile) formData.append('media', data.mediaFile);
+  if (data.scheduleAt) formData.append('scheduleAt', data.scheduleAt);
+  
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram/groups/send-bulk", {
+    method: "POST",
+    authToken: token,
+    body: formData
+  });
+}
+
+export async function startTelegramCampaign(
+  token: string,
+  file: File,
+  messageTemplate: string,
+  throttleMs = 3000,
+  mediaFile?: File | null,
+  scheduleAt?: string | null,
+  dailyCap?: number | null,
+  perNumberDelayMs?: number | null
+) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('messageTemplate', messageTemplate);
+  formData.append('throttleMs', throttleMs.toString());
+  if (mediaFile) formData.append('media', mediaFile);
+  if (scheduleAt) formData.append('scheduleAt', scheduleAt);
+  if (dailyCap) formData.append('dailyCap', dailyCap.toString());
+  if (perNumberDelayMs) formData.append('perNumberDelayMs', perNumberDelayMs.toString());
+  
+  return apiFetch<{ success: boolean; message: string; summary?: { sent: number; failed: number; total: number } }>("/api/telegram/campaigns/start", {
+    method: "POST",
+    authToken: token,
+    body: formData
+  });
+}
+
+export async function getTelegramChatHistory(token: string, chatId?: string, limit = 50, offset = 0) {
+  const params = new URLSearchParams();
+  if (chatId) params.append('chatId', chatId);
+  params.append('limit', limit.toString());
+  params.append('offset', offset.toString());
+  
+  return apiFetch<{ success: boolean; chats: Array<{ id: number; chatId: string; chatType: string; chatTitle: string; messageType: 'incoming' | 'outgoing'; messageContent: string; responseSource: string; knowledgeBaseMatch: string | null; timestamp: string }> }>(`/api/telegram/chats?${params}`, { authToken: token });
+}
+
+export async function getTelegramChatContacts(token: string) {
+  return apiFetch<{ success: boolean; contacts: Array<{ chatId: string; chatType: string; chatTitle: string; messageCount: number; lastMessageTime: string }> }>("/api/telegram/contacts", { authToken: token });
+}
+
+export async function getTelegramBotStats(token: string) {
+  return apiFetch<{ success: boolean; stats: { totalMessages: number; incomingMessages: number; outgoingMessages: number; totalContacts: number; knowledgeBaseResponses: number; openaiResponses: number; fallbackResponses: number } }>("/api/telegram/stats", { authToken: token });
+}
+
+export async function uploadTelegramKnowledgeBase(token: string, file: File) {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  return apiFetch<{ success: boolean; message: string; count: number }>("/api/telegram/knowledge/upload", {
+    method: "POST",
+    authToken: token,
+    body: formData
+  });
+}
+
+export async function getTelegramKnowledgeBase(token: string) {
+  return apiFetch<{ success: boolean; entries: Array<{ id: number; keyword: string; answer: string; isActive: boolean; createdAt: string }> }>("/api/telegram/knowledge", { authToken: token });
+}
+
+export async function deleteTelegramKnowledgeEntry(token: string, id: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/telegram/knowledge/${id}`, { method: "DELETE", authToken: token });
+}
+
+export async function listTelegramSchedules(token: string) {
+  return apiFetch<{ success: boolean; schedules: Array<any> }>("/api/telegram/schedules", { authToken: token });
+}
+
+export async function cancelTelegramSchedule(token: string, id: number) {
+  return apiFetch<{ success: boolean }>(`/api/telegram/schedules/${id}/cancel`, { method: "POST", authToken: token });
+}
+
+export async function updateTelegramSchedule(token: string, id: number, scheduledAt: string, payload?: any, mediaFile?: File | null) {
+  const formData = new FormData();
+  formData.append('scheduledAt', scheduledAt);
+  if (payload) formData.append('payload', JSON.stringify(payload));
+  if (mediaFile) formData.append('media', mediaFile);
+  
+  return apiFetch<{ success: boolean; schedule: any }>(`/api/telegram/schedules/${id}`, {
+    method: "PUT",
+    authToken: token,
+    body: formData
+  });
+}
+
+export async function deleteTelegramSchedule(token: string, id: number) {
+  return apiFetch<{ success: boolean }>(`/api/telegram/schedules/${id}`, { method: "DELETE", authToken: token });
+}
+
+export async function listTelegramMonthlySchedules(token: string, month?: number, year?: number) {
+  const params = new URLSearchParams();
+  if (month) params.append('month', month.toString());
+  if (year) params.append('year', year.toString());
+  
+  return apiFetch<{ success: boolean; month: number; year: number; telegram: Array<any>; posts: Array<any> }>(`/api/telegram/schedules/monthly?${params}`, { authToken: token });
 }
 

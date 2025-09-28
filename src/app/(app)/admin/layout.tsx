@@ -16,8 +16,8 @@ export default function AdminLayout({ children }: PropsWithChildren) {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-        <p className="text-sm text-gray-600">Administrative tools and settings.</p>
+        <h1 className="text-2xl font-semibold text-white">Admin Dashboard</h1>
+        <p className="text-sm text-gray-300">Administrative tools and settings.</p>
       </div>
       
       <div className="pt-2">
@@ -29,8 +29,8 @@ export default function AdminLayout({ children }: PropsWithChildren) {
               className={clsx(
                 "rounded-md px-3 py-2 text-sm",
                 pathname === tab.href 
-                  ? "bg-gray-900 text-white" 
-                  : "bg-gray-100 hover:bg-gray-200"
+                  ? "bg-light-custom text-white" 
+                  : "bg-card hover:bg-light-custom text-white"
               )}
             >
               {tab.label}
@@ -45,3 +45,9 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     </div>
   );
 }
+
+
+
+
+
+

@@ -42,52 +42,42 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium">Published Posts</h3>
+        <Card className="bg-card border-none">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-text-primary/50">
+            <h3 className="text-sm font-medium text-white">Published Posts</h3>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.published || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-primary">{stats?.published || 0}</div>
+            <p className="text-xs text-muted-foreground text-white">
               Successfully published content
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium">Scheduled Posts</h3>
+        <Card className="bg-card border-none">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-text-primary/50">
+            <h3 className="text-sm font-medium text-white">Scheduled Posts</h3>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.scheduled || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-yellow-500">{stats?.scheduled || 0}</div>
+            <p className="text-xs text-muted-foreground text-white">
               Posts waiting to be published
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium">Draft Posts</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.draft || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Posts saved as drafts
-            </p>
-          </CardContent>
-        </Card>
+      
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 className="text-sm font-medium">Failed Posts</h3>
+        <Card className="bg-card border-none">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-text-primary/50">
+            <h3 className="text-sm font-medium text-white">Failed Posts</h3>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.failed || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-red-500">{stats?.failed || 0}</div>
+            <p className="text-xs text-muted-foreground text-white">
               Posts that failed to publish
             </p>
           </CardContent>
@@ -95,8 +85,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border-none text-white">
+          <CardHeader className="border-text-primary/50">
             <h3 className="text-lg font-semibold">Platform Breakdown</h3>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -134,26 +124,26 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="bg-card border-none text-white">
+          <CardHeader className="border-text-primary/50">
             <h3 className="text-lg font-semibold">Quick Actions</h3>
           </CardHeader>
           <CardContent className="space-y-3">
             <a
               href="/create-post"
-              className="block w-full p-3 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="block w-full p-3 text-center button-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Create New Post
             </a>
             <a
               href="/schedule"
-              className="block w-full p-3 text-center bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="block w-full p-3 text-center bg-orange-600/50 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               View Scheduled Posts
             </a>
             <a
               href="/settings"
-              className="block w-full p-3 text-center bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="block w-full p-3 text-center bg-green-600/70 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               Manage Integrations
             </a>

@@ -397,7 +397,7 @@ export default function WhatsAppPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">WhatsApp Bot Management</h1>
+      <h1 className="text-2xl font-semibold text-white">WhatsApp Bot Management</h1>
       
       {/* Status Messages */}
       {error && (
@@ -406,23 +406,104 @@ export default function WhatsAppPage() {
         </div>
       )}
 
+
+      {success && (
+        <div className="rounded-md p-4 bg-green-50 text-green-700">
+          {success}
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-1 bg-card p-1 rounded-lg">
+        <button
+          onClick={() => setActiveTab('connection')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'connection'
+              ? 'bg-light-custom text-white shadow-sm'
+              : 'text-white '
+          }`}
+        >
+          Connection
+        </button>
+        <button
+          onClick={() => setActiveTab('bot')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'bot'
+              ? 'bg-light-custom text-white shadow-sm'
+              : 'text-white '
+          }`}
+        >
+          Bot Settings
+        </button>
+        <button
+          onClick={() => setActiveTab('chats')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'chats'
+              ? 'bg-light-custom text-white shadow-sm'
+              : 'text-white'
+          }`}
+        >
+          Chat History
+        </button>
+        <button
+          onClick={() => setActiveTab('stats')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'stats'
+              ? 'bg-light-custom text-white shadow-sm'
+              : 'text-white'
+          }`}
+        >
+          Statistics
+        </button>
+        <button
+          onClick={() => setActiveTab('groups')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'groups'
+              ? 'bg-light-custom text-white shadow-sm'
+              : 'text-white'
+          }`}
+        >
+          Groups & Status
+        </button>
+        <button
+          onClick={() => setActiveTab('campaigns')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'campaigns'
+              ? 'bg-light-custom text-white shadow-sm'
+              : 'text-white'
+          }`}
+        >
+          Campaigns
+        </button>
+        <button
+          onClick={() => setActiveTab('admin')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'admin'
+              ? 'bg-light-custom text-white shadow-sm'
+              : 'text-white'
+          }`}
+        >
+          Admin
+        </button>
+      </div>
+
       {/* Groups & Status Tab */}
       {activeTab === 'groups' && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>Groups</CardHeader>
+          <Card className="bg-card border-none">
+            <CardHeader className="border-text-primary/50 text-primary">Groups</CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
                 <Button onClick={handleListGroups} variant="secondary" disabled={loading}>Refresh</Button>
-                <span className="text-sm text-gray-600">{groups.length} groups</span>
+                <span className="text-sm text-white">{groups.length} groups</span>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Select Groups</label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2">
+                  <label className="block text-sm font-medium mb-2 text-white">Select Groups</label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto border border-text-primary rounded-md p-2">
                     <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={selectedGroupNames.length === groups.length && groups.length > 0} onChange={(e) => setSelectedGroupNames(e.target.checked ? groups.map(g => g.name) : [])} />
-                      <span className="text-sm">Select All</span>
+                      <input className="" type="checkbox" checked={selectedGroupNames.length === groups.length && groups.length > 0} onChange={(e) => setSelectedGroupNames(e.target.checked ? groups.map(g => g.name) : [])} />
+                      <span className="text-sm text-white ">Select All</span>
                     </div>
                     {groups.map(g => (
                       <label key={g.id} className="flex items-center gap-2 text-sm">
@@ -435,25 +516,25 @@ export default function WhatsAppPage() {
                             setSelectedGroupNames(Array.from(next));
                           }}
                         />
-                        <span>{g.name} ({g.participantsCount})</span>
+                        <span className="text-white">{g.name} ({g.participantsCount})</span>
                       </label>
                     ))}
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Message</label>
-                    <textarea className="w-full px-3 py-2 border border-gray-300 rounded-md" rows={3} placeholder="Type your message... (optional if media attached)" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
+                    <label className="block text-sm font-medium mb-2 text-white">Message</label>
+                    <textarea className="w-full px-3 py-2 border border-text-primary outline-none rounded-md bg-gray-700/30 text-white" rows={3} placeholder="Type your message... (optional if media attached)" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Media (image/video)</label>
-                    <input type="file" accept="image/*,video/*" onChange={(e) => setGroupMedia(e.target.files?.[0] || null)} />
+                    <label className="block text-sm font-medium mb-2 text-white">Media (image/video)</label>
+                    <input className="text-orange-500" type="file" accept="image/*,video/*" onChange={(e) => setGroupMedia(e.target.files?.[0] || null)} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Schedule (optional)</label>
+                    <label className="block text-sm font-medium mb-2 text-white">Schedule (optional)</label>
                     <input 
                       type="datetime-local" 
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md" 
+                      className="w-full px-3 py-2 border border-text-primary outline-none rounded-md bg-gray-700/30 text-white" 
                       value={groupScheduleAt} 
                       onChange={(e) => {
                         const value = e.target.value;
@@ -473,17 +554,17 @@ export default function WhatsAppPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>Post Status</CardHeader>
+          <Card className="bg-card border-none">
+            <CardHeader className="border-text-primary/50 text-primary">Post Status</CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Image</label>
-                  <input type="file" accept="image/*" onChange={(e) => setStatusImage(e.target.files?.[0] || null)} />
+                  <label className="block text-sm font-medium mb-2 text-white">Image</label>
+                  <input className="text-white" type="file" accept="image/*" onChange={(e) => setStatusImage(e.target.files?.[0] || null)} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Caption</label>
-                  <input className="w-full px-3 py-2 border border-gray-300 rounded-md" value={statusCaption} onChange={(e) => setStatusCaption(e.target.value)} />
+                  <label className="block text-sm font-medium mb-2 text-white">Caption</label>
+                  <input className="w-full px-3 py-2 border border-text-primary outline-none rounded-md bg-gray-700/30 text-white" value={statusCaption} onChange={(e) => setStatusCaption(e.target.value)} />
                 </div>
               </div>
               <Button onClick={handlePostStatus} disabled={loading || !statusImage}>Post Status</Button>
@@ -495,42 +576,42 @@ export default function WhatsAppPage() {
       {/* Campaigns Tab */}
       {activeTab === 'campaigns' && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>Start Campaign</CardHeader>
+          <Card className="bg-card border-none">
+            <CardHeader className="border-text-primary/50 text-primary">Start Campaign</CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Upload Excel (columns: phone, name, message)</label>
+                  <label className="block text-sm font-medium mb-2 text-white">Upload Excel (columns: phone, name, message)</label>
                   <input type="file" accept=".xlsx" onChange={(e) => setCampaignFile(e.target.files?.[0] || null)} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Message Template</label>
-                  <textarea className="w-full px-3 py-2 border border-gray-300 rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
-                  <p className="text-xs text-gray-500 mt-1">Use {'{{name}}'} placeholder.</p>
+                  <label className="block text-sm font-medium mb-2 text-white">Message Template</label>
+                  <textarea className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
+                  <p className="text-xs text-gray-300 mt-1">Use {'{{name}}'} placeholder.</p>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Throttle (ms between messages)</label>
-                <input type="number" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '3000'))} />
+                <label className="block text-sm font-medium mb-2 text-white">Throttle (ms between messages)</label>
+                <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '3000'))} />
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Media (image/video, optional)</label>
+                  <label className="block text-sm font-medium mb-2 text-white">Media (image/video, optional)</label>
                   <input type="file" accept="image/*,video/*" onChange={(e) => setCampaignMedia(e.target.files?.[0] || null)} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Schedule (optional)</label>
-                  <input type="datetime-local" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={campaignScheduleAt} onChange={(e) => setCampaignScheduleAt(e.target.value)} />
+                  <label className="block text-sm font-medium mb-2 text-white">Schedule (optional)</label>
+                  <input type="datetime-local" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignScheduleAt} onChange={(e) => setCampaignScheduleAt(e.target.value)} />
                 </div>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Daily cap (numbers/day, optional)</label>
-                  <input type="number" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : '')} />
+                  <label className="block text-sm font-medium mb-2 text-white">Daily cap (numbers/day, optional)</label>
+                  <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : '')} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Per-number delay (ms, optional)</label>
-                  <input type="number" className="w-full px-3 py-2 border border-gray-300 rounded-md" value={campaignPerNumberDelay} onChange={(e) => setCampaignPerNumberDelay(e.target.value ? Number(e.target.value) : '')} />
+                  <label className="block text-sm font-medium mb-2 text-white">Per-number delay (ms, optional)</label>
+                  <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignPerNumberDelay} onChange={(e) => setCampaignPerNumberDelay(e.target.value ? Number(e.target.value) : '')} />
                 </div>
               </div>
               <Button onClick={handleStartCampaign} disabled={loading || !campaignFile || !campaignTemplate}>Start Campaign</Button>
@@ -539,96 +620,16 @@ export default function WhatsAppPage() {
         </div>
       )}
 
-      {success && (
-        <div className="rounded-md p-4 bg-green-50 text-green-700">
-          {success}
-        </div>
-      )}
-
-      {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => setActiveTab('connection')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'connection'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Connection
-        </button>
-        <button
-          onClick={() => setActiveTab('bot')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'bot'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Bot Settings
-        </button>
-        <button
-          onClick={() => setActiveTab('chats')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'chats'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Chat History
-        </button>
-        <button
-          onClick={() => setActiveTab('stats')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'stats'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Statistics
-        </button>
-        <button
-          onClick={() => setActiveTab('groups')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'groups'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Groups & Status
-        </button>
-        <button
-          onClick={() => setActiveTab('campaigns')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'campaigns'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Campaigns
-        </button>
-        <button
-          onClick={() => setActiveTab('admin')}
-          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'admin'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          Admin
-        </button>
-      </div>
-
       {/* Connection Tab */}
       {activeTab === 'connection' && (
         <div className="space-y-6">
           {/* WhatsApp Connection */}
-      <Card>
-            <CardHeader>WhatsApp Connection</CardHeader>
+      <Card className="bg-card border-none">
+            <CardHeader className="border-text-primary/50 text-primary">WhatsApp Connection</CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-300">
                     Status: {status?.status || 'Unknown'} • {status?.message || 'No session'}
               </p>
             </div>
@@ -668,8 +669,8 @@ export default function WhatsAppPage() {
       </Card>
 
       {/* Send Test Message */}
-      <Card>
-        <CardHeader>Send Test Message</CardHeader>
+      {/* <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50 text-primary">Send Test Message</CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -701,7 +702,7 @@ export default function WhatsAppPage() {
             {loading ? 'Sending...' : 'Send Message'}
           </Button>
         </CardContent>
-      </Card>
+      </Card> */}
         </div>
       )}
 
@@ -709,12 +710,12 @@ export default function WhatsAppPage() {
       {activeTab === 'bot' && (
         <div className="space-y-6">
       {/* Knowledge Base Upload */}
-      <Card>
-            <CardHeader>Knowledge Base Management</CardHeader>
+      <Card className="bg-card border-none">
+            <CardHeader className="border-text-primary/50 text-primary">Knowledge Base Management</CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Upload Excel File</label>
-            <p className="mb-2 text-xs text-gray-500">
+            <label className="block text-sm font-medium mb-2 text-primary">Upload Excel File</label>
+            <p className="mb-2 text-xs text-gray-300">
                   Upload an Excel file with "keyword" and "answer" columns. The bot will prioritize this data over OpenAI responses.
             </p>
             <div className="flex gap-2">
@@ -726,6 +727,7 @@ export default function WhatsAppPage() {
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
               />
               <Button 
+              className="bg-green-500 text-white"
                 onClick={handleFileUpload} 
                 disabled={!file || loading}
                 size="sm"
@@ -739,8 +741,8 @@ export default function WhatsAppPage() {
 
       {/* Knowledge Base Entries */}
       {knowledgeEntries.length > 0 && (
-        <Card>
-          <CardHeader>Knowledge Base Entries ({knowledgeEntries.length})</CardHeader>
+        <Card className="bg-card border-none">
+          <CardHeader className="border-text-primary/50">Knowledge Base Entries ({knowledgeEntries.length})</CardHeader>
           <CardContent>
             <div className="space-y-2">
               {knowledgeEntries.map((entry) => (
@@ -764,21 +766,21 @@ export default function WhatsAppPage() {
       )}
 
           {/* Bot Response Priority Info */}
-      <Card>
-            <CardHeader>Response Priority</CardHeader>
+      <Card className="bg-card border-none">
+            <CardHeader className="border-text-primary/50 text-primary">Response Priority</CardHeader>
         <CardContent>
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
                   <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
-                  <span><strong>1. Knowledge Base:</strong> Exact and fuzzy matches from your Excel file</span>
+                  <span className="text-white"><strong className="text-primary">1. Knowledge Base:</strong> Exact and fuzzy matches from your Excel file</span>
             </div>
             <div className="flex items-start gap-2">
                   <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
-                  <span><strong>2. OpenAI:</strong> AI responses for unknown queries</span>
+                  <span className="text-white"><strong className="text-primary">2. OpenAI:</strong> AI responses for unknown queries</span>
             </div>
             <div className="flex items-start gap-2">
                   <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-gray-500" />
-                  <span><strong>3. Fallback:</strong> Default responses when all else fails</span>
+                  <span className="text-white"><strong className="text-primary">3. Fallback:</strong> Default responses when all else fails</span>
                 </div>
               </div>
             </CardContent>
@@ -791,8 +793,8 @@ export default function WhatsAppPage() {
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
             {/* Contacts List */}
-            <Card>
-              <CardHeader>Contacts ({contacts.length})</CardHeader>
+            <Card className="bg-card border-none">
+              <CardHeader className="border-text-primary/50 text-primary">Contacts ({contacts.length})</CardHeader>
               <CardContent>
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {contacts.map((contact) => (
@@ -820,8 +822,8 @@ export default function WhatsAppPage() {
 
             {/* Chat Messages */}
             <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
+              <Card className="bg-card border-none">
+                <CardHeader className="border-text-primary/50 text-primary">
                   {selectedContact ? `Chat with ${selectedContact}` : 'Select a contact to view messages'}
                 </CardHeader>
                 <CardContent>
@@ -867,40 +869,40 @@ export default function WhatsAppPage() {
         <div className="space-y-6">
           {botStats && (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
+              <Card className="bg-card border-none">
                 <CardContent className="p-6">
-                  <div className="text-2xl font-bold">{botStats.totalMessages}</div>
-                  <p className="text-xs text-gray-600">Total Messages</p>
+                  <div className="text-2xl font-bold text-orange-500">{botStats.totalMessages}</div>
+                  <p className="text-xs text-primary">Total Messages</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-card border-none">
                 <CardContent className="p-6">
-                  <div className="text-2xl font-bold">{botStats.totalContacts}</div>
-                  <p className="text-xs text-gray-600">Total Contacts</p>
+                  <div className="text-2xl font-bold text-primary">{botStats.totalContacts}</div>
+                  <p className="text-xs text-primary">Total Contacts</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-card border-none">
                 <CardContent className="p-6">
-                  <div className="text-2xl font-bold">{botStats.incomingMessages}</div>
-                  <p className="text-xs text-gray-600">Incoming Messages</p>
+                  <div className="text-2xl font-bold text-yellow-500">{botStats.incomingMessages}</div>
+                  <p className="text-xs text-primary">Incoming Messages</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-card border-none">
                 <CardContent className="p-6">
-                  <div className="text-2xl font-bold">{botStats.outgoingMessages}</div>
-                  <p className="text-xs text-gray-600">Bot Responses</p>
+                  <div className="text-2xl font-bold text-blue-500">{botStats.outgoingMessages}</div>
+                  <p className="text-xs text-primary">Bot Responses</p>
                 </CardContent>
               </Card>
             </div>
           )}
 
           {botStats && (
-            <Card>
-              <CardHeader>Response Sources</CardHeader>
+            <Card className="bg-card border-none">
+              <CardHeader className="border-text-primary/50 text-primary">Response Sources</CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Knowledge Base</span>
+                    <span className="text-sm font-medium text-white">Knowledge Base</span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div 
@@ -908,11 +910,11 @@ export default function WhatsAppPage() {
                           style={{ width: `${(botStats.knowledgeBaseResponses / botStats.outgoingMessages) * 100}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-600">{botStats.knowledgeBaseResponses}</span>
+                      <span className="text-sm text-white">{botStats.knowledgeBaseResponses}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">OpenAI</span>
+                    <span className="text-sm font-medium text-white">OpenAI</span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div 
@@ -920,11 +922,11 @@ export default function WhatsAppPage() {
                           style={{ width: `${(botStats.openaiResponses / botStats.outgoingMessages) * 100}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-600">{botStats.openaiResponses}</span>
+                      <span className="text-sm text-white">{botStats.openaiResponses}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Fallback</span>
+                    <span className="text-sm font-medium text-white">Fallback</span>
                     <div className="flex items-center gap-2">
                       <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div 
@@ -932,7 +934,7 @@ export default function WhatsAppPage() {
                           style={{ width: `${(botStats.fallbackResponses / botStats.outgoingMessages) * 100}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-600">{botStats.fallbackResponses}</span>
+                      <span className="text-sm text-white">{botStats.fallbackResponses}</span>
                     </div>
             </div>
           </div>
@@ -945,8 +947,8 @@ export default function WhatsAppPage() {
       {/* Admin Tab */}
       {activeTab === 'admin' && (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
+          <Card className="bg-card border-none">
+            <CardHeader className="border-text-primary/50">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">Admin Management</h3>

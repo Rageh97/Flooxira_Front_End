@@ -49,9 +49,9 @@ export default function UsersAdminPage() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="bg-card border-none">
         <CardContent className="p-6">
-          <p className="text-sm text-gray-600">Loading users...</p>
+          <p className="text-sm text-gray-300">Loading users...</p>
         </CardContent>
       </Card>
     );
@@ -59,9 +59,9 @@ export default function UsersAdminPage() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="bg-card border-none">
         <CardContent className="p-6">
-          <p className="text-sm text-red-600">Error: {error}</p>
+          <p className="text-sm text-red-400">Error: {error}</p>
         </CardContent>
       </Card>
     );
@@ -70,41 +70,41 @@ export default function UsersAdminPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">User Management</h2>
-        <span className="text-sm text-gray-500">{users.length} total users</span>
+        <h2 className="text-lg font-semibold text-white">User Management</h2>
+        <span className="text-sm text-gray-300">{users.length} total users</span>
       </div>
       
-      <Card>
-        <CardHeader>
+      <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50 text-primary">
           <h3 className="text-lg font-semibold">All Users</h3>
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
-            <p className="text-sm text-gray-600">No users found.</p>
+            <p className="text-sm text-gray-300">No users found.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Email</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Phone</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Role</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Created</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Last Updated</th>
+                <thead className="text-center">
+                  <tr className="border-b border-gray-600">
+                    <th className=" py-3 px-4 font-medium text-white">ID</th>
+                    <th className=" py-3 px-4 font-medium text-white">Name</th>
+                    <th className=" py-3 px-4 font-medium text-white">Email</th>
+                    <th className=" py-3 px-4 font-medium text-white">Phone</th>
+                    <th className=" py-3 px-4 font-medium text-white">Role</th>
+                    <th className=" py-3 px-4 font-medium text-white">Status</th>
+                    <th className=" py-3 px-4 font-medium text-white">Created</th>
+                    <th className=" py-3 px-4 font-medium text-white">Last Updated</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="text-center">
                   {users.map((user) => (
-                    <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-sm text-gray-600">{user.id}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                    <tr key={user.id} className="border-b border-gray-600 hover:bg-gray-700/30">
+                      <td className="py-3 px-4 text-sm text-gray-300">{user.id}</td>
+                      <td className="py-3 px-4 text-sm font-medium text-white">
                         {user.name || 'No name'}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{user.email}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{user.phone || 'No phone'}</td>
+                      <td className="py-3 px-4 text-sm text-gray-300">{user.email}</td>
+                      <td className="py-3 px-4 text-sm text-gray-300">{user.phone || 'No phone'}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           user.role === 'admin' 
@@ -123,8 +123,8 @@ export default function UsersAdminPage() {
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{formatDate(user.createdAt)}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{formatDate(user.updatedAt)}</td>
+                      <td className="py-3 px-4 text-sm text-gray-300">{formatDate(user.createdAt)}</td>
+                      <td className="py-3 px-4 text-sm text-gray-300">{formatDate(user.updatedAt)}</td>
                     </tr>
                   ))}
                 </tbody>

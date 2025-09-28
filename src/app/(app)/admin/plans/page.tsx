@@ -98,53 +98,53 @@ export default function PlansAdminPage() {
 
   return (
     <div className="space-y-8">
-      <h2 className="text-lg font-semibold">Plan Management</h2>
+      <h2 className="text-lg font-semibold text-white">Plan Management</h2>
       
-      <Card>
-        <CardHeader>Create a new plan</CardHeader>
+      <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50 text-primary">Create a new plan</CardHeader>
         <CardContent className="space-y-3">
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-400">{error}</p>}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-            <Input placeholder="Name" value={newPlan.name} onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })} />
-            <Input type="number" placeholder="Price (cents)" value={newPlan.priceCents} onChange={(e) => setNewPlan({ ...newPlan, priceCents: Number(e.target.value || 0) })} />
-            <select className="h-10 rounded-md border border-gray-300 px-3 text-sm" value={newPlan.interval} onChange={(e) => setNewPlan({ ...newPlan, interval: e.target.value as any })}>
+            <Input placeholder="Name" value={newPlan.name} onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })} className="!border !border-text-primary !outline-none !bg-gray-700/30 !text-white placeholder:text-gray-400" />
+            <Input type="number" placeholder="Price (cents)" value={newPlan.priceCents} onChange={(e) => setNewPlan({ ...newPlan, priceCents: Number(e.target.value || 0) })} className="!border !border-text-primary !outline-none !bg-gray-700/30 !text-white placeholder:text-gray-400" />
+            <select className="h-10 rounded-md !border !border-text-primary !outline-none !bg-gray-700/30 !text-white px-3 text-sm" value={newPlan.interval} onChange={(e) => setNewPlan({ ...newPlan, interval: e.target.value as any })}>
               <option value="monthly">Monthly</option>
               <option value="yearly">Yearly</option>
             </select>
-            <select className="h-10 rounded-md border border-gray-300 px-3 text-sm" value={String(newPlan.isActive)} onChange={(e) => setNewPlan({ ...newPlan, isActive: e.target.value === "true" })}>
+            <select className="h-10 rounded-md !border !border-text-primary !outline-none !bg-gray-700/30 !text-white px-3 text-sm" value={String(newPlan.isActive)} onChange={(e) => setNewPlan({ ...newPlan, isActive: e.target.value === "true" })}>
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
           </div>
-          <Textarea placeholder="Features: JSON array or newline list" value={newPlan.features} onChange={(e) => setNewPlan({ ...newPlan, features: e.target.value })} />
+          <Textarea placeholder="Features: JSON array or newline list" value={newPlan.features} onChange={(e) => setNewPlan({ ...newPlan, features: e.target.value })} className="!border !border-text-primary !outline-none !bg-gray-700/30 !text-white placeholder:text-gray-400" />
           <Button onClick={handleCreate} disabled={loading || !newPlan.name}>Create plan</Button>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>Your plans</CardHeader>
+      <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50 text-primary">Your plans</CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-gray-600">Loading...</p>
+            <p className="text-sm text-gray-300">Loading...</p>
           ) : items.length === 0 ? (
-            <p className="text-sm text-gray-600">No plans yet.</p>
+            <p className="text-sm text-gray-300">No plans yet.</p>
           ) : (
             <ul className="space-y-3">
               {items.map((p) => (
-                <li key={p.id} className="rounded-md border border-gray-200 p-3">
+                <li key={p.id} className="rounded-md border border-gray-600 p-3 bg-card">
                   {p._editing ? (
                     <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
-                      <Input value={p.name} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, name: e.target.value } : x)))} />
-                      <Input type="number" value={p.priceCents} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, priceCents: Number(e.target.value || 0) } : x)))} />
-                      <select className="h-10 rounded-md border border-gray-300 px-3 text-sm" value={p.interval} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, interval: e.target.value as any } : x)))}>
+                      <Input value={p.name} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, name: e.target.value } : x)))} className="!border !border-text-primary !outline-none !bg-gray-700/30 !text-white placeholder:text-gray-400" />
+                      <Input type="number" value={p.priceCents} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, priceCents: Number(e.target.value || 0) } : x)))} className="!border !border-text-primary !outline-none !bg-gray-700/30 !text-white placeholder:text-gray-400" />
+                      <select className="h-10 rounded-md !border !border-text-primary !outline-none !bg-gray-700/30 !text-white px-3 text-sm" value={p.interval} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, interval: e.target.value as any } : x)))}>
                         <option value="monthly">Monthly</option>
                         <option value="yearly">Yearly</option>
                       </select>
-                      <select className="h-10 rounded-md border border-gray-300 px-3 text-sm" value={String(p.isActive)} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, isActive: e.target.value === "true" } : x)))}>
+                      <select className="h-10 rounded-md !border !border-text-primary !outline-none !bg-gray-700/30 !text-white px-3 text-sm" value={String(p.isActive)} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, isActive: e.target.value === "true" } : x)))}>
                         <option value="true">Active</option>
                         <option value="false">Inactive</option>
                       </select>
-                      <Textarea className="md:col-span-2" value={Array.isArray(p.features) ? p.features.join("\n") : String(p.features ?? "")} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, features: parseFeatures(e.target.value) } : x)))} />
+                      <Textarea className="md:col-span-2 !border !border-text-primary !outline-none !bg-gray-700/30 !text-white placeholder:text-gray-400" value={Array.isArray(p.features) ? p.features.join("\n") : String(p.features ?? "")} onChange={(e) => setItems((cur) => cur.map((x) => (x.id === p.id ? { ...x, features: parseFeatures(e.target.value) } : x)))} />
                       <div className="col-span-full flex gap-2 pt-1">
                         <Button onClick={() => handleSave(p)} size="sm">Save</Button>
                         <Button variant="secondary" size="sm" onClick={() => setEditing(p.id, false)}>Cancel</Button>
@@ -153,8 +153,8 @@ export default function PlansAdminPage() {
                   ) : (
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-1">
-                        <div className="text-sm font-medium">{p.name} {p.isActive ? <span className="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs text-green-800">Active</span> : <span className="ml-2 rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">Inactive</span>}</div>
-                        <div className="text-xs text-gray-600">{p.interval} • {(p.priceCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" })}</div>
+                        <div className="text-sm font-medium text-white">{p.name} {p.isActive ? <span className="ml-2 rounded bg-green-200 px-2 py-0.5 text-xs text-green-800">Active</span> : <span className="ml-2 rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-600">Inactive</span>}</div>
+                        <div className="text-xs text-gray-300">{p.interval} • {(p.priceCents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" })}</div>
                       </div>
                       <div className="flex gap-2">
                         <Button size="sm" variant="secondary" onClick={() => setEditing(p.id, true)}>Edit</Button>
