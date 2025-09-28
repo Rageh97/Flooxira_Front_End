@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { checkPlatformConnections } from "@/lib/api";
 
 const PLATFORMS = {
-  facebook: { name: "Facebook", icon: "👥", connectUrl: "/auth/facebook" },
-  instagram: { name: "Instagram", icon: "📷", connectUrl: "/auth/instagram" },
-  youtube: { name: "YouTube", icon: "▶️", connectUrl: "/auth/youtube" },
-  tiktok: { name: "TikTok", icon: "🎵", connectUrl: "/auth/tiktok" },
-  linkedin: { name: "LinkedIn", icon: "💼", connectUrl: "/auth/linkedin" },
-  pinterest: { name: "Pinterest", icon: "📌", connectUrl: "/auth/pinterest" }
+  facebook: { name: "Facebook", icon: "👥", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
+  instagram: { name: "Instagram", icon: "📷", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/instagram` },
+  youtube: { name: "YouTube", icon: "▶️", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/youtube` },
+  tiktok: { name: "TikTok", icon: "🎵", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/tiktok` },
+  linkedin: { name: "LinkedIn", icon: "💼", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/linkedin` },
+  pinterest: { name: "Pinterest", icon: "📌", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/pinterest` }
 };
 
 export default function SettingsPage() {
