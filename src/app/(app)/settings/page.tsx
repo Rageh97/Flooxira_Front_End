@@ -10,7 +10,6 @@ import {
   exchangeFacebookCode,
   exchangeYouTubeCode,
   exchangeTikTokCode,
-  exchangeSallaCode
 } from "@/lib/api";
 import { exchangeTwitterCode } from "@/lib/api";
 import FacebookPageSelection from "@/components/FacebookPageSelection";
@@ -51,7 +50,6 @@ function SettingsContent() {
     const facebookCode = searchParams.get('fb_code');
     const youtubeCode = searchParams.get('youtube_code');
     const tiktokCode = searchParams.get('tiktok_code');
-    const sallaCode = searchParams.get('salla_code');
     const error = searchParams.get('error');
     const message = searchParams.get('message');
     const twitterCode = searchParams.get('twitter_code');
@@ -101,11 +99,7 @@ function SettingsContent() {
             if (tiktokCode) {
               result = await exchangeTikTokCode(token, tiktokCode);
             }
-            break;
-          case 'salla':
-            if (sallaCode) {
-              result = await exchangeSallaCode(token, sallaCode);
-            }
+            
             break;
           case 'twitter':
             if (twitterCode) {

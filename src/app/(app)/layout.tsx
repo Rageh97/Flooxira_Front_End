@@ -15,7 +15,6 @@ const navItems = [
   { href: "/schedule", label: "Schedules" },
   { href: "/whatsapp", label: "WhatsApp Bot" },
   { href: "/telegram", label: "Telegram Web" },
-  { href: "/salla", label: "Salla Store" },
   { href: "/analytics", label: "Analytics" },
   { href: "/settings", label: "Accounts Management" },
   { href: "/billing", label: "Billing" },

@@ -410,158 +410,158 @@ export async function checkPlatformConnections(token: string) {
 }
 
 
-// Salla API helpers
-export async function startSallaOAuth() {
-  // server handles redirect building at /auth/salla
-  window.location.href = `${API_URL}/auth/salla`;
-}
+// // Salla API helpers
+// export async function startSallaOAuth() {
+//   // server handles redirect building at /auth/salla
+//   window.location.href = `${API_URL}/auth/salla`;
+// }
 
-export async function exchangeSallaCode(token: string, code: string) {
-  return apiFetch<{ message: string; account?: any }>("/api/salla/exchange", {
-    method: "POST",
-    authToken: token,
-    body: JSON.stringify({ code })
-  });
-}
+// export async function exchangeSallaCode(token: string, code: string) {
+//   return apiFetch<{ message: string; account?: any }>("/api/salla/exchange", {
+//     method: "POST",
+//     authToken: token,
+//     body: JSON.stringify({ code })
+//   });
+// }
 
-export async function getSallaAccount(token: string) {
-  return apiFetch<{ connected: boolean; account?: any }>("/api/salla/account", { authToken: token });
-}
+// export async function getSallaAccount(token: string) {
+//   return apiFetch<{ connected: boolean; account?: any }>("/api/salla/account", { authToken: token });
+// }
 
-export async function testSalla(token: string) {
-  return apiFetch<{ ok: boolean; message: string; storeName?: string }>("/api/salla/test", { authToken: token });
-}
+// export async function testSalla(token: string) {
+//   return apiFetch<{ ok: boolean; message: string; storeName?: string }>("/api/salla/test", { authToken: token });
+// }
 
-export async function disconnectSalla(token: string) {
-  return apiFetch<{ message: string }>("/api/salla/disconnect", { method: "POST", authToken: token });
-}
+// export async function disconnectSalla(token: string) {
+//   return apiFetch<{ message: string }>("/api/salla/disconnect", { method: "POST", authToken: token });
+// }
 
-export async function getSallaStore(token: string) {
-  return apiFetch<{ ok?: boolean; store?: { id: any; name?: string; email?: string }; scope?: string; message?: string }>("/api/salla/store", { authToken: token });
-}
+// export async function getSallaStore(token: string) {
+//   return apiFetch<{ ok?: boolean; store?: { id: any; name?: string; email?: string }; scope?: string; message?: string }>("/api/salla/store", { authToken: token });
+// }
 
-export async function listSallaProducts(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; data: any[]; message?: string }>(`/api/salla/products?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// export async function listSallaProducts(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; data: any[]; message?: string }>(`/api/salla/products?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function createSallaProduct(token: string, payload: any) {
-  return apiFetch<{ ok: boolean; product?: any; message?: string }>("/api/salla/products", { method: "POST", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function createSallaProduct(token: string, payload: any) {
+//   return apiFetch<{ ok: boolean; product?: any; message?: string }>("/api/salla/products", { method: "POST", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function updateSallaProduct(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; product?: any; message?: string }>(`/api/salla/products/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaProduct(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; product?: any; message?: string }>(`/api/salla/products/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function listSallaOrders(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; data: any[]; message?: string }>(`/api/salla/orders?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// export async function listSallaOrders(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; data: any[]; message?: string }>(`/api/salla/orders?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function updateSallaOrder(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; order?: any; message?: string }>(`/api/salla/orders/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaOrder(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; order?: any; message?: string }>(`/api/salla/orders/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function listSallaCustomers(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; data: any[]; message?: string }>(`/api/salla/customers?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// export async function listSallaCustomers(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; data: any[]; message?: string }>(`/api/salla/customers?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function updateSallaCustomer(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; customer?: any; message?: string }>(`/api/salla/customers/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaCustomer(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; customer?: any; message?: string }>(`/api/salla/customers/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-// Categories API
-export async function listSallaCategories(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; categories?: any[]; message?: string }>(`/api/salla/categories?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// // Categories API
+// export async function listSallaCategories(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; categories?: any[]; message?: string }>(`/api/salla/categories?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function createSallaCategory(token: string, payload: any) {
-  return apiFetch<{ ok: boolean; category?: any; message?: string }>("/api/salla/categories", { method: "POST", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function createSallaCategory(token: string, payload: any) {
+//   return apiFetch<{ ok: boolean; category?: any; message?: string }>("/api/salla/categories", { method: "POST", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function updateSallaCategory(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; category?: any; message?: string }>(`/api/salla/categories/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaCategory(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; category?: any; message?: string }>(`/api/salla/categories/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function deleteSallaCategory(token: string, id: any) {
-  return apiFetch<{ ok: boolean; category?: any; message?: string }>(`/api/salla/categories/${id}` as string, { method: "DELETE", authToken: token });
-}
+// export async function deleteSallaCategory(token: string, id: any) {
+//   return apiFetch<{ ok: boolean; category?: any; message?: string }>(`/api/salla/categories/${id}` as string, { method: "DELETE", authToken: token });
+// }
 
-// Brands API
-export async function listSallaBrands(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; brands?: any[]; message?: string }>(`/api/salla/brands?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// // Brands API
+// export async function listSallaBrands(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; brands?: any[]; message?: string }>(`/api/salla/brands?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function createSallaBrand(token: string, payload: any) {
-  return apiFetch<{ ok: boolean; brand?: any; message?: string }>("/api/salla/brands", { method: "POST", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function createSallaBrand(token: string, payload: any) {
+//   return apiFetch<{ ok: boolean; brand?: any; message?: string }>("/api/salla/brands", { method: "POST", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function updateSallaBrand(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; brand?: any; message?: string }>(`/api/salla/brands/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaBrand(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; brand?: any; message?: string }>(`/api/salla/brands/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function deleteSallaBrand(token: string, id: any) {
-  return apiFetch<{ ok: boolean; brand?: any; message?: string }>(`/api/salla/brands/${id}` as string, { method: "DELETE", authToken: token });
-}
+// export async function deleteSallaBrand(token: string, id: any) {
+//   return apiFetch<{ ok: boolean; brand?: any; message?: string }>(`/api/salla/brands/${id}` as string, { method: "DELETE", authToken: token });
+// }
 
-// Branches API
-export async function listSallaBranches(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; branches?: any[]; message?: string }>(`/api/salla/branches?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// // Branches API
+// export async function listSallaBranches(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; branches?: any[]; message?: string }>(`/api/salla/branches?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function createSallaBranch(token: string, payload: any) {
-  return apiFetch<{ ok: boolean; branch?: any; message?: string }>("/api/salla/branches", { method: "POST", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function createSallaBranch(token: string, payload: any) {
+//   return apiFetch<{ ok: boolean; branch?: any; message?: string }>("/api/salla/branches", { method: "POST", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function updateSallaBranch(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; branch?: any; message?: string }>(`/api/salla/branches/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaBranch(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; branch?: any; message?: string }>(`/api/salla/branches/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function deleteSallaBranch(token: string, id: any) {
-  return apiFetch<{ ok: boolean; branch?: any; message?: string }>(`/api/salla/branches/${id}` as string, { method: "DELETE", authToken: token });
-}
+// export async function deleteSallaBranch(token: string, id: any) {
+//   return apiFetch<{ ok: boolean; branch?: any; message?: string }>(`/api/salla/branches/${id}` as string, { method: "DELETE", authToken: token });
+// }
 
-// Payments API
-export async function listSallaPayments(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; payments?: any[]; message?: string }>(`/api/salla/payments?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// // Payments API
+// export async function listSallaPayments(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; payments?: any[]; message?: string }>(`/api/salla/payments?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function updateSallaPayment(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; payment?: any; message?: string }>(`/api/salla/payments/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaPayment(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; payment?: any; message?: string }>(`/api/salla/payments/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-// Settings API
-export async function getSallaSettings(token: string, entity = 'store') {
-  return apiFetch<{ ok: boolean; settings?: any; message?: string }>(`/api/salla/settings?entity=${entity}`, { authToken: token });
-}
+// // Settings API
+// export async function getSallaSettings(token: string, entity = 'store') {
+//   return apiFetch<{ ok: boolean; settings?: any; message?: string }>(`/api/salla/settings?entity=${entity}`, { authToken: token });
+// }
 
-export async function updateSallaSettings(token: string, payload: any) {
-  return apiFetch<{ ok: boolean; settings?: any; message?: string }>("/api/salla/settings", { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaSettings(token: string, payload: any) {
+//   return apiFetch<{ ok: boolean; settings?: any; message?: string }>("/api/salla/settings", { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-export async function getSallaSettingsField(token: string, slug: string) {
-  return apiFetch<{ ok: boolean; field?: any; message?: string }>(`/api/salla/settings/fields/${slug}`, { authToken: token });
-}
+// export async function getSallaSettingsField(token: string, slug: string) {
+//   return apiFetch<{ ok: boolean; field?: any; message?: string }>(`/api/salla/settings/fields/${slug}`, { authToken: token });
+// }
 
-export async function updateSallaSettingsField(token: string, slug: string, payload: any) {
-  return apiFetch<{ ok: boolean; field?: any; message?: string }>(`/api/salla/settings/fields/${slug}`, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaSettingsField(token: string, slug: string, payload: any) {
+//   return apiFetch<{ ok: boolean; field?: any; message?: string }>(`/api/salla/settings/fields/${slug}`, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-// Reviews API
-export async function listSallaReviews(token: string, page = 1, perPage = 20, type = 'rating') {
-  return apiFetch<{ ok: boolean; reviews?: any[]; message?: string }>(`/api/salla/reviews?page=${page}&per_page=${perPage}&type=${type}` as string, { authToken: token });
-}
+// // Reviews API
+// export async function listSallaReviews(token: string, page = 1, perPage = 20, type = 'rating') {
+//   return apiFetch<{ ok: boolean; reviews?: any[]; message?: string }>(`/api/salla/reviews?page=${page}&per_page=${perPage}&type=${type}` as string, { authToken: token });
+// }
 
-export async function updateSallaReview(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; review?: any; message?: string }>(`/api/salla/reviews/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaReview(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; review?: any; message?: string }>(`/api/salla/reviews/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
-// Questions API
-export async function listSallaQuestions(token: string, page = 1, perPage = 20) {
-  return apiFetch<{ ok: boolean; questions?: any[]; message?: string }>(`/api/salla/questions?page=${page}&per_page=${perPage}` as string, { authToken: token });
-}
+// // Questions API
+// export async function listSallaQuestions(token: string, page = 1, perPage = 20) {
+//   return apiFetch<{ ok: boolean; questions?: any[]; message?: string }>(`/api/salla/questions?page=${page}&per_page=${perPage}` as string, { authToken: token });
+// }
 
-export async function updateSallaQuestion(token: string, id: any, payload: any) {
-  return apiFetch<{ ok: boolean; question?: any; message?: string }>(`/api/salla/questions/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
-}
+// export async function updateSallaQuestion(token: string, id: any, payload: any) {
+//   return apiFetch<{ ok: boolean; question?: any; message?: string }>(`/api/salla/questions/${id}` as string, { method: "PUT", authToken: token, body: JSON.stringify(payload) });
+// }
 
 // LinkedIn API helpers
 export async function startLinkedInOAuth() {
