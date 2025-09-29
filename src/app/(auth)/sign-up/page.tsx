@@ -27,7 +27,6 @@ export default function SignUpPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold">Create account</h1>
-        <p className="text-sm text-gray-600">Start your 14-day free trial.</p>
       </div>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
         <div>

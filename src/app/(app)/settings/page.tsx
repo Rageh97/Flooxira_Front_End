@@ -12,6 +12,7 @@ import {
   exchangeTikTokCode,
   exchangeSallaCode
 } from "@/lib/api";
+import { exchangeTwitterCode } from "@/lib/api";
 import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
@@ -21,7 +22,8 @@ const PLATFORMS = {
   youtube: { name: "YouTube", icon: "▶️", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/youtube` },
   tiktok: { name: "TikTok", icon: "🎵", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/tiktok` },
   linkedin: { name: "LinkedIn", icon: "💼", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/linkedin` },
-  pinterest: { name: "Pinterest", icon: "📌", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/pinterest` }
+  pinterest: { name: "Pinterest", icon: "📌", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/pinterest` },
+  twitter: { name: "Twitter (X)", icon: "𝕏", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/twitter` }
 };
 
 function SettingsContent() {
@@ -52,6 +54,8 @@ function SettingsContent() {
     const sallaCode = searchParams.get('salla_code');
     const error = searchParams.get('error');
     const message = searchParams.get('message');
+    const twitterCode = searchParams.get('twitter_code');
+    const codeVerifier = searchParams.get('code_verifier') || undefined;
 
     if (error) {
       console.error('OAuth error:', error, message);
@@ -101,6 +105,11 @@ function SettingsContent() {
           case 'salla':
             if (sallaCode) {
               result = await exchangeSallaCode(token, sallaCode);
+            }
+            break;
+          case 'twitter':
+            if (twitterCode) {
+              result = await exchangeTwitterCode(token, twitterCode, codeVerifier || undefined);
             }
             break;
         }

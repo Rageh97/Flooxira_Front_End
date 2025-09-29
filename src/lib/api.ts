@@ -868,24 +868,66 @@ export async function listTelegramMonthlySchedules(token: string, month?: number
   return apiFetch<{ success: boolean; month: number; year: number; telegram: Array<any>; posts: Array<any> }>(`/api/telegram/schedules/monthly?${params}`, { authToken: token });
 }
 
+// ===== Telegram Web (puppeteer) =====
+export async function tgWebStart(token: string, params?: { method?: 'qr' | 'code'; phone?: string }) {
+  return apiFetch<{ success: boolean; status?: string; qrCode?: string; tgUrl?: string; webUrl?: string; message?: string }>("/api/telegram-web/start", { method: 'POST', authToken: token, body: JSON.stringify(params || {}) });
+}
+
+export async function tgWebStatus(token: string) {
+  return apiFetch<{ success: boolean; status: string; message?: string }>("/api/telegram-web/status", { authToken: token });
+}
+
+export async function tgWebQR(token: string) {
+  return apiFetch<{ success: boolean; qrCode?: string; message?: string }>("/api/telegram-web/qr", { authToken: token });
+}
+
+export async function tgWebStop(token: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram-web/stop", { method: 'POST', authToken: token });
+}
+
+export async function tgWebSend(token: string, to: string, message: string) {
+  return apiFetch<{ success: boolean; message?: string; error?: string }>("/api/telegram-web/send", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ to, message })
+  });
+}
+
+export async function tgWebGroups(token: string) {
+  return apiFetch<{ success: boolean; groups: Array<{ id: string; name: string; type: string }> }>("/api/telegram-web/groups", { authToken: token });
+}
+
+export async function tgWebSendBulk(token: string, targets: string[], message: string) {
+  return apiFetch<{ success: boolean; summary?: { sent: number; failed: number; total: number } }>("/api/telegram-web/send-bulk", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ targets, message })
+  });
+}
+
 // ===== Telegram Personal (GramJS) endpoints =====
-export async function startTelegramPersonal(token: string) {
-  return apiFetch<{ success: boolean; status?: string; qrCode?: string; message?: string }>("/api/telegram-personal/start", { method: 'POST', authToken: token });
+export async function tgWebVerify(token: string, code: string, password?: string) {
+  return apiFetch<{ success: boolean; status?: string; message?: string }>("/api/telegram-web/verify", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ code, password })
+  });
 }
 
-export async function getTelegramPersonalStatus(token: string) {
-  return apiFetch<{ success: boolean; status: string; message?: string }>("/api/telegram-personal/status", { authToken: token });
+// ===== Twitter (X) helpers =====
+export async function exchangeTwitterCode(token: string, code: string, codeVerifier?: string) {
+  return apiFetch<{ success: boolean; message?: string; account?: any }>("/api/twitter/exchange", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ code, codeVerifier })
+  });
 }
 
-export async function getTelegramPersonalQR(token: string) {
-  return apiFetch<{ success: boolean; qrCode?: string; message?: string }>("/api/telegram-personal/qr", { authToken: token });
-}
-
-export async function stopTelegramPersonal(token: string) {
-  return apiFetch<{ success: boolean; message: string }>("/api/telegram-personal/stop", { method: 'POST', authToken: token });
-}
-
-export async function sendTelegramPersonalMessage(token: string, to: string, message: string) {
-  return apiFetch<{ success: boolean; message?: string }>("/api/telegram-personal/send", { method: 'POST', authToken: token, body: JSON.stringify({ to, message }) });
+export async function tweet(token: string, text: string) {
+  return apiFetch<{ success: boolean; tweet?: any; message?: string }>("/api/twitter/tweet", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ text })
+  });
 }
 

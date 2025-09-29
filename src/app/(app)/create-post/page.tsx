@@ -59,7 +59,14 @@ const PLATFORMS = {
      supportedTypes: ['photo', 'video', 'text', 'link'],
      supportedFormats: ['feed', 'channel'],
      color: "from-blue-500 to-blue-700"
-   }
+  },
+  twitter: {
+    name: "Twitter (X)",
+    icon: "𝕏",
+    supportedTypes: ['text', 'link', 'photo'],
+    supportedFormats: ['feed'],
+    color: "from-gray-900 to-gray-700"
+  }
 };
 
 export default function CreatePostPage() {
