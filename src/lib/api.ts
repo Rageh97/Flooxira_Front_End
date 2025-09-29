@@ -868,3 +868,24 @@ export async function listTelegramMonthlySchedules(token: string, month?: number
   return apiFetch<{ success: boolean; month: number; year: number; telegram: Array<any>; posts: Array<any> }>(`/api/telegram/schedules/monthly?${params}`, { authToken: token });
 }
 
+// ===== Telegram Personal (GramJS) endpoints =====
+export async function startTelegramPersonal(token: string) {
+  return apiFetch<{ success: boolean; status?: string; qrCode?: string; message?: string }>("/api/telegram-personal/start", { method: 'POST', authToken: token });
+}
+
+export async function getTelegramPersonalStatus(token: string) {
+  return apiFetch<{ success: boolean; status: string; message?: string }>("/api/telegram-personal/status", { authToken: token });
+}
+
+export async function getTelegramPersonalQR(token: string) {
+  return apiFetch<{ success: boolean; qrCode?: string; message?: string }>("/api/telegram-personal/qr", { authToken: token });
+}
+
+export async function stopTelegramPersonal(token: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram-personal/stop", { method: 'POST', authToken: token });
+}
+
+export async function sendTelegramPersonalMessage(token: string, to: string, message: string) {
+  return apiFetch<{ success: boolean; message?: string }>("/api/telegram-personal/send", { method: 'POST', authToken: token, body: JSON.stringify({ to, message }) });
+}
+

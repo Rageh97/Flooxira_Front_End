@@ -3,22 +3,22 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  getTelegramStatus, 
-  sendTelegramMessage,
-  createTelegramBot,
-  getTelegramBotInfo,
-  stopTelegramBot,
+  getTelegramPersonalStatus,
+  getTelegramPersonalQR,
+  startTelegramPersonal,
+  stopTelegramPersonal,
+  sendTelegramPersonalMessage,
 } from "@/lib/api";
 
 export default function TelegramPage() {
   const [status, setStatus] = useState<any>(null);
-  const [botInfo, setBotInfo] = useState<any>(null);
+  const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [testChatId, setTestChatId] = useState("");
   const [testMessage, setTestMessage] = useState("");
-  const [botToken, setBotToken] = useState("");
+  const [botToken, setBotToken] = useState(""); // reserved if later needed
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
@@ -30,34 +30,31 @@ export default function TelegramPage() {
 
   async function checkStatus() {
     try {
-      const data = await getTelegramStatus(token);
+      const data = await getTelegramPersonalStatus(token);
       setStatus(data);
-      if (data.status === 'connected') {
-        const botData = await getTelegramBotInfo(token);
-        if (botData.success) {
-          setBotInfo(botData.bot);
-        }
+      if (data.status !== 'CONNECTED') {
+        try {
+          const q = await getTelegramPersonalQR(token);
+          if (q.success && q.qrCode) setQrCode(q.qrCode);
+        } catch {}
+      } else {
+        setQrCode("");
       }
     } catch (e: any) {
       setError(e.message);
     }
   }
 
-  async function createBot() {
-    if (!botToken.trim()) {
-      setError("Please enter a bot token");
-      return;
-    }
-
+  async function startPersonal() {
     try {
       setLoading(true);
       setError("");
-      const result = await createTelegramBot(token, botToken);
+      const result = await startTelegramPersonal(token);
       if (result.success) {
-        setSuccess("Bot created successfully!");
-        await checkStatus();
+        setSuccess('Session starting... Scan QR if shown');
+        if (result.qrCode) setQrCode(result.qrCode);
       } else {
-        setError(result.message || "Failed to create bot");
+        setError(result.message || 'Failed to start');
       }
     } catch (e: any) {
       setError(e.message);
@@ -66,14 +63,13 @@ export default function TelegramPage() {
     }
   }
 
-  async function stopBot() {
+  async function stopPersonal() {
     try {
       setLoading(true);
       setError("");
-      const result = await stopTelegramBot(token);
+      const result = await stopTelegramPersonal(token);
       if (result.success) {
         setSuccess("Bot stopped successfully!");
-        setBotInfo(null);
         await checkStatus();
       } else {
         setError(result.message || "Failed to stop bot");
@@ -95,7 +91,7 @@ export default function TelegramPage() {
       setLoading(true);
       setError("");
       console.log(`[Telegram Frontend] Sending message to ${testChatId}: ${testMessage}`);
-      const result = await sendTelegramMessage(token, testChatId, testMessage);
+      const result = await sendTelegramPersonalMessage(token, testChatId, testMessage);
       
       if (result.success) {
         setSuccess("Message sent successfully!");
@@ -127,19 +123,18 @@ export default function TelegramPage() {
         </div>
       )}
 
-      {/* Telegram Bot Connection */}
+      {/* Telegram Personal Connection */}
       <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">Telegram Bot Connection</CardHeader>
+        <CardHeader className="border-text-primary/50 text-primary">Telegram Personal Connection</CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <p className="text-sm text-gray-300">
                 Status: {status?.status || 'Unknown'} • {status?.message || 'No bot'}
               </p>
-              {botInfo && (
-                <div className="mt-2 text-sm text-gray-300">
-                  <p>Bot: @{botInfo.username} ({botInfo.first_name})</p>
-                  <p>ID: {botInfo.id}</p>
+              {qrCode && status?.status !== 'CONNECTED' && (
+                <div className="mt-3">
+                  <img src={qrCode} alt="Telegram QR" className="max-w-[260px] rounded border border-text-primary" />
                 </div>
               )}
             </div>
@@ -147,42 +142,17 @@ export default function TelegramPage() {
               <Button onClick={checkStatus} disabled={loading} variant="secondary">
                 Refresh
               </Button>
-              {status?.status === 'disconnected' || !status ? (
-                <Button onClick={createBot} disabled={loading || !botToken.trim()}>
-                  {loading ? 'Creating...' : 'Create Bot'}
+              {status?.status !== 'CONNECTED' ? (
+                <Button onClick={startPersonal} disabled={loading}>
+                  {loading ? 'Starting...' : 'Start Session'}
                 </Button>
               ) : (
-                <Button onClick={stopBot} disabled={loading} variant="destructive">
-                  {loading ? 'Stopping...' : 'Stop Bot'}
+                <Button onClick={stopPersonal} disabled={loading} variant="destructive">
+                  {loading ? 'Stopping...' : 'Stop Session'}
                 </Button>
               )}
             </div>
           </div>
-          
-          {/* Bot Token Input */}
-          {(!status || status?.status === 'disconnected') && (
-            <div>
-              <label className="block text-sm font-medium mb-2 text-white">Bot Token</label>
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  value={botToken}
-                  onChange={(e) => setBotToken(e.target.value)}
-                  placeholder="Enter your bot token from @BotFather"
-                  className="flex-1 px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md"
-                />
-                <Button 
-                  onClick={createBot} 
-                  disabled={loading || !botToken.trim()}
-                >
-                  Create
-                </Button>
-              </div>
-              <p className="text-xs text-gray-300 mt-1">
-                Get your bot token from @BotFather on Telegram
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
