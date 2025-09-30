@@ -47,20 +47,41 @@ export default function SallaEventsPage() {
 
       <div className="p-4 border rounded-md">
         <h2 className="font-medium mb-2">Recent Events</h2>
-        <div className="space-y-2">
-          {events.map((e) => (
-            <div key={e.id} className="p-2 border rounded text-sm">
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-0.5 bg-green-600/30 rounded">{e.eventType}</span>
-                {e.storeId && <span className="px-2 py-0.5 bg-blue-600/30 rounded">store: {e.storeId}</span>}
-                <span className="px-2 py-0.5 bg-gray-600/30 rounded">sig: {e.signatureValid ? 'valid' : 'invalid'}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {events.map((e) => {
+            const p = e.payload || {};
+            const product = p.data || {};
+            const price = product.price?.amount;
+            const currency = product.price?.currency;
+            const url = product.urls?.customer || product.url;
+            return (
+              <div key={e.id} className="p-3 border rounded text-sm bg-black/10">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="px-2 py-0.5 bg-green-600/30 rounded">{e.eventType}</span>
+                  {e.storeId && <span className="px-2 py-0.5 bg-blue-600/30 rounded">Store: {e.storeId}</span>}
+                  <span className="px-2 py-0.5 bg-gray-600/30 rounded">Signature: {e.signatureValid ? 'valid' : 'invalid'}</span>
+                </div>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {product.name && <div><div className="opacity-70 text-xs">Name</div><div className="font-medium">{product.name}</div></div>}
+                  {typeof product.id !== 'undefined' && <div><div className="opacity-70 text-xs">Product ID</div><div className="font-medium">{product.id}</div></div>}
+                  {typeof price !== 'undefined' && <div><div className="opacity-70 text-xs">Price</div><div className="font-medium">{price} {currency}</div></div>}
+                  {product.status && <div><div className="opacity-70 text-xs">Status</div><div className="font-medium">{product.status}</div></div>}
+                </div>
+                {url && (
+                  <div className="mt-2">
+                    <a href={url} target="_blank" rel="noreferrer" className="text-blue-300 underline">View product</a>
+                  </div>
+                )}
+                <details className="mt-2">
+                  <summary className="cursor-pointer">Raw payload</summary>
+                  <pre className="mt-2 whitespace-pre-wrap break-all text-xs bg-black/20 p-2 rounded">{JSON.stringify(e.payload, null, 2)}</pre>
+                </details>
+                <div className="text-xs opacity-70 mt-2">{new Date(e.createdAt || e.receivedAt).toLocaleString()}</div>
               </div>
-              <pre className="mt-2 whitespace-pre-wrap break-all text-xs bg-black/20 p-2 rounded">{JSON.stringify(e.payload, null, 2)}</pre>
-              <div className="text-xs opacity-70 mt-1">{new Date(e.createdAt || e.receivedAt).toLocaleString()}</div>
-            </div>
-          ))}
-          {events.length === 0 && <div className="text-sm opacity-70">No events yet.</div>}
+            );
+          })}
         </div>
+        {events.length === 0 && <div className="text-sm opacity-70">No events yet.</div>}
       </div>
     </div>
   );
