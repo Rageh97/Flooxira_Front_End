@@ -74,6 +74,10 @@ export default function SallaEventsPage() {
                         <a href={url} target="_blank" rel="noreferrer" className="text-blue-500 underline">View product</a>
                       </div>
                     )}
+                    <details className="mt-3" open>
+                      <summary className="cursor-pointer">All fields</summary>
+                      <pre className="mt-2 whitespace-pre-wrap break-all text-xs bg-black/20 p-2 rounded text-white">{JSON.stringify(e.payload, null, 2)}</pre>
+                    </details>
                     <div className="text-xs opacity-70 mt-2">{new Date(e.createdAt || e.receivedAt).toLocaleString()}</div>
                   </div>
                 </div>
