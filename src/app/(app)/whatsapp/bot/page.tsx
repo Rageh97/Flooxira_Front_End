@@ -42,7 +42,9 @@ export default function WhatsAppBotPage() {
       setError("");
       const result = await uploadKnowledgeBase(token, file);
       if (result.success) {
-        setSuccess("Knowledge base uploaded successfully!");
+        const columnInfo = result.columns ? ` using ${result.totalColumns} columns: ${result.columns.join(', ')}` : "";
+        const rowInfo = result.rows ? ` from ${result.rows} rows` : "";
+        setSuccess(`Knowledge base uploaded successfully!${rowInfo}${columnInfo}`);
         setFile(null);
         await loadKnowledgeBase();
       } else {
@@ -86,7 +88,7 @@ export default function WhatsAppBotPage() {
           <div>
             <label className="block text-sm font-medium mb-2 text-primary">Upload Excel File</label>
             <p className="mb-2 text-xs text-gray-300">
-              Upload an Excel file with "keyword" and "answer" columns. The bot will prioritize this data over OpenAI responses.
+              Upload an Excel file with any number of columns. Each cell value becomes a searchable keyword that will return all data from that row. The bot will prioritize this data over OpenAI responses.
             </p>
             <div className="flex gap-2">
               <input
