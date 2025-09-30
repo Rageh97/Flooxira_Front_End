@@ -63,21 +63,12 @@ export default function SallaEventsPage() {
                       {e.storeId && <span className="px-2 py-0.5 bg-blue-600/30 rounded">Store: {e.storeId}</span>}
                       {status && <span className="px-2 py-0.5 bg-gray-600/30 rounded">{status}</span>}
                     </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      {product.name && <div><div className="opacity-70 text-xs">Name</div><div className="font-medium">{product.name}</div></div>}
-                      {typeof product.id !== 'undefined' && <div><div className="opacity-70 text-xs">ID</div><div className="font-medium">{product.id}</div></div>}
-                      {typeof price !== 'undefined' && <div><div className="opacity-70 text-xs">Price</div><div className="font-medium">{price} {currency}</div></div>}
-                      {product.quantity !== undefined && <div><div className="opacity-70 text-xs">Quantity</div><div className="font-medium">{product.quantity}</div></div>}
-                    </div>
-                    {url && (
-                      <div className="mt-2">
-                        <a href={url} target="_blank" rel="noreferrer" className="text-blue-500 underline">View product</a>
-                      </div>
+                    {/* Event-specific pretty view */}
+                    {eventTitle?.startsWith('product.') ? (
+                      <ProductDetails product={product} url={url} currency={currency} />
+                    ) : (
+                      <FallbackDetails payload={p} />
                     )}
-                    <details className="mt-3" open>
-                      <summary className="cursor-pointer">All fields</summary>
-                      <pre className="mt-2 whitespace-pre-wrap break-all text-xs bg-black/20 p-2 rounded text-white">{JSON.stringify(e.payload, null, 2)}</pre>
-                    </details>
                     <div className="text-xs opacity-70 mt-2">{new Date(e.createdAt || e.receivedAt).toLocaleString()}</div>
                   </div>
                 </div>
@@ -86,6 +77,74 @@ export default function SallaEventsPage() {
           })}
         </div>
         {events.length === 0 && <div className="text-sm opacity-70">No events yet.</div>}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, value }: { label: string; value: any }) {
+  return (
+    <div>
+      <div className="opacity-70 text-xs">{label}</div>
+      <div className="font-medium break-all">{String(value)}</div>
+    </div>
+  );
+}
+
+function ProductDetails({ product, url, currency }: { product: any; url?: string; currency?: string }) {
+  const price = product?.price?.amount;
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        {product?.name && <Field label="Name" value={product.name} />}
+        {product?.id !== undefined && <Field label="Product ID" value={product.id} />}
+        {product?.sku !== undefined && <Field label="SKU" value={product.sku || '-'} />}
+        {price !== undefined && <Field label="Price" value={`${price} ${currency || ''}`} />}
+        {product?.quantity !== undefined && <Field label="Quantity" value={product.quantity} />}
+        {product?.status && <Field label="Status" value={product.status} />}
+        {product?.is_available !== undefined && <Field label="Available" value={product.is_available ? 'Yes' : 'No'} />}
+        {product?.weight !== undefined && <Field label="Weight" value={`${product.weight} ${product.weight_type || ''}`} />}
+      </div>
+      {(product?.urls?.customer || product?.urls?.admin || url) && (
+        <div className="flex flex-wrap gap-3 text-sm">
+          {product?.urls?.customer && <a href={product.urls.customer} target="_blank" rel="noreferrer" className="text-blue-400 underline">Customer page</a>}
+          {product?.urls?.admin && <a href={product.urls.admin} target="_blank" rel="noreferrer" className="text-blue-400 underline">Admin page</a>}
+          {!product?.urls?.customer && url && <a href={url} target="_blank" rel="noreferrer" className="text-blue-400 underline">View product</a>}
+        </div>
+      )}
+      {Array.isArray(product?.categories) && product.categories.length > 0 && (
+        <div className="text-sm">
+          <div className="opacity-70 text-xs mb-1">Categories</div>
+          <div className="flex flex-wrap gap-2">
+            {product.categories.slice(0, 8).map((c: any) => (
+              <span key={c.id} className="px-2 py-0.5 bg-gray-700/40 rounded">{c.name}</span>
+            ))}
+            {product.categories.length > 8 && <span className="opacity-60">+{product.categories.length - 8} more</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FallbackDetails({ payload }: { payload: any }) {
+  const top = {
+    event: payload?.event,
+    merchant: payload?.merchant,
+    created_at: payload?.created_at
+  };
+  const data = payload?.data || {};
+  const primitives: Array<{ label: string; value: any }> = [];
+  for (const [k, v] of Object.entries(data)) {
+    if (v === null || ['string', 'number', 'boolean'].includes(typeof v)) {
+      primitives.push({ label: k, value: v as any });
+    }
+  }
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        {Object.entries(top).map(([k, v]) => v && <Field key={k} label={k} value={v as any} />)}
+        {primitives.map((p, i) => <Field key={i} label={p.label} value={p.value} />)}
       </div>
     </div>
   );
