@@ -344,6 +344,70 @@ export async function deletePlatformPostSchedule(token: string, id: number) {
   });
 }
 
+// ===== Content Management (Categories & Items) =====
+export type ContentCategory = { id: number; name: string; description?: string | null; createdAt: string; updatedAt: string };
+export type ContentItem = { id: number; categoryId: number; title: string; body?: string | null; attachments: Array<{ url: string; type: 'image' | 'video' | 'file' }>; status: 'draft' | 'ready'; platforms: string[]; scheduledAt?: string | null; createdAt: string; updatedAt: string };
+
+export async function listContentCategories(token: string) {
+  return apiFetch<{ categories: ContentCategory[] }>("/api/content/categories", { authToken: token });
+}
+
+export async function createContentCategory(token: string, payload: { name: string; description?: string }) {
+  return apiFetch<{ category: ContentCategory }>("/api/content/categories", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateContentCategory(token: string, id: number, payload: Partial<{ name: string; description?: string }>) {
+  return apiFetch<{ category: ContentCategory }>(`/api/content/categories/${id}` as string, {
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteContentCategory(token: string, id: number) {
+  return apiFetch<{ ok: boolean }>(`/api/content/categories/${id}` as string, { method: 'DELETE', authToken: token });
+}
+
+export async function listContentItems(token: string, categoryId: number) {
+  return apiFetch<{ items: ContentItem[] }>(`/api/content/categories/${categoryId}/items` as string, { authToken: token });
+}
+
+export async function createContentItem(token: string, categoryId: number, payload: { title: string; body?: string; attachments?: ContentItem['attachments']; status?: 'draft' | 'ready' }) {
+  return apiFetch<{ item: ContentItem }>(`/api/content/categories/${categoryId}/items` as string, {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function getContentItem(token: string, id: number) {
+  return apiFetch<{ item: ContentItem }>(`/api/content/items/${id}` as string, { authToken: token });
+}
+
+export async function updateContentItem(token: string, id: number, payload: Partial<Pick<ContentItem, 'title' | 'body' | 'attachments' | 'status' | 'platforms'>> & { scheduledAt?: string | null }) {
+  return apiFetch<{ item: ContentItem }>(`/api/content/items/${id}` as string, {
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify({ ...payload, timezoneOffset: new Date().getTimezoneOffset() })
+  });
+}
+
+export async function deleteContentItem(token: string, id: number) {
+  return apiFetch<{ ok: boolean }>(`/api/content/items/${id}` as string, { method: 'DELETE', authToken: token });
+}
+
+export async function scheduleContentItem(token: string, id: number, payload: { platforms: string[]; format?: 'feed' | 'reel' | 'story'; scheduledAt?: string | null }) {
+  return apiFetch<{ post: any }>(`/api/content/items/${id}/schedule` as string, {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ ...payload, timezoneOffset: new Date().getTimezoneOffset() })
+  });
+}
+
 // Campaigns
 export async function startWhatsAppCampaign(token: string, file: File, messageTemplate: string, throttleMs = 3000, mediaFile?: File | null, scheduleAt?: string | null, dailyCap?: number | null, perNumberDelayMs?: number | null) {
   const formData = new FormData();
@@ -751,6 +815,12 @@ export async function sendToTelegramGroup(token: string, groupId: string, messag
   });
 }
 
+// Export Telegram group/channel members as an Excel/CSV file
+export async function exportTelegramMembers(token: string, chatId: string) {
+  const path = `/api/telegram/members/export?chatId=${encodeURIComponent(chatId)}`;
+  return apiFetch<{ success: boolean; file?: string; message?: string }>(path, { authToken: token });
+}
+
 export async function sendToTelegramGroupsBulk(
   token: string,
   data: {
@@ -929,5 +999,19 @@ export async function tweet(token: string, text: string) {
     authToken: token,
     body: JSON.stringify({ text })
   });
+}
+
+// ===== Salla helpers =====
+export async function sallaUpsertStore(token: string, payload: { storeId: string; storeName?: string; webhookSecret?: string }) {
+  return apiFetch<{ ok: boolean; store: any }>(`/api/salla/store`, {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function sallaListEvents(token: string, limit = 50, offset = 0) {
+  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return apiFetch<{ success: boolean; events: any[] }>(`/api/salla/events?${qs.toString()}`, { authToken: token });
 }
 
