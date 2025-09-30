@@ -13,7 +13,7 @@ const navItems = [
   { href: "/plans", label: "Plans" },
   { href: "/create-post", label: "Create Post" },
   { href: "/schedule", label: "Schedules" },
-  // { href: "/content", label: "Content" },
+  { href: "/content", label: "Content" },
   { href: "/salla", label: "Salla Webhooks" },
   { href: "/whatsapp", label: "WhatsApp Management" },
   { href: "/telegram", label: "Telegram Management" },
