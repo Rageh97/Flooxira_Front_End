@@ -1,0 +1,570 @@
+"use client";
+import React from "react";
+import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, type BotField, type BotDataRow } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+
+type EditableCellProps = {
+  value: any;
+  onChange: (v: any) => void;
+  type?: string;
+};
+
+function EditableCell({ value, onChange, type = 'text' }: EditableCellProps) {
+  return (
+    <input
+      className="border rounded px-2 py-1 w-full text-sm"
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value)}
+      type={type}
+    />
+  );
+}
+
+export default function BotContentPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [fields, setFields] = React.useState<BotField[]>([]);
+  const [rows, setRows] = React.useState<BotDataRow[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [newFieldName, setNewFieldName] = React.useState('');
+  const [newFieldType, setNewFieldType] = React.useState<'string' | 'number' | 'boolean' | 'date' | 'text'>('string');
+  const [showAddField, setShowAddField] = React.useState(false);
+  const [showAddRow, setShowAddRow] = React.useState(false);
+  const [editingRow, setEditingRow] = React.useState<number | null>(null);
+  const [editingData, setEditingData] = React.useState<Record<string, any>>({});
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [itemsPerPage] = React.useState(10);
+  const [successMessage, setSuccessMessage] = React.useState('');
+  const [showClearConfirm, setShowClearConfirm] = React.useState(false);
+
+  React.useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      alert('يجب تسجيل الدخول أولاً');
+      window.location.href = '/sign-in';
+      return;
+    }
+    loadData();
+  }, [user, authLoading]);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const [fieldsRes, rowsRes] = await Promise.all([
+        botListFields(token),
+        botListData(token)
+      ]);
+      
+      
+      console.log('Fields from API:', fieldsRes.fields);
+      console.log('Rows from API:', rowsRes.rows);
+      if (fieldsRes.fields) setFields(fieldsRes.fields);
+      if (rowsRes.rows) setRows(rowsRes.rows);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddField = async () => {
+    if (!newFieldName.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await botAddField(token, {
+        fieldName: newFieldName.trim(),
+        fieldType: newFieldType
+      });
+      
+      if (res.field) {
+        setNewFieldName('');
+        setShowAddField(false);
+        setSuccessMessage('تم إضافة العمود بنجاح');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        loadData();
+      } else {
+        alert('فشل في إضافة العمود');
+      }
+    } catch (error) {
+      console.error('Error adding field:', error);
+      alert('فشل في إضافة العمود');
+    }
+  };
+
+  const handleAddRow = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await botCreateRow(token, editingData);
+      
+      if (res.row) {
+        setEditingData({});
+        setShowAddRow(false);
+        setSuccessMessage('تم إضافة الصف بنجاح');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        loadData();
+      } else {
+        alert('فشل في إضافة الصف');
+      }
+    } catch (error) {
+      console.error('Error adding row:', error);
+      alert('فشل في إضافة الصف');
+    }
+  };
+
+  const handleUpdateRow = async (rowId: number) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await botUpdateRow(token, rowId, editingData);
+      
+      if (res.row) {
+        setEditingData({});
+        setEditingRow(null);
+        setSuccessMessage('تم تحديث الصف بنجاح');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        loadData();
+      } else {
+        alert('فشل في تحديث الصف');
+      }
+    } catch (error) {
+      console.error('Error updating row:', error);
+      alert('فشل في تحديث الصف');
+    }
+  };
+
+  const handleDeleteRow = async (rowId: number) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الصف؟')) return;
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await botDeleteRow(token, rowId);
+      
+      if (res.ok) {
+        setSuccessMessage('تم حذف الصف بنجاح');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        loadData();
+      } else {
+        alert('فشل في حذف الصف');
+      }
+    } catch (error) {
+      console.error('Error deleting row:', error);
+      alert('فشل في حذف الصف');
+    }
+  };
+
+  const handleClearAllData = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      // Delete all rows
+      for (const row of rows) {
+        await botDeleteRow(token, row.id);
+      }
+      
+      // Delete all fields
+      for (const field of fields) {
+        await botDeleteField(token, field.id);
+      }
+
+      setSuccessMessage('تم حذف جميع البيانات بنجاح');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setShowClearConfirm(false);
+      loadData();
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      alert('فشل في حذف البيانات');
+    }
+  };
+
+  const handleExcelUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await botUploadExcel(token, file);
+      
+      if (res.success) {
+        setSuccessMessage(`تم رفع الملف بنجاح! تم إنشاء ${res.fieldsCreated} عمود و ${res.rowsCreated} صف`);
+        setTimeout(() => setSuccessMessage(''), 5000);
+        loadData();
+      } else {
+        alert('فشل في رفع الملف');
+      }
+    } catch (error) {
+      console.error('Error uploading Excel:', error);
+      alert('فشل في رفع الملف');
+    }
+  };
+
+  const startEditRow = (row: BotDataRow) => {
+    setEditingRow(row.id);
+    setEditingData({ ...row.data });
+  };
+
+  const cancelEdit = () => {
+    setEditingRow(null);
+    setEditingData({});
+  };
+
+  // Pagination
+  const totalPages = Math.ceil(rows.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentRows = rows.slice(startIndex, endIndex);
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-white">إدارة محتوى البوت</h1>
+      
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          {successMessage}
+        </div>
+      )}
+      
+      {/* Controls */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-wrap gap-4">
+          <button
+            onClick={() => setShowAddField(true)}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            إضافة عمود جديد
+          </button>
+          
+          <button
+            onClick={() => setShowAddRow(true)}
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+          >
+            إضافة صف جديد
+          </button>
+          
+          <label className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded cursor-pointer">
+            رفع ملف Excel
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+          </label>
+          
+          {(fields.length > 0 || rows.length > 0) && (
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              حذف جميع البيانات
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Add Field Modal */}
+      {showAddField && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h3 className="text-lg font-semibold mb-4">إضافة عمود جديد</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">اسم العمود</label>
+                <input
+                  type="text"
+                  value={newFieldName}
+                  onChange={(e) => setNewFieldName(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="مثال: اسم_المنتج"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">نوع العمود</label>
+                <select
+                  value={newFieldType}
+                  onChange={(e) => setNewFieldType(e.target.value as 'string' | 'number' | 'boolean' | 'date' | 'text')}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="string">نص</option>
+                  <option value="number">رقم</option>
+                  <option value="boolean">نعم/لا</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddField}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  إضافة
+                </button>
+                <button
+                  onClick={() => setShowAddField(false)}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Row Modal */}
+      {showAddRow && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">إضافة صف جديد</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {fields.map(field => (
+                <div key={field.id}>
+                  <label className="block text-sm font-medium mb-2">{field.fieldName}</label>
+                  <EditableCell
+                    value={editingData[field.fieldName] || ''}
+                    onChange={(value) => setEditingData(prev => ({ ...prev, [field.fieldName]: value }))}
+                    type={field.fieldType === 'number' ? 'number' : 'text'}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={handleAddRow}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+              >
+                إضافة
+              </button>
+              <button
+                onClick={() => setShowAddRow(false)}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Clear All Data Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">تأكيد الحذف</h3>
+            <p className="mb-4 text-gray-700">
+              هل أنت متأكد من حذف جميع البيانات؟ هذا الإجراء لا يمكن التراجع عنه.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleClearAllData}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+              >
+                نعم، احذف الكل
+              </button>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Table */}
+      {fields.length === 0 && rows.length === 0 ? (
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد بيانات</h3>
+          <p className="text-gray-500 mb-4">ابدأ برفع ملف Excel أو إضافة عمود جديد</p>
+          <label className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded cursor-pointer">
+            رفع ملف Excel
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 bg-gray-50 border-b">
+            <h3 className="text-lg font-medium text-gray-900">
+              البيانات ({rows.length} صف، {fields.length} عمود)
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  {fields.map(field => (
+                    <th key={field.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {field.fieldName}
+                    </th>
+                  ))}
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    الإجراءات
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentRows.map(row => (
+                  <tr key={row.id}>
+                    {fields.map(field => (
+                      <td key={field.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {editingRow === row.id ? (
+                          <EditableCell
+                            value={editingData[field.fieldName] || ''}
+                            onChange={(value) => setEditingData(prev => ({ ...prev, [field.fieldName]: value }))}
+                            type={field.fieldType === 'number' ? 'number' : 'text'}
+                          />
+                        ) : (
+                          <span>{row.data[field.fieldName] || '-'}</span>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {editingRow === row.id ? (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleUpdateRow(row.id)}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            حفظ
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="text-gray-600 hover:text-gray-900"
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => startEditRow(row)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            تعديل
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRow(row.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            حذف
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  السابق
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                >
+                  التالي
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    عرض <span className="font-medium">{startIndex + 1}</span> إلى <span className="font-medium">{Math.min(endIndex, rows.length)}</span> من <span className="font-medium">{rows.length}</span> نتيجة
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      السابق
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === page
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      التالي
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+

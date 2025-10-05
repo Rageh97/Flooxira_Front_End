@@ -1,4 +1,4 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.flooxira.com';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 type FetchOptions = RequestInit & { authToken?: string };
 
@@ -374,6 +374,45 @@ export async function deleteContentCategory(token: string, id: number) {
 
 export async function listContentItems(token: string, categoryId: number) {
   return apiFetch<{ items: ContentItem[] }>(`/api/content/categories/${categoryId}/items` as string, { authToken: token });
+}
+
+// ===== Bot Content (Dynamic fields + data) =====
+export type BotField = { id: number; userId: number; fieldName: string; fieldType: 'string' | 'number' | 'boolean' | 'date' | 'text'; createdAt: string; updatedAt: string };
+export type BotDataRow = { id: number; userId: number; data: Record<string, any>; createdAt: string; updatedAt: string };
+
+export async function botAddField(token: string, payload: { fieldName: string; fieldType?: BotField['fieldType'] }) {
+  return apiFetch<{ field: BotField }>(`/api/bot/fields`, { method: 'POST', authToken: token, body: JSON.stringify(payload) });
+}
+
+export async function botListFields(token: string) {
+  return apiFetch<{ fields: BotField[] }>(`/api/bot/fields`, { authToken: token });
+}
+
+export async function botDeleteField(token: string, id: number) {
+  return apiFetch<{ ok: boolean }>(`/api/bot/fields/${id}`, { method: 'DELETE', authToken: token });
+}
+
+export async function botCreateRow(token: string, data: Record<string, any>) {
+  return apiFetch<{ row: BotDataRow }>(`/api/bot/data`, { method: 'POST', authToken: token, body: JSON.stringify({ data }) });
+}
+
+export async function botListData(token: string, limit = 50, offset = 0) {
+  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return apiFetch<{ rows: BotDataRow[]; count: number; limit: number; offset: number }>(`/api/bot/data?${qs.toString()}`, { authToken: token });
+}
+
+export async function botUpdateRow(token: string, id: number, data: Record<string, any>) {
+  return apiFetch<{ row: BotDataRow }>(`/api/bot/data/${id}`, { method: 'PUT', authToken: token, body: JSON.stringify({ data }) });
+}
+
+export async function botUploadExcel(token: string, file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  return apiFetch<{ success: boolean; fieldsCreated: number; rowsCreated: number }>(`/api/bot/upload`, { method: 'POST', authToken: token, body: form, headers: {} });
+}
+
+export async function botDeleteRow(token: string, id: number) {
+  return apiFetch<{ ok: boolean }>(`/api/bot/data/${id}`, { method: 'DELETE', authToken: token });
 }
 
 export async function createContentItem(token: string, categoryId: number, payload: { title: string; body?: string; attachments?: ContentItem['attachments']; status?: 'draft' | 'ready' }) {
@@ -936,6 +975,111 @@ export async function listTelegramMonthlySchedules(token: string, month?: number
   if (year) params.append('year', year.toString());
   
   return apiFetch<{ success: boolean; month: number; year: number; telegram: Array<any>; posts: Array<any> }>(`/api/telegram/schedules/monthly?${params}`, { authToken: token });
+}
+
+// ===== Telegram Bot API (BotFather token) =====
+export async function telegramBotConnect(token: string, botToken: string, baseUrl?: string) {
+  return apiFetch<{ success: boolean; bot?: { botUserId: string; username?: string; name?: string }; message?: string }>("/api/telegram-bot/connect", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ token: botToken, baseUrl })
+  });
+}
+
+export async function telegramBotInfo(token: string) {
+  return apiFetch<{ success: boolean; bot: { botUserId: string; username?: string; name?: string } | null }>("/api/telegram-bot/info", { authToken: token });
+}
+
+export async function telegramBotTest(token: string) {
+  return apiFetch<{ success: boolean; bot?: any; message?: string }>("/api/telegram-bot/test", { authToken: token });
+}
+
+export async function telegramBotSendMessage(token: string, chatId: string, text: string) {
+  return apiFetch<{ success: boolean; message?: any }>("/api/telegram-bot/send", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ chatId, text })
+  });
+}
+
+export async function telegramBotGetChat(token: string, chatId: string) {
+  return apiFetch<{ success: boolean; chat?: any }>(`/api/telegram-bot/chat/${encodeURIComponent(chatId)}`, { authToken: token });
+}
+
+export async function telegramBotGetChatAdmins(token: string, chatId: string) {
+  return apiFetch<{ success: boolean; administrators?: any[] }>(`/api/telegram-bot/chat/${encodeURIComponent(chatId)}/admins`, { authToken: token });
+}
+
+export async function telegramBotPromoteMember(token: string, chatId: string, memberId: string, permissions: any) {
+  return apiFetch<{ success: boolean; result?: any }>("/api/telegram-bot/promote", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ chatId, memberId, permissions })
+  });
+}
+
+export async function telegramBotGetUpdates(token: string, offset?: number, limit?: number) {
+  const params = new URLSearchParams();
+  if (offset !== undefined) params.set('offset', offset.toString());
+  if (limit !== undefined) params.set('limit', limit.toString());
+  return apiFetch<{ success: boolean; updates?: any[] }>(`/api/telegram-bot/updates?${params}`, { authToken: token });
+}
+
+export async function telegramBotGetChatHistory(token: string, chatId?: string, limit?: number, offset?: number) {
+  const params = new URLSearchParams();
+  if (chatId) params.set('chatId', chatId);
+  if (limit !== undefined) params.set('limit', limit.toString());
+  if (offset !== undefined) params.set('offset', offset.toString());
+  return apiFetch<{ success: boolean; chats?: any[] }>(`/api/telegram-bot/chats?${params}`, { authToken: token });
+}
+
+export async function telegramBotGetStats(token: string) {
+  return apiFetch<{ success: boolean; stats?: any }>("/api/telegram-bot/stats", { authToken: token });
+}
+
+export async function telegramBotGetContacts(token: string) {
+  return apiFetch<{ success: boolean; contacts?: any[] }>("/api/telegram-bot/contacts", { authToken: token });
+}
+
+export async function telegramBotGetChatMembers(token: string, chatId: string) {
+  return apiFetch<{ success: boolean; totalCount?: number; members?: any[]; note?: string }>(`/api/telegram-bot/chat/${encodeURIComponent(chatId)}/members`, { authToken: token });
+}
+
+export async function telegramBotExportMembers(token: string, chatId: string) {
+  const response = await fetch(`${API_URL}/api/telegram-bot/chat/${encodeURIComponent(chatId)}/export`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Export failed with status ${response.status}`);
+  }
+  
+  // Create blob and download
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  
+  // Get filename from header or use default
+  const contentDisposition = response.headers.get('content-disposition');
+  const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+  const filename = filenameMatch?.[1] || `telegram_members_${new Date().getTime()}.xlsx`;
+  
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  
+  return { success: true, filename };
+}
+
+export async function telegramBotGetBotChats(token: string) {
+  return apiFetch<{ success: boolean; chats?: any[]; total?: number; note?: string }>("/api/telegram-bot/bot-chats", { authToken: token });
 }
 
 // ===== Telegram Web (puppeteer) =====

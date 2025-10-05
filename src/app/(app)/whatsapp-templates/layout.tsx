@@ -5,7 +5,7 @@ import { PropsWithChildren } from "react";
 import { clsx } from "clsx";
 
 const whatsappTabs = [
-  { href: "/whatsapp", label: "Connection", exact: true },
+  { href: "/whatsapp", label: "Connection" },
   { href: "/whatsapp/chats", label: "Chats" },
   { href: "/whatsapp/campaigns", label: "Campaigns" },
   { href: "/whatsapp/groups", label: "Groups" },
@@ -13,10 +13,10 @@ const whatsappTabs = [
   { href: "/whatsapp/bot-content", label: "Bot Content" },
   { href: "/whatsapp/ai-settings", label: "AI Settings" },
   { href: "/whatsapp/tags", label: "Tags" },
-  { href: "/whatsapp-templates", label: "Templates" },
+  { href: "/whatsapp-templates", label: "Templates", exact: true },
 ];
 
-export default function WhatsAppLayout({ children }: PropsWithChildren) {
+export default function WhatsAppTemplatesLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
 
   return (

@@ -1,0 +1,178 @@
+"use client";
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth';
+import { listTags, createTag, deleteTag, addContactToTag, listContactsByTag, getAllContacts } from '@/lib/tagsApi';
+
+type Tag = { id: number; name: string; color?: string };
+type ContactTag = { id: number; contactNumber: string; contactName?: string };
+
+export default function TagsPage() {
+  const { user, loading: authLoading } = useAuth();
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [newName, setNewName] = useState('');
+  const [newColor, setNewColor] = useState('');
+  const [selectedTag, setSelectedTag] = useState<number | null>(null);
+  const [contacts, setContacts] = useState<ContactTag[]>([]);
+  const [contactNumber, setContactNumber] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [allContacts, setAllContacts] = useState<string[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      window.location.href = '/sign-in';
+      return;
+    }
+    load();
+  }, [user, authLoading]);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [tagsRes, contactsRes] = await Promise.all([
+        listTags(),
+        getAllContacts()
+      ]);
+      if (tagsRes.success) setTags(tagsRes.data);
+      if (contactsRes.success) setAllContacts(contactsRes.data);
+    } finally { setLoading(false); }
+  }
+
+  async function onCreate() {
+    if (!newName.trim()) return;
+    const res = await createTag({ name: newName.trim(), color: newColor || undefined });
+    if (res.success) {
+      setNewName(''); setNewColor('');
+      await load();
+    }
+  }
+
+  async function onDelete(id: number) {
+    const res = await deleteTag(id);
+    if (res.success) {
+      if (selectedTag === id) setSelectedTag(null);
+      await load();
+    }
+  }
+
+  async function onSelectTag(id: number) {
+    setSelectedTag(id);
+    const res = await listContactsByTag(id);
+    if (res.success) setContacts(res.data);
+  }
+
+  async function onAddContact() {
+    if (!selectedTag || !contactNumber.trim()) return;
+    const res = await addContactToTag(selectedTag, { contactNumber: contactNumber.trim(), contactName: contactName || undefined });
+    if (res.success) {
+      setContactNumber(''); setContactName('');
+      await onSelectTag(selectedTag);
+    } else {
+      alert(res.message || 'Failed to add contact');
+    }
+  }
+
+  async function refreshContacts() {
+    setLoadingContacts(true);
+    try {
+      const res = await getAllContacts();
+      if (res.success) setAllContacts(res.data);
+    } finally {
+      setLoadingContacts(false);
+    }
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-4 text-white">Tags</h1>
+
+      <div className="bg-semidark-custom border border-gray-700 rounded p-4 mb-6">
+        <div className="flex gap-2">
+          <input className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white" placeholder="Tag name" value={newName} onChange={e => setNewName(e.target.value)} />
+          <input className="w-40 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white" placeholder="#color" value={newColor} onChange={e => setNewColor(e.target.value)} />
+          <button onClick={onCreate} className="bg-light-custom hover:bg-[#08c47d] text-white rounded px-4">Create</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-semidark-custom border border-gray-700 rounded p-4">
+          <h2 className="text-lg font-medium text-white mb-3">Your Tags</h2>
+          {loading ? (
+            <div className="text-gray-300">Loading...</div>
+          ) : (
+            <ul className="space-y-2">
+              {tags.map(t => (
+                <li key={t.id} className="flex items-center justify-between bg-dark-custom rounded px-3 py-2">
+                  <button className="text-white text-left flex-1" onClick={() => onSelectTag(t.id)}>
+                    {t.name}
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {t.color && <span className="inline-block w-4 h-4 rounded" style={{ background: t.color }} />}
+                    <button className="text-red-400 hover:text-red-300" onClick={() => onDelete(t.id)}>Delete</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="bg-semidark-custom border border-gray-700 rounded p-4">
+          <h2 className="text-lg font-medium text-white mb-3">Contacts in selected tag</h2>
+          {selectedTag ? (
+            <>
+              <div className="space-y-3 mb-3">
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white" 
+                    value={contactNumber} 
+                    onChange={e => setContactNumber(e.target.value)}
+                  >
+                    <option value="">Select a contact number</option>
+                    {allContacts.map(contact => (
+                      <option key={contact} value={contact}>{contact}</option>
+                    ))}
+                  </select>
+                  <button 
+                    onClick={refreshContacts}
+                    className="bg-blue-500 hover:bg-blue-600 text-white rounded px-4"
+                    disabled={loadingContacts}
+                  >
+                    {loadingContacts ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input 
+                    className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white" 
+                    placeholder="Name (optional)" 
+                    value={contactName} 
+                    onChange={e => setContactName(e.target.value)} 
+                  />
+                  <button 
+                    onClick={onAddContact} 
+                    className="bg-light-custom hover:bg-[#08c47d] text-white rounded px-4"
+                    disabled={!contactNumber.trim()}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+              <ul className="space-y-2">
+                {contacts.map(c => (
+                  <li key={c.id} className="bg-dark-custom rounded px-3 py-2 text-white">
+                    {c.contactName ? `${c.contactName} - ` : ''}{c.contactNumber}
+                  </li>
+                ))}
+                {contacts.length === 0 && <div className="text-gray-300">No contacts yet</div>}
+              </ul>
+            </>
+          ) : (
+            <div className="text-gray-300">Select a tag to manage its contacts</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+

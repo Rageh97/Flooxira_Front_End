@@ -4,27 +4,20 @@ import { usePathname } from "next/navigation";
 import { PropsWithChildren } from "react";
 import { clsx } from "clsx";
 
-const whatsappTabs = [
-  { href: "/whatsapp", label: "Connection", exact: true },
-  { href: "/whatsapp/chats", label: "Chats" },
-  { href: "/whatsapp/campaigns", label: "Campaigns" },
-  { href: "/whatsapp/groups", label: "Groups" },
-  { href: "/whatsapp/stats", label: "Stats" },
-  { href: "/whatsapp/bot-content", label: "Bot Content" },
-  { href: "/whatsapp/ai-settings", label: "AI Settings" },
-  { href: "/whatsapp/tags", label: "Tags" },
-  { href: "/whatsapp-templates", label: "Templates" },
+const telegramTabs = [
+  { href: "/telegram", label: "Bot Settings", exact: true },
+  { href: "/telegram-templates", label: "Templates", exact: true },
 ];
 
-export default function WhatsAppLayout({ children }: PropsWithChildren) {
+export default function TelegramTemplatesLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
 
   return (
     <div className="space-y-6">
-      {/* WhatsApp Tabs */}
+      {/* Telegram Tabs */}
       <div className="bg-semidark-custom border border-gray-700 rounded-lg p-4">
         <div className="flex flex-wrap gap-2">
-          {whatsappTabs.map((tab) => {
+          {telegramTabs.map((tab) => {
             const isActive = tab.exact 
               ? pathname === tab.href 
               : pathname.startsWith(tab.href);

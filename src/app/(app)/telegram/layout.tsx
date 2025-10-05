@@ -1,60 +1,53 @@
 "use client";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PropsWithChildren } from "react";
+import { clsx } from "clsx";
 
-export default function TelegramLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const telegramTabs = [
+  { href: "/telegram", label: "🤖 Bot Settings", exact: true },
+  { href: "/telegram-templates", label: "📝 Templates", exact: true },
+];
+
+export default function TelegramLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
-  
-  const tabs = [
-    { id: 'connection', name: 'Connection', path: '/telegram/connection', icon: '🔗' },
-    { id: 'bot', name: 'Bot Settings', path: '/telegram/bot', icon: '🤖' },
-    { id: 'chats', name: 'Chat History', path: '/telegram/chats', icon: '💬' },
-    { id: 'groups', name: 'Groups', path: '/telegram/groups', icon: '👥' },
-    { id: 'channels', name: 'Channels', path: '/telegram/channels', icon: '📢' },
-    { id: 'campaigns', name: 'Campaigns', path: '/telegram/campaigns', icon: '📈' },
-    { id: 'stats', name: 'Statistics', path: '/telegram/stats', icon: '📊' },
-  ];
-
-  const getActiveTab = () => {
-    if (pathname === '/telegram') return 'connection';
-    return tabs.find(tab => pathname === tab.path)?.id || 'connection';
-  };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">Telegram Bot Management</h1>
-      
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => {
-            const isActive = getActiveTab() === tab.id;
+      {/* Header */}
+      <div className="bg-semidark-custom border border-gray-700 rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-white mb-4">📱 Telegram Management</h1>
+        <p className="text-gray-300">إدارة البوتات والقوالب التفاعلية للتيليجرام</p>
+      </div>
+
+      {/* Telegram Tabs */}
+      <div className="bg-semidark-custom border border-gray-700 rounded-lg p-6">
+        <div className="flex flex-wrap gap-3">
+          {telegramTabs.map((tab) => {
+            const isActive = tab.exact 
+              ? pathname === tab.href 
+              : pathname.startsWith(tab.href);
+            
             return (
               <Link
-                key={tab.id}
-                href={tab.path}
-                className={`${
+                key={tab.href}
+                href={tab.href}
+                className={clsx(
+                  "px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2",
                   isActive
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
+                    ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700 hover:transform hover:scale-105"
+                )}
               >
-                <span>{tab.icon}</span>
-                {tab.name}
+                {tab.label}
               </Link>
             );
           })}
-        </nav>
+        </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="mt-6">
+      {/* Page Content */}
+      <div>
         {children}
       </div>
     </div>

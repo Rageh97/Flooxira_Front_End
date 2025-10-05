@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { startWhatsAppCampaign } from "@/lib/api";
+import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
 
 export default function WhatsAppCampaignsPage() {
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,21 @@ export default function WhatsAppCampaignsPage() {
   const [campaignDailyCap, setCampaignDailyCap] = useState<number | ''>('');
   const [campaignPerNumberDelay, setCampaignPerNumberDelay] = useState<number | ''>('');
 
+  // Tag-based campaign
+  const [tags, setTags] = useState<Array<{ id: number; name: string }>>([]);
+  const [selectedTagId, setSelectedTagId] = useState<number | ''>('');
+
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+
+  useEffect(() => {
+    // Load tags on mount
+    (async () => {
+      try {
+        const res = await listTags();
+        if (res.success) setTags(res.data || []);
+      } catch {}
+    })();
+  }, []);
 
   async function handleStartCampaign() {
     if (!campaignFile || !campaignTemplate) {
@@ -55,6 +70,27 @@ export default function WhatsAppCampaignsPage() {
         setCampaignPerNumberDelay('');
       } else {
         setError(result.message || "Failed to start campaign");
+      }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSendToTag() {
+    if (!selectedTagId || !campaignTemplate.trim()) {
+      setError("Please select a tag and enter a message template");
+      return;
+    }
+    try {
+      setLoading(true);
+      setError("");
+      const res = await sendCampaignToTag({ tagId: Number(selectedTagId), messageTemplate: campaignTemplate, throttleMs: campaignThrottle });
+      if (res.success) {
+        setSuccess("Campaign to tag started successfully!");
+      } else {
+        setError(res.message || "Failed to start tag campaign");
       }
     } catch (e: any) {
       setError(e.message);
@@ -117,6 +153,36 @@ export default function WhatsAppCampaignsPage() {
             </div>
           </div>
           <Button onClick={handleStartCampaign} disabled={loading || !campaignFile || !campaignTemplate}>Start Campaign</Button>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50 text-primary">Start Campaign to Tag</CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-white">Select Tag</label>
+              <select
+                className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md"
+                value={selectedTagId}
+                onChange={(e) => setSelectedTagId(e.target.value ? Number(e.target.value) : '')}
+              >
+                <option value="">-- Choose Tag --</option>
+                {tags.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-white">Message Template</label>
+              <textarea className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2 text-white">Throttle (ms between messages)</label>
+            <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '3000'))} />
+          </div>
+          <Button onClick={handleSendToTag} disabled={loading || !selectedTagId || !campaignTemplate.trim()}>Send to Tag</Button>
         </CardContent>
       </Card>
     </div>

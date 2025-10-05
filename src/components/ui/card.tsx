@@ -10,6 +10,9 @@ export function CardHeader({ children, className }: PropsWithChildren<{ classNam
 export function CardContent({ children, className }: PropsWithChildren<{ className?: string }>) {
   return <div className={clsx("p-4", className)}>{children}</div>;
 }
+export function CardTitle({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <div className={clsx("text-lg font-semibold", className)}>{children}</div>;
+}
 
 
 
