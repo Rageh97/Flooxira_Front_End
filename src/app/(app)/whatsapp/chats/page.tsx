@@ -347,6 +347,7 @@ export default function WhatsAppChatsPage() {
                   ({botStatus.timeRemaining} min remaining)
                 </span>
               )}
+              
             </div>
             <div className="flex gap-2">
               {botStatus?.isPaused ? (
