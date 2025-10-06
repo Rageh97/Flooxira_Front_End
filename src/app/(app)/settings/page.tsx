@@ -194,10 +194,20 @@ function SettingsContent() {
     
     setProcessing(platformKey);
     try {
-      // Add disconnect API calls here when needed
-      console.log(`Disconnecting ${platformKey}...`);
-      // For now, just refresh the connections
-      await loadPlatformConnections();
+      // Call the appropriate disconnect endpoint for each platform
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/${platformKey}/disconnect`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success || result.message) {
+        console.log(`${platformKey} disconnected successfully`);
+        await loadPlatformConnections();
+      } else {
+        throw new Error(result.message || 'Failed to disconnect');
+      }
     } catch (error) {
       console.error(`Error disconnecting ${platformKey}:`, error);
       alert(`Error disconnecting ${platformKey}: ${error instanceof Error ? error.message : 'Unknown error'}`);
