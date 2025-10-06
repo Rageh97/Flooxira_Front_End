@@ -512,6 +512,23 @@ export async function checkPlatformConnections(token: string) {
   }>("/api/platforms/connections", { authToken: token });
 }
 
+// Platform credentials (per-user app credentials)
+export async function listPlatformCredentials(token: string) {
+  return apiFetch<{ success: boolean; credentials: Array<{ id: number; platform: string; clientId: string; redirectUri?: string }> }>("/api/platforms/credentials", { authToken: token });
+}
+
+export async function getPlatformCredential(token: string, platform: string) {
+  return apiFetch<{ success: boolean; credential?: { id: number; platform: string; clientId: string; redirectUri?: string; metadata?: any } }>(`/api/platforms/credentials/${platform}`, { authToken: token });
+}
+
+export async function upsertPlatformCredential(token: string, platform: string, payload: { clientId: string; clientSecret: string; redirectUri?: string; metadata?: any }) {
+  return apiFetch<{ success: boolean }>(`/api/platforms/credentials/${platform}`, { method: 'PUT', authToken: token, body: JSON.stringify(payload) });
+}
+
+export async function deletePlatformCredential(token: string, platform: string) {
+  return apiFetch<{ success: boolean }>(`/api/platforms/credentials/${platform}`, { method: 'DELETE', authToken: token });
+}
+
 
 // // Salla API helpers
 // export async function startSallaOAuth() {

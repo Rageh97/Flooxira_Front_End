@@ -10,6 +10,10 @@ import {
   exchangeFacebookCode,
   exchangeYouTubeCode,
   exchangeTikTokCode,
+  listPlatformCredentials,
+  getPlatformCredential,
+  upsertPlatformCredential,
+  deletePlatformCredential,
 } from "@/lib/api";
 import { exchangeTwitterCode } from "@/lib/api";
 import FacebookPageSelection from "@/components/FacebookPageSelection";
@@ -32,6 +36,8 @@ function SettingsContent() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [showFacebookSelection, setShowFacebookSelection] = useState<boolean>(false);
   const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
+  const [creds, setCreds] = useState<Record<string, { clientId: string; redirectUri?: string }>>({});
+  const [edit, setEdit] = useState<{ platform: string; clientId: string; clientSecret: string; redirectUri?: string } | null>(null);
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -157,6 +163,20 @@ function SettingsContent() {
   useEffect(() => {
     loadPlatformConnections();
   }, [token]);
+
+  const loadCredentials = async () => {
+    if (!token) return;
+    try {
+      const res = await listPlatformCredentials(token);
+      if (res.success) {
+        const map: Record<string, { clientId: string; redirectUri?: string }> = {};
+        for (const c of res.credentials) map[c.platform] = { clientId: c.clientId, redirectUri: c.redirectUri };
+        setCreds(map);
+      }
+    } catch {}
+  };
+
+  useEffect(() => { loadCredentials(); }, [token]);
 
   const isPlatformConnected = (platformKey: string) => {
     return connectedPlatforms.includes(platformKey);
@@ -286,6 +306,53 @@ function SettingsContent() {
               );
             })}
             </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card border-none">
+        <CardHeader className="border-text-primary/50 text-primary">
+          <h2 className="text-lg font-semibold">تكوين تطبيقات المنصات لكل مستخدم</h2>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(PLATFORMS).map(([key, platform]) => (
+              <Card key={`creds-${key}`} className="border-none bg-semidark-custom">
+                <CardContent className="p-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="text-xl">{platform.icon}</div>
+                      <div className="font-semibold text-primary">{platform.name}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-300">
+                    <div>Client ID: {creds[key]?.clientId ? <span className="text-green-500">محدد</span> : <span className="text-red-500">غير محدد</span>}</div>
+                    {creds[key]?.redirectUri && (<div>Redirect URI: <span className="break-all">{creds[key]?.redirectUri}</span></div>)}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="button-primary flex-1" onClick={() => setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '', redirectUri: creds[key]?.redirectUri })}>تعيين/تعديل</Button>
+                    {creds[key]?.clientId && (
+                      <Button size="sm" variant="secondary" className="flex-1" onClick={async () => { await deletePlatformCredential(token, key); await loadCredentials(); }}>حذف</Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {edit && (
+            <div className="mt-4 p-4 bg-light-custom rounded-lg space-y-3">
+              <div className="text-sm text-primary font-semibold">تعديل إعدادات {PLATFORMS[edit.platform as keyof typeof PLATFORMS].name}</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input className="px-3 py-2 rounded bg-white text-black" placeholder="Client ID" value={edit.clientId} onChange={e => setEdit({ ...edit, clientId: e.target.value })} />
+                <input className="px-3 py-2 rounded bg-white text-black" placeholder="Client Secret" value={edit.clientSecret} onChange={e => setEdit({ ...edit, clientSecret: e.target.value })} />
+                <input className="px-3 py-2 rounded bg-white text-black" placeholder="Redirect URI (اختياري)" value={edit.redirectUri || ''} onChange={e => setEdit({ ...edit, redirectUri: e.target.value })} />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="button-primary" onClick={async () => { await upsertPlatformCredential(token, edit.platform, { clientId: edit.clientId, clientSecret: edit.clientSecret, redirectUri: edit.redirectUri }); setEdit(null); await loadCredentials(); }}>حفظ</Button>
+                <Button size="sm" variant="secondary" onClick={() => setEdit(null)}>إلغاء</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

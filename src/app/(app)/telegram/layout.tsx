@@ -11,6 +11,7 @@ const telegramTabs = [
   { href: "/telegram/groups", label: "🏢 Groups" },
   { href: "/telegram/chats", label: "💬 Chat History" },
   { href: "/telegram/campaigns", label: "📣 Campaigns" },
+  { href: "/telegram/tags", label: "🏷️ Tags" },
   { href: "/telegram-templates", label: "📝 Templates" },
 ];
 
