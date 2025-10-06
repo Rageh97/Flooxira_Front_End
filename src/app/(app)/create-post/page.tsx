@@ -28,7 +28,7 @@ const PLATFORMS = {
   youtube: {
     name: "YouTube",
     icon: "▶️", 
-    supportedTypes: ['video'],
+    supportedTypes: ['photo', 'video', 'text', 'link'],
     supportedFormats: ['feed'],
     color: "from-red-500 to-red-700"
   },
@@ -94,10 +94,8 @@ export default function CreatePostPage() {
         return platform.supportedFormats.includes('reel') && platform.supportedTypes.includes('video');
       });
     } else {
-      // For articles, show all platforms that support text content
-      return Object.entries(PLATFORMS).filter(([key, platform]) => {
-        return platform.supportedTypes.includes('text');
-      });
+      // For articles, show all platforms (they all support text content)
+      return Object.entries(PLATFORMS);
     }
   };
 
@@ -358,61 +356,6 @@ export default function CreatePostPage() {
             </button>
           </div>
           
-          {/* Article Type Selection - Only show when articles is selected */}
-          {contentType === 'articles' && (
-            <div className="mt-4 p-4 bg-gray-700/30 rounded-lg">
-              <h3 className="text-sm font-medium text-white mb-3">نوع المقال</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button
-                  onClick={() => setType('text')}
-                  className={`p-3 rounded-lg transition-all ${
-                    type === 'text' 
-                      ? 'border-text-primary border bg-light-custom' 
-                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
-                  }`}
-                >
-                  <div className="text-xl mb-1">📝</div>
-                  <div className="text-xs font-medium text-white">نص فقط</div>
-                </button>
-                
-                <button
-                  onClick={() => setType('link')}
-                  className={`p-3 rounded-lg transition-all ${
-                    type === 'link' 
-                      ? 'border-text-primary border bg-light-custom' 
-                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
-                  }`}
-                >
-                  <div className="text-xl mb-1">🔗</div>
-                  <div className="text-xs font-medium text-white">رابط</div>
-                </button>
-                
-                <button
-                  onClick={() => setType('photo')}
-                  className={`p-3 rounded-lg transition-all ${
-                    type === 'photo' 
-                      ? 'border-text-primary border bg-light-custom' 
-                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
-                  }`}
-                >
-                  <div className="text-xl mb-1">📷</div>
-                  <div className="text-xs font-medium text-white">صورة</div>
-                </button>
-                
-                <button
-                  onClick={() => setType('video')}
-                  className={`p-3 rounded-lg transition-all ${
-                    type === 'video' 
-                      ? 'border-text-primary border bg-light-custom' 
-                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
-                  }`}
-                >
-                  <div className="text-xl mb-1">🎥</div>
-                  <div className="text-xs font-medium text-white">فيديو</div>
-                </button>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -480,7 +423,7 @@ export default function CreatePostPage() {
               <strong>{contentType === 'reels' ? 'المنصات المتاحة للريلز:' : 'المنصات المتاحة للمقالات:'}</strong>
               {contentType === 'reels' 
                 ? ' Instagram و TikTok (فيديو قصير فقط)'
-                : ' جميع المنصات المتصلة (نص، صور، فيديو، روابط)'
+                : ' جميع المنصات المتصلة (Facebook, Instagram, LinkedIn, Pinterest, Twitter, YouTube)'
               }
             </p>
           </div>
@@ -647,6 +590,23 @@ export default function CreatePostPage() {
             onChange={(e) => setText(e.target.value)}
             className="min-h-[120px] !border !border-text-primary outline-none !bg-gray-700/30 !text-white placeholder:text-gray-400"
           />
+          
+          {/* Content Type Selection for Articles */}
+          {contentType === 'articles' && (
+            <div>
+              <label className="block text-sm font-medium mb-1 text-white">نوع المحتوى</label>
+              <select
+                className="h-9 w-full rounded-md !border !border-text-primary !outline-none !bg-gray-700/30 !text-white px-3 text-sm"
+                value={type}
+                onChange={(e) => setType(e.target.value as 'text' | 'link' | 'photo' | 'video')}
+              >
+                <option value="text">نص فقط</option>
+                <option value="link">رابط</option>
+                <option value="photo">صورة</option>
+                <option value="video">فيديو</option>
+              </select>
+            </div>
+          )}
 
           {platforms.includes('pinterest') && (
             <div>
