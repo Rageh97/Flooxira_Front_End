@@ -243,6 +243,8 @@ export default function ManageTemplateButtonsPage() {
     </div>
   );
 
+}
+
 // Button Card Component
 function ButtonCard({ 
   button, 
