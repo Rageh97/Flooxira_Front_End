@@ -50,6 +50,7 @@ export default function SignUpPage() {
         {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
       </form>
     </div>
+    
   );
 }
 
