@@ -203,7 +203,7 @@ function SettingsContent() {
     const platform = PLATFORMS[platformKey as keyof typeof PLATFORMS];
     if (platform) {
       // Add userId parameter to OAuth URL for platforms that need it
-      if (['facebook', 'instagram', 'pinterest'].includes(platformKey)) {
+      if (['facebook', 'instagram', 'pinterest', 'youtube', 'twitter', 'tiktok'].includes(platformKey)) {
         window.location.href = `${platform.connectUrl}?userId=${userId}`;
       } else {
         window.location.href = platform.connectUrl;

@@ -15,14 +15,14 @@ const PLATFORMS = {
     name: "Instagram",
     icon: "📷",
     supportedTypes: ['photo', 'video', 'text'],
-    supportedFormats: ['feed', 'story', 'reel'],
+    supportedFormats: ['feed', 'reel'],
     color: "from-pink-500 to-purple-600"
   },
   facebook: {
     name: "Facebook", 
     icon: "👥",
     supportedTypes: ['photo', 'video', 'text', 'link'],
-    supportedFormats: ['feed', 'story'],
+    supportedFormats: ['feed'],
     color: "from-blue-600 to-blue-800"
   },
   youtube: {
@@ -53,13 +53,6 @@ const PLATFORMS = {
      supportedFormats: ['feed'],
      color: "from-red-600 to-pink-600"
    },
-   telegram: {
-     name: "Telegram",
-     icon: "✈️",
-     supportedTypes: ['photo', 'video', 'text', 'link'],
-     supportedFormats: ['feed', 'channel'],
-     color: "from-blue-500 to-blue-700"
-  },
   twitter: {
     name: "Twitter (X)",
     icon: "𝕏",
@@ -74,7 +67,8 @@ export default function CreatePostPage() {
   const [image, setImage] = useState<File | null>(null);
   const [when, setWhen] = useState<string>("");
   const [type, setType] = useState<'text' | 'link' | 'photo' | 'video'>("text");
-  const [format, setFormat] = useState<'feed' | 'reel' | 'story'>("feed");
+  const [format, setFormat] = useState<'feed' | 'reel'>("feed");
+  const [contentType, setContentType] = useState<'articles' | 'reels'>('articles');
   const [linkUrl, setLinkUrl] = useState<string>("");
   const [hashtags, setHashtags] = useState<string>("");
   const [message, setMessage] = useState<string>("");
@@ -92,13 +86,19 @@ export default function CreatePostPage() {
     return Object.entries(PLATFORMS);
   };
 
-  // Helper function to get available platforms based on content type and format
+  // Helper function to get available platforms based on content type
   const getAvailablePlatforms = () => {
-    return Object.entries(PLATFORMS).filter(([key, platform]) => {
-      const supportsType = platform.supportedTypes.includes(type);
-      const supportsFormat = platform.supportedFormats.includes(format);
-      return supportsType && supportsFormat;
-    });
+    if (contentType === 'reels') {
+      // For reels, only show platforms that support video reels
+      return Object.entries(PLATFORMS).filter(([key, platform]) => {
+        return platform.supportedFormats.includes('reel') && platform.supportedTypes.includes('video');
+      });
+    } else {
+      // For articles, show all platforms that support text content
+      return Object.entries(PLATFORMS).filter(([key, platform]) => {
+        return platform.supportedTypes.includes('text');
+      });
+    }
   };
 
   // Helper function to check if platform is connected
@@ -118,27 +118,18 @@ export default function CreatePostPage() {
       let mediaUrl: string | undefined = undefined;
       
       // Validation: Reels require a video file
-      if (format === 'reel') {
+      if (contentType === 'reels') {
         if (!image || !image.type?.startsWith('video')) {
-          throw new Error('Reels require a video file. Please upload a video.');
+          throw new Error('الريلز تتطلب ملف فيديو. يرجى رفع فيديو.');
         }
         // Force type to video for reels
         setType('video');
+        setFormat('reel');
       }
       
-      // Validation: Stories require photo or video
-      if (format === 'story') {
-        if (!image) {
-          throw new Error('Stories require a photo or video file.');
-        }
-        if (type === 'text' || type === 'link') {
-          throw new Error('Stories must be photo or video type.');
-        }
-      }
-      
-      // Validation: photo/video types require a file
-      if ((type === 'photo' || type === 'video') && !image) {
-        throw new Error('Please upload a media file for photo/video posts.');
+      // Validation: photo/video types require a file (only for articles, not reels)
+      if (contentType === 'articles' && (type === 'photo' || type === 'video') && !image) {
+        throw new Error('يرجى رفع ملف وسائط للمنشورات التي تحتوي على صور أو فيديو.');
       }
       
       // Upload file if present
@@ -180,22 +171,23 @@ export default function CreatePostPage() {
         const isVideo = image.type?.startsWith('video');
         const isImage = image.type?.startsWith('image');
         
-        if (format === 'reel' && !isVideo) {
-          throw new Error('Reels require a video file.');
+        if (contentType === 'reels' && !isVideo) {
+          throw new Error('الريلز تتطلب ملف فيديو.');
         }
         
-        if (type === 'photo' && isVideo) {
+        if (contentType === 'articles' && type === 'photo' && isVideo) {
           // Auto-correct to video if user selected photo but uploaded a video
           setType('video');
         }
         
-        if (type === 'video' && isImage) {
-          throw new Error('You selected video type but uploaded an image. Switch type to Photo or upload a video.');
+        if (contentType === 'articles' && type === 'video' && isImage) {
+          throw new Error('لقد اخترت نوع فيديو ولكن رفعت صورة. غير النوع إلى صورة أو ارفع فيديو.');
         }
       }
       
       // Ensure type is video for reels
-      const finalType = format === 'reel' ? 'video' : type;
+      const finalType = contentType === 'reels' ? 'video' : type;
+      const finalFormat = contentType === 'reels' ? 'reel' : 'feed';
       
       // Debug logging
       console.log('Creating post with payload:', {
@@ -204,7 +196,7 @@ export default function CreatePostPage() {
         linkUrl: linkUrl || undefined,
         mediaUrl,
         hashtags,
-        format,
+        format: finalFormat,
         scheduledAt,
         platforms,
         pinterestBoardId: platforms.includes('pinterest') ? (pinterestBoardId || undefined) : undefined
@@ -218,7 +210,7 @@ export default function CreatePostPage() {
           linkUrl: linkUrl || undefined, 
           mediaUrl, 
           hashtags, 
-          format, 
+          format: finalFormat, 
           scheduledAt,
           timezoneOffset: scheduledAt ? new Date().getTimezoneOffset() : undefined,
           platforms,
@@ -230,7 +222,7 @@ export default function CreatePostPage() {
       return res.post;
     },
     onSuccess: (post) => {
-      setMessage(post.status === "published" ? "Post published!" : (post.status === "scheduled" ? "Post scheduled" : "Draft saved"));
+      setMessage(post.status === "published" ? "تم النشر بنجاح!" : (post.status === "scheduled" ? "تم الجدولة بنجاح" : "تم الحفظ كمسودة"));
       setText("");
       setWhen("");
       setImage(null);
@@ -261,17 +253,17 @@ export default function CreatePostPage() {
     }
   };
 
-  // Auto-filter platforms when type or format changes
+  // Auto-filter platforms when content type changes
   useEffect(() => {
     const availablePlatforms = getAvailablePlatforms();
     const availableKeys = availablePlatforms.map(([key]) => key);
     
-    // Remove platforms that don't support current type/format
+    // Remove platforms that don't support current content type
     const filteredPlatforms = platforms.filter(platform => availableKeys.includes(platform));
     if (filteredPlatforms.length !== platforms.length) {
       setPlatforms(filteredPlatforms);
     }
-  }, [type, format]);
+  }, [contentType]);
 
   // Load Pinterest boards when Pinterest is selected
   const loadPinterestBoards = async () => {
@@ -338,55 +330,89 @@ export default function CreatePostPage() {
           <h2 className="text-lg font-semibold text-white">خيارات النشر</h2>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <button
-              onClick={() => setFormat('story')}
-              className={`p-4  rounded-lg  transition-all ${
-                format === 'story' 
-                  ? 'border-text-primary border bg-light-custom' 
-                  : 'border-gray-200 border-gray-300 bg-semidark-custom'
-              }`}
-            >
-              <div className="text-2xl mb-2">📱</div>
-              <div className="text-sm font-medium text-white">نشر ستوري</div>
-            </button>
-            
-            <button
-              onClick={() => { setFormat('feed'); setType('photo'); }}
-              className={`p-4 rounded-lg  transition-all ${
-                format === 'feed' && type === 'photo' 
-                  ? 'border-text-primary border bg-light-custom' 
-                  : 'border-gray-200 border-gray-300 bg-semidark-custom'
-              }`}
-            >
-              <div className="text-2xl mb-2">📷</div>
-              <div className="text-sm font-medium text-white">نشر صور</div>
-            </button>
-            
-            <button
-              onClick={() => { setFormat('reel'); setType('video'); }}
-              className={`p-4 rounded-lg  transition-all ${
-                format === 'reel' 
-                  ? 'border-text-primary border bg-light-custom' 
-                  : 'border-gray-200 border-gray-300 bg-semidark-custom'
-              }`}
-            >
-              <div className="text-2xl mb-2">🎬</div>
-              <div className="text-sm font-medium text-white">فيديوهات قصيرة</div>
-            </button>
-            
-            <button
-              onClick={() => { setFormat('feed'); setType('text'); }}
-              className={`p-4 rounded-lg  transition-all ${
-                format === 'feed' && type === 'text' 
+              onClick={() => { setContentType('articles'); setType('text'); setFormat('feed'); }}
+              className={`p-4 rounded-lg transition-all ${
+                contentType === 'articles' 
                   ? 'border-text-primary border bg-light-custom' 
                   : 'border-gray-200 border-gray-300 bg-semidark-custom'
               }`}
             >
               <div className="text-2xl mb-2">📝</div>
               <div className="text-sm font-medium text-white">مقالات</div>
+              <div className="text-xs text-gray-400 mt-1">نص مع صور/فيديو اختياري</div>
+            </button>
+            
+            <button
+              onClick={() => { setContentType('reels'); setType('video'); setFormat('reel'); }}
+              className={`p-4 rounded-lg transition-all ${
+                contentType === 'reels' 
+                  ? 'border-text-primary border bg-light-custom' 
+                  : 'border-gray-200 border-gray-300 bg-semidark-custom'
+              }`}
+            >
+              <div className="text-2xl mb-2">🎬</div>
+              <div className="text-sm font-medium text-white">فيديوهات قصيرة</div>
+              <div className="text-xs text-gray-400 mt-1">ريلز فقط</div>
             </button>
           </div>
+          
+          {/* Article Type Selection - Only show when articles is selected */}
+          {contentType === 'articles' && (
+            <div className="mt-4 p-4 bg-gray-700/30 rounded-lg">
+              <h3 className="text-sm font-medium text-white mb-3">نوع المقال</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button
+                  onClick={() => setType('text')}
+                  className={`p-3 rounded-lg transition-all ${
+                    type === 'text' 
+                      ? 'border-text-primary border bg-light-custom' 
+                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
+                  }`}
+                >
+                  <div className="text-xl mb-1">📝</div>
+                  <div className="text-xs font-medium text-white">نص فقط</div>
+                </button>
+                
+                <button
+                  onClick={() => setType('link')}
+                  className={`p-3 rounded-lg transition-all ${
+                    type === 'link' 
+                      ? 'border-text-primary border bg-light-custom' 
+                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
+                  }`}
+                >
+                  <div className="text-xl mb-1">🔗</div>
+                  <div className="text-xs font-medium text-white">رابط</div>
+                </button>
+                
+                <button
+                  onClick={() => setType('photo')}
+                  className={`p-3 rounded-lg transition-all ${
+                    type === 'photo' 
+                      ? 'border-text-primary border bg-light-custom' 
+                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
+                  }`}
+                >
+                  <div className="text-xl mb-1">📷</div>
+                  <div className="text-xs font-medium text-white">صورة</div>
+                </button>
+                
+                <button
+                  onClick={() => setType('video')}
+                  className={`p-3 rounded-lg transition-all ${
+                    type === 'video' 
+                      ? 'border-text-primary border bg-light-custom' 
+                      : 'border-gray-200 border-gray-300 bg-semidark-custom'
+                  }`}
+                >
+                  <div className="text-xl mb-1">🎥</div>
+                  <div className="text-xs font-medium text-white">فيديو</div>
+                </button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -415,20 +441,19 @@ export default function CreatePostPage() {
           ) : (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {getAllPlatforms().map(([key, platform]) => {
+                {getAvailablePlatforms().map(([key, platform]) => {
                   const isConnected = isPlatformConnected(key);
                   const isSelected = isPlatformSelected(key);
-                  const isCompatible = getAvailablePlatforms().some(([k]) => k === key);
                   
                   return (
                     <button
                       key={key}
-                      onClick={() => isConnected && isCompatible ? togglePlatform(key) : null}
-                      disabled={!isConnected || !isCompatible}
+                      onClick={() => isConnected ? togglePlatform(key) : null}
+                      disabled={!isConnected}
                       className={`relative p-4 rounded-lg border-2 transition-all ${
                         isSelected
                           ? 'border-green-500 bg-green-50' 
-                          : isConnected && isCompatible
+                          : isConnected
                           ? 'border-gray-200 hover:border-gray-300'
                           : 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
                       }`}
@@ -444,13 +469,20 @@ export default function CreatePostPage() {
                       {!isConnected && (
                         <div className="text-xs text-gray-400 mt-1">غير متصل</div>
                       )}
-                      
-                      {isConnected && !isCompatible && (
-                        <div className="text-xs text-orange-500 mt-1">غير متوافق</div>
-                      )}
                     </button>
                   );
                 })}
+          </div>
+          
+          {/* Platform Info */}
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>{contentType === 'reels' ? 'المنصات المتاحة للريلز:' : 'المنصات المتاحة للمقالات:'}</strong>
+              {contentType === 'reels' 
+                ? ' Instagram و TikTok (فيديو قصير فقط)'
+                : ' جميع المنصات المتصلة (نص، صور، فيديو، روابط)'
+              }
+            </p>
           </div>
           
           {/* Platform Details */}
@@ -541,19 +573,6 @@ export default function CreatePostPage() {
                    </div>
                  )}
                  
-                 {/* Telegram Channel */}
-                 {platforms.includes('telegram') && isPlatformConnected('telegram') && (
-                   <div className="flex items-center space-x-3">
-                     <div className="text-xl">✈️</div>
-                     <div>
-                       <div className="text-sm font-medium text-blue-900">قناة Telegram</div>
-                       <div className="text-xs text-blue-700">محددة تلقائياً للنشر</div>
-                     </div>
-                     <div className="ml-auto">
-                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                     </div>
-                   </div>
-                 )}
               </div>
             </div>
           )}
@@ -675,22 +694,20 @@ export default function CreatePostPage() {
           <div className="grid gap-3 md:grid-cols-2">
             <div>
               <label className="block text-sm font-medium mb-1 text-white">
-                {format === 'reel' ? 'فيديو (MP4 مُوصى به)' : 
-                 format === 'story' ? 'وسائط (صورة/فيديو)' :
-                 type === 'video' ? 'فيديو' : 
-                 type === 'photo' ? 'صورة' : 'وسائط (صورة/فيديو)'}
+                {contentType === 'reels' ? 'فيديو (MP4 مُوصى به)' : 
+                 contentType === 'articles' ? 'وسائط اختيارية (صورة/فيديو)' : 
+                 'وسائط (صورة/فيديو)'}
               </label>
               <Input
                 type="file"
-                accept={format === 'reel' ? 'video/*' : 
-                        format === 'story' ? 'image/*,video/*' :
-                        type === 'video' ? 'video/*' : 
-                        type === 'photo' ? 'image/jpeg,image/png' : 'image/jpeg,image/png,video/*'}
+                accept={contentType === 'reels' ? 'video/*' : 
+                        contentType === 'articles' ? 'image/*,video/*' : 
+                        'image/*,video/*'}
                 onChange={(e) => setImage(e.target.files?.[0] || null)}
                 className="!border !border-text-primary !outline-none !bg-gray-700/30 !text-white"
               />
-              {format === 'reel' && <p className="mt-1 text-xs text-gray-500">الريلز تتطلب ملف فيديو. الصور غير مدعومة من فيسبوك للريلز.</p>}
-              {format === 'story' && <p className="mt-1 text-xs text-gray-500">الستوريز تدعم الصور والفيديوهات.</p>}
+              {contentType === 'reels' && <p className="mt-1 text-xs text-gray-500">الريلز تتطلب ملف فيديو. الصور غير مدعومة للريلز.</p>}
+              {contentType === 'articles' && <p className="mt-1 text-xs text-gray-500">الصور والفيديوهات اختيارية للمقالات.</p>}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1 text-white">الجدولة (التاريخ والوقت)</label>
@@ -705,7 +722,7 @@ export default function CreatePostPage() {
           
           <div className="flex gap-3">
             <Button onClick={() => mutation.mutate()} disabled={mutation.isPending || platforms.length === 0} className="flex-1 bg-yellow-300 text-white">
-              {mutation.isPending ? "جاري الحفظ..." : when ? "حفظ وجدولة" : "حفظ وجدولة "}
+              {mutation.isPending ? "جاري الحفظ..." : when ? "حفظ وجدولة" : "حفظ كمسودة"}
             </Button>
             <Button  onClick={() => { setWhen(""); mutation.mutate(); }} disabled={mutation.isPending || platforms.length === 0} className="flex-1 bg-green-300 text-white">
               {mutation.isPending ? "جاري النشر..." : "نشر الآن"}
