@@ -33,6 +33,7 @@ function SettingsContent() {
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [token, setToken] = useState<string>("");
+  const [userId, setUserId] = useState<number | null>(null);
   const [processing, setProcessing] = useState<string | null>(null);
   const [showFacebookSelection, setShowFacebookSelection] = useState<boolean>(false);
   const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
@@ -42,7 +43,18 @@ function SettingsContent() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setToken(localStorage.getItem("auth_token") || "");
+      const token = localStorage.getItem("auth_token") || "";
+      setToken(token);
+      
+      // Get user ID from token (decode JWT)
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setUserId(payload.sub);
+        } catch (e) {
+          console.error('Failed to decode token:', e);
+        }
+      }
     }
   }, []);
 
@@ -183,9 +195,19 @@ function SettingsContent() {
   };
 
   const handleConnect = (platformKey: string) => {
+    if (!userId) {
+      alert('يجب تسجيل الدخول أولاً');
+      return;
+    }
+    
     const platform = PLATFORMS[platformKey as keyof typeof PLATFORMS];
     if (platform) {
-      window.location.href = platform.connectUrl;
+      // Add userId parameter to OAuth URL for platforms that need it
+      if (['facebook', 'instagram', 'pinterest'].includes(platformKey)) {
+        window.location.href = `${platform.connectUrl}?userId=${userId}`;
+      } else {
+        window.location.href = platform.connectUrl;
+      }
     }
   };
 
