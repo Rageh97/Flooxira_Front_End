@@ -1082,6 +1082,42 @@ export async function telegramBotGetBotChats(token: string) {
   return apiFetch<{ success: boolean; chats?: any[]; total?: number; note?: string }>("/api/telegram-bot/bot-chats", { authToken: token });
 }
 
+export async function telegramBotCreateCampaign(token: string, payload: { targets?: string[]; tagIds?: number[]; message: string; scheduleAt?: string; throttleMs?: number; mediaUrl?: string; timezoneOffset?: number }) {
+  return apiFetch<{ success: boolean; id: number }>("/api/telegram-bot/campaigns", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function telegramBotListCampaigns(token: string) {
+  return apiFetch<{ success: boolean; jobs: any[] }>("/api/telegram-bot/campaigns", { authToken: token });
+}
+
+export async function telegramMonthlySchedules(token: string, month?: number, year?: number) {
+  const params = new URLSearchParams();
+  if (month) params.set('month', String(month));
+  if (year) params.set('year', String(year));
+  return apiFetch<{ success: boolean; month: number; year: number; telegram: any[] }>(`/api/telegram-bot/schedules/monthly?${params.toString()}`, { authToken: token });
+}
+
+export async function telegramUpdateSchedule(token: string, id: number, scheduledAt: string, payload?: any) {
+  const body: any = { scheduledAt };
+  if (payload) body.payload = payload;
+  return apiFetch<{ success: boolean; schedule: any }>(`/api/telegram-bot/schedules/${id}`, {
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify(body)
+  });
+}
+
+export async function telegramDeleteSchedule(token: string, id: number) {
+  return apiFetch<{ success: boolean }>(`/api/telegram-bot/schedules/${id}`, {
+    method: 'DELETE',
+    authToken: token
+  });
+}
+
 // ===== Telegram Web (puppeteer) =====
 export async function tgWebStart(token: string, params?: { method?: 'qr' | 'code'; phone?: string }) {
   return apiFetch<{ success: boolean; status?: string; qrCode?: string; tgUrl?: string; webUrl?: string; message?: string }>("/api/telegram-web/start", { method: 'POST', authToken: token, body: JSON.stringify(params || {}) });

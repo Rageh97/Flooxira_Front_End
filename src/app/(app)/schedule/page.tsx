@@ -8,13 +8,16 @@ import {
   updateWhatsAppSchedule, 
   deleteWhatsAppSchedule,
   updatePlatformPostSchedule,
-  deletePlatformPostSchedule
+  deletePlatformPostSchedule,
+  telegramMonthlySchedules,
+  telegramUpdateSchedule,
+  telegramDeleteSchedule
 } from "@/lib/api";
 
 export default function SchedulePage() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [monthlySchedules, setMonthlySchedules] = useState<any>({ whatsapp: [], posts: [] });
+  const [monthlySchedules, setMonthlySchedules] = useState<any>({ whatsapp: [], posts: [], telegram: [] });
   const [selectedDaySchedules, setSelectedDaySchedules] = useState<any[]>([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState<any>(null);
@@ -74,17 +77,17 @@ export default function SchedulePage() {
       console.log('Token:', token.substring(0, 20) + '...');
       
       const response = await getMonthlySchedules(token, currentMonth, currentYear);
-      console.log('Full API response:', response);
+      const tgResp = await telegramMonthlySchedules(token, currentMonth, currentYear);
+      console.log('Full API response:', response, tgResp);
       
       if (response && response.success) {
-        console.log('Setting monthly schedules:', {
+        const next = {
           whatsapp: response.whatsapp || [],
-          posts: response.posts || []
-        });
-        setMonthlySchedules({
-          whatsapp: response.whatsapp || [],
-          posts: response.posts || []
-        });
+          posts: response.posts || [],
+          telegram: tgResp?.telegram || []
+        };
+        console.log('Setting monthly schedules:', next);
+        setMonthlySchedules(next);
       } else {
         console.log('API response not successful:', response);
         // Try to fetch all posts to see if there are any
@@ -126,6 +129,17 @@ export default function SchedulePage() {
       const postDate = new Date(post.scheduledAt);
       if (postDate.getDate() === day) {
         daySchedules.push({ type: 'post', item: post });
+      }
+    });
+    
+    // Add Telegram schedules for this day
+    monthlySchedules.telegram.forEach((tg: any) => {
+      const d = new Date(tg.scheduledAt);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const dd = d.getDate();
+      if (y === currentYear && m === currentMonth && dd === day) {
+        daySchedules.push({ type: 'telegram', item: tg });
       }
     });
     
@@ -330,8 +344,9 @@ export default function SchedulePage() {
               </div>
               
               <div className="text-sm text-primary">
-                Total WhatsApp schedules: {monthlySchedules.whatsapp.length} | 
-                Total posts: {monthlySchedules.posts.length}
+                Total WhatsApp: {monthlySchedules.whatsapp.length} | 
+                Total Posts: {monthlySchedules.posts.length} | 
+                Total Telegram: {monthlySchedules.telegram.length}
               </div>
               {monthlySchedules.whatsapp.length > 0 && (
                 <div className="text-xs text-green-600">
@@ -403,13 +418,15 @@ export default function SchedulePage() {
                           {daySchedules.slice(0, 2).map((schedule, idx) => (
                             <div
                               key={idx}
-                              className={`text-xs px-1 py-0.5 rounded font-medium ${
+                          className={`text-xs px-1 py-0.5 rounded font-medium ${
                                 schedule.type === 'whatsapp' 
                                   ? 'bg-green-600 text-white' 
+                                  : schedule.type === 'telegram'
+                                  ? 'bg-purple-600 text-white'
                                   : 'bg-blue-600 text-white'
                               }`}
                             >
-                              {schedule.type === 'whatsapp' ? 'WA' : 'Post'}
+                              {schedule.type === 'whatsapp' ? 'WA' : schedule.type === 'telegram' ? 'TG' : 'Post'}
                             </div>
                           ))}
                           {daySchedules.length > 2 && (
@@ -517,7 +534,14 @@ export default function SchedulePage() {
                           if (type === 'whatsapp') {
                             handleUpdateSchedule(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
                           } else {
-                            handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
+                            if (type === 'post') {
+                              handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
+                            } else {
+                              // Telegram schedule update
+                              const newDate = item.__newDate || item.scheduledAt;
+                              telegramUpdateSchedule(token as string, item.id, newDate, item.__newContent ? { message: item.__newContent } : undefined)
+                                .then(()=> handleLoadMonthlySchedules());
+                            }
                           }
                         }}
                       >
@@ -530,7 +554,12 @@ export default function SchedulePage() {
                           if (type === 'whatsapp') {
                             handleDeleteSchedule(item.id);
                           } else {
-                            handleDeletePost(item.id);
+                            if (type === 'post') {
+                              handleDeletePost(item.id);
+                            } else {
+                              telegramDeleteSchedule(token as string, item.id)
+                                .then(()=> handleLoadMonthlySchedules());
+                            }
                           }
                         }}
                       >

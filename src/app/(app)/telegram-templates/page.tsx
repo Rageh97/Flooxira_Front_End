@@ -46,8 +46,9 @@ export default function TelegramTemplatesPage() {
       if (response.success) {
         setTemplates(response.data || []);
       }
-    } catch (error) {
-      console.error('Failed to load templates:', error);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('Failed to load templates:', err?.message || String(error));
     } finally {
       setLoading(false);
     }
@@ -63,9 +64,9 @@ export default function TelegramTemplatesPage() {
       } else {
         alert('فشل في إنشاء القالب: ' + (response.message || 'خطأ غير معروف'));
       }
-    } catch (error) {
-      console.error('Failed to create template:', error);
-      alert('فشل في إنشاء القالب: ' + (error.message || 'خطأ غير معروف'));
+    } catch (error: any) {
+      console.error('Failed to create template:', error?.message || error);
+      alert('فشل في إنشاء القالب: ' + (error?.message || 'خطأ غير معروف'));
     }
   };
 
@@ -103,9 +104,9 @@ export default function TelegramTemplatesPage() {
     try {
       const response = await testTemplateMatching(testMessage);
       setTestResult(response.data);
-    } catch (error) {
-      console.error('Failed to test template:', error);
-      alert('فشل في اختبار القالب: ' + (error.message || 'خطأ غير معروف'));
+    } catch (error: any) {
+      console.error('Failed to test template:', error?.message || error);
+      alert('فشل في اختبار القالب: ' + (error?.message || 'خطأ غير معروف'));
     }
   };
 
@@ -143,6 +144,9 @@ export default function TelegramTemplatesPage() {
             </button>
           </div>
         </div>
+
+        {/* Auto Reply Controls */}
+        <AutoReplyPanel templates={templates} />
 
         {/* Test Templates */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -344,6 +348,15 @@ function TemplateCard({
           <p className="truncate">{template.bodyText}</p>
         </div>
 
+        {template.mediaUrl && (
+          <div className="mb-4">
+            <div className="text-xs text-gray-500 mb-1">وسائط القالب</div>
+            <a href={template.mediaUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline truncate inline-block max-w-full">
+              {template.mediaUrl}
+            </a>
+          </div>
+        )}
+
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
           <span>{template.buttons?.length || 0} أزرار</span>
           <span>{template.variables?.length || 0} متغيرات</span>
@@ -367,6 +380,82 @@ function TemplateCard({
             className="flex-1 bg-red-600 text-white px-3 py-2 rounded-md text-sm hover:bg-red-700 transition-colors"
           >
             حذف
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Auto Reply Panel Component
+function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
+  const [loading, setLoading] = useState(false);
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(false);
+  const [autoReplyTemplateId, setAutoReplyTemplateId] = useState<string>('');
+  // Removed button color preference from UI
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { API_URL } = await import('@/lib/api');
+        const res = await fetch(`${API_URL}/api/bot-settings`, { headers: { Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}` } });
+        const data = await res.json().catch(()=>({}));
+        const s = data?.data || data;
+        if (s) {
+          setAutoReplyEnabled(!!s.autoReplyEnabled);
+          setAutoReplyTemplateId(s.autoReplyTemplateId ? String(s.autoReplyTemplateId) : '');
+        }
+      } catch {}
+    })();
+  }, []);
+
+  const save = async () => {
+    try {
+      setLoading(true);
+      const { API_URL } = await import('@/lib/api');
+      const resp = await fetch(`${API_URL}/api/bot-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}` },
+        body: JSON.stringify({
+          autoReplyEnabled,
+          autoReplyTemplateId: autoReplyTemplateId ? Number(autoReplyTemplateId) : null
+        })
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(()=>({ message: 'Failed to save' }));
+        throw new Error(err?.message || 'Failed to save');
+      }
+      alert('تم حفظ إعدادات الرد التلقائي بنجاح');
+    } catch (e:any) {
+      alert(e?.message || 'فشل حفظ الإعدادات');
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ إعدادات الرد التلقائي</h3>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium text-gray-900">تفعيل الرد التلقائي بقالب محدد</div>
+            <div className="text-xs text-gray-500">سيتم إرسال هذا القالب تلقائياً عند وصول أي رسالة</div>
+          </div>
+          <input type="checkbox" checked={autoReplyEnabled} onChange={(e)=>setAutoReplyEnabled(e.target.checked)} />
+        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">القالب الافتراضي</label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-md" value={autoReplyTemplateId} onChange={(e)=>setAutoReplyTemplateId(e.target.value)}>
+              <option value="">بدون</option>
+              {templates.filter(t=>t.isActive).map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <button onClick={save} disabled={loading} className="bg-emerald-600 text-white px-4 py-2 rounded-md">
+            {loading ? 'جارِ الحفظ...' : 'حفظ الإعدادات'}
           </button>
         </div>
       </div>
@@ -408,10 +497,11 @@ function TemplateModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const data = {
+    const data: Partial<TelegramTemplate> = {
       ...formData,
       triggerKeywords: formData.triggerKeywords.split(',').map(k => k.trim()).filter(k => k),
-      pollOptions: formData.pollOptions ? formData.pollOptions.split(',').map(o => o.trim()).filter(o => o) : undefined,
+      mediaType: (formData.mediaType || undefined) as 'photo' | 'video' | 'document' | 'audio' | 'voice' | undefined,
+      pollOptions: formData.pollOptions ? formData.pollOptions.split(',').map((o: string) => o.trim()).filter((o: string) => o) : undefined,
       variables: variables
     };
     onSave(data);
@@ -552,6 +642,25 @@ function TemplateModal({
                     value={formData.mediaUrl}
                     onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
                   />
+                  <div className="text-xs text-gray-500 mt-2">أو قم برفع ملف</div>
+                  <input
+                    type="file"
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const { API_URL } = await import('@/lib/api');
+                        const token = localStorage.getItem('auth_token') || '';
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        const resp = await fetch(`${API_URL}/api/uploads`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+                        const data = await resp.json();
+                        if (data?.url) setFormData({ ...formData, mediaUrl: data.url });
+                      } catch {}
+                    }}
+                    className="mt-2"
+                  />
                 </div>
               </div>
             )}
@@ -578,8 +687,8 @@ function TemplateModal({
                         type="number"
                         min="0"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.correctAnswer}
-                        onChange={(e) => setFormData({ ...formData, correctAnswer: parseInt(e.target.value) || 0 })}
+                  value={formData.correctAnswer}
+                  onChange={(e) => setFormData({ ...formData, correctAnswer: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -733,7 +842,7 @@ function VariableFormModal({
     e.preventDefault();
     const data = {
       ...formData,
-      options: formData.options ? formData.options.split(',').map(o => o.trim()).filter(o => o) : undefined
+      options: formData.options ? formData.options.split(',').map((o: string) => o.trim()).filter((o: string) => o) : undefined
     };
     onSave(data);
   };

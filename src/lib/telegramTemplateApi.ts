@@ -44,6 +44,8 @@ export interface TelegramTemplateButton {
   switchInlineQuery?: string;
   displayOrder: number;
   isActive: boolean;
+  mediaType?: 'photo' | 'video' | 'document' | 'audio' | 'voice';
+  mediaUrl?: string;
   ChildButtons?: TelegramTemplateButton[];
   createdAt: string;
   updatedAt: string;

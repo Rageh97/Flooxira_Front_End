@@ -5,8 +5,13 @@ import { PropsWithChildren } from "react";
 import { clsx } from "clsx";
 
 const telegramTabs = [
-  { href: "/telegram", label: "🤖 Bot Settings", exact: true },
-  { href: "/telegram-templates", label: "📝 Templates", exact: true },
+  { href: "/telegram", label: "🤖 Connection", exact: true },
+  { href: "/telegram/chat-management", label: "👥 Chat Management" },
+  { href: "/telegram/admin-tools", label: "⚙️ Admin Tools" },
+  { href: "/telegram/groups", label: "🏢 Groups" },
+  { href: "/telegram/chats", label: "💬 Chat History" },
+  { href: "/telegram/campaigns", label: "📣 Campaigns" },
+  { href: "/telegram-templates", label: "📝 Templates" },
 ];
 
 export default function TelegramLayout({ children }: PropsWithChildren) {

@@ -11,16 +11,20 @@ import {
   telegramBotConnect,
   telegramBotInfo,
   telegramBotTest,
-  telegramBotSendMessage,
   telegramBotGetChat,
   telegramBotGetChatAdmins,
   telegramBotPromoteMember,
   telegramBotGetUpdates,
   telegramBotGetChatMembers,
   telegramBotExportMembers,
-  telegramBotGetBotChats
+  telegramBotGetBotChats,
+  telegramBotGetContacts,
+  telegramBotCreateCampaign,
+  telegramBotListCampaigns
 } from "@/lib/api";
+import { listTags } from "@/lib/tagsApi";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function TelegramBotPage() {
   const [loading, setLoading] = useState(false);
@@ -38,13 +42,27 @@ export default function TelegramBotPage() {
   // Bot Management States
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [chatId, setChatId] = useState<string>("");
-  const [message, setMessage] = useState<string>("");
   const [chatInfo, setChatInfo] = useState<any>(null);
   const [chatAdmins, setChatAdmins] = useState<any[]>([]);
   const [updates, setUpdates] = useState<any[]>([]);
   const [chatMembers, setChatMembers] = useState<any>({ totalCount: 0, members: [], note: '' });
   const [promoteMemberId, setPromoteMemberId] = useState<string>("");
   const [botChats, setBotChats] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
+  const [campaignMessage, setCampaignMessage] = useState<string>("");
+  const [campaignWhen, setCampaignWhen] = useState<string>("");
+  const [campaignThrottle, setCampaignThrottle] = useState<number>(1500);
+  const [campaignMediaUrl, setCampaignMediaUrl] = useState<string>("");
+  const [campaignMediaFile, setCampaignMediaFile] = useState<File | null>(null);
+  const [availableTags, setAvailableTags] = useState<any[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  // Auto-reply & templates admin
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState<boolean>(false);
+  const [autoReplyTemplateId, setAutoReplyTemplateId] = useState<string>("");
+  const [buttonColorDefault, setButtonColorDefault] = useState<string>("");
+  const [activeTemplates, setActiveTemplates] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
   const [permissions, setPermissions] = useState<any>({
     can_manage_chat: false,
     can_delete_messages: false,
@@ -65,13 +83,31 @@ export default function TelegramBotPage() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+
   useEffect(() => {
     if (token) {
       loadKnowledgeBase();
-      loadGroups();
+      // loadGroups();
       loadBotInfo();
+      loadActiveTemplatesList();
+      loadBotSettingsUI();
+      listTags().then(res=> { if (res?.success) setAvailableTags(res.data || []); }).catch(()=>{});
     }
   }, [token]);
+
+  // Sync active tab with route path for route-based tabs
+  useEffect(() => {
+    try {
+      const p = typeof window !== 'undefined' ? window.location.pathname : '';
+      if (p.includes('/telegram/chat-management')) setActiveTab('chat-management');
+      else if (p.includes('/telegram/admin-tools')) setActiveTab('admin-tools');
+      else if (p.includes('/telegram/groups')) setActiveTab('groups');
+      else if (p.includes('/telegram/contacts')) setActiveTab('contacts');
+      else if (p.includes('/telegram/campaigns')) setActiveTab('campaigns');
+      else setActiveTab('overview');
+    } catch {}
+  }, []);
 
   async function loadKnowledgeBase() {
     try {
@@ -84,17 +120,17 @@ export default function TelegramBotPage() {
     }
   }
 
-  async function loadGroups() {
-    if (!token) return;
-    setLoadingGroups(true);
-    try {
-      const res = await tgWebGroups(token);
-      setGroups(res.groups || []);
-    } catch (e: any) {
-      setError("Failed to load groups and channels");
-    }
-    setLoadingGroups(false);
-  }
+  // async function loadGroups() {
+  //   if (!token) return;
+  //   setLoadingGroups(true);
+  //   try {
+  //     const res = await tgWebGroups(token);
+  //     setGroups(res.groups || []);
+  //   } catch (e: any) {
+  //     setError("Failed to load groups and channels");
+  //   }
+  //   setLoadingGroups(false);
+  // }
 
   async function loadBotInfo() {
     try {
@@ -105,38 +141,115 @@ export default function TelegramBotPage() {
     }
   }
 
-  async function sendBotMessage() {
-    if (!chatId || !message) return;
-    
-    // Clean and validate chat ID
-    let cleanChatId = chatId.trim();
-    
-    // Remove + signs and other invalid characters for numeric IDs
-    if (!cleanChatId.startsWith('@')) {
-      cleanChatId = cleanChatId.replace(/[^-0-9]/g, '');
+  async function loadActiveTemplatesList() {
+    try {
+      const res = await fetch(`/api/telegram-templates/templates/active`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json().catch(()=>({}));
+      const list = data?.data || [];
+      setActiveTemplates(list);
+    } catch {}
+  }
+
+  async function loadBotSettingsUI() {
+    try {
+      const res = await fetch(`/api/bot-settings`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json().catch(()=>({}));
+      const s = data?.data || data;
+      if (s) {
+        setAutoReplyEnabled(!!s.autoReplyEnabled);
+        setAutoReplyTemplateId(s.autoReplyTemplateId ? String(s.autoReplyTemplateId) : "");
+        setButtonColorDefault(s.buttonColorDefault || "");
+      }
+    } catch {}
+  }
+
+  async function saveBotSettingsUI() {
+    try {
+      await fetch(`/api/bot-settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          autoReplyEnabled,
+          autoReplyTemplateId: autoReplyTemplateId ? Number(autoReplyTemplateId) : null,
+          buttonColorDefault: buttonColorDefault || null,
+        })
+      });
+      setSuccess("Settings saved");
+    } catch (e:any) {
+      setError(e?.message || "Failed to save settings");
     }
-    
-    if (!cleanChatId) {
-      setError("Invalid chat ID format");
+  }
+
+  async function loadContacts() {
+    try {
+      setLoading(true);
+      const res = await telegramBotGetContacts(token);
+      if (res.success) {
+        setContacts(res.contacts || []);
+      }
+    } catch (e:any) {
+      setError(e.message);
+    } finally { setLoading(false); }
+  }
+
+  async function loadCampaigns() {
+    try {
+      setLoading(true);
+      const res = await telegramBotListCampaigns(token);
+      if (res.success) setCampaigns(res.jobs || []);
+    } catch (e:any) {
+      setError(e.message);
+    } finally { setLoading(false); }
+  }
+
+  async function createCampaign() {
+    if (selectedTargets.length === 0 || !campaignMessage.trim()) {
+      setError('Select at least one target and enter a message');
       return;
     }
-    
     try {
       setLoading(true);
       setError("");
-      const res = await telegramBotSendMessage(token, cleanChatId, message);
-      if (res.success) {
-        setSuccess("Message sent successfully!");
-        setMessage("");
-        setChatId(""); // Clear the input
-      } else {
-        setError("Failed to send message");
+      const payload: any = { targets: selectedTargets, message: campaignMessage.trim(), throttleMs: campaignThrottle };
+      if (campaignMediaUrl.trim()) {
+        payload.mediaUrl = campaignMediaUrl.trim();
       }
-    } catch (e: any) {
+      if (campaignWhen) {
+        payload.scheduleAt = campaignWhen;
+        payload.timezoneOffset = new Date().getTimezoneOffset();
+      }
+      const res = await telegramBotCreateCampaign(token, payload);
+      if (res.success) {
+        setSuccess('Campaign scheduled successfully');
+        setCampaignMessage('');
+        setCampaignWhen('');
+        setSelectedTargets([]);
+        await loadCampaigns();
+      }
+    } catch (e:any) {
       setError(e.message);
-    } finally {
-      setLoading(false);
+    } finally { setLoading(false); }
+  }
+
+  async function sendCampaignNow() {
+    if (selectedTargets.length === 0 || !campaignMessage.trim()) {
+      setError('Select at least one target and enter a message');
+      return;
     }
+    try {
+      setLoading(true);
+      setError("");
+      const payload: any = { targets: selectedTargets, message: campaignMessage.trim(), throttleMs: campaignThrottle };
+      if (campaignMediaUrl.trim()) payload.mediaUrl = campaignMediaUrl.trim();
+      await telegramBotCreateCampaign(token, payload);
+      setSuccess('Campaign sent now');
+      setCampaignMessage('');
+      setCampaignMediaUrl('');
+      setSelectedTargets([]);
+      await loadCampaigns();
+    } catch (e:any) {
+      setError(e.message);
+    } finally { setLoading(false); }
   }
 
   async function loadChatInfo() {
@@ -301,18 +414,18 @@ export default function TelegramBotPage() {
 
   const tabs = [
     { id: "overview", name: "Overview", icon: "🤖" },
-    { id: "messaging", name: "Send Messages", icon: "💬" },
     { id: "chat-management", name: "Chat Management", icon: "👥" },
     { id: "admin-tools", name: "Admin Tools", icon: "⚙️" },
     { id: "groups", name: "My Groups & Channels", icon: "🏢" },
-    { id: "knowledge-base", name: "Knowledge Base", icon: "📚" },
-    { id: "updates", name: "Recent Updates", icon: "🔄" }
+    { id: "contacts", name: "Contacts", icon: "👤" },
+    { id: "campaigns", name: "Campaigns", icon: "📣" },
+    
   ];
 
   return (
     <div className="space-y-6">
       {/* Quick Actions */}
-      <Card className="bg-card border-none">
+      {/* <Card className="bg-card border-none">
         <CardHeader>
           <h3 className="text-lg font-semibold text-white">🚀 Quick Actions</h3>
           <p className="text-sm text-gray-400">Access key features quickly</p>
@@ -333,7 +446,7 @@ export default function TelegramBotPage() {
             </Link>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Status Messages */}
       {error && (
@@ -354,6 +467,7 @@ export default function TelegramBotPage() {
           <h3 className="text-lg font-semibold text-white">Bot Status</h3>
         </CardHeader>
         <CardContent className="space-y-4">
+         
           {botInfo ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -367,7 +481,7 @@ export default function TelegramBotPage() {
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     onClick={async () => {
                       try {
                         setLoading(true);
@@ -433,32 +547,9 @@ export default function TelegramBotPage() {
         </CardContent>
       </Card>
 
-      {/* Bot Management Tabs - Only show if bot is connected */}
+      {/* Route-based content only (no inner tabs) */}
       {botInfo && (
-        <>
-          {/* Tab Navigation */}
-          <div className="border-b border-gray-700">
-            <nav className="-mb-px flex space-x-8">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-400'
-                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
-                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2`}
-                >
-                  <span>{tab.icon}</span>
-                  {tab.name}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Tab Content */}
           <div className="mt-6">{renderTabContent()}</div>
-        </>
       )}
     </div>
   );
@@ -467,18 +558,16 @@ export default function TelegramBotPage() {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
-      case "messaging":
-        return renderMessagingTab();
       case "chat-management":
         return renderChatManagementTab();
       case "admin-tools":
         return renderAdminToolsTab();
       case "groups":
         return renderGroupsTab();
-      case "knowledge-base":
-        return renderKnowledgeBaseTab();
-      case "updates":
-        return renderUpdatesTab();
+      case "contacts":
+        return renderContactsTab();
+      case "campaigns":
+        return renderCampaignsTab();
       default:
         return renderOverviewTab();
     }
@@ -487,7 +576,7 @@ export default function TelegramBotPage() {
   function renderOverviewTab() {
     return (
       <Card className="bg-card border-none">
-        <CardHeader>
+        {/* <CardHeader>
           <h3 className="text-lg font-semibold text-white">Bot Overview</h3>
           <p className="text-sm text-gray-400">Manage your Telegram bot configuration and AI responses</p>
         </CardHeader>
@@ -526,61 +615,240 @@ export default function TelegramBotPage() {
           >
             {loading ? 'Saving...' : 'Save Settings'}
           </Button>
+        </CardContent> */}
+      </Card>
+    );
+  }
+
+  function renderContactsTab() {
+    return (
+      <Card className="bg-card border-none">
+        <CardHeader>
+          <h3 className="text-lg font-semibold text-white">Contacts</h3>
+          <p className="text-sm text-gray-400">Users who started your bot (recent activity)</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button onClick={loadContacts} disabled={loading} className="bg-blue-500 text-white">
+            {loading ? 'Loading...' : 'Refresh Contacts'}
+          </Button>
+          {contacts.length > 0 && (
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  const all = contacts.map((c:any)=> c.chatId);
+                  setSelectedTargets(Array.from(new Set([...(selectedTargets as string[]), ...all])));
+                  setSuccess(`Added ${all.length} contacts to targets`);
+                }}
+                className="bg-yellow-600 text-white"
+              >
+                Select All Contacts
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => setSelectedTargets([])}
+              >
+                Clear Targets
+              </Button>
+            </div>
+          )}
+          {contacts.length > 0 && (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {contacts.map((c:any, i:number) => (
+                <div key={i} className="p-3 bg-gray-800 rounded flex items-center justify-between">
+                  <div className="text-sm text-white">
+                    <div className="font-medium">{c.chatTitle || 'User'}</div>
+                    <div className="text-gray-400 text-xs">{c.chatType} • {c.chatId}</div>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedTargets.includes(c.chatId)}
+                      onChange={(e)=>{
+                        if (e.target.checked) {
+                          if (!selectedTargets.includes(c.chatId)) setSelectedTargets((prev: string[]) => [...prev, c.chatId]);
+                        } else {
+                          setSelectedTargets((prev: string[]) => prev.filter((x: string) => x !== c.chatId));
+                        }
+                      }}
+                    />
+                    <Button size="sm" className="bg-emerald-600 text-white" onClick={() => {
+                      if (!selectedTargets.includes(c.chatId)) setSelectedTargets((prev: string[]) => [...prev, c.chatId]);
+                    }}>Add</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     );
   }
 
-  function renderMessagingTab() {
+  function renderCampaignsTab() {
     return (
+      <div className="space-y-6">
       <Card className="bg-card border-none">
         <CardHeader>
-          <h3 className="text-lg font-semibold text-white">Send Messages</h3>
-          <p className="text-sm text-gray-400">Send messages to users, groups, or channels</p>
+            <h3 className="text-lg font-semibold text-white">Create Campaign</h3>
+            <p className="text-sm text-gray-400">Select targets from Groups/Contacts and schedule a message</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2 text-white">Chat ID</label>
-            <Input
-              placeholder="@username, 123456789, or -100123456789"
-              value={chatId}
-              onChange={(e) => setChatId(e.target.value)}
-              className="w-full"
-            />
-            <div className="mt-1 space-y-1">
-              <p className="text-xs text-gray-400">
-                <strong>Examples:</strong>
-              </p>
-              <p className="text-xs text-gray-300">
-                • User: <code className="bg-gray-700 px-1 rounded">123456789</code> or <code className="bg-gray-700 px-1 rounded">@username</code>
-              </p>
-              <p className="text-xs text-gray-300">
-                • Group: <code className="bg-gray-700 px-1 rounded">-100123456789</code> or <code className="bg-gray-700 px-1 rounded">@groupname</code>
-              </p>
-              <p className="text-xs text-yellow-400">
-                💡 Send a message to your bot first, then check "Recent Updates" to see your user ID
-              </p>
+              <label className="block text-sm font-medium mb-2 text-white">Selected Targets ({selectedTargets.length})</label>
+              {selectedTargets.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {selectedTargets.map(t => (
+                    <span key={t} className="text-xs bg-gray-700 text-yellow-300 px-2 py-1 rounded inline-flex items-center gap-2">
+                      {t}
+                      <button className="text-red-400" onClick={() => setSelectedTargets((prev: string[]) => prev.filter((x: string) => x !== t))}>×</button>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-gray-400">Pick chats from Groups or Contacts tabs.</div>
+              )}
             </div>
+            {/* Tag picker */}
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">Tags (optional)</label>
+              {availableTags.length === 0 ? (
+                <div className="text-xs text-gray-400">No tags yet. Create tags in Tags section.</div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {availableTags.map((t:any)=> (
+                    <button key={t.id} onClick={()=>{
+                      setSelectedTagIds(prev=> prev.includes(t.id) ? prev.filter(x=>x!==t.id) : [...prev, t.id]);
+                    }} className={`px-2 py-1 rounded text-xs border ${selectedTagIds.includes(t.id)? 'bg-yellow-600 text-white border-yellow-700':'bg-gray-800 text-gray-200 border-gray-700'}`}>
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Contacts picker inside Campaigns */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-white">Pick Contacts</label>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={loadContacts} disabled={loading} className="bg-blue-500 text-white">
+                    {loading ? 'Loading...' : 'Refresh Contacts'}
+                  </Button>
+                  {contacts.length > 0 && (
+                    <Button size="sm" onClick={() => {
+                      const all = contacts.map((c:any)=> c.chatId);
+                      setSelectedTargets(prev => Array.from(new Set([...(prev||[]), ...all])));
+                      setSuccess(`Added ${all.length} contacts to targets`);
+                    }} className="bg-yellow-600 text-white">
+                      Select All Contacts
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {contacts.length > 0 && (
+                <div className="max-h-64 overflow-y-auto space-y-2 p-2 bg-gray-900/40 rounded-md border border-gray-800">
+                  {contacts.map((c:any, i:number) => (
+                    <div key={i} className="p-2 bg-gray-800 rounded flex items-center justify-between">
+                      <div className="text-xs text-white">
+                        <div className="font-medium">{c.chatTitle || 'User'}</div>
+                        <div className="text-gray-400">{c.chatType} • {c.chatId}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedTargets.includes(c.chatId)}
+                          onChange={(e)=>{
+                            if (e.target.checked) {
+                              if (!selectedTargets.includes(c.chatId)) setSelectedTargets(prev => [...prev, c.chatId]);
+                            } else {
+                              setSelectedTargets(prev => prev.filter(x => x !== c.chatId));
+                            }
+                          }}
+                        />
+                        <Button size="sm" className="bg-emerald-600 text-white" onClick={() => {
+                          if (!selectedTargets.includes(c.chatId)) setSelectedTargets(prev => [...prev, c.chatId]);
+                        }}>Add</Button>
+            </div>
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-2 text-white">Message</label>
             <textarea
-              placeholder="Enter your message here..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full h-24 p-3 border rounded-md bg-gray-800 text-white border-gray-600"
-              rows={4}
+                placeholder="Your promotional message..."
+                value={campaignMessage}
+                onChange={(e) => setCampaignMessage(e.target.value)}
+                className="w-full h-28 p-3 border rounded-md bg-gray-800 text-white border-gray-600"
             />
           </div>
-          <Button 
-            onClick={sendBotMessage}
-            disabled={loading || !chatId || !message}
-            className="bg-green-500 text-white"
-          >
-            {loading ? 'Sending...' : 'Send Message'}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Schedule At (optional)</label>
+                <Input type="datetime-local" value={campaignWhen} onChange={(e)=>setCampaignWhen(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Throttle (ms)</label>
+                <Input type="number" value={campaignThrottle} onChange={(e)=>setCampaignThrottle(Number(e.target.value||1500))} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">Media URL (optional)</label>
+                <Input placeholder="https://... (image/video/document)" value={campaignMediaUrl} onChange={(e)=>setCampaignMediaUrl(e.target.value)} />
+                <p className="text-xs text-gray-400 mt-1">If provided, media will be sent with the message.</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <input type="file" onChange={(e)=> setCampaignMediaFile(e.target.files?.[0] || null)} className="text-xs text-gray-300" />
+                  <Button size="sm" className="bg-blue-600 text-white" disabled={loading || !campaignMediaFile} onClick={async ()=>{
+                    if (!campaignMediaFile) return;
+                    try {
+                      setLoading(true);
+                      const form = new FormData();
+                      form.append('file', campaignMediaFile);
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/uploads`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+                      const data = await res.json();
+                      if (data?.url) {
+                        setCampaignMediaUrl(data.url);
+                        setSuccess('Media uploaded');
+                      } else {
+                        setError('Upload failed');
+                      }
+                    } catch (e:any) { setError(e.message); } finally { setLoading(false); }
+                  }}>Upload</Button>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={createCampaign} disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} className="bg-green-600 text-white">
+                {loading ? 'Scheduling...' : 'Schedule Campaign'}
           </Button>
+              <Button onClick={sendCampaignNow} disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} className="bg-emerald-600 text-white" variant="secondary">
+                {loading ? 'Sending...' : 'Send Now'}
+              </Button>
+                  <Button onClick={loadCampaigns} disabled={loading} variant="secondary">
+                {loading ? 'Loading...' : 'Refresh Campaigns'}
+              </Button>
+            </div>
         </CardContent>
       </Card>
+
+        <Card className="bg-card border-none">
+          <CardHeader>
+            <h3 className="text-lg font-semibold text-white">Recent Campaigns</h3>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {campaigns.length === 0 && <div className="text-sm text-gray-400">No campaigns yet.</div>}
+            {campaigns.map((j:any,i:number)=> (
+              <div key={i} className="p-3 bg-gray-800 rounded flex items-center justify-between">
+                <div className="text-sm text-white">
+                  <div className="font-medium">#{j.id} • {j.status}</div>
+                  <div className="text-gray-400 text-xs">Scheduled: {new Date(j.scheduledAt).toLocaleString()}</div>
+                </div>
+                <div className="text-xs text-gray-400">Created: {new Date(j.createdAt).toLocaleString()}</div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -634,6 +902,7 @@ export default function TelegramBotPage() {
               onClick={loadChatAdmins}
               disabled={loading || !chatId}
               className="bg-purple-500 text-white"
+                variant="secondary"
             >
               {loading ? 'Loading...' : 'Load Administrators'}
             </Button>
@@ -765,7 +1034,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_manage_chat}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_manage_chat: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_chat: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Manage Chat (Full Access)</span>
@@ -774,7 +1043,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_delete_messages}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_delete_messages: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_delete_messages: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Delete Messages</span>
@@ -783,7 +1052,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_restrict_members}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_restrict_members: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_restrict_members: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Restrict Members</span>
@@ -792,7 +1061,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_promote_members}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_promote_members: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_promote_members: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Promote Members</span>
@@ -801,7 +1070,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_invite_users}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_invite_users: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_invite_users: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Invite Users</span>
@@ -816,7 +1085,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_change_info}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_change_info: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_change_info: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Change Chat Info</span>
@@ -825,7 +1094,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_pin_messages}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_pin_messages: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_pin_messages: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Pin Messages</span>
@@ -834,7 +1103,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_manage_video_chats}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_manage_video_chats: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_video_chats: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Manage Video Chats</span>
@@ -843,7 +1112,7 @@ export default function TelegramBotPage() {
                     <input
                       type="checkbox"
                       checked={permissions.can_manage_topics}
-                      onChange={(e) => setPermissions(prev => ({ ...prev, can_manage_topics: e.target.checked }))}
+                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_topics: e.target.checked }))}
                       className="rounded"
                     />
                     <span className="text-sm text-white">Manage Topics (Forums)</span>
@@ -870,7 +1139,7 @@ export default function TelegramBotPage() {
               {botInfo && (
                 <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-lg">
                   <p className="text-red-300 text-sm">
-                    <strong>🤖 Bot User ID:</strong> <code className="bg-red-900/30 px-1 rounded">{botInfo.id}</code>
+                            <strong>🤖 Bot User ID:</strong> <code className="bg-red-900/30 px-1 rounded">{botInfo.botUserId}</code>
                   </p>
                   <p className="text-red-300 text-xs mt-1">
                     <strong>Note:</strong> Don't use the bot's ID to promote it. The bot needs to be promoted by a human admin first.
@@ -892,171 +1161,7 @@ export default function TelegramBotPage() {
     );
   }
 
-  function renderKnowledgeBaseTab() {
-    return (
-      <div className="space-y-6">
-        {/* Knowledge Base Upload */}
-        <Card className="bg-card border-none">
-          <CardHeader>
-          <h3 className="text-lg font-semibold text-white">Knowledge Base Management</h3>
-          <p className="text-sm text-gray-400">Upload Excel file with keyword-answer pairs for bot responses</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2 text-white">Upload Excel File</label>
-            <p className="mb-2 text-xs text-gray-300">
-                Upload an Excel file with "keyword" and "answer" columns. The bot will prioritize this data over AI responses.
-            </p>
-            <div className="flex gap-2">
-              <input
-                id="file-input"
-                type="file"
-                accept=".xlsx"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100"
-              />
-              <Button 
-                className="bg-green-500 text-white"
-                onClick={handleFileUpload} 
-                disabled={!file || loading}
-                size="sm"
-              >
-                {loading ? 'Uploading...' : 'Upload'}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Knowledge Base Entries */}
-      {knowledgeEntries.length > 0 && (
-        <Card className="bg-card border-none">
-            <CardHeader>
-            <h3 className="text-lg font-semibold text-white">Knowledge Base Entries ({knowledgeEntries.length})</h3>
-            <p className="text-sm text-gray-400">Current keyword-answer pairs in your knowledge base</p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {knowledgeEntries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between rounded-md border border-gray-200 p-3">
-                  <div className="flex-1">
-                    <div className="font-medium text-sm text-white">{entry.keyword}</div>
-                    <div className="text-xs text-gray-500">{entry.answer}</div>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="destructive" 
-                    onClick={() => handleDeleteEntry(entry.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-        {/* Response Priority Info */}
-      <Card className="bg-card border-none">
-          <CardHeader>
-          <h3 className="text-lg font-semibold text-white">Response Priority</h3>
-          <p className="text-sm text-gray-400">How your bot prioritizes responses to incoming messages</p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-start gap-2">
-              <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500" />
-                <span className="text-white"><strong className="text-blue-400">1. Knowledge Base:</strong> Exact and fuzzy matches from your Excel file</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-blue-500" />
-                <span className="text-white"><strong className="text-blue-400">2. OpenAI:</strong> AI responses for unknown queries</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-gray-500" />
-                <span className="text-white"><strong className="text-blue-400">3. Fallback:</strong> Default responses when all else fails</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-  }
-
-  function renderUpdatesTab() {
-    return (
-      <Card className="bg-card border-none">
-        <CardHeader>
-          <h3 className="text-lg font-semibold text-white">Recent Updates</h3>
-          <p className="text-sm text-gray-400">View recent messages and events from your bot</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button 
-            onClick={loadUpdates}
-            disabled={loading}
-            className="bg-indigo-500 text-white"
-          >
-            {loading ? 'Loading...' : 'Load Recent Updates'}
-          </Button>
-          
-          {updates.length > 0 && (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {updates.map((update, index) => (
-                <div key={index} className="p-3 bg-gray-800 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-400">Update #{update.update_id}</span>
-                    <span className="text-xs text-gray-400">
-                      {update.message?.date ? new Date(update.message.date * 1000).toLocaleString() : 'N/A'}
-                    </span>
-                  </div>
-                  
-                  {update.message && (
-                    <div className="space-y-1">
-                      <div className="text-sm text-white">
-                        <strong>From:</strong> {update.message.from?.first_name} {update.message.from?.last_name || ''} 
-                        {update.message.from?.username && <span className="text-gray-400"> (@{update.message.from.username})</span>}
-                      </div>
-                      <div className="text-sm text-green-400">
-                        <strong>User ID:</strong> 
-                        <code className="bg-gray-700 px-2 py-1 rounded ml-1 cursor-pointer select-all" 
-                              onClick={() => setChatId(String(update.message.from?.id))}
-                              title="Click to copy to chat ID field">
-                          {update.message.from?.id}
-                        </code>
-                        <span className="text-xs text-gray-400 ml-2">(click to use)</span>
-                      </div>
-                      {update.message.chat && (
-                        <div className="text-sm text-gray-300">
-                          <strong>Chat:</strong> {update.message.chat.title || update.message.chat.first_name || `ID: ${update.message.chat.id}`}
-                          {update.message.chat.id !== update.message.from?.id && (
-                            <div className="text-blue-400">
-                              <strong>Chat ID:</strong> 
-                              <code className="bg-gray-700 px-2 py-1 rounded ml-1 cursor-pointer select-all"
-                                    onClick={() => setChatId(String(update.message.chat.id))}
-                                    title="Click to copy to chat ID field">
-                                {update.message.chat.id}
-                              </code>
-                              <span className="text-xs text-gray-400 ml-2">(click to use)</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {update.message.text && (
-                        <div className="text-sm text-gray-200 mt-2 p-2 bg-gray-700 rounded">
-                          {update.message.text}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
+  
 
   function renderGroupsTab() {
     return (
@@ -1074,6 +1179,23 @@ export default function TelegramBotPage() {
                 className="bg-blue-500 text-white"
               >
                 {loading ? 'Loading...' : '🔄 Refresh Groups & Channels'}
+              </Button>
+              <Button 
+                onClick={() => {
+                  const all = botChats.map((c:any)=> c.id);
+                  setSelectedTargets(Array.from(new Set([...selectedTargets, ...all])));
+                  setSuccess(`Added ${all.length} chats to targets`);
+                }}
+                disabled={loading || botChats.length===0}
+                className="bg-yellow-600 text-white"
+              >
+                Select All Groups
+              </Button>
+              <Button 
+                onClick={() => setActiveTab('campaigns')}
+                className="bg-green-600 text-white"
+              >
+                Go to Campaigns
               </Button>
             </div>
             
@@ -1153,6 +1275,16 @@ export default function TelegramBotPage() {
                           className="bg-green-500 text-white text-xs"
                         >
                           Manage
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (!selectedTargets.includes(chat.id)) setSelectedTargets((prev: string[]) => ([...prev, chat.id] as string[]));
+                            setSuccess(`Added ${chat.id} to targets`);
+                          }}
+                          className="bg-emerald-600 text-white text-xs"
+                        >
+                          Target
                         </Button>
                         
                         {chat.canManage && (

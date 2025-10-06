@@ -1,111 +1,170 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth';
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { 
   getTemplate, 
+  updateTemplate,
   createButton, 
   updateButton, 
   deleteButton,
   type TelegramTemplate,
-  type TelegramTemplateButton 
-} from '@/lib/telegramTemplateApi';
+  type TelegramTemplateButton,
+} from "@/lib/telegramTemplateApi";
 
-export default function TemplateButtonsPage() {
-  const { id } = useParams();
+export default function ManageTemplateButtonsPage() {
+  const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
-  const [template, setTemplate] = useState<TelegramTemplate | null>(null);
+  const templateId = Number(params?.id);
+
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingButton, setEditingButton] = useState<TelegramTemplateButton | null>(null);
-  const [parentButton, setParentButton] = useState<TelegramTemplateButton | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [template, setTemplate] = useState<TelegramTemplate | null>(null);
+  const [error, setError] = useState<string>("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalParent, setModalParent] = useState<TelegramTemplateButton | null>(null);
+  const [modalEditButton, setModalEditButton] = useState<TelegramTemplateButton | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<TelegramTemplateButton | null>(null);
+
+  const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : ""), []);
 
   useEffect(() => {
-    if (id) {
+    if (!templateId) return;
       loadTemplate();
-    }
-  }, [id]);
+  }, [templateId]);
 
-  const loadTemplate = async () => {
+  async function loadTemplate() {
     try {
       setLoading(true);
-      const response = await getTemplate(Number(id));
-      if (response.success) {
-        setTemplate(response.data);
+      setError("");
+      const res = await getTemplate(templateId);
+      if (res?.success) {
+        setTemplate(res.data as TelegramTemplate);
+      } else {
+        setError(res?.message || "Failed to load template");
       }
-    } catch (error) {
-      console.error('Failed to load template:', error);
+    } catch (e: any) {
+      setError(e?.message || "Failed to load template");
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleCreateButton = async (buttonData: Partial<TelegramTemplateButton>) => {
+  async function handleAddButton(parentButtonId?: number) {
+    if (!template) return;
+    const parent = (parentButtonId && Array.isArray(template.buttons)) ? findButtonById(template.buttons, parentButtonId) : null;
+    setModalParent(parent || null);
+    setModalEditButton(null);
+    setModalOpen(true);
+  }
+
+  async function handleEditButton(btn: TelegramTemplateButton) {
+    setModalEditButton(btn);
+    setModalParent(null);
+    setModalOpen(true);
+  }
+
+  async function handleDeleteButton(btn: TelegramTemplateButton) {
+    setConfirmTarget(btn);
+    setConfirmOpen(true);
+  }
+
+  async function handleSetButtonType(btn: TelegramTemplateButton, type: TelegramTemplateButton["buttonType"]) {
+    // open edit modal prefilled so user can confirm in modal
+    setModalEditButton({ ...btn, buttonType: type } as TelegramTemplateButton);
+    setModalParent(null);
+    setModalOpen(true);
+  }
+
+  async function handleSetUrl(btn: TelegramTemplateButton) {
+    setModalEditButton(btn);
+    setModalParent(null);
+    setModalOpen(true);
+  }
+
+  async function handleSetCallback(btn: TelegramTemplateButton) {
+    setModalEditButton(btn);
+    setModalParent(null);
+    setModalOpen(true);
+  }
+
+  async function handleUploadMedia(btn: TelegramTemplateButton) {
     try {
-      const response = await createButton({
-        ...buttonData,
-        templateId: Number(id),
-        parentButtonId: parentButton?.id
-      });
-      if (response.success) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx";
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const { API_URL } = await import("@/lib/api");
+        const fd = new FormData();
+        fd.append("file", file);
+        const resp = await fetch(`${API_URL}/api/uploads`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+        const data = await resp.json();
+        if (!resp.ok || !data?.url) throw new Error(data?.message || "Upload failed");
+        const lower = String(file.name).toLowerCase();
+        let mediaType: any = "document";
+        if (/\.(jpg|jpeg|png|gif|webp)$/.test(lower)) mediaType = "photo";
+        else if (/\.(mp4|mov|m4v)$/.test(lower)) mediaType = "video";
+        else if (/\.(mp3|wav|aac|ogg)$/.test(lower)) mediaType = "audio";
+        await updateButton(btn.id, { mediaUrl: data.url, mediaType });
         await loadTemplate();
-        setShowCreateModal(false);
-        setParentButton(null);
-      }
-    } catch (error) {
-      console.error('Failed to create button:', error);
+      };
+      input.click();
+    } catch (e: any) {
+      setError(e?.message || "Failed to upload media");
     }
-  };
+  }
 
-  const handleUpdateButton = async (buttonId: number, buttonData: Partial<TelegramTemplateButton>) => {
-    try {
-      const response = await updateButton(buttonId, buttonData);
-      if (response.success) {
-        await loadTemplate();
-        setEditingButton(null);
-      }
-    } catch (error) {
-      console.error('Failed to update button:', error);
-    }
-  };
-
-  const handleDeleteButton = async (buttonId: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الزر؟')) return;
-    
-    try {
-      const response = await deleteButton(buttonId);
-      if (response.success) {
-        await loadTemplate();
-      }
-    } catch (error) {
-      console.error('Failed to delete button:', error);
-    }
-  };
-
-  if (loading) {
+  function ButtonTree({ nodes, parentId }: { nodes: TelegramTemplateButton[]; parentId?: number }) {
+    const roots = useMemo(() => nodes.filter((b) => (parentId ? b.parentButtonId === parentId : !b.parentButtonId)).sort((a,b)=> (a.displayOrder||0)-(b.displayOrder||0)), [nodes, parentId]);
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري تحميل القالب...</p>
-        </div>
-      </div>
+      <ul className="space-y-2">
+        {roots.map((b) => (
+          <li key={b.id} className="border rounded p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2 py-0.5 text-xs rounded bg-gray-100">#{b.id}</span>
+              <span className="font-medium">{b.text}</span>
+              <span className="text-xs text-gray-500">{b.buttonType}</span>
+              {b.mediaUrl && (
+                <a href={b.mediaUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline truncate max-w-[200px]">media</a>
+              )}
+              <div className="ml-auto flex gap-2">
+                <button onClick={() => handleEditButton(b)} className="text-blue-600 text-sm">تعديل</button>
+                <button onClick={() => handleAddButton(b.id)} className="text-emerald-600 text-sm">إضافة زر فرعي</button>
+                <button onClick={() => handleUploadMedia(b)} className="text-purple-600 text-sm">رفع وسائط</button>
+                <button onClick={() => handleSetButtonType(b, "url")} className="text-gray-600 text-sm">نوع: URL</button>
+                <button onClick={() => handleSetButtonType(b, "callback")} className="text-gray-600 text-sm">نوع: Callback</button>
+                <button onClick={() => handleSetUrl(b)} className="text-gray-600 text-sm">تعيين رابط</button>
+                <button onClick={() => handleSetCallback(b)} className="text-gray-600 text-sm">تعيين بيانات</button>
+                <button onClick={() => handleDeleteButton(b)} className="text-red-600 text-sm">حذف</button>
+              </div>
+            </div>
+            {Array.isArray(b.ChildButtons) && b.ChildButtons.length > 0 && (
+              <div className="pl-4 mt-3 border-l">
+                <ButtonTree nodes={b.ChildButtons} parentId={b.id} />
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     );
   }
 
-  if (!template) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">القالب غير موجود</h2>
-          <button
-            onClick={() => router.push('/telegram-templates')}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            العودة للقوالب
-          </button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
+    );
+  }
+
+  if (error || !template) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-4"><Link href="/telegram-templates" className="text-blue-600">← الرجوع</Link></div>
+          <div className="p-6 bg-white rounded border">{error || "Template not found"}</div>
         </div>
       </div>
     );
@@ -113,99 +172,76 @@ export default function TemplateButtonsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-center">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{template.name}</h1>
-              <p className="text-gray-600 mt-2">إدارة أزرار القالب التفاعلية</p>
+            <div className="text-sm"><Link href="/telegram-templates" className="text-blue-600">← الرجوع</Link></div>
+            <h1 className="text-2xl font-bold mt-1">إدارة أزرار القالب: {template.name}</h1>
             </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => router.push('/telegram-templates')}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                العودة للقوالب
-              </button>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                إضافة زر جديد
-              </button>
-            </div>
+          <div className="flex gap-2">
+            <button onClick={() => handleAddButton(undefined)} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50" disabled={saving}>إضافة زر رئيسي</button>
+            <button onClick={() => router.refresh()} className="px-3 py-2 rounded border" disabled={saving}>تحديث</button>
           </div>
         </div>
 
-        {/* Template Preview */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">معاينة القالب</h3>
-          <div className="bg-gray-50 rounded-lg p-4">
-            {template.headerText && (
-              <div className="text-sm text-gray-600 mb-2">{template.headerText}</div>
-            )}
-            <div className="text-gray-900 mb-2">{template.bodyText}</div>
-            {template.footerText && (
-              <div className="text-sm text-gray-600">{template.footerText}</div>
-            )}
-          </div>
-        </div>
-
-        {/* Buttons Management */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">أزرار القالب</h3>
-          
-          {template.buttons && template.buttons.length > 0 ? (
-            <div className="space-y-4">
-              {template.buttons.map((button) => (
-                <ButtonCard
-                  key={button.id}
-                  button={button}
-                  onEdit={setEditingButton}
-                  onDelete={handleDeleteButton}
-                  onAddChild={(parent) => {
-                    setParentButton(parent);
-                    setShowCreateModal(true);
-                  }}
-                />
-              ))}
-            </div>
+        <div className="bg-white border rounded p-4">
+          {Array.isArray(template.buttons) && template.buttons.length > 0 ? (
+            <ButtonTree nodes={template.buttons} />
           ) : (
-            <div className="text-center py-8">
-              <div className="text-gray-400 text-4xl mb-4">🔘</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد أزرار</h3>
-              <p className="text-gray-600 mb-4">ابدأ بإضافة أزرار تفاعلية للقالب</p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                إضافة أول زر
-              </button>
-            </div>
+            <div className="text-sm text-gray-600">لا توجد أزرار بعد. ابدأ بإضافة زر رئيسي.</div>
           )}
         </div>
-      </div>
 
-      {/* Create/Edit Button Modal */}
-      {(showCreateModal || editingButton) && (
-        <ButtonModal
-          button={editingButton}
-          parentButton={parentButton}
-          onClose={() => {
-            setShowCreateModal(false);
-            setEditingButton(null);
-            setParentButton(null);
-          }}
-          onSave={editingButton ? 
-            (data) => handleUpdateButton(editingButton.id, data) : 
-            handleCreateButton
-          }
-        />
-      )}
+        {modalOpen && (
+          <ButtonModal
+            button={modalEditButton}
+            parentButton={modalParent || undefined}
+            onClose={() => { setModalOpen(false); setModalEditButton(null); setModalParent(null); }}
+            onSave={async (data) => {
+              try {
+                setSaving(true);
+                if (modalEditButton) {
+                  await updateButton(modalEditButton.id, data);
+                } else if (template) {
+                  await createButton({ templateId: template.id, parentButtonId: modalParent?.id, text: data.text || '', buttonType: (data as any).buttonType || 'callback', url: (data as any).url, callbackData: (data as any).callbackData, webAppUrl: (data as any).webAppUrl, switchInlineQuery: (data as any).switchInlineQuery, isActive: (data as any).isActive ?? true, displayOrder: (data as any).displayOrder ?? 0 });
+                }
+                setModalOpen(false);
+                setModalEditButton(null);
+                setModalParent(null);
+                await loadTemplate();
+              } catch (e: any) {
+                setError(e?.message || 'Failed to save');
+              } finally {
+                setSaving(false);
+              }
+            }}
+          />
+        )}
+
+        {confirmOpen && (
+          <ConfirmModal
+            title="تأكيد الحذف"
+            message="هل أنت متأكد من حذف هذا الزر؟"
+            onCancel={() => { setConfirmOpen(false); setConfirmTarget(null); }}
+            onConfirm={async () => {
+              if (!confirmTarget) return;
+              try {
+                setSaving(true);
+                await deleteButton(confirmTarget.id);
+                await loadTemplate();
+              } catch (e: any) {
+                setError(e?.message || 'Failed to delete');
+              } finally {
+                setSaving(false);
+                setConfirmOpen(false);
+                setConfirmTarget(null);
+              }
+            }}
+          />
+        )}
+      </div>
     </div>
   );
-}
 
 // Button Card Component
 function ButtonCard({ 
@@ -358,8 +394,12 @@ function ButtonModal({
     webAppUrl: button?.webAppUrl || '',
     switchInlineQuery: button?.switchInlineQuery || '',
     displayOrder: button?.displayOrder || 0,
-    isActive: button?.isActive ?? true
+    isActive: button?.isActive ?? true,
+    mediaUrl: (button as any)?.mediaUrl || '',
+    mediaType: (button as any)?.mediaType || ''
   });
+  const [uploading, setUploading] = useState(false);
+  const token = useMemo(() => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : ''), []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -463,6 +503,47 @@ function ButtonModal({
               </div>
             )}
 
+            {/* Media URL or Upload */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">وسائط (اختياري)</label>
+              <input
+                type="url"
+                placeholder="رابط وسائط (صورة/فيديو/مستند/صوت)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formData.mediaUrl}
+                onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
+              />
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="file"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      setUploading(true);
+                      const fd = new FormData();
+                      fd.append('file', file);
+                      const base = process.env.NEXT_PUBLIC_API_URL || '';
+                      const resp = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+                      const data = await resp.json();
+                      if (!resp.ok || !data?.url) throw new Error(data?.message || 'Upload failed');
+                      const lower = String(file.name).toLowerCase();
+                      let mediaType: any = 'document';
+                      if (/\.(jpg|jpeg|png|gif|webp)$/.test(lower)) mediaType = 'photo';
+                      else if (/\.(mp4|mov|m4v)$/.test(lower)) mediaType = 'video';
+                      else if (/\.(mp3|wav|aac|ogg)$/.test(lower)) mediaType = 'audio';
+                      setFormData((prev) => ({ ...prev, mediaUrl: data.url, mediaType }));
+                    } catch (err) {
+                      // swallow; outer page shows errors elsewhere
+                    } finally {
+                      setUploading(false);
+                    }
+                  }}
+                />
+                {uploading && <span className="text-xs text-gray-600">...جاري الرفع</span>}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">ترتيب العرض</label>
@@ -502,6 +583,23 @@ function ButtonModal({
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ title, message, onConfirm, onCancel }: { title: string; message: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-sm w-full">
+        <div className="p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
+          <p className="text-sm text-gray-700 mb-4">{message}</p>
+          <div className="flex justify-end gap-3">
+            <button onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">إلغاء</button>
+            <button onClick={onConfirm} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">حذف</button>
+          </div>
         </div>
       </div>
     </div>
