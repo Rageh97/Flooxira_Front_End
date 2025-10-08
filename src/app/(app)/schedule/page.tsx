@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
 import { 
   getMonthlySchedules, 

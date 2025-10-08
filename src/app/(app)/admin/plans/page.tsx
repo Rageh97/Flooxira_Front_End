@@ -29,7 +29,7 @@ import {
   XCircle,
   DollarSign
 } from "lucide-react";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast-provider";
 
 export default function PlansAdminPage() {
   const [plans, setPlans] = useState<Plan[]>([]);

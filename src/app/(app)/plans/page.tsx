@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { listPlans, type Plan, createSubscriptionRequest } from "@/lib/api";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast-provider";
 import { CheckCircle, XCircle } from "lucide-react";
 
 export default function PlansPage() {

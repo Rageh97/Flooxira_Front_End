@@ -34,7 +34,7 @@ import {
   Copy,
   Sparkles
 } from "lucide-react";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast-provider";
 
 export default function CouponsAdminPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);

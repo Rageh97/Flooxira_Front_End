@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { FileUpload } from "@/components/ui/file-upload";
 import { CreditCard, Gift, Wallet, CheckCircle, AlertCircle, Upload } from "lucide-react";
 import { Plan, uploadReceipt } from "@/lib/api";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/ui/toast-provider";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
