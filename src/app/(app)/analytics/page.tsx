@@ -34,7 +34,7 @@ import {
   Calendar,
   RefreshCw
 } from 'lucide-react';
-import { getAllAnalytics } from '@/lib/api';
+import { getAllAnalytics, getAvailableFacebookPages, switchFacebookPage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
@@ -45,6 +45,16 @@ interface AnalyticsData {
     insights: any[];
     pageId: string;
     hasInstagram: boolean;
+    pageInfo?: {
+      name: string;
+      fanCount: number;
+      recentPosts: any[];
+    };
+  };
+  instagram?: {
+    account: any;
+    username: string;
+    insights: any[];
   };
   linkedin?: {
     network: any;
@@ -70,6 +80,9 @@ export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [availablePages, setAvailablePages] = useState<any[]>([]);
+  const [showPageSwitcher, setShowPageSwitcher] = useState(false);
+  const [switchingPage, setSwitchingPage] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
@@ -94,6 +107,37 @@ export default function AnalyticsPage() {
       setAnalytics({}); // Set empty analytics on error
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAvailablePages = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      
+      const data = await getAvailableFacebookPages(token);
+      if (data && data.pages) {
+        setAvailablePages(data.pages);
+      }
+    } catch (err) {
+      console.error('Error loading Facebook pages:', err);
+    }
+  };
+
+  const handleSwitchPage = async (pageId: string, pageName: string) => {
+    try {
+      setSwitchingPage(true);
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      
+      await switchFacebookPage(token, pageId, pageName);
+      setShowPageSwitcher(false);
+      await fetchAnalytics(); // Refresh analytics
+    } catch (err) {
+      console.error('Error switching page:', err);
+      setError('Failed to switch Facebook page');
+    } finally {
+      setSwitchingPage(false);
     }
   };
 
@@ -176,19 +220,31 @@ export default function AnalyticsPage() {
           <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
           <p className="text-gray-600">Track your social media performance across all platforms</p>
         </div>
-        <Button onClick={fetchAnalytics} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          {analytics.facebook && (
+            <Button onClick={() => {
+              setShowPageSwitcher(true);
+              loadAvailablePages();
+            }} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Switch Facebook Page
+            </Button>
+          )}
+          <Button onClick={fetchAnalytics} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Connected Accounts Section */}
       <ConnectedAccountsSimple />
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="facebook">Facebook</TabsTrigger>
+          <TabsTrigger value="instagram">Instagram</TabsTrigger>
           <TabsTrigger value="twitter">Twitter</TabsTrigger>
           <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
           <TabsTrigger value="youtube">YouTube</TabsTrigger>
@@ -288,6 +344,28 @@ export default function AnalyticsPage() {
               </Card>
             )}
 
+            {/* Instagram Card */}
+            {analytics.instagram && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Instagram</CardTitle>
+                  <Instagram className="h-4 w-4 text-pink-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {analytics.instagram?.account?.followers_count ? 
+                      formatNumber(analytics.instagram.account.followers_count) : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Followers
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    @{analytics.instagram?.username || 'N/A'}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Pinterest Card */}
             {analytics.pinterest && (
               <Card>
@@ -366,6 +444,83 @@ export default function AnalyticsPage() {
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">No Facebook Analytics</h3>
                 <p className="text-gray-500 text-center">
                   Connect your Facebook account to see analytics.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="instagram" className="space-y-6">
+          {analytics.instagram ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Instagram className="h-5 w-5 mr-2 text-pink-600" />
+                    Instagram Analytics
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    @{analytics.instagram.username}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Followers</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.instagram.account?.followers_count ? 
+                          formatNumber(analytics.instagram.account.followers_count) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Following</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.instagram.account?.follows_count ? 
+                          formatNumber(analytics.instagram.account.follows_count) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Posts</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.instagram.account?.media_count ? 
+                          formatNumber(analytics.instagram.account.media_count) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Username</h4>
+                      <div className="text-lg">
+                        @{analytics.instagram.account?.username || 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {analytics.instagram.insights && analytics.instagram.insights.length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="font-semibold mb-4">Insights</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {analytics.instagram.insights.map((insight, index) => (
+                          <div key={index} className="space-y-2">
+                            <h5 className="font-medium">{insight.name}</h5>
+                            <div className="text-xl font-bold">
+                              {insight.values?.[0]?.value ? 
+                                formatNumber(insight.values[0].value) : 'N/A'}
+                            </div>
+                            <p className="text-sm text-gray-600">{insight.period}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Instagram className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Instagram Analytics</h3>
+                <p className="text-gray-500 text-center">
+                  Connect your Instagram account to see analytics.
                 </p>
               </CardContent>
             </Card>
@@ -603,6 +758,50 @@ export default function AnalyticsPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Facebook Page Switcher Modal */}
+      {showPageSwitcher && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-96 max-h-96 overflow-y-auto">
+            <CardHeader>
+              <CardTitle>Switch Facebook Page</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Select a different Facebook page to view analytics for
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {availablePages.map((page) => (
+                  <div
+                    key={page.id}
+                    className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleSwitchPage(page.id, page.name)}
+                  >
+                    <div>
+                      <p className="font-medium">{page.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {page.fan_count ? formatNumber(page.fan_count) : '0'} fans
+                      </p>
+                    </div>
+                    {switchingPage && (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => setShowPageSwitcher(false)}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       </div>
     </AuthGuard>
   );

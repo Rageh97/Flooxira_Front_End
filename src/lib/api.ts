@@ -1418,6 +1418,38 @@ export async function getPinterestAnalytics(token: string) {
   }>("/api/analytics/pinterest", { authToken: token });
 }
 
+// Facebook page management
+export async function getAvailableFacebookPages(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    pages: any[]; 
+    currentPageId: string 
+  }>("/api/analytics/facebook/pages", { authToken: token });
+}
+
+export async function switchFacebookPage(token: string, pageId: string, pageName: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    message: string; 
+    pageId: string; 
+    pageName: string 
+  }>("/api/analytics/facebook/switch", { 
+    method: "POST",
+    body: JSON.stringify({ pageId, pageName }),
+    authToken: token 
+  });
+}
+
+// Get current Facebook page info
+export async function getCurrentFacebookPage(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    pageId: string; 
+    pageName: string; 
+    fanCount: number;
+  }>("/api/analytics/facebook/current", { authToken: token });
+}
+
 // ===== CONNECTED ACCOUNTS API =====
 export async function getConnectedAccounts(token: string) {
   return apiFetch<{ 

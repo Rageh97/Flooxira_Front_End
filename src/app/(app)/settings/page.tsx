@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   checkPlatformConnections, 
@@ -14,6 +14,9 @@ import {
   getPlatformCredential,
   upsertPlatformCredential,
   deletePlatformCredential,
+  getAvailableFacebookPages,
+  getCurrentFacebookPage,
+  switchFacebookPage
 } from "@/lib/api";
 import { exchangeTwitterCode } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
@@ -40,6 +43,9 @@ function SettingsContent() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [showFacebookSelection, setShowFacebookSelection] = useState<boolean>(false);
   const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
+  const [availableFacebookPages, setAvailableFacebookPages] = useState<any[]>([]);
+  const [currentFacebookPage, setCurrentFacebookPage] = useState<{pageId: string, pageName: string, fanCount: number} | null>(null);
+  const [showFacebookPageManager, setShowFacebookPageManager] = useState<boolean>(false);
   const [creds, setCreds] = useState<Record<string, { clientId: string; redirectUri?: string }>>({});
   const [edit, setEdit] = useState<{ platform: string; clientId: string; clientSecret: string; redirectUri?: string } | null>(null);
   const searchParams = useSearchParams();
@@ -192,6 +198,59 @@ function SettingsContent() {
   };
 
   useEffect(() => { loadCredentials(); }, [token]);
+
+  // Load Facebook pages and current page
+  const loadFacebookPages = async () => {
+    try {
+      if (!token) return;
+      
+      // Load available pages
+      const pagesData = await getAvailableFacebookPages(token);
+      if (pagesData.success) {
+        setAvailableFacebookPages(pagesData.pages || []);
+      }
+      
+      // Load current page
+      const currentPageData = await getCurrentFacebookPage(token);
+      if (currentPageData.success) {
+        setCurrentFacebookPage({
+          pageId: currentPageData.pageId,
+          pageName: currentPageData.pageName,
+          fanCount: currentPageData.fanCount
+        });
+      }
+    } catch (error) {
+      console.error('Error loading Facebook pages:', error);
+    }
+  };
+
+  // Switch Facebook page
+  const handleSwitchFacebookPage = async (pageId: string, pageName: string) => {
+    try {
+      if (!token) return;
+      
+      await switchFacebookPage(token, pageId, pageName);
+      setCurrentFacebookPage({
+        pageId,
+        pageName,
+        fanCount: 0 // Will be updated when page info is fetched
+      });
+      setShowFacebookPageManager(false);
+      
+      // Reload pages to get updated info
+      await loadFacebookPages();
+    } catch (error) {
+      console.error('Error switching Facebook page:', error);
+      alert('فشل في تغيير صفحة Facebook');
+    }
+  };
+
+  // Load Facebook pages when Facebook is connected
+  useEffect(() => {
+    if (connectedPlatforms.includes('facebook')) {
+      loadFacebookPages();
+    }
+  }, [connectedPlatforms, token]);
 
   // Check permissions
   if (permissionsLoading) {
@@ -391,6 +450,56 @@ function SettingsContent() {
             </div>
         </CardContent>
       </Card>
+
+      {/* Facebook Page Management */}
+      {connectedPlatforms.includes('facebook') && (
+        <Card className="bg-card border-none">
+          <CardHeader className="border-text-primary/50 text-primary">
+            <h2 className="text-lg font-semibold">إدارة صفحة Facebook</h2>
+            <p className="text-sm text-gray-400">اختر صفحة Facebook للنشر عليها</p>
+          </CardHeader>
+          <CardContent>
+            {currentFacebookPage ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="text-2xl">👥</div>
+                    <div>
+                      <div className="font-semibold text-blue-900">{currentFacebookPage.pageName}</div>
+                      <div className="text-sm text-blue-700">
+                        {currentFacebookPage.fanCount} معجب • الصفحة النشطة للنشر
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                </div>
+                
+                <Button 
+                  onClick={() => setShowFacebookPageManager(true)}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  تغيير صفحة Facebook
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">👥</div>
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">لا توجد صفحة محددة</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  اختر صفحة Facebook للنشر عليها
+                </p>
+                <Button 
+                  onClick={() => setShowFacebookPageManager(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  اختيار صفحة Facebook
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">
@@ -611,6 +720,52 @@ function SettingsContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Facebook Page Manager Modal */}
+      {showFacebookPageManager && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-96 max-h-96 overflow-y-auto">
+            <CardHeader>
+              <CardTitle>اختيار صفحة Facebook</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                اختر صفحة Facebook للنشر عليها
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {availableFacebookPages.map((page) => (
+                  <div
+                    key={page.id}
+                    className={`flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-gray-50 ${
+                      currentFacebookPage?.pageId === page.id ? 'border-blue-500 bg-blue-50' : ''
+                    }`}
+                    onClick={() => handleSwitchFacebookPage(page.id, page.name)}
+                  >
+                    <div>
+                      <p className="font-medium">{page.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {page.fan_count ? `${page.fan_count} معجب` : '0 معجب'}
+                      </p>
+                    </div>
+                    {currentFacebookPage?.pageId === page.id && (
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  onClick={() => setShowFacebookPageManager(false)}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

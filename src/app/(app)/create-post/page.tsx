@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { apiFetch, listPinterestBoards, checkPlatformConnections } from "@/lib/api";
+import { apiFetch, listPinterestBoards, checkPlatformConnections, getCurrentFacebookPage } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
-import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
 // Platform configuration with icons and supported content types
@@ -81,8 +80,8 @@ export default function CreatePostPage() {
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState<boolean>(true);
   const [isDevelopment, setIsDevelopment] = useState<boolean>(false);
-  const [showFacebookSelection, setShowFacebookSelection] = useState<boolean>(false);
   const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
+  const [currentFacebookPage, setCurrentFacebookPage] = useState<{pageName: string, fanCount: number} | null>(null);
 
   // Helper function to get all platforms (for initial display)
   const getAllPlatforms = () => {
@@ -169,6 +168,14 @@ export default function CreatePostPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platforms.includes('pinterest')]);
+
+  // Load current Facebook page when Facebook is selected
+  useEffect(() => {
+    if (platforms.includes('facebook') && connectedPlatforms.includes('facebook')) {
+      loadCurrentFacebookPage();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platforms, connectedPlatforms]);
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -332,10 +339,7 @@ export default function CreatePostPage() {
     } else {
       setPlatforms([...platforms, platform]);
       
-      // If Facebook is selected and connected, show page selection modal
-      if (platform === 'facebook' && isPlatformConnected('facebook')) {
-        setShowFacebookSelection(true);
-      }
+      // Facebook page selection is now handled in settings page
       
       // If YouTube is selected and connected, show channel selection modal
       if (platform === 'youtube' && isPlatformConnected('youtube')) {
@@ -354,6 +358,23 @@ export default function CreatePostPage() {
       // if no current selection, preselect first
       if (!pinterestBoardId && res.boards?.length) setPinterestBoardId(res.boards[0].id);
     } catch {}
+  };
+
+  // Load current Facebook page info
+  const loadCurrentFacebookPage = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      if (!token) return;
+      const res = await getCurrentFacebookPage(token);
+      if (res.success) {
+        setCurrentFacebookPage({
+          pageName: res.pageName,
+          fanCount: res.fanCount
+        });
+      }
+    } catch (error) {
+      console.error('Error loading current Facebook page:', error);
+    }
   };
 
   return (
@@ -477,8 +498,20 @@ export default function CreatePostPage() {
                     <div className="flex items-center space-x-3">
                       <div className="text-xl">👥</div>
                       <div>
-                        <div className="text-sm font-medium text-blue-900">صفحة Facebook</div>
-                        <div className="text-xs text-blue-700">محددة تلقائياً للنشر</div>
+                        <div className="text-sm font-medium text-blue-900">
+                          صفحة Facebook
+                          {currentFacebookPage && (
+                            <span className="ml-2 text-xs text-gray-600">
+                              ({currentFacebookPage.pageName})
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-blue-700">
+                          {currentFacebookPage ? 
+                            `محددة: ${currentFacebookPage.pageName} (${currentFacebookPage.fanCount} معجب)` : 
+                            'محددة تلقائياً للنشر'
+                          }
+                        </div>
                       </div>
                       <div className="ml-auto">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -558,15 +591,6 @@ export default function CreatePostPage() {
             </div>
           )}
           
-          {/* Facebook Page Selection Modal */}
-          <FacebookPageSelection
-            isOpen={showFacebookSelection}
-            onClose={() => setShowFacebookSelection(false)}
-            onComplete={() => {
-              setShowFacebookSelection(false);
-              // Optionally refresh platform connections
-            }}
-          />
           
           {/* YouTube Channel Selection Modal */}
           <YouTubeChannelSelection
