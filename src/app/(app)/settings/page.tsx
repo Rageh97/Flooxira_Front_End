@@ -475,7 +475,10 @@ function SettingsContent() {
                 </div>
                 
                 <Button 
-                  onClick={() => setShowFacebookPageManager(true)}
+                  onClick={() => {
+                    setShowFacebookPageManager(true);
+                    loadFacebookPages(); // Load pages when opening modal
+                  }}
                   variant="secondary"
                   className="w-full"
                 >
@@ -490,7 +493,10 @@ function SettingsContent() {
                   اختر صفحة Facebook للنشر عليها
                 </p>
                 <Button 
-                  onClick={() => setShowFacebookPageManager(true)}
+                  onClick={() => {
+                    setShowFacebookPageManager(true);
+                    loadFacebookPages(); // Load pages when opening modal
+                  }}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   اختيار صفحة Facebook

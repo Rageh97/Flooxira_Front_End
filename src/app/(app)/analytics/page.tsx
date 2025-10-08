@@ -409,7 +409,10 @@ export default function AnalyticsPage() {
                     Facebook Analytics
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Page ID: {analytics.facebook.pageId}
+                    {analytics.facebook.pageInfo?.name ? 
+                      `صفحة: ${analytics.facebook.pageInfo.name} (${analytics.facebook.pageInfo.fanCount} معجب)` : 
+                      `Page ID: ${analytics.facebook.pageId}`
+                    }
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -683,10 +686,10 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="font-semibold">Hidden Subscribers</h4>
+                      <h4 className="font-semibold">Comments</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.youtube.statistics?.hiddenSubscriberCount ? 
-                          (analytics.youtube.statistics.hiddenSubscriberCount ? 'Yes' : 'No') : 'N/A'}
+                        {analytics.youtube.statistics?.commentCount ? 
+                          formatNumber(parseInt(analytics.youtube.statistics.commentCount)) : 'N/A'}
                       </div>
                     </div>
                   </div>
