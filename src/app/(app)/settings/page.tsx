@@ -16,7 +16,13 @@ import {
   deletePlatformCredential,
   getAvailableFacebookPages,
   getCurrentFacebookPage,
-  switchFacebookPage
+  switchFacebookPage,
+  getFacebookPageDetails,
+  getLinkedInProfileDetails,
+  getTwitterAccountDetails,
+  getYouTubeChannelDetails,
+  getPinterestAccountDetails,
+  getInstagramAccountInfo
 } from "@/lib/api";
 import { exchangeTwitterCode } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
@@ -48,6 +54,8 @@ function SettingsContent() {
   const [showFacebookPageManager, setShowFacebookPageManager] = useState<boolean>(false);
   const [creds, setCreds] = useState<Record<string, { clientId: string; redirectUri?: string }>>({});
   const [edit, setEdit] = useState<{ platform: string; clientId: string; clientSecret: string; redirectUri?: string } | null>(null);
+  const [platformDetails, setPlatformDetails] = useState<Record<string, any>>({});
+  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -258,6 +266,55 @@ function SettingsContent() {
       loadFacebookPages();
     }
   }, [connectedPlatforms, token, currentFacebookPage]);
+
+  // Load platform details
+  const loadPlatformDetails = async (platform: string) => {
+    if (!token || loadingDetails[platform]) return;
+    
+    setLoadingDetails(prev => ({ ...prev, [platform]: true }));
+    
+    try {
+      let details = null;
+      
+      switch (platform) {
+        case 'facebook':
+          details = await getFacebookPageDetails(token);
+          break;
+        case 'linkedin':
+          details = await getLinkedInProfileDetails(token);
+          break;
+        case 'twitter':
+          details = await getTwitterAccountDetails(token);
+          break;
+        case 'youtube':
+          details = await getYouTubeChannelDetails(token);
+          break;
+        case 'pinterest':
+          details = await getPinterestAccountDetails(token);
+          break;
+        case 'instagram':
+          details = await getInstagramAccountInfo(token);
+          break;
+      }
+      
+      if (details?.success) {
+        setPlatformDetails(prev => ({ ...prev, [platform]: details }));
+      }
+    } catch (error) {
+      console.error(`Error loading ${platform} details:`, error);
+    } finally {
+      setLoadingDetails(prev => ({ ...prev, [platform]: false }));
+    }
+  };
+
+  // Load all platform details when platforms are connected
+  useEffect(() => {
+    if (token && connectedPlatforms.length > 0) {
+      connectedPlatforms.forEach(platform => {
+        loadPlatformDetails(platform);
+      });
+    }
+  }, [token, connectedPlatforms]);
 
   // Check permissions
   if (permissionsLoading) {
@@ -583,104 +640,204 @@ function SettingsContent() {
       </Card>
 
       {/* Platform Details Section */}
-      {(isPlatformConnected('facebook') || isPlatformConnected('pinterest') || isPlatformConnected('youtube') || isPlatformConnected('linkedin')) && (
+      {connectedPlatforms.length > 0 && (
         <Card className="bg-card border-none">
           <CardHeader className="border-text-primary/50 text-primary">
             <h2 className="text-lg font-semibold">تفاصيل المنصات المحددة</h2>
+            <p className="text-sm text-gray-400">معلومات مفصلة عن المنصات المتصلة</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Facebook Page and Instagram */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Facebook Page */}
               {isPlatformConnected('facebook') && (
-                <>
-                  <div className="p-4 bg-light-custom rounded-lg">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="text-2xl">👥</div>
-                      <div>
-                        <h3 className="font-semibold text-primary">صفحة Facebook</h3>
-                        <p className="text-sm text-gray-300">اختر الصفحة للنشر</p>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-300">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span>متصل - اختر الصفحة</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-light-custom rounded-lg">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="text-2xl">📷</div>
-                      <div>
-                        <h3 className="font-semibold text-primary">حساب Instagram</h3>
-                        <p className="text-sm text-gray-300">اختر الحساب للنشر</p>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-300">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span>متصل - اختر الحساب</span>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
-              
-              {/* Pinterest Board */}
-              {isPlatformConnected('pinterest') && (
-                <div className="p-4 bg-light-custom rounded-lg">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="text-2xl">📌</div>
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="text-3xl">👥</div>
                     <div>
-                      <h3 className="font-semibold text-primary">لوحة Pinterest</h3>
-                      <p className="text-sm text-gray-300">اللوحة المحددة للنشر</p>
+                      <h3 className="font-bold text-blue-900">صفحة Facebook</h3>
+                      <p className="text-sm text-blue-700">الصفحة المحددة للنشر</p>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-300">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>متصل ومحدد تلقائياً</span>
+                  {loadingDetails.facebook ? (
+                    <div className="text-sm text-blue-600">جاري تحميل التفاصيل...</div>
+                  ) : platformDetails.facebook ? (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-blue-900">اسم الصفحة:</span>
+                        <span className="text-blue-700 ml-2">{platformDetails.facebook.pageName || 'غير محدد'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-blue-900">عدد المعجبين:</span>
+                        <span className="text-blue-700 ml-2">{platformDetails.facebook.fanCount ? platformDetails.facebook.fanCount.toLocaleString() : '0'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-blue-900">معرف الصفحة:</span>
+                        <span className="text-blue-700 ml-2 font-mono text-xs">{platformDetails.facebook.pageId || 'غير محدد'}</span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-sm text-blue-600">فشل في تحميل التفاصيل</div>
+                  )}
                 </div>
               )}
-              
+
+              {/* Instagram Account */}
+              {isPlatformConnected('facebook') && platformDetails.facebook?.instagramId && (
+                <div className="p-6 bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="text-3xl">📷</div>
+                    <div>
+                      <h3 className="font-bold text-pink-900">حساب Instagram</h3>
+                      <p className="text-sm text-pink-700">مرتبط بصفحة Facebook</p>
+                    </div>
+                  </div>
+                  {loadingDetails.instagram ? (
+                    <div className="text-sm text-pink-600">جاري تحميل التفاصيل...</div>
+                  ) : platformDetails.instagram ? (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-pink-900">اسم المستخدم:</span>
+                        <span className="text-pink-700 ml-2">@{platformDetails.instagram.username || 'غير محدد'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-pink-900">المتابعون:</span>
+                        <span className="text-pink-700 ml-2">{platformDetails.instagram.followersCount ? platformDetails.instagram.followersCount.toLocaleString() : '0'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-pink-900">المنشورات:</span>
+                        <span className="text-pink-700 ml-2">{platformDetails.instagram.mediaCount ? platformDetails.instagram.mediaCount.toLocaleString() : '0'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-pink-600">فشل في تحميل التفاصيل</div>
+                  )}
+                </div>
+              )}
+
+              {/* LinkedIn Profile */}
+              {isPlatformConnected('linkedin') && (
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="text-3xl">💼</div>
+                    <div>
+                      <h3 className="font-bold text-blue-900">ملف LinkedIn</h3>
+                      <p className="text-sm text-blue-700">الملف الشخصي المتصل</p>
+                    </div>
+                  </div>
+                  {loadingDetails.linkedin ? (
+                    <div className="text-sm text-blue-600">جاري تحميل التفاصيل...</div>
+                  ) : platformDetails.linkedin ? (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-blue-900">الاسم:</span>
+                        <span className="text-blue-700 ml-2">
+                          {platformDetails.linkedin.profile?.firstName || platformDetails.linkedin.profile?.firstName?.localized?.en_US || 'غير محدد'} {' '}
+                          {platformDetails.linkedin.profile?.lastName || platformDetails.linkedin.profile?.lastName?.localized?.en_US || 'غير محدد'}
+                        </span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-blue-900">اسم الحساب:</span>
+                        <span className="text-blue-700 ml-2">{platformDetails.linkedin.name || 'غير محدد'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-blue-600">فشل في تحميل التفاصيل</div>
+                  )}
+                </div>
+              )}
+
+              {/* Twitter Account */}
+              {isPlatformConnected('twitter') && (
+                <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="text-3xl">𝕏</div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">حساب Twitter</h3>
+                      <p className="text-sm text-gray-700">الحساب المتصل</p>
+                    </div>
+                  </div>
+                  {loadingDetails.twitter ? (
+                    <div className="text-sm text-gray-600">جاري تحميل التفاصيل...</div>
+                  ) : platformDetails.twitter ? (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-gray-900">اسم المستخدم:</span>
+                        <span className="text-gray-700 ml-2">@{platformDetails.twitter.username || 'غير محدد'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-gray-900">المتابعون:</span>
+                        <span className="text-gray-700 ml-2">{platformDetails.twitter.metrics?.followers_count ? platformDetails.twitter.metrics.followers_count.toLocaleString() : '0'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-gray-900">التغريدات:</span>
+                        <span className="text-gray-700 ml-2">{platformDetails.twitter.metrics?.tweet_count ? platformDetails.twitter.metrics.tweet_count.toLocaleString() : '0'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-600">فشل في تحميل التفاصيل</div>
+                  )}
+                </div>
+              )}
+
               {/* YouTube Channel */}
               {isPlatformConnected('youtube') && (
-                <div className="p-4 bg-light-custom rounded-lg">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="text-2xl">▶️</div>
+                <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="text-3xl">▶️</div>
                     <div>
-                      <h3 className="font-semibold text-primary">قناة YouTube</h3>
-                      <p className="text-sm text-gray-300">اختر القناة للنشر</p>
+                      <h3 className="font-bold text-red-900">قناة YouTube</h3>
+                      <p className="text-sm text-red-700">القناة المتصلة</p>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-300">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span>متصل - اختر القناة</span>
+                  {loadingDetails.youtube ? (
+                    <div className="text-sm text-red-600">جاري تحميل التفاصيل...</div>
+                  ) : platformDetails.youtube ? (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-red-900">اسم القناة:</span>
+                        <span className="text-red-700 ml-2">{platformDetails.youtube.title || 'غير محدد'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-red-900">المشتركون:</span>
+                        <span className="text-red-700 ml-2">{platformDetails.youtube.statistics?.subscriberCount ? platformDetails.youtube.statistics.subscriberCount.toLocaleString() : '0'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-red-900">الفيديوهات:</span>
+                        <span className="text-red-700 ml-2">{platformDetails.youtube.statistics?.videoCount ? platformDetails.youtube.statistics.videoCount.toLocaleString() : '0'}</span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-sm text-red-600">فشل في تحميل التفاصيل</div>
+                  )}
                 </div>
               )}
-              
-              {/* LinkedIn Company */}
-              {isPlatformConnected('linkedin') && (
-                <div className="p-4 bg-light-custom rounded-lg">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <div className="text-2xl">💼</div>
+
+              {/* Pinterest Account */}
+              {isPlatformConnected('pinterest') && (
+                <div className="p-6 bg-gradient-to-br from-red-50 to-pink-100 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="text-3xl">📌</div>
                     <div>
-                      <h3 className="font-semibold text-primary">شركة LinkedIn</h3>
-                      <p className="text-sm text-gray-300">الشركة المحددة للنشر</p>
+                      <h3 className="font-bold text-red-900">حساب Pinterest</h3>
+                      <p className="text-sm text-red-700">الحساب المتصل</p>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-300">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>متصل ومحدد تلقائياً</span>
+                  {loadingDetails.pinterest ? (
+                    <div className="text-sm text-red-600">جاري تحميل التفاصيل...</div>
+                  ) : platformDetails.pinterest ? (
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-red-900">اسم المستخدم:</span>
+                        <span className="text-red-700 ml-2">@{platformDetails.pinterest.username || 'غير محدد'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold text-red-900">اسم الحساب:</span>
+                        <span className="text-red-700 ml-2">{platformDetails.pinterest.user?.username || 'غير محدد'}</span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-sm text-red-600">فشل في تحميل التفاصيل</div>
+                  )}
                 </div>
               )}
             </div>

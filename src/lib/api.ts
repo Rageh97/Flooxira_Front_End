@@ -1462,6 +1462,50 @@ export async function getInstagramAccountInfo(token: string) {
   }>("/api/analytics/instagram/account", { authToken: token });
 }
 
+// Platform Details APIs
+export async function getFacebookPageDetails(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    pageId: string;
+    pageName: string;
+    fanCount: number;
+    instagramId?: string;
+    instagramUsername?: string;
+  }>("/api/analytics/facebook/current-page", { authToken: token });
+}
+
+export async function getLinkedInProfileDetails(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    profile: any;
+    name: string;
+  }>("/api/analytics/linkedin/profile", { authToken: token });
+}
+
+export async function getTwitterAccountDetails(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    metrics: any;
+    username: string;
+  }>("/api/analytics/twitter/account", { authToken: token });
+}
+
+export async function getYouTubeChannelDetails(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    title: string;
+    statistics: any;
+  }>("/api/analytics/youtube/channel", { authToken: token });
+}
+
+export async function getPinterestAccountDetails(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    user: any;
+    username: string;
+  }>("/api/analytics/pinterest/account", { authToken: token });
+}
+
 // ===== CONNECTED ACCOUNTS API =====
 export async function getConnectedAccounts(token: string) {
   return apiFetch<{ 
