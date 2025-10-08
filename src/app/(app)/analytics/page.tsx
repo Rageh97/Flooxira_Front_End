@@ -230,10 +230,10 @@ export default function AnalyticsPage() {
               Switch Facebook Page
             </Button>
           )}
-          <Button onClick={fetchAnalytics} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+        <Button onClick={fetchAnalytics} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
         </div>
       </div>
 
@@ -417,18 +417,18 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   {analytics.facebook.insights && analytics.facebook.insights.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {analytics.facebook.insights.map((insight, index) => (
-                        <div key={index} className="space-y-2">
-                          <h4 className="font-semibold">{insight.name}</h4>
-                          <div className="text-2xl font-bold">
-                            {insight.values?.[0]?.value ? 
-                              formatNumber(insight.values[0].value) : 'N/A'}
-                          </div>
-                          <p className="text-sm text-gray-600">{insight.period}</p>
+                      <div key={index} className="space-y-2">
+                        <h4 className="font-semibold">{insight.name}</h4>
+                        <div className="text-2xl font-bold">
+                          {insight.values?.[0]?.value ? 
+                            formatNumber(insight.values[0].value) : 'N/A'}
                         </div>
-                      ))}
-                    </div>
+                        <p className="text-sm text-gray-600">{insight.period}</p>
+                      </div>
+                    ))}
+                  </div>
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-gray-500">No insights data available</p>
@@ -454,7 +454,7 @@ export default function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="instagram" className="space-y-6">
-          {analytics.instagram && analytics.instagram.account ? (
+          {analytics.instagram ? (
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -616,13 +616,13 @@ export default function AnalyticsPage() {
                     <div className="space-y-2">
                       <h4 className="font-semibold">First Name</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.linkedin?.profile?.firstName || analytics.linkedin?.profile?.firstName?.localized?.en_US || 'N/A'}
+                        {analytics.linkedin?.profile?.firstName || analytics.linkedin?.profile?.firstName?.localized?.en_US || analytics.linkedin?.profile?.firstName?.localized?.ar_AE || 'N/A'}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <h4 className="font-semibold">Last Name</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.linkedin?.profile?.lastName || analytics.linkedin?.profile?.lastName?.localized?.en_US || 'N/A'}
+                        {analytics.linkedin?.profile?.lastName || analytics.linkedin?.profile?.lastName?.localized?.en_US || analytics.linkedin?.profile?.lastName?.localized?.ar_AE || 'N/A'}
                       </div>
                     </div>
                   </div>

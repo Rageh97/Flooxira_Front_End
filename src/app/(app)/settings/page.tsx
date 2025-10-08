@@ -247,10 +247,17 @@ function SettingsContent() {
 
   // Load Facebook pages when Facebook is connected
   useEffect(() => {
-    if (connectedPlatforms.includes('facebook')) {
+    if (connectedPlatforms.includes('facebook') && token) {
       loadFacebookPages();
     }
   }, [connectedPlatforms, token]);
+
+  // Also load Facebook pages when component mounts if Facebook is connected
+  useEffect(() => {
+    if (connectedPlatforms.includes('facebook') && token && !currentFacebookPage) {
+      loadFacebookPages();
+    }
+  }, [connectedPlatforms, token, currentFacebookPage]);
 
   // Check permissions
   if (permissionsLoading) {
