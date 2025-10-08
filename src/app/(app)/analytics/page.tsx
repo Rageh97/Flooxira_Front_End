@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,7 +25,6 @@ import {
   Twitter, 
   Linkedin, 
   Youtube, 
-  Pinterest,
   TrendingUp,
   Users,
   Heart,
@@ -125,7 +124,7 @@ export default function AnalyticsPage() {
       case 'twitter': return <Twitter className="h-5 w-5 text-blue-400" />;
       case 'linkedin': return <Linkedin className="h-5 w-5 text-blue-700" />;
       case 'youtube': return <Youtube className="h-5 w-5 text-red-600" />;
-      case 'pinterest': return <Pinterest className="h-5 w-5 text-red-500" />;
+      case 'pinterest': return <TrendingUp className="h-5 w-5 text-red-500" />;
       default: return <TrendingUp className="h-5 w-5" />;
     }
   };
@@ -294,7 +293,7 @@ export default function AnalyticsPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Pinterest</CardTitle>
-                  <Pinterest className="h-4 w-4 text-red-500" />
+                  <TrendingUp className="h-4 w-4 text-red-500" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
@@ -331,9 +330,9 @@ export default function AnalyticsPage() {
                     <Facebook className="h-5 w-5 mr-2 text-blue-600" />
                     Facebook Analytics
                   </CardTitle>
-                  <CardDescription>
+                  <p className="text-sm text-muted-foreground">
                     Page ID: {analytics.facebook.pageId}
-                  </CardDescription>
+                  </p>
                 </CardHeader>
                 <CardContent>
                   {analytics.facebook.insights && analytics.facebook.insights.length > 0 ? (
@@ -382,9 +381,9 @@ export default function AnalyticsPage() {
                     <Twitter className="h-5 w-5 mr-2 text-blue-400" />
                     Twitter Analytics
                   </CardTitle>
-                  <CardDescription>
+                  <p className="text-sm text-muted-foreground">
                     @{analytics.twitter.username}
-                  </CardDescription>
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -442,9 +441,9 @@ export default function AnalyticsPage() {
                     <Linkedin className="h-5 w-5 mr-2 text-blue-700" />
                     LinkedIn Analytics
                   </CardTitle>
-                  <CardDescription>
+                  <p className="text-sm text-muted-foreground">
                     {analytics.linkedin.name}
-                  </CardDescription>
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -493,9 +492,9 @@ export default function AnalyticsPage() {
                     <Youtube className="h-5 w-5 mr-2 text-red-600" />
                     YouTube Analytics
                   </CardTitle>
-                  <CardDescription>
+                  <p className="text-sm text-muted-foreground">
                     {analytics.youtube.title}
-                  </CardDescription>
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -550,12 +549,12 @@ export default function AnalyticsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <Pinterest className="h-5 w-5 mr-2 text-red-500" />
+                    <TrendingUp className="h-5 w-5 mr-2 text-red-500" />
                     Pinterest Analytics
                   </CardTitle>
-                  <CardDescription>
+                  <p className="text-sm text-muted-foreground">
                     {analytics.pinterest.boards?.length || 0} Boards
-                  </CardDescription>
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -594,7 +593,7 @@ export default function AnalyticsPage() {
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Pinterest className="h-12 w-12 text-gray-400 mb-4" />
+                <TrendingUp className="h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">No Pinterest Analytics</h3>
                 <p className="text-gray-500 text-center">
                   Connect your Pinterest account to see analytics.
