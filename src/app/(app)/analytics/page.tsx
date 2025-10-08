@@ -1,32 +1,573 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
+import { 
+  Facebook, 
+  Instagram, 
+  Twitter, 
+  Linkedin, 
+  Youtube, 
+  Pinterest,
+  TrendingUp,
+  Users,
+  Heart,
+  MessageCircle,
+  Share,
+  Eye,
+  Calendar,
+  RefreshCw
+} from 'lucide-react';
+
+interface AnalyticsData {
+  facebook?: {
+    insights: any[];
+    pageId: string;
+    hasInstagram: boolean;
+  };
+  linkedin?: {
+    network: any;
+    name: string;
+  };
+  twitter?: {
+    metrics: any;
+    username: string;
+  };
+  youtube?: {
+    title: string;
+    statistics: any;
+  };
+  pinterest?: {
+    user: any;
+    boards: any[];
+  };
+}
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 export default function AnalyticsPage() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">التحليلات</h1>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>المنشورات الشهرية</CardHeader>
+  const [analytics, setAnalytics] = useState<AnalyticsData>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/analytics', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+      
+      const data = await response.json();
+      setAnalytics(data.analytics || {});
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
+  const getPlatformIcon = (platform: string) => {
+    switch (platform) {
+      case 'facebook': return <Facebook className="h-5 w-5 text-blue-600" />;
+      case 'instagram': return <Instagram className="h-5 w-5 text-pink-600" />;
+      case 'twitter': return <Twitter className="h-5 w-5 text-blue-400" />;
+      case 'linkedin': return <Linkedin className="h-5 w-5 text-blue-700" />;
+      case 'youtube': return <Youtube className="h-5 w-5 text-red-600" />;
+      case 'pinterest': return <Pinterest className="h-5 w-5 text-red-500" />;
+      default: return <TrendingUp className="h-5 w-5" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center space-x-2">
+          <RefreshCw className="h-6 w-6 animate-spin" />
+          <span>Loading analytics...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-96">
+          <CardHeader>
+            <CardTitle className="text-red-600">Error</CardTitle>
+          </CardHeader>
           <CardContent>
-            <div className="h-48 rounded-md border border-dashed" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>التفاعل</CardHeader>
-          <CardContent>
-            <div className="h-48 rounded-md border border-dashed" />
+            <p className="text-gray-600">{error}</p>
+            <Button onClick={fetchAnalytics} className="mt-4">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+          <p className="text-gray-600">Track your social media performance across all platforms</p>
+        </div>
+        <Button onClick={fetchAnalytics} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="facebook">Facebook</TabsTrigger>
+          <TabsTrigger value="twitter">Twitter</TabsTrigger>
+          <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
+          <TabsTrigger value="youtube">YouTube</TabsTrigger>
+          <TabsTrigger value="pinterest">Pinterest</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Facebook Card */}
+            {analytics.facebook && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Facebook</CardTitle>
+                  <Facebook className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {analytics.facebook.insights?.[0]?.values?.[0]?.value ? 
+                      formatNumber(analytics.facebook.insights[0].values[0].value) : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Page Fans
+                  </p>
+                  {analytics.facebook.hasInstagram && (
+                    <Badge variant="secondary" className="mt-2">
+                      <Instagram className="h-3 w-3 mr-1" />
+                      Instagram Connected
+                    </Badge>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* LinkedIn Card */}
+            {analytics.linkedin && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">LinkedIn</CardTitle>
+                  <Linkedin className="h-4 w-4 text-blue-700" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {analytics.linkedin.network?.firstDegreeSize ? 
+                      formatNumber(analytics.linkedin.network.firstDegreeSize) : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Connections
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {analytics.linkedin.name}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Twitter Card */}
+            {analytics.twitter && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Twitter</CardTitle>
+                  <Twitter className="h-4 w-4 text-blue-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {analytics.twitter.metrics?.followers_count ? 
+                      formatNumber(analytics.twitter.metrics.followers_count) : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Followers
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    @{analytics.twitter.username}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* YouTube Card */}
+            {analytics.youtube && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">YouTube</CardTitle>
+                  <Youtube className="h-4 w-4 text-red-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {analytics.youtube.statistics?.subscriberCount ? 
+                      formatNumber(parseInt(analytics.youtube.statistics.subscriberCount)) : 'N/A'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Subscribers
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {analytics.youtube.title}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pinterest Card */}
+            {analytics.pinterest && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pinterest</CardTitle>
+                  <Pinterest className="h-4 w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {analytics.pinterest.boards?.length || 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Boards
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* No Analytics Message */}
+          {Object.keys(analytics).length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <TrendingUp className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Analytics Available</h3>
+                <p className="text-gray-500 text-center max-w-md">
+                  Connect your social media accounts to see detailed analytics and insights.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="facebook" className="space-y-6">
+          {analytics.facebook ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Facebook className="h-5 w-5 mr-2 text-blue-600" />
+                    Facebook Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    Page ID: {analytics.facebook.pageId}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {analytics.facebook.insights?.map((insight, index) => (
+                      <div key={index} className="space-y-2">
+                        <h4 className="font-semibold">{insight.name}</h4>
+                        <div className="text-2xl font-bold">
+                          {insight.values?.[0]?.value ? 
+                            formatNumber(insight.values[0].value) : 'N/A'}
+                        </div>
+                        <p className="text-sm text-gray-600">{insight.period}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Facebook className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Facebook Analytics</h3>
+                <p className="text-gray-500 text-center">
+                  Connect your Facebook account to see analytics.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="twitter" className="space-y-6">
+          {analytics.twitter ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Twitter className="h-5 w-5 mr-2 text-blue-400" />
+                    Twitter Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    @{analytics.twitter.username}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Followers</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.twitter.metrics?.followers_count ? 
+                          formatNumber(analytics.twitter.metrics.followers_count) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Following</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.twitter.metrics?.following_count ? 
+                          formatNumber(analytics.twitter.metrics.following_count) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Tweets</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.twitter.metrics?.tweet_count ? 
+                          formatNumber(analytics.twitter.metrics.tweet_count) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Listed</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.twitter.metrics?.listed_count ? 
+                          formatNumber(analytics.twitter.metrics.listed_count) : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Twitter className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Twitter Analytics</h3>
+                <p className="text-gray-500 text-center">
+                  Connect your Twitter account to see analytics.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="linkedin" className="space-y-6">
+          {analytics.linkedin ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Linkedin className="h-5 w-5 mr-2 text-blue-700" />
+                    LinkedIn Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    {analytics.linkedin.name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">1st Degree</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.linkedin.network?.firstDegreeSize ? 
+                          formatNumber(analytics.linkedin.network.firstDegreeSize) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">2nd Degree</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.linkedin.network?.secondDegreeSize ? 
+                          formatNumber(analytics.linkedin.network.secondDegreeSize) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">3rd Degree</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.linkedin.network?.thirdDegreeSize ? 
+                          formatNumber(analytics.linkedin.network.thirdDegreeSize) : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Linkedin className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No LinkedIn Analytics</h3>
+                <p className="text-gray-500 text-center">
+                  Connect your LinkedIn account to see analytics.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="youtube" className="space-y-6">
+          {analytics.youtube ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Youtube className="h-5 w-5 mr-2 text-red-600" />
+                    YouTube Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    {analytics.youtube.title}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Subscribers</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.youtube.statistics?.subscriberCount ? 
+                          formatNumber(parseInt(analytics.youtube.statistics.subscriberCount)) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Videos</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.youtube.statistics?.videoCount ? 
+                          formatNumber(parseInt(analytics.youtube.statistics.videoCount)) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Views</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.youtube.statistics?.viewCount ? 
+                          formatNumber(parseInt(analytics.youtube.statistics.viewCount)) : 'N/A'}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold">Comments</h4>
+                      <div className="text-2xl font-bold">
+                        {analytics.youtube.statistics?.commentCount ? 
+                          formatNumber(parseInt(analytics.youtube.statistics.commentCount)) : 'N/A'}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Youtube className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No YouTube Analytics</h3>
+                <p className="text-gray-500 text-center">
+                  Connect your YouTube account to see analytics.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="pinterest" className="space-y-6">
+          {analytics.pinterest ? (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Pinterest className="h-5 w-5 mr-2 text-red-500" />
+                    Pinterest Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    {analytics.pinterest.boards?.length || 0} Boards
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-semibold">Boards</h4>
+                        <div className="text-2xl font-bold">
+                          {analytics.pinterest.boards?.length || 0}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="font-semibold">Username</h4>
+                        <div className="text-lg">
+                          {analytics.pinterest.user?.username || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {analytics.pinterest.boards && analytics.pinterest.boards.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-semibold">Recent Boards</h4>
+                        <div className="space-y-2">
+                          {analytics.pinterest.boards.slice(0, 5).map((board, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                              <span className="font-medium">{board.name}</span>
+                              <Badge variant="outline">{board.pin_count || 0} pins</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Pinterest className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">No Pinterest Analytics</h3>
+                <p className="text-gray-500 text-center">
+                  Connect your Pinterest account to see analytics.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
