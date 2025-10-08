@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { CheckCircle, XCircle, AlertCircle, Info } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
@@ -115,8 +115,6 @@ const ToastComponent = ({ toast, onRemove }: ToastProps) => {
 };
 
 // Toast Context
-import { createContext, useContext, useCallback } from "react";
-
 interface ToastContextType {
   showToast: (toast: Omit<Toast, "id">) => void;
   showSuccess: (title: string, message?: string) => void;
@@ -189,18 +187,3 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
     </ToastContext.Provider>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
