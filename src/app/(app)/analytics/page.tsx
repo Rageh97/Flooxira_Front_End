@@ -77,15 +77,22 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
+      setError(null); // Clear previous errors
       const token = localStorage.getItem('auth_token');
       if (!token) {
         throw new Error('No authentication token found');
       }
       
       const data = await getAllAnalytics(token);
-      setAnalytics(data.analytics || {});
+      if (data && data.analytics) {
+        setAnalytics(data.analytics);
+      } else {
+        setAnalytics({});
+      }
     } catch (err) {
+      console.error('Analytics fetch error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
+      setAnalytics({}); // Set empty analytics on error
     } finally {
       setLoading(false);
     }
@@ -200,7 +207,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {analytics.facebook.insights?.[0]?.values?.[0]?.value ? 
+                    {analytics.facebook?.insights?.[0]?.values?.[0]?.value ? 
                       formatNumber(analytics.facebook.insights[0].values[0].value) : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -225,14 +232,14 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {analytics.linkedin.network?.firstDegreeSize ? 
-                      formatNumber(analytics.linkedin.network.firstDegreeSize) : 'N/A'}
+                    {analytics.linkedin?.profile?.firstName ? 
+                      analytics.linkedin.profile.firstName : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Connections
+                    Profile
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {analytics.linkedin.name}
+                    {analytics.linkedin?.name || 'N/A'}
                   </p>
                 </CardContent>
               </Card>
@@ -247,14 +254,14 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {analytics.twitter.metrics?.followers_count ? 
+                    {analytics.twitter?.metrics?.followers_count ? 
                       formatNumber(analytics.twitter.metrics.followers_count) : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Followers
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    @{analytics.twitter.username}
+                    @{analytics.twitter?.username || 'N/A'}
                   </p>
                 </CardContent>
               </Card>
@@ -269,14 +276,14 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {analytics.youtube.statistics?.subscriberCount ? 
+                    {analytics.youtube?.statistics?.subscriberCount ? 
                       formatNumber(parseInt(analytics.youtube.statistics.subscriberCount)) : 'N/A'}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Subscribers
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {analytics.youtube.title}
+                    {analytics.youtube?.title || 'N/A'}
                   </p>
                 </CardContent>
               </Card>
@@ -291,7 +298,7 @@ export default function AnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {analytics.pinterest.boards?.length || 0}
+                    {analytics.pinterest?.boards?.length || 0}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Boards
@@ -329,18 +336,27 @@ export default function AnalyticsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {analytics.facebook.insights?.map((insight, index) => (
-                      <div key={index} className="space-y-2">
-                        <h4 className="font-semibold">{insight.name}</h4>
-                        <div className="text-2xl font-bold">
-                          {insight.values?.[0]?.value ? 
-                            formatNumber(insight.values[0].value) : 'N/A'}
+                  {analytics.facebook.insights && analytics.facebook.insights.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {analytics.facebook.insights.map((insight, index) => (
+                        <div key={index} className="space-y-2">
+                          <h4 className="font-semibold">{insight.name}</h4>
+                          <div className="text-2xl font-bold">
+                            {insight.values?.[0]?.value ? 
+                              formatNumber(insight.values[0].value) : 'N/A'}
+                          </div>
+                          <p className="text-sm text-gray-600">{insight.period}</p>
                         </div>
-                        <p className="text-sm text-gray-600">{insight.period}</p>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No insights data available</p>
+                      {analytics.facebook.error && (
+                        <p className="text-sm text-red-500 mt-2">{analytics.facebook.error}</p>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -431,29 +447,27 @@ export default function AnalyticsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <h4 className="font-semibold">1st Degree</h4>
+                      <h4 className="font-semibold">First Name</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.linkedin.network?.firstDegreeSize ? 
-                          formatNumber(analytics.linkedin.network.firstDegreeSize) : 'N/A'}
+                        {analytics.linkedin?.profile?.firstName || 'N/A'}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="font-semibold">2nd Degree</h4>
+                      <h4 className="font-semibold">Last Name</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.linkedin.network?.secondDegreeSize ? 
-                          formatNumber(analytics.linkedin.network.secondDegreeSize) : 'N/A'}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-semibold">3rd Degree</h4>
-                      <div className="text-2xl font-bold">
-                        {analytics.linkedin.network?.thirdDegreeSize ? 
-                          formatNumber(analytics.linkedin.network.thirdDegreeSize) : 'N/A'}
+                        {analytics.linkedin?.profile?.lastName || 'N/A'}
                       </div>
                     </div>
                   </div>
+                  {analytics.linkedin?.error && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                      <p className="text-sm text-yellow-800">
+                        Note: {analytics.linkedin.error}
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
