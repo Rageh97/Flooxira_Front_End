@@ -1424,7 +1424,7 @@ export async function getAvailableFacebookPages(token: string) {
     success: boolean; 
     pages: any[]; 
     currentPageId: string 
-  }>("/api/analytics/facebook/pages", { authToken: token });
+  }>("/api/facebook/pages", { authToken: token });
 }
 
 export async function switchFacebookPage(token: string, pageId: string, pageName: string) {
@@ -1444,10 +1444,10 @@ export async function switchFacebookPage(token: string, pageId: string, pageName
 export async function getCurrentFacebookPage(token: string) {
   return apiFetch<{ 
     success: boolean; 
-    pageId: string; 
-    pageName: string; 
+    pageId: string;
+    pageName: string;
     fanCount: number;
-  }>("/api/analytics/facebook/current", { authToken: token });
+  }>("/api/facebook/current-page", { authToken: token });
 }
 
 // Get Instagram account info
@@ -1459,7 +1459,7 @@ export async function getInstagramAccountInfo(token: string) {
     followersCount: number;
     followingCount: number;
     mediaCount: number;
-  }>("/api/analytics/instagram/account", { authToken: token });
+  }>("/api/facebook/instagram/account", { authToken: token });
 }
 
 // Platform Details APIs
@@ -1471,7 +1471,7 @@ export async function getFacebookPageDetails(token: string) {
     fanCount: number;
     instagramId?: string;
     instagramUsername?: string;
-  }>("/api/analytics/facebook/current-page", { authToken: token });
+  }>("/api/facebook/current-page", { authToken: token });
 }
 
 export async function getLinkedInProfileDetails(token: string) {
@@ -1479,7 +1479,7 @@ export async function getLinkedInProfileDetails(token: string) {
     success: boolean; 
     profile: any;
     name: string;
-  }>("/api/analytics/linkedin/profile", { authToken: token });
+  }>("/api/linkedin/profile", { authToken: token });
 }
 
 export async function getTwitterAccountDetails(token: string) {
@@ -1487,7 +1487,7 @@ export async function getTwitterAccountDetails(token: string) {
     success: boolean; 
     metrics: any;
     username: string;
-  }>("/api/analytics/twitter/account", { authToken: token });
+  }>("/api/twitter/account", { authToken: token });
 }
 
 export async function getYouTubeChannelDetails(token: string) {
@@ -1495,7 +1495,7 @@ export async function getYouTubeChannelDetails(token: string) {
     success: boolean; 
     title: string;
     statistics: any;
-  }>("/api/analytics/youtube/channel", { authToken: token });
+  }>("/api/youtube/channel", { authToken: token });
 }
 
 export async function getPinterestAccountDetails(token: string) {
@@ -1503,7 +1503,7 @@ export async function getPinterestAccountDetails(token: string) {
     success: boolean; 
     user: any;
     username: string;
-  }>("/api/analytics/pinterest/account", { authToken: token });
+  }>("/api/pinterest/account", { authToken: token });
 }
 
 // ===== CONNECTED ACCOUNTS API =====
