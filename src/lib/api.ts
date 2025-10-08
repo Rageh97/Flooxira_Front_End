@@ -1418,3 +1418,18 @@ export async function getPinterestAnalytics(token: string) {
   }>("/api/analytics/pinterest", { authToken: token });
 }
 
+// ===== CONNECTED ACCOUNTS API =====
+export async function getConnectedAccounts(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    connectedAccounts: {
+      facebook?: { name: string; id: string; type: string };
+      linkedin?: { name: string; id: string; type: string };
+      twitter?: { name: string; id: string; type: string };
+      youtube?: { name: string; id: string; type: string };
+      pinterest?: { name: string; id: string; type: string };
+    }; 
+    totalConnected: number;
+  }>("/api/facebook/connected-accounts", { authToken: token });
+}
+

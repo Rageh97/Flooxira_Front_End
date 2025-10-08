@@ -39,6 +39,7 @@ import { getAllAnalytics } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
+import ConnectedAccounts from '@/components/ConnectedAccounts';
 
 interface AnalyticsData {
   facebook?: {
@@ -174,6 +175,9 @@ export default function AnalyticsPage() {
           Refresh
         </Button>
       </div>
+
+      {/* Connected Accounts Section */}
+      <ConnectedAccounts />
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">
