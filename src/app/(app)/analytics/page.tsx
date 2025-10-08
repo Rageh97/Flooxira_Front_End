@@ -36,6 +36,9 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { getAllAnalytics } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import AuthGuard from '@/components/AuthGuard';
 
 interface AnalyticsData {
   facebook?: {
@@ -67,11 +70,13 @@ export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -86,8 +91,15 @@ export default function AnalyticsPage() {
   };
 
   useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user) {
+      router.push('/sign-in');
+      return;
+    }
+    
     fetchAnalytics();
-  }, []);
+  }, [user, authLoading, router]);
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -110,12 +122,12 @@ export default function AnalyticsPage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex items-center space-x-2">
           <RefreshCw className="h-6 w-6 animate-spin" />
-          <span>Loading analytics...</span>
+          <span>{authLoading ? 'Checking authentication...' : 'Loading analytics...'}</span>
         </div>
       </div>
     );
@@ -130,10 +142,19 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600">{error}</p>
-            <Button onClick={fetchAnalytics} className="mt-4">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
+            {error.includes('authentication') ? (
+              <div className="mt-4 space-y-2">
+                <p className="text-sm text-gray-500">Please sign in to access analytics.</p>
+                <Button onClick={() => router.push('/sign-in')} className="w-full">
+                  Go to Sign In
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={fetchAnalytics} className="mt-4">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -141,7 +162,8 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AuthGuard>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
@@ -564,6 +586,7 @@ export default function AnalyticsPage() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AuthGuard>
   );
 }
