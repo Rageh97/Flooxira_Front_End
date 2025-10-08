@@ -5,14 +5,14 @@ import { PropsWithChildren } from "react";
 import { clsx } from "clsx";
 
 const telegramTabs = [
-  { href: "/telegram", label: "🤖 Connection", exact: true },
-  { href: "/telegram/chat-management", label: "👥 Chat Management" },
-  { href: "/telegram/admin-tools", label: "⚙️ Admin Tools" },
-  { href: "/telegram/groups", label: "🏢 Groups" },
-  { href: "/telegram/chats", label: "💬 Chat History" },
-  { href: "/telegram/campaigns", label: "📣 Campaigns" },
-  { href: "/telegram/tags", label: "🏷️ Tags" },
-  { href: "/telegram-templates", label: "📝 Templates" },
+  { href: "/telegram", label: "الاتصال", exact: true },
+  { href: "/telegram/chat-management", label: "إدارة المحادثات" },
+  { href: "/telegram/admin-tools", label: "أدوات الإدارة" },
+  { href: "/telegram/groups", label: "المجموعات" },
+  { href: "/telegram/chats", label: "سجل المحادثات" },
+  { href: "/telegram/campaigns", label: "الحملات" },
+  { href: "/telegram/tags", label: "العلامات" },
+  { href: "/telegram-templates", label: "القوالب" },
 ];
 
 export default function TelegramLayout({ children }: PropsWithChildren) {
@@ -22,7 +22,7 @@ export default function TelegramLayout({ children }: PropsWithChildren) {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-semidark-custom border border-gray-700 rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-white mb-4">📱 Telegram Management</h1>
+        <h1 className="text-2xl font-bold text-white mb-4">إدارة التليجرام</h1>
         <p className="text-gray-300">إدارة البوتات والقوالب التفاعلية للتيليجرام</p>
       </div>
 

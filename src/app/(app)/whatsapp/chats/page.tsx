@@ -73,7 +73,13 @@ export default function WhatsAppChatsPage() {
       const data = await getChatHistory(token, contactNumber);
       console.log(`[WhatsApp] Chat history response:`, data);
       if (data.success) {
-        setChats(data.chats);
+        setChats(data.chats.map((chat: any) => ({
+          ...chat,
+          contentType: chat.contentType || 'text',
+          mediaUrl: chat.mediaUrl || undefined,
+          mediaFilename: chat.mediaFilename || undefined,
+          mediaMimetype: chat.mediaMimetype || undefined
+        })));
         console.log(`[WhatsApp] Loaded ${data.chats.length} messages`);
       } else {
         console.log(`[WhatsApp] Failed to load chat history:`, data);
@@ -119,10 +125,10 @@ export default function WhatsAppChatsPage() {
       setTagLoading(true);
       const res = await addContactToTag(selectedTagId, { contactNumber: selectedContactForTag, contactName: undefined });
       if (res.success) {
-        setSuccess("Added to tag successfully");
+        setSuccess("تمت الإضافة إلى العلامة بنجاح");
         setShowTagModal(false);
       } else {
-        setError(res.message || "Failed to add to tag");
+        setError(res.message || "فشل في الإضافة إلى العلامة");
       }
     } catch (e: any) {
       setError(e.message);
@@ -153,7 +159,7 @@ export default function WhatsAppChatsPage() {
     const targetMessage = message || testMessage;
     
     if (!targetPhone || !targetMessage) {
-      setError("Please enter both phone number and message");
+      setError("يرجى إدخال رقم الهاتف والرسالة");
       return;
     }
     
@@ -164,7 +170,7 @@ export default function WhatsAppChatsPage() {
       const result = await sendWhatsAppMessage(token, targetPhone, targetMessage);
       
       if (result.success) {
-        setSuccess("Message sent successfully!");
+        setSuccess("تم إرسال الرسالة بنجاح!");
         setTestMessage("");
         console.log(`[WhatsApp Frontend] Message sent successfully, refreshing chat history for ${selectedContact}`);
         // Refresh chat history if we're in chat view
@@ -177,7 +183,7 @@ export default function WhatsAppChatsPage() {
         }
       } else {
         console.log(`[WhatsApp Frontend] Message send failed:`, result.message);
-        setError(result.message || "Failed to send message");
+        setError(result.message || "فشل في إرسال الرسالة");
       }
     } catch (e: any) {
       console.error('[WhatsApp Frontend] Send message error:', e);
@@ -200,14 +206,14 @@ export default function WhatsAppChatsPage() {
       console.log(`[WhatsApp] Send media response:`, data);
       
       if (data.success) {
-        setSuccess(`Media sent successfully to ${contactNumber}`);
+        setSuccess(`تم إرسال الوسائط بنجاح إلى ${contactNumber}`);
         setMediaFile(null);
         setMediaPreview(null);
         setMediaCaption("");
         // Refresh chat history to show the new message
         await loadChatHistory(contactNumber);
       } else {
-        setError(data.message || "Failed to send media");
+        setError(data.message || "فشل في إرسال الوسائط");
       }
     } catch (error) {
       console.error("[WhatsApp] Error sending media:", error);
@@ -226,13 +232,13 @@ export default function WhatsAppChatsPage() {
     const isVideo = file.type.startsWith('video/');
     
     if (!isImage && !isVideo) {
-      setError('Please select an image or video file');
+      setError('يرجى اختيار ملف صورة أو فيديو');
       return;
     }
 
     // Check file size (max 16MB for WhatsApp)
     if (file.size > 16 * 1024 * 1024) {
-      setError('File size must be less than 16MB');
+      setError('يجب أن يكون حجم الملف أقل من 16 ميجابايت');
       return;
     }
 
@@ -275,10 +281,10 @@ export default function WhatsAppChatsPage() {
       setError("");
       const result = await pauseBot(minutes);
       if (result.success) {
-        setSuccess(`Bot paused for ${minutes} minutes`);
+        setSuccess(`تم إيقاف البوت لمدة ${minutes} دقيقة`);
         await loadBotStatus();
       } else {
-        setError(result.message || "Failed to pause bot");
+        setError(result.message || "فشل في إيقاف البوت");
       }
     } catch (e: any) {
       setError(e.message);
@@ -293,10 +299,10 @@ export default function WhatsAppChatsPage() {
       setError("");
       const result = await resumeBot();
       if (result.success) {
-        setSuccess("Bot resumed successfully");
+        setSuccess("تم استئناف البوت بنجاح");
         await loadBotStatus();
       } else {
-        setError(result.message || "Failed to resume bot");
+        setError(result.message || "فشل في استئناف البوت");
       }
     } catch (e: any) {
       setError(e.message);
@@ -324,7 +330,7 @@ export default function WhatsAppChatsPage() {
       <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">
           <div className="flex items-center justify-between">
-            <span>Bot Control</span>
+            <span>تحكم البوت</span>
             <Button 
               size="sm" 
               variant="secondary" 
@@ -340,11 +346,11 @@ export default function WhatsAppChatsPage() {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
               <span className="text-sm text-white">
-                {botStatus?.isPaused ? 'Bot Paused' : 'Bot Active'}
+                {botStatus?.isPaused ? 'البوت متوقف' : 'البوت نشط'}
               </span>
               {botStatus?.isPaused && botStatus.timeRemaining > 0 && (
                 <span className="text-xs text-gray-500">
-                  ({botStatus.timeRemaining} min remaining)
+                  ({botStatus.timeRemaining} دقيقة متبقية)
                 </span>
               )}  
             </div>
@@ -356,7 +362,7 @@ export default function WhatsAppChatsPage() {
                   disabled={botControlLoading}
                   className="bg-green-500 hover:bg-green-600"
                 >
-                  {botControlLoading ? 'Resuming...' : 'Resume Bot'}
+                  {botControlLoading ? 'جاري الاستئناف...' : 'استئناف البوت'}
                 </Button>
               ) : (
                 <div className="flex gap-1">
@@ -366,7 +372,7 @@ export default function WhatsAppChatsPage() {
                     disabled={botControlLoading}
                     className="bg-yellow-500 hover:bg-yellow-600"
                   >
-                    Pause 30m
+                    إيقاف 30 د
                   </Button>
                   <Button 
                     size="sm" 
@@ -374,17 +380,17 @@ export default function WhatsAppChatsPage() {
                     disabled={botControlLoading}
                     className="bg-orange-500 hover:bg-orange-600"
                   >
-                    Pause 1h
+                    إيقاف ساعة
                   </Button>
                 </div>
               )}
             </div>
           </div>
           <div className="mt-2 text-xs text-gray-500">
-            {botStatus?.isPaused 
+            {/* {botStatus?.isPaused 
               ? "Bot will not respond to incoming messages. Resume manually or wait for auto-resume."
               : "Bot is actively responding to incoming messages. Pause when you want to take over conversations."
-            }
+            } */}
           </div>
         </CardContent>
       </Card>
@@ -392,7 +398,7 @@ export default function WhatsAppChatsPage() {
       <div className="grid gap-6 md:grid-cols-3">
         {/* Contacts List */}
         <Card className="bg-card border-none">
-          <CardHeader className="border-text-primary/50 text-primary">Contacts ({contacts.length})</CardHeader>
+          <CardHeader className="border-text-primary/50 text-primary">جهات الاتصال ({contacts.length})</CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {contacts.map((contact) => (
@@ -410,7 +416,7 @@ export default function WhatsAppChatsPage() {
                 >
                   <div className="font-medium text-sm text-white">{contact.contactNumber}</div>
                   <div className="text-xs text-orange-300">
-                    {contact.messageCount} messages • {new Date(contact.lastMessageTime).toLocaleDateString()}
+                    {contact.messageCount} رسالة • {new Date(contact.lastMessageTime).toLocaleDateString()}
                   </div>
                 </div>
               ))}
@@ -423,7 +429,7 @@ export default function WhatsAppChatsPage() {
           <Card className="bg-card border-none">
             <CardHeader className="border-text-primary/50 text-primary">
               <div className="flex items-center justify-between">
-                <span>{selectedContact ? `Chat with ${selectedContact}` : 'Select a contact to view messages'}</span>
+                <span>{selectedContact ? `محادثة مع ${selectedContact}` : 'اختر جهة اتصال لعرض الرسائل'}</span>
                 {selectedContact && (
                   <div className="flex items-center gap-2">
                   <Button 
@@ -439,7 +445,7 @@ export default function WhatsAppChatsPage() {
                       onClick={openTagModal}
                       className="text-xs bg-light-custom hover:bg-[#08c47d]"
                     >
-                      + Add to Tag
+                      + إضافة إلى علامة
                     </Button>
                   </div>
                 )}
@@ -452,12 +458,12 @@ export default function WhatsAppChatsPage() {
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {chats.length === 0 ? (
                       <div className="text-center py-4 text-gray-500">
-                        No messages found. Try refreshing or check if the contact has sent any messages.
+                        لم يتم العثور على رسائل. جرب التحديث أو تحقق من إرسال جهة الاتصال لأي رسائل.
                       </div>
                     ) : (
                       <>
                         <div className="text-xs text-gray-500 text-center">
-                          {chats.length} message{chats.length !== 1 ? 's' : ''} loaded
+                          {chats.length} رسالة محملة
                         </div>
                         {chats.map((chat) => (
                           <div
@@ -495,7 +501,7 @@ export default function WhatsAppChatsPage() {
                                       e.currentTarget.style.display = 'none';
                                     }}
                                   >
-                                    Your browser does not support the video tag.
+                                    متصفحك لا يدعم علامة الفيديو.
                                   </video>
                                 </div>
                               )}
@@ -516,7 +522,7 @@ export default function WhatsAppChatsPage() {
                                         rel="noopener noreferrer"
                                         className="text-xs underline"
                                       >
-                                        Download
+                                        تحميل
                                       </a>
                                     </div>
                                   </div>
@@ -545,14 +551,13 @@ export default function WhatsAppChatsPage() {
                     <div className="border-t pt-4">
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-medium text-gray-700">Media Preview</h4>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={clearMedia}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            Remove
+                          <h4 className="text-sm font-medium text-gray-700">معاينة الوسائط</h4>
+                        <Button 
+                          variant="secondary" 
+                          onClick={clearMedia}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                            إزالة
                           </Button>
                         </div>
                         
@@ -568,17 +573,17 @@ export default function WhatsAppChatsPage() {
                         
                         {mediaFile.type.startsWith('video/') && (
                           <div className="mb-3 p-2 bg-gray-100 rounded">
-                            <p className="text-sm text-gray-600">📹 Video: {mediaFile.name}</p>
+                            <p className="text-sm text-gray-600">📹 فيديو: {mediaFile.name}</p>
                           </div>
                         )}
                         
                         <div className="space-y-2">
                           <input
                             type="text"
-                            placeholder="Add caption (optional)..."
+                            placeholder="أضف تعليق (اختياري)..."
                             value={mediaCaption}
                             onChange={(e) => setMediaCaption(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-white"
                           />
                           <div className="flex gap-2">
                             <Button 
@@ -586,13 +591,13 @@ export default function WhatsAppChatsPage() {
                               disabled={sendingMedia}
                               className="bg-green-500 hover:bg-green-600"
                             >
-                              {sendingMedia ? "Sending..." : "Send Media"}
+                              {sendingMedia ? 'جاري الإرسال...' : 'إرسال الوسائط'}
                             </Button>
                             <Button 
-                              variant="outline" 
+                              variant="secondary" 
                               onClick={clearMedia}
                             >
-                              Cancel
+                              إلغاء
                             </Button>
                           </div>
                         </div>
@@ -605,10 +610,10 @@ export default function WhatsAppChatsPage() {
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="Type your message..."
+                        placeholder="اكتب رسالتك..."
                         value={testMessage}
                         onChange={(e) => setTestMessage(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-white"
                         onKeyPress={(e) => {
                           if (e.key === 'Enter' && !loading) {
                             handleSendMessage(selectedContact, testMessage);
@@ -630,16 +635,16 @@ export default function WhatsAppChatsPage() {
                         disabled={!testMessage.trim() || loading}
                         className="bg-blue-500 hover:bg-blue-600"
                       >
-                        {loading ? "Sending..." : "Send"}
+                        {loading ? 'جاري الإرسال...' : 'إرسال'}
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      {loading ? "Sending message..." : "Press Enter to send or click Send button"}
+                      {loading ? "جاري إرسال الرسالة..." : "اضغط Enter للإرسال أو انقر على زر الإرسال"}
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">Select a contact to view chat history</p>
+                <p className="text-gray-500 text-center py-8">اختر جهة اتصال لعرض سجل المحادثة</p>
               )}
             </CardContent>
           </Card>
@@ -650,29 +655,29 @@ export default function WhatsAppChatsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/50" onClick={() => setShowTagModal(false)} />
           <div className="relative z-10 w-full max-w-md bg-semidark-custom border border-gray-700 rounded p-4">
-            <h3 className="text-white text-lg font-medium mb-3">Add to Tag</h3>
+            <h3 className="text-white text-lg font-medium mb-3">إضافة إلى علامة</h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-300 mb-1">Contact</label>
+                <label className="block text-sm text-gray-300 mb-1">جهة الاتصال</label>
                 <select
                   className="w-full bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white"
                   value={selectedContactForTag}
                   onChange={(e) => setSelectedContactForTag(e.target.value)}
                 >
-                  <option value="">Select contact</option>
+                  <option value="">اختر جهة اتصال</option>
                   {contacts.map(c => (
                     <option key={c.contactNumber} value={c.contactNumber}>{c.contactNumber}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm text-gray-300 mb-1">Tag</label>
+                <label className="block text-sm text-gray-300 mb-1">العلامة</label>
                 <select
                   className="w-full bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white"
                   value={selectedTagId ?? ''}
                   onChange={(e) => setSelectedTagId(parseInt(e.target.value))}
                 >
-                  <option value="">Select tag</option>
+                  <option value="">اختر علامة</option>
                   {tags.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
@@ -680,19 +685,19 @@ export default function WhatsAppChatsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <input
-                  className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white"
-                  placeholder="Quick create tag"
+                  className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white placeholder-white"
+                  placeholder="إنشاء علامة سريعة"
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
                 />
                 <Button onClick={handleCreateTagQuick} disabled={!newTagName.trim() || tagLoading} className="bg-light-custom hover:bg-[#08c47d]">
-                  Create
+                  إنشاء
                 </Button>
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button variant="secondary" size="sm" onClick={() => setShowTagModal(false)}>Cancel</Button>
+                <Button variant="secondary" size="sm" onClick={() => setShowTagModal(false)}>إلغاء</Button>
                 <Button size="sm" onClick={handleAddToTag} disabled={!selectedTagId || !selectedContactForTag || tagLoading} className="bg-light-custom hover:bg-[#08c47d]">
-                  {tagLoading ? 'Adding...' : 'Add'}
+                  {tagLoading ? 'جاري الإضافة...' : 'إضافة'}
                 </Button>
               </div>
             </div>

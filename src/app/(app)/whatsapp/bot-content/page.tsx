@@ -439,7 +439,7 @@ export default function BotContentPage() {
               <thead className="bg-gray-50">
                 <tr>
                   {fields.map(field => (
-                    <th key={field.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th key={field.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
                       {field.fieldName}
                     </th>
                   ))}
@@ -452,7 +452,7 @@ export default function BotContentPage() {
                 {currentRows.map(row => (
                   <tr key={row.id}>
                     {fields.map(field => (
-                      <td key={field.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td key={field.id} className="px-6 py-4 text-sm text-gray-900 min-w-[200px]">
                         {editingRow === row.id ? (
                           <EditableCell
                             value={editingData[field.fieldName] || ''}
@@ -460,7 +460,13 @@ export default function BotContentPage() {
                             type={field.fieldType === 'number' ? 'number' : 'text'}
                           />
                         ) : (
-                          <span>{row.data[field.fieldName] || '-'}</span>
+                          <div className="w-full">
+                            <div className="break-words whitespace-pre-wrap text-sm max-h-32 overflow-y-auto border rounded p-2 bg-gray-50 min-h-[40px] max-w-[300px]">
+                              {row.data[field.fieldName] !== undefined && row.data[field.fieldName] !== null && row.data[field.fieldName] !== '' 
+                                ? String(row.data[field.fieldName]) 
+                                : <span className="text-gray-400 italic">فارغ</span>}
+                            </div>
+                          </div>
                         )}
                       </td>
                     ))}

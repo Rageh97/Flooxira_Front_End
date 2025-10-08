@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getLinkedInAccount, testLinkedIn, disconnectLinkedIn, startLinkedInOAuth } from "@/lib/api";
+import { usePermissions } from "@/lib/permissions";
 import LinkedInPosts from "./components/LinkedInPosts";
 import LinkedInAnalytics from "./components/LinkedInAnalytics";
 import LinkedInCompanies from "./components/LinkedInCompanies";
 
 export default function LinkedInPage() {
+  const { hasPlatformAccess, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  
   const [account, setAccount] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -16,6 +19,58 @@ export default function LinkedInPage() {
   useEffect(() => {
     load();
   }, []);
+
+  // Check permissions
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">LinkedIn</h1>
+        <div className="text-center py-8">
+          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActiveSubscription()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">LinkedIn</h1>
+        <Card>
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
+            <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى LinkedIn</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              تصفح الباقات
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!hasPlatformAccess('linkedin')) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">LinkedIn</h1>
+        <Card>
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية الوصول إلى LinkedIn</h3>
+            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل LinkedIn</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              ترقية الباقة
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   async function load() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '';

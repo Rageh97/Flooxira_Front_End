@@ -72,10 +72,10 @@ export default function WhatsAppAdminPage() {
       setError("");
       const result = await adminAssignChat(token, chatId, assigneeId);
       if (result.success) {
-        setSuccess("Chat assigned successfully!");
+        setSuccess("تم تعيين المحادثة بنجاح!");
         await handleAdminLoad(); // Refresh the list
       } else {
-        setError(result.message || "Failed to assign chat");
+        setError(result.message || "فشل في تعيين المحادثة");
       }
     } catch (e: any) {
       setError(e.message);
@@ -103,11 +103,11 @@ export default function WhatsAppAdminPage() {
         <CardHeader className="border-text-primary/50">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-white">Admin Management</h3>
-              <p className="text-sm text-gray-600">Manage WhatsApp chats and assign agents</p>
+              <h3 className="text-lg font-semibold text-white">إدارة الإدارة</h3>
+              <p className="text-sm text-gray-600">إدارة محادثات الواتساب وتعيين الوكلاء</p>
             </div>
             <Button onClick={handleAdminLoad} variant="secondary" size="sm">
-              Refresh
+              تحديث
             </Button>
           </div>
         </CardHeader>
@@ -115,25 +115,25 @@ export default function WhatsAppAdminPage() {
           <div className="space-y-4">
             {adminChats.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No chats available yet.</p>
+                <p className="text-gray-500">لا توجد محادثات متاحة بعد.</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  Connect WhatsApp and send/receive some messages to see chat data here.
+                  اتصل بالواتساب وأرسل/استقبل بعض الرسائل لرؤية بيانات المحادثة هنا.
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-white">Chats ({adminChats.length})</h4>
+                  <h4 className="font-medium text-white">المحادثات ({adminChats.length})</h4>
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      placeholder="Filter by contact number"
+                      placeholder="تصفية برقم جهة الاتصال"
                       value={adminFilterContact}
                       onChange={(e) => setAdminFilterContact(e.target.value)}
                       className="px-3 py-1 border rounded-md text-sm"
                     />
                     <Button onClick={handleAdminFilter} variant="secondary" size="sm">
-                      Filter
+                      تصفية
                     </Button>
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export default function WhatsAppAdminPage() {
                             onChange={(e) => handleAdminAssign(chat.id, e.target.value ? parseInt(e.target.value) : undefined)}
                             className="text-xs border rounded px-2 py-1"
                           >
-                            <option value="">Unassigned</option>
+                            <option value="">غير معين</option>
                             {adminAgents.map(agent => (
                               <option key={agent.id} value={agent.id}>
                                 {agent.name || agent.email}

@@ -105,10 +105,10 @@ export default function TelegramChatsPage() {
     const d = new Date(dateIso);
     const today = new Date();
     const isSameDay = d.toDateString() === today.toDateString();
-    if (isSameDay) return "Today";
+    if (isSameDay) return "اليوم";
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
-    if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+    if (d.toDateString() === yesterday.toDateString()) return "أمس";
     return d.toLocaleDateString();
   }
 
@@ -142,15 +142,15 @@ export default function TelegramChatsPage() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search chats..."
+            placeholder="البحث في المحادثات..."
             className="w-full border rounded px-2 py-1"
           />
         </div>
         <div className="flex-1 overflow-auto">
           {loadingContacts ? (
-            <div className="p-3 text-sm">Loading chats...</div>
+            <div className="p-3 text-sm">جاري تحميل المحادثات...</div>
           ) : filtered.length === 0 ? (
-            <div className="p-3 text-sm">No chats yet</div>
+            <div className="p-3 text-sm">لا توجد محادثات بعد</div>
           ) : (
             <ul>
               {filtered.map((c) => {
@@ -183,14 +183,14 @@ export default function TelegramChatsPage() {
 
       <section className="flex-1 border rounded-md flex flex-col bg-white">
         <div className="px-4 py-2 border-b flex items-center justify-between">
-          <div className="font-semibold truncate">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `Chat ${activeChatId}` : "Select a chat")}</div>
+          <div className="font-semibold truncate">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
         </div>
         <div className="flex-1 overflow-auto px-4 py-3 flex flex-col-reverse">
           <div ref={listEndRef} />
           {loadingHistory ? (
-            <div className="text-sm text-gray-600">Loading messages...</div>
+            <div className="text-sm text-gray-600">جاري تحميل الرسائل...</div>
           ) : history.length === 0 ? (
-            <div className="text-sm text-gray-600">No messages yet.</div>
+            <div className="text-sm text-gray-600">لا توجد رسائل بعد.</div>
           ) : (
             <div className="space-y-4">
               {groupedByDay.map((g) => (
@@ -227,7 +227,7 @@ export default function TelegramChatsPage() {
                 handleSend();
               }
             }}
-            placeholder="Type a message..."
+            placeholder="اكتب رسالة..."
             className="flex-1 border rounded px-3 py-2"
           />
           <button
@@ -235,7 +235,7 @@ export default function TelegramChatsPage() {
             onClick={handleSend}
             className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
           >
-            Send
+            إرسال
           </button>
         </div>
       </section>

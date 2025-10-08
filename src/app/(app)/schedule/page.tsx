@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { useToast } from "@/components/ui/toast";
+import { usePermissions } from "@/lib/permissions";
 import { 
   getMonthlySchedules, 
   updateWhatsAppSchedule, 
@@ -15,6 +17,8 @@ import {
 } from "@/lib/api";
 
 export default function SchedulePage() {
+  const { showError } = useToast();
+  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [monthlySchedules, setMonthlySchedules] = useState<any>({ whatsapp: [], posts: [], telegram: [] });
@@ -106,8 +110,8 @@ export default function SchedulePage() {
       console.error('Error details:', (error as Error).message, (error as Error).stack);
       
       // Show error to user
-      setMonthlySchedules({ whatsapp: [], posts: [] });
-      alert(`Failed to load schedules: ${(error as Error).message}`);
+      setMonthlySchedules({ whatsapp: [], posts: [], telegram: [] });
+      showError('خطأ في تحميل الجدولة', (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -117,7 +121,7 @@ export default function SchedulePage() {
     const daySchedules: any[] = [];
     
     // Add WhatsApp schedules for this day
-    monthlySchedules.whatsapp.forEach((schedule: any) => {
+    monthlySchedules.whatsapp?.forEach((schedule: any) => {
       const scheduleDate = new Date(schedule.scheduledAt);
       if (scheduleDate.getDate() === day) {
         daySchedules.push({ type: 'whatsapp', item: schedule });
@@ -125,7 +129,7 @@ export default function SchedulePage() {
     });
     
     // Add platform posts for this day
-    monthlySchedules.posts.forEach((post: any) => {
+    monthlySchedules.posts?.forEach((post: any) => {
       const postDate = new Date(post.scheduledAt);
       if (postDate.getDate() === day) {
         daySchedules.push({ type: 'post', item: post });
@@ -133,7 +137,7 @@ export default function SchedulePage() {
     });
     
     // Add Telegram schedules for this day
-    monthlySchedules.telegram.forEach((tg: any) => {
+    monthlySchedules.telegram?.forEach((tg: any) => {
       const d = new Date(tg.scheduledAt);
       const y = d.getFullYear();
       const m = d.getMonth() + 1;
@@ -233,7 +237,7 @@ export default function SchedulePage() {
     console.log('WhatsApp schedules:', monthlySchedules.whatsapp);
     console.log('Posts:', monthlySchedules.posts);
     
-    monthlySchedules.whatsapp.forEach((schedule: any) => {
+    monthlySchedules.whatsapp?.forEach((schedule: any) => {
       const scheduleDate = new Date(schedule.scheduledAt);
       // Compare just the date parts (year, month, day) ignoring time
       const scheduleYear = scheduleDate.getFullYear();
@@ -256,7 +260,7 @@ export default function SchedulePage() {
       }
     });
     
-    monthlySchedules.posts.forEach((post: any) => {
+    monthlySchedules.posts?.forEach((post: any) => {
       const postDate = new Date(post.scheduledAt);
       // Compare just the date parts (year, month, day) ignoring time
       const postYear = postDate.getFullYear();
@@ -297,11 +301,43 @@ export default function SchedulePage() {
   const jan1 = new Date(currentYear, currentMonth - 1, 1);
   console.log(`January 1, ${currentYear}:`, jan1.toDateString(), 'Day of week:', jan1.getDay());
 
+  // Check permissions after all hooks
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold text-white">الجدولة</h1>
+        <div className="text-center py-8">
+          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActiveSubscription()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold text-white">الجدولة</h1>
+        <Card className="bg-card border-none">
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-white mb-2">لا يوجد اشتراك نشط</h3>
+            <p className="text-gray-400 mb-4">تحتاج إلى اشتراك نشط للوصول إلى الجدولة</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              تصفح الباقات
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white">Schedules</h1>
-        <p className="text-gray-600">Manage your scheduled WhatsApp messages and platform posts</p>
+        <h1 className="text-3xl font-bold text-white">الجدولة</h1>
+        <p className="text-gray-600">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p>
       </div>
 
       <Card className="bg-card border-none">
@@ -312,10 +348,10 @@ export default function SchedulePage() {
             </h2>
             <div className="flex items-center gap-2">
               <Button className="text-primary" variant="secondary" onClick={() => navigateMonth('prev')}>
-                ← Previous
+                ← السابق
               </Button>
               <Button className="text-primary" variant="secondary" onClick={() => navigateMonth('next')}>
-                Next →
+                التالي →
               </Button>
             </div>
           </div>
@@ -323,7 +359,7 @@ export default function SchedulePage() {
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="text-gray-500">Loading schedules...</div>
+              <div className="text-gray-500">جاري تحميل الجدولة...</div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -331,39 +367,39 @@ export default function SchedulePage() {
               <div className="flex flex-wrap gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-200 border-2 border-green-400 rounded"></div>
-                  <span className="text-white">Today</span>
+                  <span className="text-white">اليوم</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-red-200 border-2 border-red-300 rounded"></div>
-                  <span className="text-white">Past Days</span>
+                  <span className="text-white">الأيام الماضية</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-yellow-200 border-2 border-yellow-300 rounded"></div>
-                  <span className="text-white">Future Days</span>
+                  <span className="text-white">الأيام القادمة</span>
                 </div>
               </div>
               
               <div className="text-sm text-primary">
-                Total WhatsApp: {monthlySchedules.whatsapp.length} | 
-                Total Posts: {monthlySchedules.posts.length} | 
-                Total Telegram: {monthlySchedules.telegram.length}
+                إجمالي واتساب: {monthlySchedules.whatsapp?.length || 0} | 
+                إجمالي المنشورات: {monthlySchedules.posts?.length || 0} | 
+                إجمالي تليجرام: {monthlySchedules.telegram?.length || 0}
               </div>
-              {monthlySchedules.whatsapp.length > 0 && (
+              {monthlySchedules.whatsapp?.length > 0 && (
                 <div className="text-xs text-green-600">
-                  WhatsApp schedules: {monthlySchedules.whatsapp.map((w: any) => new Date(w.scheduledAt).getDate()).join(', ')}
+                  جدولة واتساب: {monthlySchedules.whatsapp.map((w: any) => new Date(w.scheduledAt).getDate()).join(', ')}
                 </div>
               )}
-              {monthlySchedules.posts.length > 0 && (
+              {monthlySchedules.posts?.length > 0 && (
                 <div className="text-xs text-blue-600">
-                  Posts: {monthlySchedules.posts.map((p: any) => new Date(p.scheduledAt).getDate()).join(', ')}
+                  المنشورات: {monthlySchedules.posts.map((p: any) => new Date(p.scheduledAt).getDate()).join(', ')}
                 </div>
               )}
               <div className="text-xs text-white">
-                Calendar: {daysInMonth} days, starts on day {firstDay}
+                التقويم: {daysInMonth} يوم، يبدأ في اليوم {firstDay}
                     </div>
               <div className="grid grid-cols-7 gap-2  rounded-lg p-4 bg-light-custom">
                 {/* Day headers */}
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
                   <div key={day} className="p-3 text-center font-semibold text-primary bg-dark-custom rounded ">
                     {day}
                   </div>
@@ -411,7 +447,7 @@ export default function SchedulePage() {
                       onClick={() => handleDayClick(day)}
                     >
                       <div className={`font-semibold text-sm ${textColorClass}`}>
-                        {day} {isToday ? '(Today)' : ''}
+                        {day} {isToday ? '(اليوم)' : ''}
                       </div>
                       {daySchedules.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
@@ -450,14 +486,14 @@ export default function SchedulePage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Scheduled Items</h3>
+              <h3 className="text-lg font-semibold">العناصر المجدولة</h3>
               <Button variant="secondary" onClick={handleCancelSchedule}>
-                Close
+                إغلاق
               </Button>
             </div>
             
             {selectedDaySchedules.length === 0 ? (
-              <p className="text-gray-500">No scheduled items for this day</p>
+              <p className="text-gray-500">لا توجد عناصر مجدولة لهذا اليوم</p>
             ) : (
               <div className="space-y-4">
                 {selectedDaySchedules.map(({ type, item }) => (
@@ -465,7 +501,7 @@ export default function SchedulePage() {
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="text-sm font-medium">
-                          {type === 'whatsapp' ? 'WhatsApp' : 'Post'} #{item.id}
+                          {type === 'whatsapp' ? 'واتساب' : type === 'telegram' ? 'تليجرام' : 'منشور'} #{item.id}
                         </div>
                         <div className="text-xs text-gray-500">
                           {new Date(item.scheduledAt).toLocaleString()}
@@ -475,23 +511,23 @@ export default function SchedulePage() {
                     
                     {/* Content editing */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">Message Content</label>
+                      <label className="block text-sm font-medium mb-1">محتوى الرسالة</label>
                       <textarea
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         rows={3}
                         defaultValue={type === 'whatsapp' ? (item.payload?.message || '') : (item.content || '')}
                         onChange={(e) => (item.__newContent = e.target.value)}
-                        placeholder="Enter message content..."
+                        placeholder="أدخل محتوى الرسالة..."
                       />
                     </div>
                     
                     {/* Media editing */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">Media File</label>
+                      <label className="block text-sm font-medium mb-1">ملف الوسائط</label>
                       <div className="space-y-2">
                         {item.mediaPath && (
                           <div className="text-xs text-gray-500">
-                            Current media: {item.mediaPath.split('/').pop()}
+                            الوسائط الحالية: {item.mediaPath.split('/').pop()}
                           </div>
                         )}
                         <input
@@ -501,14 +537,14 @@ export default function SchedulePage() {
                           onChange={(e) => (item.__newMedia = e.target.files?.[0] || null)}
                         />
                         <div className="text-xs text-gray-500">
-                          Leave empty to keep current media, or select new file to replace
+                          اتركه فارغاً للاحتفاظ بالوسائط الحالية، أو اختر ملفاً جديداً للاستبدال
                         </div>
                       </div>
                     </div>
                     
                     {/* Time editing */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">Schedule Time</label>
+                      <label className="block text-sm font-medium mb-1">وقت الجدولة</label>
                       <input 
                         type="datetime-local" 
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" 
@@ -545,7 +581,7 @@ export default function SchedulePage() {
                           }
                         }}
                       >
-                        Update
+                        تحديث
                       </Button>
                       <Button 
                         size="sm" 
@@ -563,7 +599,7 @@ export default function SchedulePage() {
                           }
                         }}
                       >
-                        Delete
+                        حذف
                       </Button>
                     </div>
                   </div>

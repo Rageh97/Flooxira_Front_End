@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
 import { apiFetch, listPinterestBoards, checkPlatformConnections } from "@/lib/api";
+import { usePermissions } from "@/lib/permissions";
 import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
@@ -63,6 +64,8 @@ const PLATFORMS = {
 };
 
 export default function CreatePostPage() {
+  const { hasActiveSubscription, hasPlatformAccess, loading: permissionsLoading } = usePermissions();
+  
   const [text, setText] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [when, setWhen] = useState<string>("");
@@ -86,17 +89,24 @@ export default function CreatePostPage() {
     return Object.entries(PLATFORMS);
   };
 
-  // Helper function to get available platforms based on content type
+  // Helper function to get available platforms based on content type and user permissions
   const getAvailablePlatforms = () => {
+    let availablePlatforms;
+    
     if (contentType === 'reels') {
       // For reels, only show platforms that support video reels
-      return Object.entries(PLATFORMS).filter(([key, platform]) => {
+      availablePlatforms = Object.entries(PLATFORMS).filter(([key, platform]) => {
         return platform.supportedFormats.includes('reel') && platform.supportedTypes.includes('video');
       });
     } else {
       // For articles, show all platforms (they all support text content)
-      return Object.entries(PLATFORMS);
+      availablePlatforms = Object.entries(PLATFORMS);
     }
+    
+    // Filter by user permissions
+    return availablePlatforms.filter(([key, platform]) => {
+      return hasPlatformAccess(key);
+    });
   };
 
   // Helper function to check if platform is connected
@@ -109,6 +119,57 @@ export default function CreatePostPage() {
     return platforms.includes(platformKey);
   };
   
+  // Auto-filter platforms when content type changes
+  useEffect(() => {
+    const availablePlatforms = getAvailablePlatforms();
+    const availableKeys = availablePlatforms.map(([key]) => key);
+    
+    // Remove platforms that don't support current content type
+    const filteredPlatforms = platforms.filter(platform => availableKeys.includes(platform));
+    if (filteredPlatforms.length !== platforms.length) {
+      setPlatforms(filteredPlatforms);
+    }
+  }, [contentType]);
+
+  // Load platform connections on component mount
+  useEffect(() => {
+    const loadConnections = async () => {
+      try {
+        const token = localStorage.getItem('auth_token') || '';
+        if (!token) return;
+        
+        const res = await checkPlatformConnections(token);
+        if (res.success) {
+          const connected = Object.entries(res.connections)
+            .filter(([_, isConnected]) => isConnected)
+            .map(([platform, _]) => platform);
+          
+          setConnectedPlatforms(connected);
+          setIsDevelopment((res as any).mode === 'development');
+          
+          // Don't auto-select platforms if none are connected
+          if (connected.length === 0) {
+            setPlatforms([]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load platform connections:', error);
+      } finally {
+        setConnectionsLoading(false);
+      }
+    };
+
+    loadConnections();
+  }, []);
+
+  // Auto-load boards when Pinterest is selected
+  useEffect(() => {
+    if (platforms.includes('pinterest')) {
+      loadPinterestBoards();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platforms.includes('pinterest')]);
+
   const mutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("auth_token") || "";
@@ -230,6 +291,38 @@ export default function CreatePostPage() {
     },
   });
 
+  // Check permissions after all hooks
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold text-white">إنشاء منشور</h1>
+        <div className="text-center py-8">
+          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActiveSubscription()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold text-white">إنشاء منشور</h1>
+        <Card className="bg-card border-none">
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-white mb-2">لا يوجد اشتراك نشط</h3>
+            <p className="text-gray-400 mb-4">تحتاج إلى اشتراك نشط لإنشاء المنشورات</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              تصفح الباقات
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const togglePlatform = (platform: string) => {
     if (platforms.includes(platform)) {
       setPlatforms(platforms.filter(p => p !== platform));
@@ -251,18 +344,6 @@ export default function CreatePostPage() {
     }
   };
 
-  // Auto-filter platforms when content type changes
-  useEffect(() => {
-    const availablePlatforms = getAvailablePlatforms();
-    const availableKeys = availablePlatforms.map(([key]) => key);
-    
-    // Remove platforms that don't support current content type
-    const filteredPlatforms = platforms.filter(platform => availableKeys.includes(platform));
-    if (filteredPlatforms.length !== platforms.length) {
-      setPlatforms(filteredPlatforms);
-    }
-  }, [contentType]);
-
   // Load Pinterest boards when Pinterest is selected
   const loadPinterestBoards = async () => {
     try {
@@ -274,49 +355,6 @@ export default function CreatePostPage() {
       if (!pinterestBoardId && res.boards?.length) setPinterestBoardId(res.boards[0].id);
     } catch {}
   };
-
-  // Load platform connections on component mount
-  useEffect(() => {
-    const loadConnections = async () => {
-      try {
-        const token = localStorage.getItem('auth_token') || '';
-        if (!token) return;
-        
-        const res = await checkPlatformConnections(token);
-        if (res.success) {
-          const connected = Object.entries(res.connections)
-            .filter(([_, isConnected]) => isConnected)
-            .map(([platform, _]) => platform);
-          
-          setConnectedPlatforms(connected);
-          setIsDevelopment((res as any).mode === 'development');
-          
-          // Don't auto-select platforms if none are connected
-          if (connected.length === 0) {
-            setPlatforms([]);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load platform connections:', error);
-        // Fallback to no connections in case of error
-        setConnectedPlatforms([]);
-        setIsDevelopment(false);
-        setPlatforms([]);
-      } finally {
-        setConnectionsLoading(false);
-      }
-    };
-
-    loadConnections();
-  }, []);
-
-  // Auto-load boards when Pinterest is selected
-  useEffect(() => {
-    if (platforms.includes('pinterest')) {
-      loadPinterestBoards();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platforms.includes('pinterest')]);
 
   return (
     <div className="space-y-6">
@@ -544,8 +582,24 @@ export default function CreatePostPage() {
                 <div className="mt-4 text-center">
                   {connectionsLoading ? (
                     <p className="text-sm text-gray-600">جاري تحميل المنصات...</p>
+                  ) : getAvailablePlatforms().length === 0 ? (
+                    <div className="p-4 bg-red-200 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-800 mb-2">
+                        <strong>لا توجد منصات متاحة في باقتك</strong>
+                      </p>
+                      <p className="text-xs text-red-700 mb-3">
+                        باقتك الحالية لا تشمل أي منصات اجتماعية. يرجى ترقية باقتك للوصول إلى المنصات الاجتماعية.
+                      </p>
+                      <Button 
+                        size="sm" 
+                        onClick={() => window.location.href = '/plans'}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        ترقية الباقة
+                      </Button>
+                    </div>
                   ) : connectedPlatforms.length === 0 ? (
-                    <div className="p-4 bg-red-200 border border-yellow-200 rounded-lg">
+                    <div className="p-4 bg-yellow-200 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-800 mb-2">
                         <strong>لا توجد منصات متصلة</strong>
                       </p>

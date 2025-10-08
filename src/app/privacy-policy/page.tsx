@@ -1,121 +1,96 @@
 export default function PrivacyPolicyPage() {
   return (
     <div className="prose max-w-none">
-      <h1 className="text-2xl font-semibold">Privacy Policy</h1>
-      <p className="text-sm text-gray-600">Last updated: {new Date().toLocaleDateString()}</p>
+      <h1 className="text-2xl font-semibold">سياسة الخصوصية</h1>
+      <p className="text-sm text-gray-600">آخر تحديث: {new Date().toLocaleDateString()}</p>
 
       <p>
-        This Privacy Policy describes how we collect, use, disclose, and safeguard your information when you use our
-        application and website (collectively, the "Service"). It is designed to meet platform requirements for apps
-        that integrate with third-party services such as Facebook, LinkedIn, TikTok, YouTube, WhatsApp, and Salla.
+        تصف سياسة الخصوصية هذه كيفية جمعنا واستخدامنا والكشف عن معلوماتك وحمايتها عند استخدامك لتطبيقنا وموقعنا الإلكتروني (المُشار إليهما مجتمعين باسم "الخدمة"). وهي مصممة لتلبية متطلبات المنصة للتطبيقات التي تدمج مع خدمات الطرف الثالث مثل Facebook و LinkedIn و TikTok و YouTube و WhatsApp و Salla.
       </p>
 
-      <h2 className="text-xl font-semibold">1. Information We Collect</h2>
+      <h2 className="text-xl font-semibold">1. المعلومات التي نجمعها</h2>
       <ul className="list-disc pl-6">
         <li>
-          <span className="font-medium">Account Information:</span> Name, email address, password hash, and plan/subscription
-          details that you provide when you create or manage an account.
+          <span className="font-medium">معلومات الحساب:</span> الاسم وعنوان البريد الإلكتروني وتشفير كلمة المرور وتفاصيل الباقة/الاشتراك التي تقدمها عند إنشاء أو إدارة حساب.
         </li>
         <li>
-          <span className="font-medium">OAuth Tokens and IDs:</span> When you connect third-party accounts (e.g., Facebook
-          Pages, LinkedIn Companies, TikTok, YouTube, WhatsApp, Salla), we receive access tokens, page/channel IDs, and
-          similar identifiers strictly to provide the Service. We do not collect your third-party passwords.
+          <span className="font-medium">رموز OAuth والمعرفات:</span> عند ربط حسابات الطرف الثالث (مثل صفحات Facebook وشركات LinkedIn وTikTok وYouTube وWhatsApp وSalla)، نحصل على رموز الوصول ومعرفات الصفحة/القناة والمعرفات المماثلة حصرياً لتقديم الخدمة. نحن لا نجمع كلمات مرور الطرف الثالث.
         </li>
         <li>
-          <span className="font-medium">Content and Metadata:</span> Posts, captions, media, scheduled times, analytics
-          metrics, and other content you create or import to manage and publish via the Service.
+          <span className="font-medium">المحتوى والبيانات الوصفية:</span> المنشورات والعناوين والوسائط والأوقات المجدولة ومقاييس التحليلات والمحتوى الآخر الذي تنشئه أو تستورده لإدارة ونشر عبر الخدمة.
         </li>
         <li>
-          <span className="font-medium">Usage Data:</span> Device information, log data, and diagnostic information such as
-          IP address, browser type, pages visited, and timestamps to improve the Service.
+          <span className="font-medium">بيانات الاستخدام:</span> معلومات الجهاز وبيانات السجل ومعلومات التشخيص مثل عنوان IP ونوع المتصفح والصفحات المُزارة والطوابع الزمنية لتحسين الخدمة.
         </li>
       </ul>
 
-      <h2 className="text-xl font-semibold">2. How We Use Your Information</h2>
+      <h2 className="text-xl font-semibold">2. كيفية استخدامنا لمعلوماتك</h2>
       <ul className="list-disc pl-6">
-        <li>Provide, operate, and maintain the Service features you request.</li>
-        <li>Authenticate and securely connect your third-party accounts via OAuth.</li>
-        <li>Create, schedule, publish, and analyze social and commerce content on your behalf.</li>
-        <li>Monitor performance, debug issues, and enhance reliability and security.</li>
-        <li>Communicate service updates, security alerts, and administrative messages.</li>
-        <li>Comply with legal obligations and platform policies.</li>
+        <li>تقديم وتشغيل وصيانة ميزات الخدمة التي تطلبها.</li>
+        <li>المصادقة وربط حسابات الطرف الثالث بأمان عبر OAuth.</li>
+        <li>إنشاء وجدولة ونشر وتحليل المحتوى الاجتماعي والتجاري نيابة عنك.</li>
+        <li>مراقبة الأداء وتصحيح المشاكل وتحسين الموثوقية والأمان.</li>
+        <li>التواصل حول تحديثات الخدمة وتنبيهات الأمان والرسائل الإدارية.</li>
+        <li>الامتثال للالتزامات القانونية وسياسات المنصة.</li>
       </ul>
 
-      <h2 className="text-xl font-semibold">3. Facebook and Other Platform Data</h2>
+      <h2 className="text-xl font-semibold">3. بيانات Facebook والمنصات الأخرى</h2>
       <p>
-        When you connect Facebook products (e.g., Facebook Pages, Instagram accounts via Facebook, or WhatsApp Business),
-        we use data only to provide the features you enable, such as scheduling posts, reading page insights, or managing
-        conversations. We do not sell your data. We do not use Facebook data to build profiles of users for advertising
-        outside the Service. We store tokens securely and respect the permissions you grant. If you remove permissions
-        or disconnect an account, our access will cease accordingly.
+        عند ربط منتجات Facebook (مثل صفحات Facebook وحسابات Instagram عبر Facebook أو WhatsApp Business)، نستخدم البيانات فقط لتقديم الميزات التي تمكنها، مثل جدولة المنشورات أو قراءة رؤى الصفحة أو إدارة المحادثات. نحن لا نبيع بياناتك. نحن لا نستخدم بيانات Facebook لبناء ملفات تعريف للمستخدمين للإعلان خارج الخدمة. نحن نخزن الرموز بأمان ونحترم الأذونات التي تمنحها. إذا قمت بإزالة الأذونات أو قطع الاتصال بحساب، فسيتوقف وصولنا وفقاً لذلك.
       </p>
 
-      <h2 className="text-xl font-semibold">4. Data Sharing and Disclosure</h2>
+      <h2 className="text-xl font-semibold">4. مشاركة البيانات والكشف عنها</h2>
       <ul className="list-disc pl-6">
         <li>
-          <span className="font-medium">Service Providers:</span> We may share limited data with vendors who help us operate
-          the Service (e.g., hosting, analytics, error monitoring) under confidentiality and data processing agreements.
+          <span className="font-medium">مقدمو الخدمة:</span> قد نشارك بيانات محدودة مع البائعين الذين يساعدوننا في تشغيل الخدمة (مثل الاستضافة والتحليلات ومراقبة الأخطاء) بموجب اتفاقيات السرية ومعالجة البيانات.
         </li>
         <li>
-          <span className="font-medium">Platform APIs:</span> We disclose data to connected platforms (e.g., Facebook Graph API,
-          LinkedIn, TikTok, YouTube, WhatsApp, Salla) strictly as necessary to perform actions you request.
+          <span className="font-medium">واجهات برمجة التطبيقات للمنصة:</span> نكشف عن البيانات للمنصات المتصلة (مثل Facebook Graph API و LinkedIn و TikTok و YouTube و WhatsApp و Salla) حصرياً حسب الضرورة لتنفيذ الإجراءات التي تطلبها.
         </li>
         <li>
-          <span className="font-medium">Legal Requirements:</span> We may disclose information if required by law, regulation, or
-          valid legal process.
+          <span className="font-medium">المتطلبات القانونية:</span> قد نكشف عن المعلومات إذا تطلب القانون أو اللائحة أو الإجراء القانوني الصحيح ذلك.
         </li>
         <li>
-          <span className="font-medium">Business Transfers:</span> In the event of a merger, acquisition, or asset sale, your
-          information may be transferred as permitted by law.
+          <span className="font-medium">التحويلات التجارية:</span> في حالة الاندماج أو الاستحواذ أو بيع الأصول، قد يتم نقل معلوماتك كما يسمح القانون.
         </li>
       </ul>
 
-      <h2 className="text-xl font-semibold">5. Data Retention</h2>
+      <h2 className="text-xl font-semibold">5. الاحتفاظ بالبيانات</h2>
       <p>
-        We retain personal data for as long as your account is active or as needed to provide the Service. We may retain
-        and use information as necessary to comply with legal obligations, resolve disputes, and enforce our agreements.
-        Access tokens are stored only while required to maintain your connections and are revoked or deleted upon
-        disconnection or account deletion.
+        نحتفظ بالبيانات الشخصية طالما أن حسابك نشط أو حسب الحاجة لتقديم الخدمة. قد نحتفظ بالمعلومات ونستخدمها حسب الضرورة للامتثال للالتزامات القانونية وحل النزاعات وإنفاذ اتفاقياتنا. يتم تخزين رموز الوصول فقط أثناء الحاجة للحفاظ على اتصالاتك ويتم إلغاؤها أو حذفها عند قطع الاتصال أو حذف الحساب.
       </p>
 
-      <h2 className="text-xl font-semibold">6. Your Rights and Choices</h2>
+      <h2 className="text-xl font-semibold">6. حقوقك وخياراتك</h2>
       <ul className="list-disc pl-6">
-        <li>Access, correct, or delete certain personal information in your account settings.</li>
-        <li>Disconnect any linked third-party account at any time.</li>
-        <li>Opt out of non-essential communications by using unsubscribe links where available.</li>
-        <li>Request a copy or deletion of your data by contacting us at the email below.</li>
+        <li>الوصول إلى معلوماتك الشخصية أو تصحيحها أو حذفها في إعدادات حسابك.</li>
+        <li>قطع الاتصال بأي حساب طرف ثالث مرتبط في أي وقت.</li>
+        <li>إلغاء الاشتراك في الاتصالات غير الأساسية باستخدام روابط إلغاء الاشتراك حيثما توفرت.</li>
+        <li>طلب نسخة أو حذف بياناتك من خلال الاتصال بنا على البريد الإلكتروني أدناه.</li>
       </ul>
 
-      <h2 className="text-xl font-semibold">7. Security</h2>
+      <h2 className="text-xl font-semibold">7. الأمان</h2>
       <p>
-        We implement administrative, technical, and physical safeguards designed to protect personal information. No
-        method of transmission over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute
-        security.
+        ننفذ ضمانات إدارية وتقنية ومادية مصممة لحماية المعلومات الشخصية. لا توجد طريقة نقل عبر الإنترنت أو التخزين الإلكتروني آمنة بنسبة 100%، ولا يمكننا ضمان الأمان المطلق.
       </p>
 
-      <h2 className="text-xl font-semibold">8. Children’s Privacy</h2>
+      <h2 className="text-xl font-semibold">8. خصوصية الأطفال</h2>
       <p>
-        The Service is not directed to individuals under the age of 13 (or the equivalent age of consent in your
-        jurisdiction). We do not knowingly collect personal information from children.
+        الخدمة غير موجهة للأفراد دون سن 13 (أو سن الموافقة المكافئ في ولايتك القضائية). نحن لا نجمع معلومات شخصية من الأطفال عن علم.
       </p>
 
-      <h2 className="text-xl font-semibold">9. International Data Transfers</h2>
+      <h2 className="text-xl font-semibold">9. نقل البيانات الدولية</h2>
       <p>
-        If you access the Service from outside your country, your information may be transferred to, stored, and
-        processed in countries where we or our service providers operate. We take measures to ensure appropriate
-        safeguards are in place.
+        إذا قمت بالوصول إلى الخدمة من خارج بلدك، قد يتم نقل معلوماتك وتخزينها ومعالجتها في البلدان التي نعمل فيها أو يعمل فيها مقدمو الخدمة لدينا. نتخذ تدابير لضمان وجود ضمانات مناسبة.
       </p>
 
-      <h2 className="text-xl font-semibold">10. Changes to This Policy</h2>
+      <h2 className="text-xl font-semibold">10. التغييرات على هذه السياسة</h2>
       <p>
-        We may update this Privacy Policy to reflect changes to our practices, technologies, or legal requirements. If we
-        make material changes, we will notify you by posting the new policy on this page and updating the "Last updated"
-        date above.
+        قد نحدث سياسة الخصوصية هذه لتعكس التغييرات في ممارساتنا أو تقنياتنا أو متطلباتنا القانونية. إذا قمنا بتغييرات جوهرية، سنخطرك بنشر السياسة الجديدة على هذه الصفحة وتحديث تاريخ "آخر تحديث" أعلاه.
       </p>
 
-      <h2 className="text-xl font-semibold">11. Contact Us</h2>
+      <h2 className="text-xl font-semibold">11. اتصل بنا</h2>
       <p>
-        If you have questions about this Privacy Policy or our data practices, please contact us at:
+        إذا كان لديك أسئلة حول سياسة الخصوصية هذه أو ممارسات البيانات الخاصة بنا، يرجى الاتصال بنا على:
       </p>
       <p className="whitespace-pre-line">
         Email: abdelhady412@gmail.com

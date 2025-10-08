@@ -16,6 +16,7 @@ import {
   deletePlatformCredential,
 } from "@/lib/api";
 import { exchangeTwitterCode } from "@/lib/api";
+import { usePermissions } from "@/lib/permissions";
 import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
@@ -30,6 +31,8 @@ const PLATFORMS = {
 };
 
 function SettingsContent() {
+  const { hasActiveSubscription, hasPlatformAccess, loading: permissionsLoading } = usePermissions();
+  
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [token, setToken] = useState<string>("");
@@ -190,6 +193,38 @@ function SettingsContent() {
 
   useEffect(() => { loadCredentials(); }, [token]);
 
+  // Check permissions
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold text-white">إعدادات الحساب</h1>
+        <div className="text-center py-8">
+          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActiveSubscription()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold text-white">إعدادات الحساب</h1>
+        <Card className="bg-card border-none">
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-white mb-2">لا يوجد اشتراك نشط</h3>
+            <p className="text-gray-400 mb-4">تحتاج إلى اشتراك نشط للوصول إلى إعدادات الحساب</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              تصفح الباقات
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const isPlatformConnected = (platformKey: string) => {
     return connectedPlatforms.includes(platformKey);
   };
@@ -262,26 +297,42 @@ function SettingsContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white">الإعدادات</h1>
-        <p className="text-sm text-gray-300">إدارة اتصالات المنصات الاجتماعية</p>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg p-6 border border-blue-500/30">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">إعدادات النظام</h1>
+            <p className="text-gray-300 text-lg">إدارة شاملة لاتصالات المنصات الاجتماعية والتكاملات</p>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-400">الحالة</div>
+            <div className="text-green-400 font-medium">🟢 متصل</div>
+          </div>
+        </div>
       </div>
       
-      <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">
-          <h2 className="text-lg font-semibold">اتصالات المنصات</h2>
+      {/* Platform Connections */}
+      <Card className="card-gradient-green-teal card-hover-effect">
+        <CardHeader className="border-b border-teal-500/20">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">اتصالات المنصات</h2>
+            <div className="text-teal-400">🔗</div>
+          </div>
+          <p className="text-sm text-gray-300">إدارة اتصالاتك مع المنصات الاجتماعية</p>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Object.entries(PLATFORMS).map(([key, platform]) => {
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Object.entries(PLATFORMS)
+              .filter(([key, platform]) => hasPlatformAccess(key))
+              .map(([key, platform]) => {
               const isConnected = isPlatformConnected(key);
               
               return (
-                <Card key={key} className={`border-none ${
-                  isConnected ? ' bg-green-50' : ' bg-semidark-custom'
+                <Card key={key} className={`card-hover-effect ${
+                  isConnected ? 'card-gradient-green' : 'card-default'
                 }`}>
-                  <CardContent className="p-6 ">
+                  <CardContent className="p-6">
                     <div className="flex items-center justify-center mb-4">
                       <div className="flex flex-col items-center justify-center space-x-3">
                         <div className="text-2xl">{platform.icon}</div>
@@ -292,7 +343,7 @@ function SettingsContent() {
                               isConnected ? 'bg-green-500' : 'bg-red-500'
                             }`}></div>
                             <span className={`text-sm ${
-                              isConnected ? 'text-green-700' : 'text-red-700'
+                              isConnected ? 'status-online' : 'status-offline'
                             }`}>
                               {isConnected ? 'متصل' : 'غير متصل'}
                             </span>
@@ -370,6 +421,27 @@ function SettingsContent() {
               </Card>
             ))}
           </div>
+
+          {/* Show message if no platforms are available */}
+          {Object.entries(PLATFORMS).filter(([key, platform]) => hasPlatformAccess(key)).length === 0 && (
+            <div className="text-center py-8">
+              <div className="p-4 bg-red-200 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-800 mb-2">
+                  <strong>لا توجد منصات متاحة في باقتك</strong>
+                </p>
+                <p className="text-xs text-red-700 mb-3">
+                  باقتك الحالية لا تشمل أي منصات اجتماعية. يرجى ترقية باقتك للوصول إلى المنصات الاجتماعية.
+                </p>
+                <Button 
+                  size="sm" 
+                  onClick={() => window.location.href = '/plans'}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  ترقية الباقة
+                </Button>
+              </div>
+            </div>
+          )}
 
           {edit && (
             <div className="mt-4 p-4 bg-light-custom rounded-lg space-y-3">
@@ -520,20 +592,20 @@ function SettingsContent() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-light-custom rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{connectedPlatforms.length}</div>
-              <div className="text-sm text-white  ">منصات متصلة</div>
+            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-500/30">
+              <div className="text-2xl font-bold text-green-400">{connectedPlatforms.length}</div>
+              <div className="text-sm text-white">منصات متصلة</div>
             </div>
-            <div className="text-center p-4 bg-light-custom rounded-lg">
-              <div className="text-2xl font-bold text-red-500">{Object.keys(PLATFORMS).length - connectedPlatforms.length}</div>
+            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-600/30">
+              <div className="text-2xl font-bold text-green-600">{Object.keys(PLATFORMS).length - connectedPlatforms.length}</div>
               <div className="text-sm text-gray-300">منصات غير متصلة</div>
             </div>
-            <div className="text-center p-4 bg-light-custom rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{Math.round((connectedPlatforms.length / Object.keys(PLATFORMS).length) * 100)}%</div>
+            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-200/30">
+              <div className="text-2xl font-bold text-green-100">{Math.round((connectedPlatforms.length / Object.keys(PLATFORMS).length) * 100)}%</div>
               <div className="text-sm text-white">نسبة الاتصال</div>
             </div>
-            <div className="text-center p-4 bg-light-custom rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">{Object.keys(PLATFORMS).length}</div>
+            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-100/30">
+              <div className="text-2xl font-bold text-green-50">{Object.keys(PLATFORMS).length}</div>
               <div className="text-sm text-white">إجمالي المنصات</div>
             </div>
           </div>

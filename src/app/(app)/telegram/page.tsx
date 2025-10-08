@@ -23,10 +23,13 @@ import {
   telegramBotListCampaigns
 } from "@/lib/api";
 import { listTags } from "@/lib/tagsApi";
+import { usePermissions } from "@/lib/permissions";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function TelegramBotPage() {
+  const { canManageTelegram, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -109,6 +112,58 @@ export default function TelegramBotPage() {
     } catch {}
   }, []);
 
+  // Check permissions
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
+        <div className="text-center py-8">
+          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActiveSubscription()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
+        <Card>
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
+            <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى إدارة التليجرام</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              تصفح الباقات
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!canManageTelegram()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
+        <Card>
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية إدارة التليجرام</h3>
+            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل إدارة التليجرام</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              ترقية الباقة
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   async function loadKnowledgeBase() {
     try {
       const data = await getKnowledgeBase(token);
@@ -174,9 +229,9 @@ export default function TelegramBotPage() {
           buttonColorDefault: buttonColorDefault || null,
         })
       });
-      setSuccess("Settings saved");
+      setSuccess("تم حفظ الإعدادات");
     } catch (e:any) {
-      setError(e?.message || "Failed to save settings");
+      setError(e?.message || "فشل في حفظ الإعدادات");
     }
   }
 
@@ -220,7 +275,7 @@ export default function TelegramBotPage() {
       }
       const res = await telegramBotCreateCampaign(token, payload);
       if (res.success) {
-        setSuccess('Campaign scheduled successfully');
+        setSuccess('تم جدولة الحملة بنجاح');
         setCampaignMessage('');
         setCampaignWhen('');
         setSelectedTargets([]);
@@ -242,7 +297,7 @@ export default function TelegramBotPage() {
       const payload: any = { targets: selectedTargets, message: campaignMessage.trim(), throttleMs: campaignThrottle };
       if (campaignMediaUrl.trim()) payload.mediaUrl = campaignMediaUrl.trim();
       await telegramBotCreateCampaign(token, payload);
-      setSuccess('Campaign sent now');
+      setSuccess('تم إرسال الحملة الآن');
       setCampaignMessage('');
       setCampaignMediaUrl('');
       setSelectedTargets([]);
@@ -259,7 +314,7 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetChat(token, chatId);
       if (res.success) {
         setChatInfo(res.chat);
-        setSuccess("Chat info loaded!");
+        setSuccess("تم تحميل معلومات المحادثة!");
       }
     } catch (e: any) {
       setError(e.message);
@@ -275,7 +330,7 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetChatAdmins(token, chatId);
       if (res.success) {
         setChatAdmins(res.administrators || []);
-        setSuccess("Admins loaded!");
+        setSuccess("تم تحميل الأدمن!");
       }
     } catch (e: any) {
       setError(e.message);
@@ -291,7 +346,7 @@ export default function TelegramBotPage() {
       setError("");
       const res = await telegramBotPromoteMember(token, chatId, promoteMemberId, permissions);
       if (res.success) {
-        setSuccess("Member promoted successfully!");
+        setSuccess("تم ترقية العضو بنجاح!");
         setPromoteMemberId("");
         await loadChatAdmins();
       }
@@ -308,7 +363,7 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetUpdates(token);
       if (res.success) {
         setUpdates(res.updates || []);
-        setSuccess("Updates loaded!");
+        setSuccess("تم تحميل التحديثات!");
       }
     } catch (e: any) {
       setError(e.message);
@@ -328,7 +383,7 @@ export default function TelegramBotPage() {
           members: res.members || [],
           note: res.note || ''
         });
-        setSuccess("Members loaded!");
+        setSuccess("تم تحميل الأعضاء!");
       }
     } catch (e: any) {
       setError(e.message);
@@ -359,7 +414,7 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetBotChats(token);
       if (res.success) {
         setBotChats(res.chats || []);
-        setSuccess(`Found ${res.total || 0} chats where your bot is active!`);
+        setSuccess(`تم العثور على ${res.total || 0} محادثة حيث بوتك نشط!`);
       }
     } catch (e: any) {
       setError(e.message);
@@ -376,11 +431,11 @@ export default function TelegramBotPage() {
       setError("");
       const result = await uploadKnowledgeBase(token, file);
       if (result.success) {
-        setSuccess("Knowledge base uploaded successfully!");
+        setSuccess("تم رفع قاعدة المعرفة بنجاح!");
         setFile(null);
         await loadKnowledgeBase();
       } else {
-        setError(result.message || "Upload failed");
+        setError(result.message || "فشل الرفع");
       }
     } catch (e: any) {
       setError(e.message);
@@ -404,7 +459,7 @@ export default function TelegramBotPage() {
       // Save OpenAI key and auto-response settings
       localStorage.setItem('telegram_openai_key', openaiKey);
       localStorage.setItem('telegram_auto_response', autoResponse.toString());
-      setSuccess("Settings saved successfully!");
+      setSuccess("تم حفظ الإعدادات بنجاح!");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -413,12 +468,12 @@ export default function TelegramBotPage() {
   }
 
   const tabs = [
-    { id: "overview", name: "Overview", icon: "🤖" },
-    { id: "chat-management", name: "Chat Management", icon: "👥" },
-    { id: "admin-tools", name: "Admin Tools", icon: "⚙️" },
-    { id: "groups", name: "My Groups & Channels", icon: "🏢" },
-    { id: "contacts", name: "Contacts", icon: "👤" },
-    { id: "campaigns", name: "Campaigns", icon: "📣" },
+    { id: "overview", name: "نظرة عامة", icon: "🤖" },
+    { id: "chat-management", name: "إدارة المحادثات", icon: "👥" },
+    { id: "admin-tools", name: "أدوات الإدارة", icon: "⚙️" },
+    { id: "groups", name: "مجموعاتي والقنوات", icon: "🏢" },
+    { id: "contacts", name: "جهات الاتصال", icon: "👤" },
+    { id: "campaigns", name: "الحملات", icon: "📣" },
     
   ];
 
@@ -464,7 +519,7 @@ export default function TelegramBotPage() {
       {/* Bot Connection Status */}
       <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">
-          <h3 className="text-lg font-semibold text-white">Bot Status</h3>
+          <h3 className="text-lg font-semibold text-white">حالة البوت</h3>
         </CardHeader>
         <CardContent className="space-y-4">
          
@@ -500,9 +555,9 @@ export default function TelegramBotPage() {
                     }}
                     disabled={loading}
                   >
-                    {loading ? 'Testing...' : 'Test Bot'}
+                    {loading ? 'جاري الاختبار...' : 'اختبار البوت'}
                   </Button>
-                  <div className="text-green-500 text-sm">Connected</div>
+                  <div className="text-green-500 text-sm">متصل</div>
                 </div>
               </div>
             </div>
@@ -526,20 +581,20 @@ export default function TelegramBotPage() {
                       setSuccess("");
                       const res = await telegramBotConnect(token, botToken);
                       if (res.success) {
-                        setSuccess("Bot connected successfully");
+                        setSuccess("تم ربط البوت بنجاح");
                         setBotToken("");
                         await loadBotInfo();
                       } else {
-                        setError(res.message || "Failed to connect bot");
+                        setError(res.message || "فشل في ربط البوت");
                       }
                     } catch (e: any) {
-                      setError(e.message || "Failed to connect bot");
+                      setError(e.message || "فشل في ربط البوت");
                     } finally {
                       setLoading(false);
                     }
                   }}
                 >
-                  {loading ? 'Connecting...' : 'Connect Bot'}
+                  {loading ? 'جاري الاتصال...' : 'ربط البوت'}
                 </Button>
               </div>
             </div>
@@ -624,12 +679,12 @@ export default function TelegramBotPage() {
     return (
       <Card className="bg-card border-none">
         <CardHeader>
-          <h3 className="text-lg font-semibold text-white">Contacts</h3>
-          <p className="text-sm text-gray-400">Users who started your bot (recent activity)</p>
+          <h3 className="text-lg font-semibold text-white">جهات الاتصال</h3>
+          <p className="text-sm text-gray-400">المستخدمون الذين بدأوا بوتك (النشاط الأخير)</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button onClick={loadContacts} disabled={loading} className="bg-blue-500 text-white">
-            {loading ? 'Loading...' : 'Refresh Contacts'}
+            {loading ? 'جاري التحميل...' : 'تحديث جهات الاتصال'}
           </Button>
           {contacts.length > 0 && (
             <div className="flex gap-2">
@@ -637,17 +692,17 @@ export default function TelegramBotPage() {
                 onClick={() => {
                   const all = contacts.map((c:any)=> c.chatId);
                   setSelectedTargets(Array.from(new Set([...(selectedTargets as string[]), ...all])));
-                  setSuccess(`Added ${all.length} contacts to targets`);
+                  setSuccess(`تم إضافة ${all.length} جهة اتصال إلى الأهداف`);
                 }}
                 className="bg-yellow-600 text-white"
               >
-                Select All Contacts
+                اختر جميع جهات الاتصال
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => setSelectedTargets([])}
               >
-                Clear Targets
+                مسح الأهداف
               </Button>
             </div>
           )}
@@ -732,15 +787,15 @@ export default function TelegramBotPage() {
                 <label className="block text-sm font-medium text-white">Pick Contacts</label>
                 <div className="flex gap-2">
                   <Button size="sm" onClick={loadContacts} disabled={loading} className="bg-blue-500 text-white">
-                    {loading ? 'Loading...' : 'Refresh Contacts'}
+                    {loading ? 'جاري التحميل...' : 'تحديث جهات الاتصال'}
                   </Button>
                   {contacts.length > 0 && (
                     <Button size="sm" onClick={() => {
                       const all = contacts.map((c:any)=> c.chatId);
                       setSelectedTargets(prev => Array.from(new Set([...(prev||[]), ...all])));
-                      setSuccess(`Added ${all.length} contacts to targets`);
+                      setSuccess(`تم إضافة ${all.length} جهة اتصال إلى الأهداف`);
                     }} className="bg-yellow-600 text-white">
-                      Select All Contacts
+                      اختر جميع جهات الاتصال
                     </Button>
                   )}
                 </div>

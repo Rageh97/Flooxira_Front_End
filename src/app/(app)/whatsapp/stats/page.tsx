@@ -40,25 +40,25 @@ export default function WhatsAppStatsPage() {
           <Card className="bg-card border-none">
             <CardContent className="p-6">
               <div className="text-2xl font-bold text-orange-500">{botStats.totalMessages}</div>
-              <p className="text-xs text-primary">Total Messages</p>
+              <p className="text-xs text-primary">إجمالي الرسائل</p>
             </CardContent>
           </Card>
           <Card className="bg-card border-none">
             <CardContent className="p-6">
               <div className="text-2xl font-bold text-primary">{botStats.totalContacts}</div>
-              <p className="text-xs text-primary">Total Contacts</p>
+              <p className="text-xs text-primary">إجمالي جهات الاتصال</p>
             </CardContent>
           </Card>
           <Card className="bg-card border-none">
             <CardContent className="p-6">
               <div className="text-2xl font-bold text-yellow-500">{botStats.incomingMessages}</div>
-              <p className="text-xs text-primary">Incoming Messages</p>
+              <p className="text-xs text-primary">الرسائل الواردة</p>
             </CardContent>
           </Card>
           <Card className="bg-card border-none">
             <CardContent className="p-6">
               <div className="text-2xl font-bold text-blue-500">{botStats.outgoingMessages}</div>
-              <p className="text-xs text-primary">Bot Responses</p>
+              <p className="text-xs text-primary">ردود البوت</p>
             </CardContent>
           </Card>
         </div>
@@ -66,11 +66,11 @@ export default function WhatsAppStatsPage() {
 
       {botStats && (
         <Card className="bg-card border-none">
-          <CardHeader className="border-text-primary/50 text-primary">Response Sources</CardHeader>
+          <CardHeader className="border-text-primary/50 text-primary">مصادر الردود</CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white">Knowledge Base</span>
+                <span className="text-sm font-medium text-white">قاعدة المعرفة</span>
                 <div className="flex items-center gap-2">
                   <div className="w-32 bg-gray-200 rounded-full h-2">
                     <div 
@@ -82,7 +82,7 @@ export default function WhatsAppStatsPage() {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white">OpenAI</span>
+                <span className="text-sm font-medium text-white">الذكاء الاصطناعي</span>
                 <div className="flex items-center gap-2">
                   <div className="w-32 bg-gray-200 rounded-full h-2">
                     <div 
@@ -94,7 +94,7 @@ export default function WhatsAppStatsPage() {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white">Fallback</span>
+                <span className="text-sm font-medium text-white">الرد الاحتياطي</span>
                 <div className="flex items-center gap-2">
                   <div className="w-32 bg-gray-200 rounded-full h-2">
                     <div 

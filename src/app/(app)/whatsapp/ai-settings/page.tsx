@@ -52,7 +52,7 @@ export default function AISettingsPage() {
       if (templatesRes.success) setTemplates(templatesRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
-      setError('Failed to load settings');
+      setError('فشل في تحميل الإعدادات');
     } finally {
       setLoading(false);
     }
@@ -68,21 +68,21 @@ export default function AISettingsPage() {
     try {
       const res = await updateBotSettings(settings);
       if (res.success) {
-        setSuccess('Settings saved successfully!');
+        setSuccess('تم حفظ الإعدادات بنجاح!');
         setSettings(res.data);
       } else {
-        setError(res.message || 'Failed to save settings');
+        setError(res.message || 'فشل في حفظ الإعدادات');
       }
     } catch (error) {
       console.error('Error saving settings:', error);
-      setError('Failed to save settings');
+      setError('فشل في حفظ الإعدادات');
     } finally {
       setSaving(false);
     }
   };
 
   const handleReset = async () => {
-    if (!confirm('Are you sure you want to reset all settings to default?')) return;
+    if (!confirm('هل أنت متأكد من إعادة تعيين جميع الإعدادات إلى الافتراضية؟')) return;
     
     setSaving(true);
     setError('');
@@ -91,14 +91,14 @@ export default function AISettingsPage() {
     try {
       const res = await resetBotSettings();
       if (res.success) {
-        setSuccess('Settings reset to default successfully!');
+        setSuccess('تم إعادة تعيين الإعدادات إلى الافتراضية بنجاح!');
         setSettings(res.data);
       } else {
-        setError(res.message || 'Failed to reset settings');
+        setError(res.message || 'فشل في إعادة تعيين الإعدادات');
       }
     } catch (error) {
       console.error('Error resetting settings:', error);
-      setError('Failed to reset settings');
+      setError('فشل في إعادة تعيين الإعدادات');
     } finally {
       setSaving(false);
     }
@@ -116,11 +116,11 @@ export default function AISettingsPage() {
       if (res.success) {
         setTestResponse(res.data.response);
       } else {
-        setError(res.message || 'Failed to test AI response');
+        setError(res.message || 'فشل في اختبار استجابة الذكاء الاصطناعي');
       }
     } catch (error) {
       console.error('Error testing AI:', error);
-      setError('Failed to test AI response');
+      setError('فشل في اختبار استجابة الذكاء الاصطناعي');
     } finally {
       setTesting(false);
     }
@@ -152,14 +152,14 @@ export default function AISettingsPage() {
   if (!settings) {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <div className="text-center text-red-500">Failed to load settings</div>
+        <div className="text-center text-red-500">فشل في تحميل الإعدادات</div>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-white">AI Bot Settings</h1>
+      <h1 className="text-3xl font-bold mb-6 text-white">إعدادات بوت الذكاء الاصطناعي</h1>
       
       {/* Status Messages */}
       {error && (
@@ -177,13 +177,13 @@ export default function AISettingsPage() {
       <div className="mb-6">
         <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
           {[
-            { id: 'general', label: 'General' },
-            { id: 'ai', label: 'AI Models' },
-            { id: 'personality', label: 'Personality' },
-            { id: 'business', label: 'Business' },
-            { id: 'prompts', label: 'Prompts' },
-            { id: 'advanced', label: 'Advanced' },
-            { id: 'test', label: 'Test' }
+            { id: 'general', label: 'عام' },
+            { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
+            { id: 'personality', label: 'الشخصية' },
+            { id: 'business', label: 'الأعمال' },
+            { id: 'prompts', label: 'الرسائل المخصصة' },
+            { id: 'advanced', label: 'متقدم' },
+            { id: 'test', label: 'اختبار' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -204,33 +204,33 @@ export default function AISettingsPage() {
       {activeTab === 'general' && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>General Settings</CardTitle>
+            <CardTitle>الإعدادات العامة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Response Length</label>
+                <label className="block text-sm font-medium mb-2">طول الرد</label>
                 <select
                   value={settings.responseLength}
                   onChange={(e) => setSettings({...settings, responseLength: e.target.value as any})}
                   className="w-full p-2 border rounded-md"
                 >
-                  <option value="short">Short</option>
-                  <option value="medium">Medium</option>
-                  <option value="long">Long</option>
+                  <option value="short">قصير</option>
+                  <option value="medium">متوسط</option>
+                  <option value="long">طويل</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Language</label>
+                <label className="block text-sm font-medium mb-2">اللغة</label>
                 <select
                   value={settings.language}
                   onChange={(e) => setSettings({...settings, language: e.target.value as any})}
                   className="w-full p-2 border rounded-md"
                 >
-                  <option value="arabic">Arabic</option>
-                  <option value="english">English</option>
-                  <option value="both">Both</option>
+                  <option value="arabic">عربي</option>
+                  <option value="english">إنجليزي</option>
+                  <option value="both">كلاهما</option>
                 </select>
               </div>
             </div>
@@ -243,7 +243,7 @@ export default function AISettingsPage() {
                   onChange={(e) => setSettings({...settings, includeEmojis: e.target.checked})}
                   className="mr-2"
                 />
-                Include Emojis
+                تضمين الإيموجي
               </label>
               
               <label className="flex items-center">
@@ -253,7 +253,7 @@ export default function AISettingsPage() {
                   onChange={(e) => setSettings({...settings, includeGreetings: e.target.checked})}
                   className="mr-2"
                 />
-                Include Greetings
+                تضمين التحيات
               </label>
               
               <label className="flex items-center">
@@ -263,7 +263,7 @@ export default function AISettingsPage() {
                   onChange={(e) => setSettings({...settings, includeFarewells: e.target.checked})}
                   className="mr-2"
                 />
-                Include Farewells
+                تضمين الوداع
               </label>
             </div>
           </CardContent>
@@ -274,25 +274,25 @@ export default function AISettingsPage() {
       {activeTab === 'ai' && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>AI Models Configuration</CardTitle>
+            <CardTitle>تكوين نماذج الذكاء الاصطناعي</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">AI Provider</label>
+                <label className="block text-sm font-medium mb-2">مزود الذكاء الاصطناعي</label>
                 <select
                   value={settings.aiProvider}
                   onChange={(e) => setSettings({...settings, aiProvider: e.target.value as any})}
                   className="w-full p-2 border rounded-md"
                 >
-                  <option value="openai">OpenAI Only</option>
-                  <option value="gemini">Gemini Only</option>
-                  <option value="both">Both (Fallback)</option>
+                  <option value="openai">OpenAI فقط</option>
+                  <option value="gemini">Gemini فقط</option>
+                  <option value="both">كلاهما (احتياطي)</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Temperature</label>
+                <label className="block text-sm font-medium mb-2">درجة الحرارة</label>
                 <input
                   type="range"
                   min="0"
@@ -308,7 +308,7 @@ export default function AISettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">OpenAI Model</label>
+                <label className="block text-sm font-medium mb-2">نموذج OpenAI</label>
                 <select
                   value={settings.openaiModel}
                   onChange={(e) => setSettings({...settings, openaiModel: e.target.value})}
@@ -321,7 +321,7 @@ export default function AISettingsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Gemini Model</label>
+                <label className="block text-sm font-medium mb-2">نموذج Gemini</label>
                 <select
                   value={settings.geminiModel}
                   onChange={(e) => setSettings({...settings, geminiModel: e.target.value})}
@@ -335,7 +335,7 @@ export default function AISettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Max Tokens</label>
+              <label className="block text-sm font-medium mb-2">الحد الأقصى للرموز</label>
               <input
                 type="number"
                 min="100"
@@ -353,67 +353,67 @@ export default function AISettingsPage() {
       {activeTab === 'personality' && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Personality & Tone</CardTitle>
+            <CardTitle>الشخصية والنبرة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Personality Type</label>
+                <label className="block text-sm font-medium mb-2">نوع الشخصية</label>
                 <select
                   value={settings.personality}
                   onChange={(e) => setSettings({...settings, personality: e.target.value as any})}
                   className="w-full p-2 border rounded-md"
                 >
-                  <option value="professional">Professional</option>
-                  <option value="friendly">Friendly</option>
-                  <option value="casual">Casual</option>
-                  <option value="formal">Formal</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="custom">Custom</option>
+                  <option value="professional">مهني</option>
+                  <option value="friendly">ودود</option>
+                  <option value="casual">عادي</option>
+                  <option value="formal">رسمي</option>
+                  <option value="marketing">تسويقي</option>
+                  <option value="custom">مخصص</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Dialect</label>
+                <label className="block text-sm font-medium mb-2">اللهجة</label>
                 <select
                   value={settings.dialect}
                   onChange={(e) => setSettings({...settings, dialect: e.target.value as any})}
                   className="w-full p-2 border rounded-md"
                 >
-                  <option value="saudi">Saudi</option>
-                  <option value="egyptian">Egyptian</option>
-                  <option value="lebanese">Lebanese</option>
-                  <option value="emirati">Emirati</option>
-                  <option value="kuwaiti">Kuwaiti</option>
-                  <option value="qatari">Qatari</option>
-                  <option value="bahraini">Bahraini</option>
-                  <option value="omani">Omani</option>
-                  <option value="jordanian">Jordanian</option>
-                  <option value="palestinian">Palestinian</option>
-                  <option value="syrian">Syrian</option>
-                  <option value="iraqi">Iraqi</option>
-                  <option value="standard">Standard Arabic</option>
+                  <option value="saudi">سعودي</option>
+                  <option value="egyptian">مصري</option>
+                  <option value="lebanese">لبناني</option>
+                  <option value="emirati">إماراتي</option>
+                  <option value="kuwaiti">كويتي</option>
+                  <option value="qatari">قطري</option>
+                  <option value="bahraini">بحريني</option>
+                  <option value="omani">عماني</option>
+                  <option value="jordanian">أردني</option>
+                  <option value="palestinian">فلسطيني</option>
+                  <option value="syrian">سوري</option>
+                  <option value="iraqi">عراقي</option>
+                  <option value="standard">العربية الفصحى</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Tone</label>
+              <label className="block text-sm font-medium mb-2">النبرة</label>
               <select
                 value={settings.tone}
                 onChange={(e) => setSettings({...settings, tone: e.target.value as any})}
                 className="w-full p-2 border rounded-md"
               >
-                <option value="formal">Formal</option>
-                <option value="informal">Informal</option>
-                <option value="mixed">Mixed</option>
+                <option value="formal">رسمي</option>
+                <option value="informal">غير رسمي</option>
+                <option value="mixed">مختلط</option>
               </select>
             </div>
 
             {/* Personality Templates */}
             {templates && (
               <div>
-                <label className="block text-sm font-medium mb-2">Quick Templates</label>
+                <label className="block text-sm font-medium mb-2">قوالب سريعة</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                   {Object.entries(templates).map(([key, template]) => (
                     <button
@@ -436,50 +436,50 @@ export default function AISettingsPage() {
       {activeTab === 'business' && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Business Information</CardTitle>
+            <CardTitle>معلومات الأعمال</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Business Name</label>
+                <label className="block text-sm font-medium mb-2">اسم العمل</label>
                 <input
                   type="text"
                   value={settings.businessName || ''}
                   onChange={(e) => setSettings({...settings, businessName: e.target.value})}
                   className="w-full p-2 border rounded-md"
-                  placeholder="Your business name"
+                  placeholder="اسم عملك"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Business Type</label>
+                <label className="block text-sm font-medium mb-2">نوع العمل</label>
                 <input
                   type="text"
                   value={settings.businessType || ''}
                   onChange={(e) => setSettings({...settings, businessType: e.target.value})}
                   className="w-full p-2 border rounded-md"
-                  placeholder="e.g., E-commerce, Restaurant, Services"
+                  placeholder="مثال: التجارة الإلكترونية، مطعم، خدمات"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Business Description</label>
+              <label className="block text-sm font-medium mb-2">وصف العمل</label>
               <textarea
                 value={settings.businessDescription || ''}
                 onChange={(e) => setSettings({...settings, businessDescription: e.target.value})}
                 className="w-full p-2 border rounded-md h-24"
-                placeholder="Describe your business and what you offer"
+                placeholder="اوصف عملك وما تقدمه"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Target Audience</label>
+              <label className="block text-sm font-medium mb-2">الجمهور المستهدف</label>
               <textarea
                 value={settings.targetAudience || ''}
                 onChange={(e) => setSettings({...settings, targetAudience: e.target.value})}
                 className="w-full p-2 border rounded-md h-24"
-                placeholder="Describe your target customers"
+                placeholder="اوصف عملاءك المستهدفين"
               />
             </div>
           </CardContent>
@@ -490,58 +490,58 @@ export default function AISettingsPage() {
       {activeTab === 'prompts' && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Custom Prompts</CardTitle>
+            <CardTitle>الرسائل المخصصة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">System Prompt</label>
+              <label className="block text-sm font-medium mb-2">رسالة النظام</label>
               <textarea
                 value={settings.systemPrompt || ''}
                 onChange={(e) => setSettings({...settings, systemPrompt: e.target.value})}
                 className="w-full p-2 border rounded-md h-32"
-                placeholder="Main system prompt that defines the bot's behavior"
+                placeholder="رسالة النظام الرئيسية التي تحدد سلوك البوت"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Greeting Prompt</label>
+                <label className="block text-sm font-medium mb-2">رسالة التحية</label>
                 <textarea
                   value={settings.greetingPrompt || ''}
                   onChange={(e) => setSettings({...settings, greetingPrompt: e.target.value})}
                   className="w-full p-2 border rounded-md h-24"
-                  placeholder="How the bot should greet customers"
+                  placeholder="كيف يجب أن يحيا البوت العملاء"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-2">Farewell Prompt</label>
+                <label className="block text-sm font-medium mb-2">رسالة الوداع</label>
                 <textarea
                   value={settings.farewellPrompt || ''}
                   onChange={(e) => setSettings({...settings, farewellPrompt: e.target.value})}
                   className="w-full p-2 border rounded-md h-24"
-                  placeholder="How the bot should say goodbye"
+                  placeholder="كيف يجب أن يودع البوت العملاء"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Sales Prompt</label>
+              <label className="block text-sm font-medium mb-2">رسالة المبيعات</label>
               <textarea
                 value={settings.salesPrompt || ''}
                 onChange={(e) => setSettings({...settings, salesPrompt: e.target.value})}
                 className="w-full p-2 border rounded-md h-24"
-                placeholder="How the bot should handle sales conversations"
+                placeholder="كيف يجب أن يتعامل البوت مع محادثات المبيعات"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Objection Handling Prompt</label>
+              <label className="block text-sm font-medium mb-2">رسالة التعامل مع الاعتراضات</label>
               <textarea
                 value={settings.objectionHandlingPrompt || ''}
                 onChange={(e) => setSettings({...settings, objectionHandlingPrompt: e.target.value})}
                 className="w-full p-2 border rounded-md h-24"
-                placeholder="How the bot should handle customer objections"
+                placeholder="كيف يجب أن يتعامل البوت مع اعتراضات العملاء"
               />
             </div>
           </CardContent>
@@ -552,7 +552,7 @@ export default function AISettingsPage() {
       {activeTab === 'advanced' && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Advanced Settings</CardTitle>
+            <CardTitle>الإعدادات المتقدمة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -563,7 +563,7 @@ export default function AISettingsPage() {
                   onChange={(e) => setSettings({...settings, enableContextMemory: e.target.checked})}
                   className="mr-2"
                 />
-                Enable Context Memory
+                تفعيل ذاكرة السياق
               </label>
               
               <label className="flex items-center">
@@ -573,12 +573,12 @@ export default function AISettingsPage() {
                   onChange={(e) => setSettings({...settings, enableFallback: e.target.checked})}
                   className="mr-2"
                 />
-                Enable Fallback Responses
+                تفعيل الردود الاحتياطية
               </label>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Context Window (messages)</label>
+              <label className="block text-sm font-medium mb-2">نافذة السياق (الرسائل)</label>
               <input
                 type="number"
                 min="5"
@@ -590,12 +590,12 @@ export default function AISettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Fallback Message</label>
+              <label className="block text-sm font-medium mb-2">رسالة احتياطية</label>
               <textarea
                 value={settings.fallbackMessage || ''}
                 onChange={(e) => setSettings({...settings, fallbackMessage: e.target.value})}
                 className="w-full p-2 border rounded-md h-24"
-                placeholder="Message to send when AI cannot respond"
+                placeholder="رسالة ترسل عندما لا يستطيع الذكاء الاصطناعي الرد"
               />
             </div>
 
@@ -607,7 +607,7 @@ export default function AISettingsPage() {
                   onChange={(e) => setSettings({...settings, trackConversations: e.target.checked})}
                   className="mr-2"
                 />
-                Track Conversations
+                تتبع المحادثات
               </label>
               
               <label className="flex items-center">
@@ -617,7 +617,7 @@ export default function AISettingsPage() {
                   onChange={(e) => setSettings({...settings, trackPerformance: e.target.checked})}
                   className="mr-2"
                 />
-                Track Performance
+                تتبع الأداء
               </label>
             </div>
           </CardContent>
@@ -628,17 +628,17 @@ export default function AISettingsPage() {
       {activeTab === 'test' && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Test AI Response</CardTitle>
+            <CardTitle>اختبار استجابة الذكاء الاصطناعي</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Test Message</label>
+              <label className="block text-sm font-medium mb-2">رسالة الاختبار</label>
               <input
                 type="text"
                 value={testMessage}
                 onChange={(e) => setTestMessage(e.target.value)}
                 className="w-full p-2 border rounded-md"
-                placeholder="Type a test message to see how the bot responds"
+                placeholder="اكتب رسالة اختبار لترى كيف يرد البوت"
               />
             </div>
             
@@ -647,12 +647,12 @@ export default function AISettingsPage() {
               disabled={!testMessage.trim() || testing}
               className="bg-blue-500 hover:bg-blue-600"
             >
-              {testing ? 'Testing...' : 'Test Response'}
+              {testing ? 'جاري الاختبار...' : 'اختبار الاستجابة'}
             </Button>
 
             {testResponse && (
               <div className="mt-4 p-4 bg-gray-50 border rounded-md">
-                <h4 className="font-medium mb-2">AI Response:</h4>
+                <h4 className="font-medium mb-2">رد الذكاء الاصطناعي:</h4>
                 <p className="text-gray-700">{testResponse}</p>
               </div>
             )}
@@ -667,7 +667,7 @@ export default function AISettingsPage() {
           disabled={saving}
           className="bg-green-500 hover:bg-green-600"
         >
-          {saving ? 'Saving...' : 'Save Settings'}
+          {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
         </Button>
         
         <Button
@@ -676,7 +676,7 @@ export default function AISettingsPage() {
           variant="outline"
           className="border-red-300 text-red-600 hover:bg-red-50"
         >
-          {saving ? 'Resetting...' : 'Reset to Default'}
+          {saving ? 'جاري إعادة التعيين...' : 'إعادة تعيين إلى الافتراضي'}
         </Button>
       </div>
     </div>

@@ -5,15 +5,15 @@ import { PropsWithChildren } from "react";
 import { clsx } from "clsx";
 
 const whatsappTabs = [
-  { href: "/whatsapp", label: "Connection", exact: true },
-  { href: "/whatsapp/chats", label: "Chats" },
-  { href: "/whatsapp/campaigns", label: "Campaigns" },
-  { href: "/whatsapp/groups", label: "Groups" },
-  { href: "/whatsapp/stats", label: "Stats" },
-  { href: "/whatsapp/bot-content", label: "Bot Content" },
-  { href: "/whatsapp/ai-settings", label: "AI Settings" },
-  { href: "/whatsapp/tags", label: "Tags" },
-  { href: "/whatsapp-templates", label: "Templates" },
+  { href: "/whatsapp", label: "الاتصال", exact: true },
+  { href: "/whatsapp/chats", label: "المحادثات" },
+  { href: "/whatsapp/campaigns", label: "الحملات" },
+  { href: "/whatsapp/groups", label: "المجموعات" },
+  { href: "/whatsapp/stats", label: "الإحصائيات" },
+  { href: "/whatsapp/bot-content", label: "محتوى البوت" },
+  { href: "/whatsapp/ai-settings", label: "إعدادات الذكاء الاصطناعي" },
+  { href: "/whatsapp/tags", label: "التصنيفات" },
+  { href: "/whatsapp-templates", label: "القوالب" },
 ];
 
 export default function WhatsAppLayout({ children }: PropsWithChildren) {

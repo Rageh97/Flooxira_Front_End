@@ -22,23 +22,23 @@ export default function SignInPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Sign in</h1>
-        <p className="text-sm text-gray-600">Welcome back. Please enter your details.</p>
+        <h1 className="text-xl font-semibold">تسجيل الدخول</h1>
+        <p className="text-sm text-gray-600">مرحباً بعودتك. يرجى إدخال بياناتك.</p>
       </div>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
         <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
+          <label className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
           <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
+          <label className="block text-sm font-medium mb-1">كلمة المرور</label>
           <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
         <div className="flex items-center justify-between text-sm">
-          <Link href="/sign-up" className="text-gray-700 hover:underline">Create account</Link>
-          <Link href="/forgot-password" className="text-gray-700 hover:underline">Forgot password?</Link>
+          <Link href="/sign-up" className="text-gray-700 hover:underline">إنشاء حساب</Link>
+          <Link href="/forgot-password" className="text-gray-700 hover:underline">نسيت كلمة المرور؟</Link>
         </div>
-        <Button className="w-full" disabled={mutation.isPending}>{mutation.isPending ? "Signing in..." : "Sign in"}</Button>
+        <Button className="w-full" disabled={mutation.isPending}>{mutation.isPending ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}</Button>
         {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
       </form>
     </div>

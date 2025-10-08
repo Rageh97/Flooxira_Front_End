@@ -12,7 +12,7 @@ export default function WhatsAppCampaignsPage() {
   
   // Campaigns state
   const [campaignFile, setCampaignFile] = useState<File | null>(null);
-  const [campaignTemplate, setCampaignTemplate] = useState<string>("مرحبا {{name}} …");
+  const [campaignTemplate, setCampaignTemplate] = useState<string>("");
   const [campaignThrottle, setCampaignThrottle] = useState<number>(3000);
   const [campaignMedia, setCampaignMedia] = useState<File | null>(null);
   const [campaignScheduleAt, setCampaignScheduleAt] = useState<string>("");
@@ -37,7 +37,7 @@ export default function WhatsAppCampaignsPage() {
 
   async function handleStartCampaign() {
     if (!campaignFile || !campaignTemplate) {
-      setError("Please upload Excel file and provide message template");
+      setError("يرجى رفع ملف Excel وتوفير قالب الرسالة");
       return;
     }
 
@@ -60,7 +60,7 @@ export default function WhatsAppCampaignsPage() {
       const result = await startWhatsAppCampaign(token, formData);
       
       if (result.success) {
-        setSuccess("Campaign started successfully!");
+        setSuccess("تم بدء الحملة بنجاح!");
         setCampaignFile(null);
         setCampaignTemplate("مرحبا {{name}} …");
         setCampaignThrottle(3000);
@@ -69,7 +69,7 @@ export default function WhatsAppCampaignsPage() {
         setCampaignDailyCap('');
         setCampaignPerNumberDelay('');
       } else {
-        setError(result.message || "Failed to start campaign");
+        setError(result.message || "فشل في بدء الحملة");
       }
     } catch (e: any) {
       setError(e.message);
@@ -80,7 +80,7 @@ export default function WhatsAppCampaignsPage() {
 
   async function handleSendToTag() {
     if (!selectedTagId || !campaignTemplate.trim()) {
-      setError("Please select a tag and enter a message template");
+      setError("يرجى اختيار تصنيف وإدخال قالب الرسالة");
       return;
     }
     try {
@@ -88,9 +88,9 @@ export default function WhatsAppCampaignsPage() {
       setError("");
       const res = await sendCampaignToTag({ tagId: Number(selectedTagId), messageTemplate: campaignTemplate, throttleMs: campaignThrottle });
       if (res.success) {
-        setSuccess("Campaign to tag started successfully!");
+        setSuccess("تم بدء الحملة للتصنيف بنجاح!");
       } else {
-        setError(res.message || "Failed to start tag campaign");
+        setError(res.message || "فشل في بدء حملة التصنيف");
       }
     } catch (e: any) {
       setError(e.message);
@@ -115,74 +115,74 @@ export default function WhatsAppCampaignsPage() {
       )}
 
       <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">Start Campaign</CardHeader>
+        <CardHeader className="border-text-primary/50 text-primary">بدء الحملة</CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Upload Excel (columns: phone, name, message)</label>
+              <label className="block text-sm font-medium mb-2 text-white">رفع ملف Excel (أعمدة: هاتف، اسم، رسالة)</label>
               <input type="file" accept=".xlsx" onChange={(e) => setCampaignFile(e.target.files?.[0] || null)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Message Template</label>
+              <label className="block text-sm font-medium mb-2 text-white">قالب الرسالة</label>
               <textarea className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
-              <p className="text-xs text-gray-300 mt-1">Use {'{{name}}'} placeholder.</p>
+              {/* <p className="text-xs text-gray-300 mt-1">استخدم placeholder {'{{name}}'}.</p> */}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2 text-white">Throttle (ms between messages)</label>
+            <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (ملي ثانية بين الرسائل)</label>
             <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '3000'))} />
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Media (image/video, optional)</label>
+              <label className="block text-sm font-medium mb-2 text-white">الوسائط (صورة/فيديو، اختياري)</label>
               <input type="file" accept="image/*,video/*" onChange={(e) => setCampaignMedia(e.target.files?.[0] || null)} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Schedule (optional)</label>
+              <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
               <input type="datetime-local" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignScheduleAt} onChange={(e) => setCampaignScheduleAt(e.target.value)} />
             </div>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Daily cap (numbers/day, optional)</label>
+              <label className="block text-sm font-medium mb-2 text-white">الحد اليومي (أرقام/يوم، اختياري)</label>
               <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : '')} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Per-number delay (ms, optional)</label>
+              <label className="block text-sm font-medium mb-2 text-white">تأخير لكل رقم (ملي ثانية، اختياري)</label>
               <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignPerNumberDelay} onChange={(e) => setCampaignPerNumberDelay(e.target.value ? Number(e.target.value) : '')} />
             </div>
           </div>
-          <Button onClick={handleStartCampaign} disabled={loading || !campaignFile || !campaignTemplate}>Start Campaign</Button>
+          <Button onClick={handleStartCampaign} disabled={loading || !campaignFile || !campaignTemplate}>بدء الحملة</Button>
         </CardContent>
       </Card>
 
       <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">Start Campaign to Tag</CardHeader>
+        <CardHeader className="border-text-primary/50 text-primary">بدء الحملة للتصنيف</CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Select Tag</label>
+              <label className="block text-sm font-medium mb-2 text-white">اختر التصنيف</label>
               <select
                 className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md"
                 value={selectedTagId}
                 onChange={(e) => setSelectedTagId(e.target.value ? Number(e.target.value) : '')}
               >
-                <option value="">-- Choose Tag --</option>
+                <option value="">-- اختر تصنيف --</option>
                 {tags.map(t => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Message Template</label>
+              <label className="block text-sm font-medium mb-2 text-white">قالب الرسالة</label>
               <textarea className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2 text-white">Throttle (ms between messages)</label>
+            <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (ملي ثانية بين الرسائل)</label>
             <input type="number" className="w-full px-3 py-2 border border-text-primary outline-none bg-gray-700/30 text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '3000'))} />
           </div>
-          <Button onClick={handleSendToTag} disabled={loading || !selectedTagId || !campaignTemplate.trim()}>Send to Tag</Button>
+          <Button onClick={handleSendToTag} disabled={loading || !selectedTagId || !campaignTemplate.trim()}>إرسال </Button>
         </CardContent>
       </Card>
     </div>

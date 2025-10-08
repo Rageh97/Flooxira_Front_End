@@ -51,7 +51,7 @@ export default function UsersAdminPage() {
     return (
       <Card className="bg-card border-none">
         <CardContent className="p-6">
-          <p className="text-sm text-gray-300">Loading users...</p>
+          <p className="text-sm text-gray-300">جاري تحميل المستخدمين...</p>
         </CardContent>
       </Card>
     );
@@ -61,7 +61,7 @@ export default function UsersAdminPage() {
     return (
       <Card className="bg-card border-none">
         <CardContent className="p-6">
-          <p className="text-sm text-red-400">Error: {error}</p>
+          <p className="text-sm text-red-400">خطأ: {error}</p>
         </CardContent>
       </Card>
     );
@@ -70,30 +70,30 @@ export default function UsersAdminPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">User Management</h2>
-        <span className="text-sm text-gray-300">{users.length} total users</span>
+        <h2 className="text-lg font-semibold text-white">إدارة المستخدمين</h2>
+        <span className="text-sm text-gray-300">{users.length} إجمالي المستخدمين</span>
       </div>
       
       <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">
-          <h3 className="text-lg font-semibold">All Users</h3>
+          <h3 className="text-lg font-semibold">جميع المستخدمين</h3>
         </CardHeader>
         <CardContent>
           {users.length === 0 ? (
-            <p className="text-sm text-gray-300">No users found.</p>
+            <p className="text-sm text-gray-300">لم يتم العثور على مستخدمين.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead className="text-center">
                   <tr className="border-b border-gray-600">
-                    <th className=" py-3 px-4 font-medium text-white">ID</th>
-                    <th className=" py-3 px-4 font-medium text-white">Name</th>
-                    <th className=" py-3 px-4 font-medium text-white">Email</th>
-                    <th className=" py-3 px-4 font-medium text-white">Phone</th>
-                    <th className=" py-3 px-4 font-medium text-white">Role</th>
-                    <th className=" py-3 px-4 font-medium text-white">Status</th>
-                    <th className=" py-3 px-4 font-medium text-white">Created</th>
-                    <th className=" py-3 px-4 font-medium text-white">Last Updated</th>
+                    <th className=" py-3 px-4 font-medium text-white">المعرف</th>
+                    <th className=" py-3 px-4 font-medium text-white">الاسم</th>
+                    <th className=" py-3 px-4 font-medium text-white">البريد الإلكتروني</th>
+                    <th className=" py-3 px-4 font-medium text-white">الهاتف</th>
+                    <th className=" py-3 px-4 font-medium text-white">الدور</th>
+                    <th className=" py-3 px-4 font-medium text-white">الحالة</th>
+                    <th className=" py-3 px-4 font-medium text-white">تاريخ الإنشاء</th>
+                    <th className=" py-3 px-4 font-medium text-white">آخر تحديث</th>
                   </tr>
                 </thead>
                 <tbody className="text-center">
@@ -101,10 +101,10 @@ export default function UsersAdminPage() {
                     <tr key={user.id} className="border-b border-gray-600 hover:bg-gray-700/30">
                       <td className="py-3 px-4 text-sm text-gray-300">{user.id}</td>
                       <td className="py-3 px-4 text-sm font-medium text-white">
-                        {user.name || 'No name'}
+                        {user.name || 'لا يوجد اسم'}
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-300">{user.email}</td>
-                      <td className="py-3 px-4 text-sm text-gray-300">{user.phone || 'No phone'}</td>
+                      <td className="py-3 px-4 text-sm text-gray-300">{user.phone || 'لا يوجد هاتف'}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                           user.role === 'admin' 
@@ -120,7 +120,7 @@ export default function UsersAdminPage() {
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {user.isActive ? 'Active' : 'Inactive'}
+                          {user.isActive ? 'نشط' : 'غير نشط'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-300">{formatDate(user.createdAt)}</td>

@@ -9,8 +9,11 @@ import {
   getWhatsAppQRCode,
   stopWhatsAppSession,
 } from "@/lib/api";
+import { usePermissions } from "@/lib/permissions";
 
 export default function WhatsAppPage() {
+  const { canManageWhatsApp, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  
   const [status, setStatus] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -39,6 +42,58 @@ export default function WhatsAppPage() {
     }
   }, [token, status?.status]);
 
+  // Check permissions after all hooks
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">إدارة الواتساب</h1>
+        <div className="text-center py-8">
+          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActiveSubscription()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">إدارة الواتساب</h1>
+        <Card>
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
+            <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى إدارة الواتساب</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              تصفح الباقات
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!canManageWhatsApp()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">إدارة الواتساب</h1>
+        <Card>
+          <CardContent className="text-center py-12">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية إدارة الواتساب</h3>
+            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل إدارة الواتساب</p>
+            <Button 
+              onClick={() => window.location.href = '/plans'}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              ترقية الباقة
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   async function checkStatus() {
     try {
       const data = await getWhatsAppStatus(token);
@@ -65,11 +120,11 @@ export default function WhatsAppPage() {
       setError("");
       const result = await startWhatsAppSession(token);
       if (result.success) {
-        setSuccess("Session started successfully!");
+        setSuccess("تم بدء الجلسة بنجاح!");
         await checkStatus();
         await refreshQRCode();
       } else {
-        setError(result.message || "Failed to start session");
+        setError(result.message || "فشل في بدء الجلسة");
       }
     } catch (e: any) {
       setError(e.message);
@@ -84,11 +139,11 @@ export default function WhatsAppPage() {
       setError("");
       const result = await stopWhatsAppSession(token);
       if (result.success) {
-        setSuccess("Session stopped successfully!");
+        setSuccess("تم إيقاف الجلسة بنجاح!");
         setQrCode("");
         await checkStatus();
       } else {
-        setError(result.message || "Failed to stop session");
+        setError(result.message || "فشل في إيقاف الجلسة");
       }
     } catch (e: any) {
       setError(e.message);
@@ -99,7 +154,7 @@ export default function WhatsAppPage() {
 
   async function handleSendMessage() {
     if (!testPhoneNumber || !testMessage) {
-      setError("Please enter both phone number and message");
+      setError("يرجى إدخال رقم الهاتف والرسالة");
       return;
     }
     
@@ -110,15 +165,15 @@ export default function WhatsAppPage() {
       const result = await sendWhatsAppMessage(token, testPhoneNumber, testMessage);
       
       if (result.success) {
-        setSuccess("Message sent successfully!");
+        setSuccess("تم إرسال الرسالة بنجاح!");
         setTestMessage("");
       } else {
         console.log(`[WhatsApp Frontend] Message send failed:`, result.message);
-        setError(result.message || "Failed to send message");
+        setError(result.message || "فشل في إرسال الرسالة");
       }
     } catch (e: any) {
       console.error('[WhatsApp Frontend] Send message error:', e);
-      setError(`Send failed: ${e.message}`);
+      setError(`فشل في الإرسال: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -141,25 +196,25 @@ export default function WhatsAppPage() {
 
       {/* WhatsApp Connection */}
       <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">WhatsApp Connection</CardHeader>
+        <CardHeader className="border-text-primary/50 text-primary">اتصال الواتساب</CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <p className="text-sm text-primary">
-                Status: {status?.status || 'Unknown'} • {status?.message || 'No session'}
+                الحالة: {status?.status || 'غير معروف'} • {status?.message || 'لا توجد جلسة'}
               </p>
             </div>
             <div className="flex gap-2">
               <Button onClick={checkStatus} disabled={loading} variant="secondary">
-                Refresh
+                تحديث
               </Button>
               {status?.status === 'disconnected' || !status ? (
                 <Button onClick={startSession} disabled={loading}>
-                  {loading ? 'Starting...' : 'Start Session'}
+                  {loading ? 'جاري البدء...' : 'بدء الجلسة'}
                 </Button>
               ) : (
                 <Button onClick={stopSession} disabled={loading} variant="destructive">
-                  {loading ? 'Stopping...' : 'Stop Session'}
+                  {loading ? 'جاري الإيقاف...' : 'إيقاف الجلسة'}
                 </Button>
               )}
             </div>
@@ -169,7 +224,7 @@ export default function WhatsAppPage() {
           {qrCode && status?.status !== 'CONNECTED' && (
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-4">
-                Scan this QR code with your WhatsApp mobile app to connect:
+                امسح رمز QR هذا بتطبيق الواتساب على هاتفك للاتصال:
               </p>
               <div className="flex justify-center">
                 <img 
@@ -186,27 +241,27 @@ export default function WhatsAppPage() {
 
       {/* Send Test Message */}
       <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">Send Test Message</CardHeader>
+        <CardHeader className="border-text-primary/50 text-primary">إرسال رسالة تجريبية</CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Phone Number (with country code)</label>
+              <label className="block text-sm font-medium mb-2 text-white">رقم الهاتف (مع رمز الدولة)</label>
               <input
                 type="text"
                 value={testPhoneNumber}
                 onChange={(e) => setTestPhoneNumber(e.target.value)}
                 placeholder="+1234567890"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Message</label>
+              <label className="block text-sm font-medium mb-2 text-white">الرسالة</label>
               <input
                 type="text"
                 value={testMessage}
                 onChange={(e) => setTestMessage(e.target.value)}
-                placeholder="Hello, this is a test message"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="مرحباً، هذه رسالة تجريبية"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-white"
               />
             </div>
           </div>
@@ -215,7 +270,7 @@ export default function WhatsAppPage() {
             disabled={loading || !testPhoneNumber || !testMessage}
             className="w-full"
           >
-            {loading ? 'Sending...' : 'Send Message'}
+            {loading ? 'جاري الإرسال...' : 'إرسال الرسالة'}
           </Button>
         </CardContent>
       </Card>

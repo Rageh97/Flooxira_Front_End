@@ -110,7 +110,24 @@ export async function selectInstagramAccount(token: string, instagramId: string,
 }
 
 // Plans API
-export type Plan = { id: number; name: string; priceCents: number; interval: 'monthly' | 'yearly'; features?: any; isActive: boolean };
+export type Plan = { 
+  id: number; 
+  name: string; 
+  priceCents: number; 
+  interval: 'monthly' | 'yearly'; 
+  features?: any; 
+  permissions?: {
+    platforms: string[];
+    monthlyPosts: number;
+    canSchedule: boolean;
+    canAnalytics: boolean;
+    canTeamManagement: boolean;
+    maxTeamMembers: number;
+    canCustomBranding: boolean;
+    prioritySupport: boolean;
+  };
+  isActive: boolean 
+};
 
 export async function listPlans(token: string) {
   return apiFetch<{ plans: Plan[] }>("/api/plans", { authToken: token });
@@ -444,6 +461,15 @@ export async function scheduleContentItem(token: string, id: number, payload: { 
     method: 'POST',
     authToken: token,
     body: JSON.stringify({ ...payload, timezoneOffset: new Date().getTimezoneOffset() })
+  });
+}
+
+// AI Content Generation
+export async function generateAIContent(token: string, payload: { prompt: string; platform?: string; tone?: string; length?: string }) {
+  return apiFetch<{ content: string; prompt: string; platform?: string; tone?: string; length?: string }>("/api/content/ai/generate", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
   });
 }
 
@@ -1210,5 +1236,133 @@ export async function sallaUpsertStore(token: string, payload: { storeId: string
 export async function sallaListEvents(token: string, limit = 50, offset = 0) {
   const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   return apiFetch<{ success: boolean; events: any[] }>(`/api/salla/events?${qs.toString()}`, { authToken: token });
+}
+
+// ===== SUBSCRIPTION REQUESTS API =====
+export type SubscriptionRequest = {
+  id: number;
+  userId: number;
+  planId: number;
+  paymentMethod: 'usdt' | 'coupon';
+  status: 'pending' | 'approved' | 'rejected';
+  usdtWalletAddress?: string;
+  receiptImage?: string;
+  couponCode?: string;
+  notes?: string;
+  adminNotes?: string;
+  processedAt?: string;
+  processedBy?: number;
+  createdAt: string;
+  updatedAt: string;
+  Plan?: Plan;
+  User?: { id: number; name?: string; email: string };
+};
+
+export async function createSubscriptionRequest(token: string, payload: {
+  planId: number;
+  paymentMethod: 'usdt' | 'coupon';
+  usdtWalletAddress?: string;
+  couponCode?: string;
+}) {
+  return apiFetch<{ success: boolean; subscriptionRequest: SubscriptionRequest; message: string }>("/api/subscription-requests", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function uploadReceipt(token: string, requestId: number, file: File) {
+  const formData = new FormData();
+  formData.append('receipt', file);
+  
+  return apiFetch<{ success: boolean; message: string; receiptImage: string }>(`/api/subscription-requests/${requestId}/upload-receipt`, {
+    method: "POST",
+    authToken: token,
+    body: formData,
+    headers: {}
+  });
+}
+
+export async function getUserSubscriptionRequests(token: string) {
+  return apiFetch<{ success: boolean; requests: SubscriptionRequest[] }>("/api/subscription-requests/my-requests", { authToken: token });
+}
+
+export async function getAllSubscriptionRequests(token: string, params: { status?: string; page?: number; limit?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.status) qs.set('status', params.status);
+  if (params.page) qs.set('page', String(params.page));
+  if (params.limit) qs.set('limit', String(params.limit));
+  
+  return apiFetch<{ success: boolean; requests: SubscriptionRequest[]; total: number; page: number; limit: number }>(`/api/subscription-requests/admin/all?${qs.toString()}`, { authToken: token });
+}
+
+export async function updateSubscriptionRequestStatus(token: string, requestId: number, payload: { status: 'pending' | 'approved' | 'rejected'; adminNotes?: string }) {
+  return apiFetch<{ success: boolean; message: string; subscriptionRequest: SubscriptionRequest }>(`/api/subscription-requests/admin/${requestId}/status`, {
+    method: "PUT",
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function validateCoupon(token: string, code: string, planId: number) {
+  const qs = new URLSearchParams({ code, planId: String(planId) });
+  return apiFetch<{ success: boolean; valid: boolean; coupon?: { id: number; code: string; plan: Plan } }>(`/api/subscription-requests/validate-coupon?${qs.toString()}`, { authToken: token });
+}
+
+export async function getUSDTWalletInfo(token: string) {
+  return apiFetch<{ success: boolean; walletInfo: { address: string; network: string; instructions: string } }>("/api/subscription-requests/wallet-info", { authToken: token });
+}
+
+// ===== COUPONS API =====
+export type Coupon = {
+  id: number;
+  code: string;
+  planId: number;
+  isActive: boolean;
+  usedAt?: string;
+  usedBy?: number;
+  expiresAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  plan?: Plan;
+};
+
+export async function createCoupon(token: string, payload: { code: string; planId: number; expiresAt?: string; notes?: string }) {
+  return apiFetch<{ success: boolean; coupon: Coupon; message: string }>("/api/coupons", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function listCoupons(token: string, params: { planId?: number; isActive?: boolean; page?: number; limit?: number } = {}) {
+  const qs = new URLSearchParams();
+  if (params.planId) qs.set('planId', String(params.planId));
+  if (params.isActive !== undefined) qs.set('isActive', String(params.isActive));
+  if (params.page) qs.set('page', String(params.page));
+  if (params.limit) qs.set('limit', String(params.limit));
+  
+  return apiFetch<{ success: boolean; coupons: Coupon[]; total: number; page: number; limit: number }>(`/api/coupons?${qs.toString()}`, { authToken: token });
+}
+
+export async function updateCoupon(token: string, couponId: number, payload: { isActive?: boolean; expiresAt?: string; notes?: string }) {
+  return apiFetch<{ success: boolean; coupon: Coupon; message: string }>(`/api/coupons/${couponId}`, {
+    method: "PUT",
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteCoupon(token: string, couponId: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/coupons/${couponId}`, { method: "DELETE", authToken: token });
+}
+
+export async function generateCoupons(token: string, payload: { planId: number; count?: number; prefix?: string; expiresAt?: string }) {
+  return apiFetch<{ success: boolean; coupons: Coupon[]; message: string }>("/api/coupons/generate", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
 }
 

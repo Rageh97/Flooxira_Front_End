@@ -5,9 +5,11 @@ import { PropsWithChildren } from "react";
 import { clsx } from "clsx";
 
 const adminTabs = [
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/plans", label: "Plans" },
-  { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/users", label: "المستخدمين" },
+  { href: "/admin/plans", label: "الباقات" },
+  { href: "/admin/subscription-requests", label: "طلبات الاشتراك" },
+  { href: "/admin/coupons", label: "إدارة القسائم" },
+  { href: "/admin/analytics", label: "التحليلات" },
 ];
 
 export default function AdminLayout({ children }: PropsWithChildren) {
@@ -16,8 +18,8 @@ export default function AdminLayout({ children }: PropsWithChildren) {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold text-white">Admin Dashboard</h1>
-        <p className="text-sm text-gray-300">Administrative tools and settings.</p>
+        <h1 className="text-2xl font-semibold text-white">لوحة تحكم الإدارة</h1>
+        <p className="text-sm text-gray-300">أدوات وإعدادات الإدارة.</p>
       </div>
       
       <div className="pt-2">

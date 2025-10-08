@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Cairo+Play:wght@200..1000&family=Cairo:wght@200..1000&display=swap');
+
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
@@ -124,6 +126,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: Cairo, sans-serif;
+
   }
 }
 
@@ -153,6 +157,138 @@
   }
   .button-primary{
     background-color: var(--color-bg-light);
-   
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+  }
+  
+  .button-primary:hover {
+    background-color: #0d4f2a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(8, 196, 125, 0.3);
+  }
+  
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .content-card {
+    background: linear-gradient(135deg, rgba(8, 196, 125, 0.1) 0%, rgba(19, 74, 43, 0.1) 100%);
+    border: 1px solid rgba(8, 196, 125, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .content-card:hover {
+    border-color: rgba(8, 196, 125, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(8, 196, 125, 0.15);
+  }
+
+  /* Card Styles */
+  .card-default {
+    @apply bg-card border-none;
+  }
+
+  .card-gradient-green {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(21, 128, 61, 0.15) 100%);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    @apply border-none;
+  }
+
+  .card-gradient-green-light {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    @apply border-none;
+  }
+
+  .card-gradient-green-dark {
+    background: linear-gradient(135deg, rgba(21, 128, 61, 0.15) 0%, rgba(15, 85, 40, 0.15) 100%);
+    border: 1px solid rgba(21, 128, 61, 0.4);
+    @apply border-none;
+  }
+
+  .card-gradient-green-emerald {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    @apply border-none;
+  }
+
+  .card-gradient-green-teal {
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(15, 118, 110, 0.15) 100%);
+    border: 1px solid rgba(20, 184, 166, 0.4);
+    @apply border-none;
+  }
+
+  .card-gradient-green-lime {
+    background: linear-gradient(135deg, rgba(132, 204, 22, 0.15) 0%, rgba(101, 163, 13, 0.15) 100%);
+    border: 1px solid rgba(132, 204, 22, 0.4);
+    @apply border-none;
+  }
+
+  .card-gradient-green-forest {
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(15, 85, 40, 0.15) 100%);
+    border: 1px solid rgba(22, 163, 74, 0.4);
+    @apply border-none;
+  }
+
+  .card-gradient-green-mint {
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    @apply border-none;
+  }
+
+  /* Hover Effects for Cards */
+  .card-hover-effect {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover-effect:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Status Indicators */
+  .status-online {
+    @apply text-green-400;
+  }
+
+  .status-offline {
+    @apply text-red-400;
+  }
+
+  .status-pending {
+    @apply text-yellow-400;
+  }
+
+  /* Platform Colors */
+  .platform-facebook {
+    @apply text-blue-500;
+  }
+
+  .platform-instagram {
+    @apply text-pink-500;
+  }
+
+  .platform-linkedin {
+    @apply text-blue-600;
+  }
+
+  .platform-pinterest {
+    @apply text-red-500;
+  }
+
+  .platform-twitter {
+    @apply text-sky-500;
+  }
+
+  .platform-youtube {
+    @apply text-red-500;
+  }
+
+  .platform-tiktok {
+    @apply text-black dark:text-white;
   }
 }

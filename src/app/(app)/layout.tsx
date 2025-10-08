@@ -9,17 +9,19 @@ import { clsx } from "clsx";
 import Image from "next/image";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/plans", label: "Plans" },
-  { href: "/create-post", label: "Create Post" },
-  { href: "/schedule", label: "Schedules" },
-  { href: "/content", label: "Content" },
-  { href: "/salla", label: "Salla Webhooks" },
-  { href: "/whatsapp", label: "WhatsApp Management" },
-  { href: "/telegram", label: "Telegram Management" },
-  { href: "/analytics", label: "Analytics" },
-  { href: "/settings", label: "Accounts Management" },
-  { href: "/billing", label: "Billing" },
+  { href: "/dashboard", label: "لوحة التحكم" },
+  { href: "/plans", label: "الباقات" },
+  { href: "/my-subscription", label: "اشتراكي" },
+  { href: "/my-subscription-requests", label: "طلبات الاشتراك" },
+  { href: "/create-post", label: "إنشاء منشور" },
+  { href: "/schedule", label: "الجدولة" },
+  { href: "/content", label: "المحتوى" },
+  { href: "/salla", label: "سلة ويب هوكس" },
+  { href: "/whatsapp", label: "إدارة واتساب" },
+  { href: "/telegram", label: "إدارة تليجرام" },
+  { href: "/analytics", label: "التحليلات" },
+  { href: "/settings", label: "إدارة الحسابات" },
+  // { href: "/billing", label: "الفواتير" },
 ];
 
 export default function AppLayout({ children }: PropsWithChildren) {
@@ -53,7 +55,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               aria-label="Close sidebar"
               onClick={() => setSidebarOpen(false)}
             >
-              <span className="sr-only">Close</span>
+              <span className="sr-only">إغلاق</span>
               ✕
             </button>
           </div>
@@ -72,7 +74,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             ))}
             {user?.role === 'admin' && (
               <div className="pt-3">
-                <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">Admin</div>
+                <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">الإدارة</div>
                 <Link
                   href="/admin"
                   className={clsx(
@@ -80,12 +82,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     pathname.startsWith('/admin') ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
                   )}
                 >
-                  Admin Home
+                  الصفحة الرئيسية للإدارة
                 </Link>
               </div>
             )}
             <div className="pt-3">
-              <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">Legal</div>
+              <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">القانونية</div>
               <Link
                 href="/privacy-policy"
                 className={clsx(
@@ -93,7 +95,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   pathname === '/privacy-policy' ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
                 )}
               >
-                Privacy Policy
+                سياسة الخصوصية
               </Link>
               <Link
                 href="/terms"
@@ -102,7 +104,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   pathname === '/terms' ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
                 )}
               >
-                Terms of Service
+                شروط الخدمة
               </Link>
             </div>
           </nav>
@@ -119,7 +121,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   onClick={() => { signOut(); router.push('/sign-in'); }}
                   className="bg-red-200 text-white"
                 >
-                  Logout
+                  تسجيل الخروج
                 </Button>
               )}
             </div>
@@ -209,7 +211,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             aria-label="Open sidebar"
             onClick={() => setSidebarOpen(true)}
           >
-            <span className="sr-only">Open sidebar</span>
+            <span className="sr-only">فتح الشريط الجانبي</span>
             ☰
           </button>
         </div>

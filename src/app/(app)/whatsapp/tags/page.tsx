@@ -70,7 +70,7 @@ export default function TagsPage() {
       setContactNumber(''); setContactName('');
       await onSelectTag(selectedTag);
     } else {
-      alert(res.message || 'Failed to add contact');
+      alert(res.message || 'فشل في إضافة جهة الاتصال');
     }
   }
 
@@ -86,21 +86,21 @@ export default function TagsPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4 text-white">Tags</h1>
+      {/* <h1 className="text-2xl font-semibold mb-4 text-white">Tags</h1> */}
 
       <div className="bg-semidark-custom border border-gray-700 rounded p-4 mb-6">
         <div className="flex gap-2">
-          <input className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white" placeholder="Tag name" value={newName} onChange={e => setNewName(e.target.value)} />
-          <input className="w-40 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white" placeholder="#color" value={newColor} onChange={e => setNewColor(e.target.value)} />
-          <button onClick={onCreate} className="bg-light-custom hover:bg-[#08c47d] text-white rounded px-4">Create</button>
+          <input className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white placeholder-white" placeholder="اسم التصنيف" value={newName} onChange={e => setNewName(e.target.value)} />
+          <input className="w-40 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white placeholder-white" placeholder="#اللون" value={newColor} onChange={e => setNewColor(e.target.value)} />
+          <button onClick={onCreate} className="bg-light-custom hover:bg-[#08c47d] text-white rounded px-4">إنشاء</button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-semidark-custom border border-gray-700 rounded p-4">
-          <h2 className="text-lg font-medium text-white mb-3">Your Tags</h2>
+          <h2 className="text-lg font-medium text-white mb-3">تصنيفاتك</h2>
           {loading ? (
-            <div className="text-gray-300">Loading...</div>
+            <div className="text-gray-300">جاري التحميل...</div>
           ) : (
             <ul className="space-y-2">
               {tags.map(t => (
@@ -110,7 +110,7 @@ export default function TagsPage() {
                   </button>
                   <div className="flex items-center gap-2">
                     {t.color && <span className="inline-block w-4 h-4 rounded" style={{ background: t.color }} />}
-                    <button className="text-red-400 hover:text-red-300" onClick={() => onDelete(t.id)}>Delete</button>
+                    <button className="text-red-400 hover:text-red-300" onClick={() => onDelete(t.id)}>حذف</button>
                   </div>
                 </li>
               ))}
@@ -119,7 +119,7 @@ export default function TagsPage() {
         </div>
 
         <div className="bg-semidark-custom border border-gray-700 rounded p-4">
-          <h2 className="text-lg font-medium text-white mb-3">Contacts in selected tag</h2>
+          <h2 className="text-lg font-medium text-white mb-3">جهات الاتصال في التصنيف المحدد</h2>
           {selectedTag ? (
             <>
               <div className="space-y-3 mb-3">
@@ -129,7 +129,7 @@ export default function TagsPage() {
                     value={contactNumber} 
                     onChange={e => setContactNumber(e.target.value)}
                   >
-                    <option value="">Select a contact number</option>
+                    <option value="">اختر رقم جهة اتصال</option>
                     {allContacts.map(contact => (
                       <option key={contact} value={contact}>{contact}</option>
                     ))}
@@ -139,13 +139,13 @@ export default function TagsPage() {
                     className="bg-blue-500 hover:bg-blue-600 text-white rounded px-4"
                     disabled={loadingContacts}
                   >
-                    {loadingContacts ? 'Loading...' : 'Refresh'}
+                    {loadingContacts ? 'جاري التحميل...' : 'تحديث'}
                   </button>
                 </div>
                 <div className="flex gap-2">
                   <input 
                     className="flex-1 bg-dark-custom border border-gray-600 rounded px-3 py-2 text-white" 
-                    placeholder="Name (optional)" 
+                    placeholder="الاسم (اختياري)" 
                     value={contactName} 
                     onChange={e => setContactName(e.target.value)} 
                   />
@@ -154,7 +154,7 @@ export default function TagsPage() {
                     className="bg-light-custom hover:bg-[#08c47d] text-white rounded px-4"
                     disabled={!contactNumber.trim()}
                   >
-                    Add
+                    إضافة
                   </button>
                 </div>
               </div>
@@ -164,11 +164,11 @@ export default function TagsPage() {
                     {c.contactName ? `${c.contactName} - ` : ''}{c.contactNumber}
                   </li>
                 ))}
-                {contacts.length === 0 && <div className="text-gray-300">No contacts yet</div>}
+                {contacts.length === 0 && <div className="text-gray-300">لا توجد جهات اتصال بعد</div>}
               </ul>
             </>
           ) : (
-            <div className="text-gray-300">Select a tag to manage its contacts</div>
+            <div className="text-gray-300">اختر تصنيفاً لإدارة جهات الاتصال الخاصة به</div>
           )}
         </div>
       </div>

@@ -2,11 +2,14 @@
 import { useEffect, useState } from "react";
 import { sallaListEvents, sallaUpsertStore } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function SallaEventsPage() {
   const { user, loading } = useAuth();
+  const { canSallaIntegration, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  
   const [events, setEvents] = useState<any[]>([]);
   const [storeId, setStoreId] = useState("");
   const [storeName, setStoreName] = useState("");
@@ -27,6 +30,54 @@ export default function SallaEventsPage() {
   }
 
   useEffect(() => { if (!loading && user) load(); }, [loading, user]);
+
+  // Check permissions
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">تكامل سلة</h1>
+        <div className="text-center py-8">
+          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasActiveSubscription()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">تكامل سلة</h1>
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
+          <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى تكامل سلة</p>
+          <Button 
+            onClick={() => window.location.href = '/plans'}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            تصفح الباقات
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canSallaIntegration()) {
+    return (
+      <div className="space-y-8">
+        <h1 className="text-2xl font-semibold">تكامل سلة</h1>
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية تكامل سلة</h3>
+          <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل تكامل سلة</p>
+          <Button 
+            onClick={() => window.location.href = '/plans'}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            ترقية الباقة
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const webhookUrl = user ? `https://api.flooxira.com/api/salla/webhook/${user.id}` : `${baseUrl}/api/salla/webhook/{user_id}`;
