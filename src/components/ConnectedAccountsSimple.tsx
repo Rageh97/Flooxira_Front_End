@@ -4,17 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Facebook, 
-  Instagram, 
-  Twitter, 
-  Linkedin, 
-  Youtube, 
-  Pinterest,
-  RefreshCw,
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { getConnectedAccounts } from '@/lib/api';
 
 interface ConnectedAccount {
@@ -31,7 +21,7 @@ interface ConnectedAccountsData {
   pinterest?: ConnectedAccount;
 }
 
-export default function ConnectedAccounts() {
+export default function ConnectedAccountsSimple() {
   const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccountsData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,12 +51,12 @@ export default function ConnectedAccounts() {
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
-      case 'facebook': return <Facebook className="h-5 w-5 text-blue-600" />;
-      case 'linkedin': return <Linkedin className="h-5 w-5 text-blue-700" />;
-      case 'twitter': return <Twitter className="h-5 w-5 text-blue-400" />;
-      case 'youtube': return <Youtube className="h-5 w-5 text-red-600" />;
-      case 'pinterest': return <Pinterest className="h-5 w-5 text-red-500" />;
-      default: return <CheckCircle className="h-5 w-5" />;
+      case 'facebook': return '📘';
+      case 'linkedin': return '💼';
+      case 'twitter': return '🐦';
+      case 'youtube': return '📺';
+      case 'pinterest': return '📌';
+      default: return '✅';
     }
   };
 
@@ -165,7 +155,7 @@ export default function ConnectedAccounts() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(connectedAccounts).map(([platform, account]) => (
               <div key={platform} className="flex items-center space-x-3 p-4 border rounded-lg">
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 text-2xl">
                   {getPlatformIcon(platform)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -205,5 +195,3 @@ export default function ConnectedAccounts() {
     </Card>
   );
 }
-
-
