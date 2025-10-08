@@ -1450,6 +1450,18 @@ export async function getCurrentFacebookPage(token: string) {
   }>("/api/analytics/facebook/current", { authToken: token });
 }
 
+// Get Instagram account info
+export async function getInstagramAccountInfo(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    account: any; 
+    username: string;
+    followersCount: number;
+    followingCount: number;
+    mediaCount: number;
+  }>("/api/analytics/instagram/account", { authToken: token });
+}
+
 // ===== CONNECTED ACCOUNTS API =====
 export async function getConnectedAccounts(token: string) {
   return apiFetch<{ 

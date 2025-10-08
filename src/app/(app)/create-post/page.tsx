@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { apiFetch, listPinterestBoards, checkPlatformConnections, getCurrentFacebookPage } from "@/lib/api";
+import { apiFetch, listPinterestBoards, checkPlatformConnections, getCurrentFacebookPage, getInstagramAccountInfo } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
@@ -82,6 +82,7 @@ export default function CreatePostPage() {
   const [isDevelopment, setIsDevelopment] = useState<boolean>(false);
   const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
   const [currentFacebookPage, setCurrentFacebookPage] = useState<{pageName: string, fanCount: number} | null>(null);
+  const [instagramAccount, setInstagramAccount] = useState<{username: string, followersCount: number, followingCount: number, mediaCount: number} | null>(null);
 
   // Helper function to get all platforms (for initial display)
   const getAllPlatforms = () => {
@@ -173,6 +174,14 @@ export default function CreatePostPage() {
   useEffect(() => {
     if (platforms.includes('facebook') && connectedPlatforms.includes('facebook')) {
       loadCurrentFacebookPage();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platforms, connectedPlatforms]);
+
+  // Load Instagram account when Instagram is selected
+  useEffect(() => {
+    if (platforms.includes('instagram') && connectedPlatforms.includes('instagram')) {
+      loadInstagramAccount();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platforms, connectedPlatforms]);
@@ -377,6 +386,25 @@ export default function CreatePostPage() {
     }
   };
 
+  // Load Instagram account info
+  const loadInstagramAccount = async () => {
+    try {
+      const token = localStorage.getItem('auth_token') || '';
+      if (!token) return;
+      const res = await getInstagramAccountInfo(token);
+      if (res.success) {
+        setInstagramAccount({
+          username: res.username,
+          followersCount: res.followersCount,
+          followingCount: res.followingCount,
+          mediaCount: res.mediaCount
+        });
+      }
+    } catch (error) {
+      console.error('Error loading Instagram account:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold text-white">إنشاء منشور</h1>
@@ -521,8 +549,20 @@ export default function CreatePostPage() {
                     <div className="flex items-center space-x-3">
                       <div className="text-xl">📷</div>
                       <div>
-                        <div className="text-sm font-medium text-blue-900">حساب Instagram</div>
-                        <div className="text-xs text-blue-700">مرتبط بصفحة Facebook</div>
+                        <div className="text-sm font-medium text-blue-900">
+                          حساب Instagram
+                          {instagramAccount && (
+                            <span className="ml-2 text-xs text-gray-600">
+                              (@{instagramAccount.username})
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-blue-700">
+                          {instagramAccount ? 
+                            `مرتبط: @${instagramAccount.username} (${instagramAccount.followersCount} متابع)` : 
+                            'مرتبط بصفحة Facebook'
+                          }
+                        </div>
                       </div>
                       <div className="ml-auto">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>

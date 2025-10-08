@@ -451,7 +451,7 @@ export default function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="instagram" className="space-y-6">
-          {analytics.instagram ? (
+          {analytics.instagram && analytics.instagram.account ? (
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -489,10 +489,18 @@ export default function AnalyticsPage() {
                     <div className="space-y-2">
                       <h4 className="font-semibold">Username</h4>
                       <div className="text-lg">
-                        @{analytics.instagram.account?.username || 'N/A'}
+                        @{analytics.instagram.account?.username || analytics.instagram.username || 'N/A'}
                       </div>
                     </div>
                   </div>
+                  
+                  {analytics.instagram.error && (
+                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                      <p className="text-sm text-yellow-800">
+                        Note: {analytics.instagram.error}
+                      </p>
+                    </div>
+                  )}
                   
                   {analytics.instagram.insights && analytics.instagram.insights.length > 0 && (
                     <div className="mt-6">
@@ -564,10 +572,10 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="font-semibold">Listed</h4>
+                      <h4 className="font-semibold">Likes</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.twitter.metrics?.listed_count ? 
-                          formatNumber(analytics.twitter.metrics.listed_count) : 'N/A'}
+                        {analytics.twitter.metrics?.like_count ? 
+                          formatNumber(analytics.twitter.metrics.like_count) : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -605,13 +613,13 @@ export default function AnalyticsPage() {
                     <div className="space-y-2">
                       <h4 className="font-semibold">First Name</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.linkedin?.profile?.firstName || 'N/A'}
+                        {analytics.linkedin?.profile?.firstName || analytics.linkedin?.profile?.firstName?.localized?.en_US || 'N/A'}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <h4 className="font-semibold">Last Name</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.linkedin?.profile?.lastName || 'N/A'}
+                        {analytics.linkedin?.profile?.lastName || analytics.linkedin?.profile?.lastName?.localized?.en_US || 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -675,10 +683,10 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="font-semibold">Comments</h4>
+                      <h4 className="font-semibold">Hidden Subscribers</h4>
                       <div className="text-2xl font-bold">
-                        {analytics.youtube.statistics?.commentCount ? 
-                          formatNumber(parseInt(analytics.youtube.statistics.commentCount)) : 'N/A'}
+                        {analytics.youtube.statistics?.hiddenSubscriberCount ? 
+                          (analytics.youtube.statistics.hiddenSubscriberCount ? 'Yes' : 'No') : 'N/A'}
                       </div>
                     </div>
                   </div>
