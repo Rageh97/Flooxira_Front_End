@@ -1366,3 +1366,55 @@ export async function generateCoupons(token: string, payload: { planId: number; 
   });
 }
 
+// ===== ANALYTICS API =====
+export async function getAllAnalytics(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    analytics: any; 
+    timestamp: string; 
+    userId: number; 
+    message: string 
+  }>("/api/analytics", { authToken: token });
+}
+
+export async function getFacebookAnalytics(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    platform: string; 
+    analytics: any; 
+    userId: number; 
+    message: string 
+  }>("/api/analytics/facebook", { authToken: token });
+}
+
+
+export async function getTwitterAnalytics(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    platform: string; 
+    analytics: any; 
+    userId: number; 
+    message: string 
+  }>("/api/analytics/twitter", { authToken: token });
+}
+
+export async function getYouTubeAnalytics(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    platform: string; 
+    analytics: any; 
+    userId: number; 
+    message: string 
+  }>("/api/analytics/youtube", { authToken: token });
+}
+
+export async function getPinterestAnalytics(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    platform: string; 
+    analytics: any; 
+    userId: number; 
+    message: string 
+  }>("/api/analytics/pinterest", { authToken: token });
+}
+

@@ -19,6 +19,16 @@ const nextConfig: NextConfig = {
     eslint: {
       ignoreDuringBuilds: true,
     },
+
+  // إضافة proxy للـ API requests
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:4000/api/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

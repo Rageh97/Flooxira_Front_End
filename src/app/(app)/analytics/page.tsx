@@ -35,6 +35,7 @@ import {
   Calendar,
   RefreshCw
 } from 'lucide-react';
+import { getAllAnalytics } from '@/lib/api';
 
 interface AnalyticsData {
   facebook?: {
@@ -70,17 +71,12 @@ export default function AnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/analytics', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
       }
       
-      const data = await response.json();
+      const data = await getAllAnalytics(token);
       setAnalytics(data.analytics || {});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
