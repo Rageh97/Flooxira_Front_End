@@ -37,42 +37,44 @@ export default function WhatsAppStatsPage() {
 
       {botStats && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="bg-card border-none">
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-orange-500">{botStats.totalMessages}</div>
-              <p className="text-xs text-primary">إجمالي الرسائل</p>
+          <Card className="gradient-border border-none">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="text-[50px] font-bold text-orange-500 ">{botStats.totalMessages}</div>
+              <p className="text-lg  font-bold text-white">إجمالي الرسائل</p>
             </CardContent>
           </Card>
-          <Card className="bg-card border-none">
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-primary">{botStats.totalContacts}</div>
-              <p className="text-xs text-primary">إجمالي جهات الاتصال</p>
+          <Card className="gradient-border border-none">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="text-[50px] font-bold text-primary">{botStats.totalContacts}</div>
+              <p className="text-lg  font-bold text-white">إجمالي جهات الاتصال</p>
             </CardContent>
           </Card>
-          <Card className="bg-card border-none">
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-yellow-500">{botStats.incomingMessages}</div>
-              <p className="text-xs text-primary">الرسائل الواردة</p>
+          <Card className="gradient-border border-none">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="text-[50px] font-bold text-yellow-500">{botStats.incomingMessages}</div>
+              <p className="text-lg  font-bold text-white">الرسائل الواردة</p>
             </CardContent>
           </Card>
-          <Card className="bg-card border-none">
-            <CardContent className="p-6">
-              <div className="text-2xl font-bold text-blue-500">{botStats.outgoingMessages}</div>
-              <p className="text-xs text-primary">ردود البوت</p>
+          <Card className="gradient-border border-none">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div className="text-[50px] font-bold text-blue-500">{botStats.outgoingMessages}</div>
+              <p className="text-lg  font-bold text-white">ردود البوت</p>
             </CardContent>
           </Card>
         </div>
       )}
 
       {botStats && (
-        <Card className="bg-card border-none">
+        <Card className="gradient-border border-none">
           <CardHeader className="border-text-primary/50 text-primary">مصادر الردود</CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white">قاعدة المعرفة</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
+              {/* <div className="flex  w-full ">
+                <div className="w-1/4">
+                <span className="text-sm font-medium text-white ">قاعدة المعرفة</span>
+                </div>
+                <div className="flex items-center gap-2 w-full">
+                  <div className="w-full bg-gray-900 rounded-full h-2 ">
                     <div 
                       className="bg-green-500 h-2 rounded-full" 
                       style={{ width: `${(botStats.knowledgeBaseResponses / botStats.outgoingMessages) * 100}%` }}
@@ -80,13 +82,15 @@ export default function WhatsAppStatsPage() {
                   </div>
                   <span className="text-sm text-white">{botStats.knowledgeBaseResponses}</span>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white">الذكاء الاصطناعي</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
+              </div> */}
+              <div className="flex  w-full ">
+                <div className="w-1/4">
+                <span className="text-sm font-medium text-white ">الذكاء الاصطناعي</span>
+                </div>
+                <div className="flex items-center gap-2 w-full">
+                  <div className="w-full bg-gray-900 rounded-full h-2 ">
                     <div 
-                      className="bg-blue-500 h-2 rounded-full" 
+                      className="bg-green-500 h-2 rounded-full" 
                       style={{ width: `${(botStats.openaiResponses / botStats.outgoingMessages) * 100}%` }}
                     ></div>
                   </div>
@@ -94,11 +98,13 @@ export default function WhatsAppStatsPage() {
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-white">الرد الاحتياطي</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
+                <div className="w-1/4">
+                <span className="text-sm font-medium text-white ">الرد الاحتياطي</span>
+                </div>
+                <div className="flex items-center gap-2 w-full">
+                  <div className="w-full bg-gray-900 rounded-full h-2">
                     <div 
-                      className="bg-gray-500 h-2 rounded-full" 
+                      className="bg-green-500 h-2 rounded-full" 
                       style={{ width: `${(botStats.fallbackResponses / botStats.outgoingMessages) * 100}%` }}
                     ></div>
                   </div>

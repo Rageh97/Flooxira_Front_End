@@ -10,6 +10,7 @@ import {
   stopWhatsAppSession,
 } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
+import UsageStats from "@/components/UsageStats";
 
 export default function WhatsAppPage() {
   const { canManageWhatsApp, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -54,7 +55,7 @@ export default function WhatsAppPage() {
     );
   }
 
-  if (!hasActiveSubscription()) {
+  if (!hasActiveSubscription) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">إدارة الواتساب</h1>
@@ -193,37 +194,48 @@ export default function WhatsAppPage() {
           {success}
         </div>
       )}
+<div className="flex  w-full gap-3">
+      {/* Usage Statistics */}
+     <div className="w-1/2 ">
+     {canManageWhatsApp && hasActiveSubscription && (
+        <UsageStats platform="whatsapp" />
+      )}
+     </div>
 
       {/* WhatsApp Connection */}
-      <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">اتصال الواتساب</CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <p className="text-sm text-primary">
-                الحالة: {status?.status || 'غير معروف'} • {status?.message || 'لا توجد جلسة'}
+      <Card className=" gradient-border  w-1/2">
+        <CardHeader className="border-text-primary/50 text-white flex items-center justify-between">اتصال الواتساب
+        
+        <div className="">
+              <p className="text-sm  bg-green-900 text-white p-1 rounded-md">
+                الحالة: <span className={`${status?.status === 'CONNECTED' ? 'text-green-500' : 'text-red-300'}`}>{status?.status || 'غير معروف'} </span> 
               </p>
+              {/* {status?.message || 'لا توجد جلسة'} */}
             </div>
-            <div className="flex gap-2">
-              <Button onClick={checkStatus} disabled={loading} variant="secondary">
+        </CardHeader>
+        <CardContent className="space-y-4">
+         
+            <div className="flex items-center gap-2 w-full">
+              <Button className="w-1/2 primary-button after:bg-[#01191080] before:bg-[#01191080]" onClick={checkStatus} disabled={loading} variant="secondary">
                 تحديث
               </Button>
               {status?.status === 'disconnected' || !status ? (
-                <Button onClick={startSession} disabled={loading}>
-                  {loading ? 'جاري البدء...' : 'بدء الجلسة'}
-                </Button>
+                <button className="w-1/2 primary-button after:bg-[#011910] before:bg-[#01191080]" onClick={startSession} disabled={loading}>
+
+                  {loading ? <span>جاري البدء...</span> : <span> ربط حسابك</span>}
+                </button>
               ) : (
-                <Button onClick={stopSession} disabled={loading} variant="destructive">
-                  {loading ? 'جاري الإيقاف...' : 'إيقاف الجلسة'}
+                <Button className="w-1/2" onClick={stopSession} disabled={loading} variant="destructive">
+                  {loading ? 'جاري الإيقاف...' : 'إيقاف الربط'}
                 </Button>
               )}
             </div>
-          </div>
+         
           
           {/* QR Code Display */}
           {qrCode && status?.status !== 'CONNECTED' && (
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-white mb-4">
                 امسح رمز QR هذا بتطبيق الواتساب على هاتفك للاتصال:
               </p>
               <div className="flex justify-center">
@@ -239,8 +251,9 @@ export default function WhatsAppPage() {
         </CardContent>
       </Card>
 
+      </div>
       {/* Send Test Message */}
-      <Card className="bg-card border-none">
+      {/* <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">إرسال رسالة تجريبية</CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -273,7 +286,7 @@ export default function WhatsAppPage() {
             {loading ? 'جاري الإرسال...' : 'إرسال الرسالة'}
           </Button>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

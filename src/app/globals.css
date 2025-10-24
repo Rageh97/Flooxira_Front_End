@@ -45,6 +45,8 @@
   
   /* Custom color scheme */
   --color-bg-dark: #0f1827;
+  --color-bg-dark-2: #122f29;
+  --color-bg-secondry: #01191070;
   --color-bg-semidark: #122f29;
   --color-bg-light: #134a2b;
   --color-text-primary: #08c47d;
@@ -133,7 +135,8 @@
 
 @layer utilities {
   .bg-gradient-custom {
-    background: linear-gradient(200deg, var(--color-bg-dark) 0%, var(--color-bg-semidark) 50%, var(--color-bg-light) 100%);
+    /* background: #141414; */
+    background: linear-gradient(200deg, var(--color-bg-dark-2) 0%, var(--color-bg-dark) 50%, var(--color-bg-dark-2) 100%);
   }
   
   .text-primary {
@@ -154,6 +157,9 @@
   }
   .bg-card{
     background-color: var(--color-bg-card);
+  }
+  .bg-secondry{
+    background: var(--color-bg-secondry);
   }
   .button-primary{
     background-color: var(--color-bg-light);
@@ -188,6 +194,7 @@
   }
 
   /* Card Styles */
+
   .card-default {
     @apply bg-card border-none;
   }
@@ -212,7 +219,7 @@
 
   .card-gradient-green-emerald {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.4);
+    /* border: 1px solid rgba(16, 185, 129, 0.4); */
     @apply border-none;
   }
 
@@ -251,6 +258,7 @@
   }
 
   /* Status Indicators */
+
   .status-online {
     @apply text-green-400;
   }
@@ -291,4 +299,574 @@
   .platform-tiktok {
     @apply text-black dark:text-white;
   }
+
+  /* Animated Emoji Styles */
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+    20%, 40%, 60%, 80% { transform: translateX(2px); }
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(3deg); }
+    75% { transform: rotate(-3deg); }
+  }
+
+  .animate-wiggle {
+    animation: wiggle 0.5s ease-in-out;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+  }
+
+  .animate-float {
+    animation: float 2s ease-in-out infinite;
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .animate-heartbeat {
+    animation: heartbeat 1s ease-in-out infinite;
+  }
+
+  /* WhatsApp Emoji Styles */
+  .whatsapp-emoji {
+    font-size: 1.2em;
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  .whatsapp-emoji:hover {
+    transform: scale(1.2);
+  }
+
+  /* Telegram Emoji Styles */
+  .telegram-emoji {
+    font-size: 1.1em;
+    display: inline-block;
+    transition: all 0.3s ease;
+  }
+
+  .telegram-emoji:hover {
+    transform: scale(1.15) rotate(5deg);
+  }
 }
+
+
+/* ........................................................................... */
+/* .gradient-border {
+  position: relative;
+  border-radius: 12px; 
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px; 
+  background: linear-gradient(to top, transparent, #ff7702, transparent);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+} */
+
+.gradient-border-2 {
+  position: relative;
+  /* border-radius: 12px;  */
+}
+
+.gradient-border-2::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px; /* Border width */
+  background: linear-gradient(
+    75deg,        
+    #ff7702 0%,      
+    #ff7702 0%,    
+    #190237 50%,     
+    #190237 100%    
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.gradient-border-packet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px; /* Border width */
+  background: linear-gradient(
+    to right,
+    transparent,  
+    #ff7702 70%,
+    #ff7702 80%,
+    #ff7702 80%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.gradient-border-3 {
+  position: relative;
+ 
+}
+
+.gradient-border-3::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px; /* Border width */
+  background: linear-gradient(to right, #ff7702, #4f008c, #ff7702);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.gradient-border-Qs {
+  position: relative;
+ 
+}
+
+.gradient-border-Qs::before {
+  content: "";
+  
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px; /* Border width */
+  background: linear-gradient(to bottom, #190237, #ff7702, #ff7702);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* ................................................................. */
+.gradient-border-review {
+  position: relative;
+ 
+}
+
+.gradient-border-review::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 2px; /* Border width */
+  background: linear-gradient(to bottom, #190237, #ff7702, #ff7702,#190237);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* .................. */
+@keyframes gradient-rotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+/* زززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززززز */
+/* خلفية الزجاج الأساسية */
+.glass-bg {
+  background: linear-gradient(
+    180deg,
+    rgba(46, 204, 113, 0.2) 0%,
+    rgba(22, 160, 133, 0.4) 50%,
+    rgba(12, 78, 66, 0.25) 100%
+  );
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  /* border: 1px solid rgba(255, 255, 255, 0.08); */
+  box-shadow:
+    inset 0 1px 2px rgba(123, 255, 0, 0.8),  /* حافة مضيئة من الأعلى */
+    inset 0 -1px 1px rgba(0, 0, 0, 0.8), /* حافة مضيئة من الأسفل */
+    inset 1px 0 8px rgba(0, 255, 106, 0.4),        /* جانِب أيمن داكن */
+    inset 1px 0 8px rgba(0, 255, 106, 0.4),       /* جانِب أيسر داكن */
+    0 6px 20px rgba(0, 255, 21, 0.2);        /* توهج خارجي ناعم */
+}
+
+/* توهج خلفي (هالة خضراء) */
+.glass-active::before {
+  content: '';
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  border-radius: 2rem;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(16, 185, 129, 0.25),
+    rgba(6, 78, 59, 0.05),
+    transparent 70%
+  );
+  filter: blur(45px);
+  opacity: 0.6;
+  pointer-events: none;
+}
+/* ............................. */
+.inner-shadow{
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.4), inset 0 4px 8px rgba(255, 255, 255, 0.2);
+  }
+ 
+.gradient-border-button-header {
+    position: relative; 
+    overflow: hidden; 
+    border: 1px solid #000; 
+}
+
+.gradient-border-button-header::before,
+.gradient-border-button-header::after {
+    content: '';
+    position: absolute;
+    height: 2px; 
+    background: linear-gradient(to right,
+        rgba(0, 0, 0, 0) 0%, 
+        #00FFFF 50%,       
+        rgba(0, 0, 0, 0) 100%
+    );
+    left: 50%; 
+    transform: translateX(-50%); 
+    width: 50%;
+    border-radius: 9999px;
+    animation: gradientShiftt 5s ease infinite;
+
+}
+
+.gradient-border-button-header::before {
+    top: 0px; 
+    animation: gradientShiftt 5s ease infinite;
+
+}
+
+.gradient-border-button-header::after {
+    bottom: 0px;
+    animation: gradientShiftt 5s ease infinite;
+
+}
+@keyframes gradientShiftt {
+  0% {
+    transform: translateY(-30%); 
+   
+  }
+  50% {
+    transform: translateY(-30%); 
+    left: 10%;
+     width: 50%; 
+  }
+  100% {
+    transform: translateY(-30%); 
+  
+  }
+}
+/* ............................................................ */
+.gradient-border {
+  position: relative; 
+  overflow: hidden; 
+  border: 1px solid rgba(0, 0, 0, 0.2); 
+  background: linear-gradient(to bottom, #01191080, rgba(7, 180, 85, 0.35));
+  backdrop-filter: blur(15px) saturate(200%);
+  -webkit-backdrop-filter: blur(15px) saturate(200%);
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 32px rgba(43, 255, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 255, 136, 0.1);
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  height: 2px; 
+  background: linear-gradient(to right,
+      rgba(0, 175, 53, 0) 0%, 
+      #00ffaa 50%,       
+      rgba(0, 255, 98, 0) 100%
+  );
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 70%;
+  border-radius: 9999px;
+  top: 0px; 
+}
+/* ......................................................................... */
+.gradient-border-service {
+  position: relative; 
+  overflow: hidden; 
+  border: 1px solid #000; 
+  
+}
+
+.gradient-border-service::before,
+.gradient-border-service::after {
+  content: '';
+  position: absolute;
+  height: 2px; 
+  background: linear-gradient(to right,
+      transparent, 
+      #ffee00 50%,       
+      transparent 100%
+  );
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 50%;
+  border-radius: 9999px;
+
+}
+
+.gradient-border-service::before {
+  top: 0px; 
+
+}
+
+.gradient-border-service::after {
+  bottom: 0px;
+
+}
+/* ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, */
+  .gradient-border-pack {
+    position: relative; 
+    border: 1px solid #000; 
+    overflow: hidden;
+
+}
+
+.gradient-border-pack::before,
+.gradient-border-pack::after {
+    content: '';
+    position: absolute;
+    height: 2px; 
+    background: linear-gradient(to right,
+        rgba(0, 0, 0, 0) 0%, 
+        #00FFFF 50%,       
+        rgba(0, 0, 0, 0) 100%
+    );
+    left: 50%; 
+    transform: translateX(-50%); 
+    width: 50%;
+    border-radius: 9999px;
+
+}
+
+.gradient-border-pack::before {
+    top: 0px;
+}
+
+.gradient-border-pack::after {
+    bottom: 0px;
+
+}
+/* .............................................. */
+/* From Uiverse.io by kleenpulse */ 
+.primary-button {
+  --border-color: linear-gradient(-45deg, #ffae00, #00a156, #00fffb);
+  --border-width: 0.125em;
+  --curve-size: 0.5em;
+  --blur: 30px;
+  /* --bg: #011910; */
+  --color: #afffff;
+  color: var(--color);
+  cursor: pointer;
+  /* use position: relative; so that BG is only for .btn */
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  place-content: center;
+  padding: 0.5em 1.5em;
+  /* font-size: 17px; */
+  border: 0;
+  text-transform: uppercase;
+  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.6);
+  clip-path: polygon(
+    /* Top-left */ 0% var(--curve-size),
+    var(--curve-size) 0,
+    /* top-right */ 100% 0,
+    100% calc(100% - var(--curve-size)),
+    /* bottom-right 1 */ calc(100% - var(--curve-size)) 100%,
+    /* bottom-right 2 */ 0 100%
+  );
+  transition: color 250ms;
+}
+
+.primary-button::after,
+.primary-button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.primary-button::before {
+  background: var(--border-color);
+  background-size: 300% 300%;
+  animation: move-bg7234 5s ease infinite;
+  z-index: -2;
+}
+
+@keyframes move-bg7234 {
+  0% {
+    background-position: 31% 0%;
+  }
+
+  50% {
+    background-position: 70% 100%;
+  }
+
+  100% {
+    background-position: 31% 0%;
+  }
+}
+
+.primary-button::after {
+  /* background: var(--bg); */
+  z-index: -1;
+  clip-path: polygon(
+    /* Top-left */ var(--border-width)
+      calc(var(--curve-size) + var(--border-width) * 0.5),
+    calc(var(--curve-size) + var(--border-width) * 0.5) var(--border-width),
+    /* top-right */ calc(100% - var(--border-width)) var(--border-width),
+    calc(100% - var(--border-width))
+      calc(100% - calc(var(--curve-size) + var(--border-width) * 0.5)),
+    /* bottom-right 1 */
+      calc(100% - calc(var(--curve-size) + var(--border-width) * 0.5))
+      calc(100% - var(--border-width)),
+    /* bottom-right 2 */ var(--border-width) calc(100% - var(--border-width))
+  );
+  transition: clip-path 500ms;
+}
+
+.primary-button:where(:hover, :focus)::after {
+  clip-path: polygon(
+    /* Top-left */ calc(100% - var(--border-width))
+      calc(100% - calc(var(--curve-size) + var(--border-width) * 0.5)),
+    calc(100% - var(--border-width)) var(--border-width),
+    /* top-right */ calc(100% - var(--border-width)) var(--border-width),
+    calc(100% - var(--border-width))
+      calc(100% - calc(var(--curve-size) + var(--border-width) * 0.5)),
+    /* bottom-right 1 */
+      calc(100% - calc(var(--curve-size) + var(--border-width) * 0.5))
+      calc(100% - var(--border-width)),
+    /* bottom-right 2 */
+      calc(100% - calc(var(--curve-size) + var(--border-width) * 0.5))
+      calc(100% - var(--border-width))
+  );
+  transition: 200ms;
+}
+
+  .primary-button:where(:hover, :focus) {
+    color: #fff;
+  }
+
+  /* Hide scrollbar styles */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+    overflow: -moz-scrollbars-none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none !important;  /* Safari and Chrome */
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar-track {
+    display: none !important;
+    background: transparent !important;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar-thumb {
+    display: none !important;
+    background: transparent !important;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar-corner {
+    display: none !important;
+    background: transparent !important;
+  }
+  
+/* Additional scrollbar hiding for all browsers */
+.scrollbar-hide {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  overflow: -moz-scrollbars-none !important;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+  display: none !important;
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-6 {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* .............................................. */

@@ -21,13 +21,14 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
     // ignore parse errors
   }
   if (!res.ok) {
-    const message = data?.message || `Request failed with ${res.status} (${url})`;
-    throw new Error(message);
+    const errorMessage = data?.error || data?.message || `Request failed with ${res.status} (${url})`;
+    const fullMessage = data?.error ? `${data.message}: ${data.error}` : errorMessage;
+    throw new Error(fullMessage);
   }
   return data as T;
 }
 
-export type AuthUser = { id: number; name?: string | null; email: string; phone?: string | null; role?: 'user' | 'admin' };
+export type AuthUser = { id: number; name?: string | null; email: string; phone?: string | null; role?: 'user' | 'admin' | 'employee' };
 
 export async function signInRequest(email: string, password: string) {
   return apiFetch<{ user: AuthUser; token: string }>("/api/auth/sign-in", {
@@ -101,11 +102,11 @@ export async function getInstagramAccounts(token: string) {
   });
 }
 
-export async function selectInstagramAccount(token: string, instagramId: string, username: string) {
+export async function selectInstagramAccount(token: string, pageId: string, instagramId: string, username: string) {
   return apiFetch<{ success: boolean; message: string; instagramId: string; username: string }>("/api/facebook/select-instagram", {
     method: "POST",
     authToken: token,
-    body: JSON.stringify({ instagramId, username }),
+    body: JSON.stringify({ pageId, instagramId, username }),
   });
 }
 
@@ -125,6 +126,14 @@ export type Plan = {
     maxTeamMembers: number;
     canCustomBranding: boolean;
     prioritySupport: boolean;
+    canManageWhatsApp: boolean;
+    whatsappMessagesPerMonth: number;
+    canManageTelegram: boolean;
+    canSallaIntegration: boolean;
+    canManageContent: boolean;
+    canManageCustomers: boolean;
+    canMarketServices: boolean;
+    maxServices: number;
   };
   isActive: boolean 
 };
@@ -432,7 +441,86 @@ export async function botDeleteRow(token: string, id: number) {
   return apiFetch<{ ok: boolean }>(`/api/bot/data/${id}`, { method: 'DELETE', authToken: token });
 }
 
-export async function createContentItem(token: string, categoryId: number, payload: { title: string; body?: string; attachments?: ContentItem['attachments']; status?: 'draft' | 'ready' }) {
+export async function botExportData(token: string): Promise<Blob> {
+  const response = await fetch(`${API_URL}/api/bot/export`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error('فشل في تصدير البيانات');
+  }
+  
+  return response.blob();
+}
+
+// Category management functions
+
+
+// Usage Statistics API
+export async function getUsageStats(token: string, platform: 'whatsapp' | 'telegram') {
+  return apiFetch<{
+    success: boolean;
+    data: {
+      platform: string;
+      usage: {
+        used: number;
+        limit: number;
+        remaining: number;
+        percentage: number;
+        isNearLimit: boolean;
+        isAtLimit: boolean;
+        canSend: boolean;
+      };
+      limits: {
+        canManageWhatsApp: boolean;
+        canManageTelegram: boolean;
+        whatsappMessagesPerMonth: number;
+        telegramMessagesPerMonth: number;
+        planName: string;
+      };
+      warning: string | null;
+    };
+  }>(`/api/usage/stats?platform=${platform}`, { authToken: token });
+}
+
+export async function getAllUsageStats(token: string) {
+  return apiFetch<{
+    success: boolean;
+    data: {
+      limits: {
+        canManageWhatsApp: boolean;
+        canManageTelegram: boolean;
+        whatsappMessagesPerMonth: number;
+        telegramMessagesPerMonth: number;
+        planName: string;
+      };
+      whatsapp: {
+        used: number;
+        limit: number;
+        remaining: number;
+        percentage: number;
+        isNearLimit: boolean;
+        isAtLimit: boolean;
+        canSend: boolean;
+      };
+      telegram: {
+        used: number;
+        limit: number;
+        remaining: number;
+        percentage: number;
+        isNearLimit: boolean;
+        isAtLimit: boolean;
+        canSend: boolean;
+      };
+      warnings: string[];
+    };
+  }>(`/api/usage/stats/all`, { authToken: token });
+}
+
+export async function createContentItem(token: string, categoryId: number, payload: { title: string; body?: string; attachments?: ContentItem['attachments']; status?: 'draft' | 'ready'; scheduledAt?: string | null }) {
   return apiFetch<{ item: ContentItem }>(`/api/content/categories/${categoryId}/items` as string, {
     method: 'POST',
     authToken: token,
@@ -474,20 +562,7 @@ export async function generateAIContent(token: string, payload: { prompt: string
 }
 
 // Campaigns
-export async function startWhatsAppCampaign(token: string, file: File, messageTemplate: string, throttleMs = 3000, mediaFile?: File | null, scheduleAt?: string | null, dailyCap?: number | null, perNumberDelayMs?: number | null) {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('messageTemplate', messageTemplate);
-  formData.append('throttleMs', String(throttleMs));
-  if (mediaFile) formData.append('media', mediaFile);
-  if (scheduleAt) {
-    formData.append('scheduleAt', scheduleAt);
-    // Include user's timezone offset
-    const timezoneOffset = new Date().getTimezoneOffset();
-    formData.append('timezoneOffset', timezoneOffset.toString());
-  }
-  if (dailyCap) formData.append('dailyCap', String(dailyCap));
-  if (perNumberDelayMs) formData.append('perNumberDelayMs', String(perNumberDelayMs));
+export async function startWhatsAppCampaign(token: string, formData: FormData) {
   return apiFetch<{ success: boolean; summary?: { sent: number; failed: number; total: number }; message?: string }>("/api/whatsapp/campaigns/start", {
     method: "POST",
     authToken: token,
@@ -518,8 +593,126 @@ export async function adminAssignChat(token: string, chatId: number, assigneeId?
   });
 }
 
-export async function getAllUsers(token: string) {
-  return apiFetch<{ success: boolean; users: Array<{ id: number; name?: string; email: string; phone?: string; role: 'user' | 'admin'; isActive: boolean; createdAt: string; updatedAt: string }> }>("/api/admin/users", { authToken: token });
+export async function getAllUsers(token: string, page: number = 1, limit: number = 10) {
+  return apiFetch<{ 
+    success: boolean; 
+    users: Array<{ id: number; name?: string; email: string; phone?: string; role: 'user' | 'admin'; isActive: boolean; createdAt: string; updatedAt: string }>;
+    total: number;
+    totalPages: number;
+    currentPage: number;
+  }>(`/api/admin/users?page=${page}&limit=${limit}`, { authToken: token });
+}
+
+export async function getUserDetails(token: string, userId: number) {
+  return apiFetch<{ 
+    success: boolean; 
+    user: {
+      id: number;
+      name?: string;
+      email: string;
+      phone?: string;
+      role: 'user' | 'admin';
+      isActive: boolean;
+      emailVerifiedAt?: string;
+      botPaused: boolean;
+      botPausedUntil?: string;
+      createdAt: string;
+      updatedAt: string;
+      subscriptions: Array<{
+        id: number;
+        userId: number;
+        planId: number;
+        status: 'active' | 'expired' | 'cancelled';
+        startedAt: string;
+        expiresAt: string;
+        autoRenew: boolean;
+        createdAt: string;
+        updatedAt: string;
+        plan: {
+          id: number;
+          name: string;
+          priceCents: number;
+          interval: 'monthly' | 'yearly';
+          features: any;
+          permissions: any;
+        };
+      }>;
+      subscriptionRequests: Array<{
+        id: number;
+        userId: number;
+        planId: number;
+        paymentMethod: 'usdt' | 'coupon';
+        status: 'pending' | 'approved' | 'rejected';
+        usdtWalletAddress?: string;
+        receiptImage?: string;
+        couponCode?: string;
+        notes?: string;
+        adminNotes?: string;
+        processedAt?: string;
+        processedBy?: number;
+        createdAt: string;
+        updatedAt: string;
+        plan: {
+          id: number;
+          name: string;
+          priceCents: number;
+          interval: 'monthly' | 'yearly';
+        };
+      }>;
+    }
+  }>(`/api/admin/users/${userId}`, { authToken: token });
+}
+
+export async function updateUserStatus(token: string, userId: number, isActive: boolean) {
+  return apiFetch<{ 
+    success: boolean; 
+    message: string;
+    user: {
+      id: number;
+      name?: string;
+      email: string;
+      isActive: boolean;
+    }
+  }>(`/api/admin/users/${userId}/status`, { 
+    method: 'PUT',
+    body: JSON.stringify({ isActive }),
+    authToken: token 
+  });
+}
+
+export async function getAllSubscriptions(token: string, page: number = 1, limit: number = 10, filter: string = 'all') {
+  return apiFetch<{ 
+    success: boolean; 
+    subscriptions: Array<{
+      id: number;
+      userId: number;
+      planId: number;
+      status: 'active' | 'expired' | 'cancelled';
+      startedAt: string;
+      expiresAt: string;
+      autoRenew: boolean;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: number;
+        name?: string;
+        email: string;
+        phone?: string;
+        isActive: boolean;
+      };
+      plan: {
+        id: number;
+        name: string;
+        priceCents: number;
+        interval: 'monthly' | 'yearly';
+        features: any;
+        permissions: any;
+      };
+    }>;
+    total: number;
+    totalPages: number;
+    currentPage: number;
+  }>(`/api/admin/subscriptions?page=${page}&limit=${limit}&filter=${filter}`, { authToken: token });
 }
 
 // Platform connection status
@@ -1045,6 +1238,29 @@ export async function telegramBotSendMessage(token: string, chatId: string, text
   });
 }
 
+export async function telegramBotSendMedia(token: string, chatId: string, mediaType: string, mediaFile: File, caption?: string) {
+  const formData = new FormData();
+  formData.append('chatId', chatId);
+  formData.append('mediaType', mediaType);
+  formData.append('mediaFile', mediaFile);
+  if (caption) formData.append('text', caption);
+  
+  return apiFetch<{ success: boolean; message?: any }>("/api/telegram-bot/send", {
+    method: 'POST',
+    authToken: token,
+    body: formData,
+    headers: {}
+  });
+}
+
+export async function telegramBotSendSticker(token: string, chatId: string, stickerId: string) {
+  return apiFetch<{ success: boolean; message?: any }>("/api/telegram-bot/send", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ chatId, stickerId })
+  });
+}
+
 export async function telegramBotGetChat(token: string, chatId: string) {
   return apiFetch<{ success: boolean; chat?: any }>(`/api/telegram-bot/chat/${encodeURIComponent(chatId)}`, { authToken: token });
 }
@@ -1082,6 +1298,20 @@ export async function telegramBotGetStats(token: string) {
 
 export async function telegramBotGetContacts(token: string) {
   return apiFetch<{ success: boolean; contacts?: any[] }>("/api/telegram-bot/contacts", { authToken: token });
+}
+
+export async function telegramBotPollMessages(token: string) {
+  return apiFetch<{ success: boolean; message?: string }>("/api/telegram-bot/poll-messages", {
+    method: 'POST',
+    authToken: token
+  });
+}
+
+export async function telegramBotDisconnect(token: string) {
+  return apiFetch<{ success: boolean; message?: string }>("/api/telegram-bot/disconnect", {
+    method: 'POST',
+    authToken: token
+  });
 }
 
 export async function telegramBotGetChatMembers(token: string, chatId: string) {
@@ -1328,7 +1558,14 @@ export type Coupon = {
   plan?: Plan;
 };
 
-export async function createCoupon(token: string, payload: { code: string; planId: number; expiresAt?: string; notes?: string }) {
+export async function createCoupon(token: string, payload: { 
+  code: string; 
+  planId: number; 
+  expiresAt?: string; 
+  notes?: string;
+  discountKeyword?: string;
+  discountKeywordValue?: number;
+}) {
   return apiFetch<{ success: boolean; coupon: Coupon; message: string }>("/api/coupons", {
     method: "POST",
     authToken: token,
@@ -1358,12 +1595,120 @@ export async function deleteCoupon(token: string, couponId: number) {
   return apiFetch<{ success: boolean; message: string }>(`/api/coupons/${couponId}`, { method: "DELETE", authToken: token });
 }
 
-export async function generateCoupons(token: string, payload: { planId: number; count?: number; prefix?: string; expiresAt?: string }) {
+export async function generateCoupons(token: string, payload: { 
+  planId: number; 
+  count?: number; 
+  prefix?: string; 
+  expiresAt?: string;
+  discountKeyword?: string;
+  discountKeywordValue?: number;
+}) {
   return apiFetch<{ success: boolean; coupons: Coupon[]; message: string }>("/api/coupons/generate", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload)
   });
+}
+
+// ===== SERVICES API =====
+export interface Service {
+  id: number;
+  userId: number;
+  title: string;
+  description?: string;
+  price: number;
+  currency: string;
+  purchaseLink?: string;
+  image?: string;
+  isActive: boolean;
+  viewsCount: number;
+  clicksCount: number;
+  category?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+  user?: {
+    id: number;
+    name: string;
+    email?: string;
+  };
+}
+
+export async function createService(token: string, formData: FormData) {
+  return apiFetch<{ success: boolean; service: Service; message: string }>("/api/services", {
+    method: "POST",
+    authToken: token,
+    body: formData
+  });
+}
+
+export async function getUserServices(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    services: Service[]; 
+    stats: {
+      currentCount: number;
+      maxServices: number;
+      canMarketServices: boolean;
+      canCreateMore: boolean;
+    }
+  }>("/api/services", { authToken: token });
+}
+
+export async function getAllActiveServices(page: number = 1, limit: number = 20, category?: string, search?: string) {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  if (category) params.append('category', category);
+  if (search) params.append('search', search);
+  
+  return apiFetch<{ 
+    success: boolean; 
+    services: Service[]; 
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }
+  }>(`/api/services/public?${params.toString()}`, {});
+}
+
+export async function getService(serviceId: number) {
+  return apiFetch<{ success: boolean; service: Service }>(`/api/services/${serviceId}/view`, {});
+}
+
+export async function updateService(token: string, serviceId: number, formData: FormData) {
+  return apiFetch<{ success: boolean; service: Service; message: string }>(`/api/services/${serviceId}`, {
+    method: "PUT",
+    authToken: token,
+    body: formData
+  });
+}
+
+export async function deleteService(token: string, serviceId: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/services/${serviceId}`, {
+    method: "DELETE",
+    authToken: token
+  });
+}
+
+export async function incrementServiceClick(serviceId: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/services/${serviceId}/click`, {
+    method: "POST"
+  });
+}
+
+export async function getServiceStats(token: string, serviceId: number) {
+  return apiFetch<{ 
+    success: boolean; 
+    stats: {
+      views: number;
+      clicks: number;
+      clickRate: string;
+    }
+  }>(`/api/services/${serviceId}/stats`, { authToken: token });
 }
 
 // ===== ANALYTICS API =====
@@ -1433,7 +1778,7 @@ export async function switchFacebookPage(token: string, pageId: string, pageName
     message: string; 
     pageId: string; 
     pageName: string 
-  }>("/api/analytics/facebook/switch", { 
+  }>("/api/facebook/select-page", { 
     method: "POST",
     body: JSON.stringify({ pageId, pageName }),
     authToken: token 
@@ -1506,6 +1851,7 @@ export async function getPinterestAccountDetails(token: string) {
   }>("/api/pinterest/account", { authToken: token });
 }
 
+
 // ===== CONNECTED ACCOUNTS API =====
 export async function getConnectedAccounts(token: string) {
   return apiFetch<{ 
@@ -1519,5 +1865,298 @@ export async function getConnectedAccounts(token: string) {
     }; 
     totalConnected: number;
   }>("/api/facebook/connected-accounts", { authToken: token });
+}
+
+// Customer Management API Functions
+export async function getCustomers(token: string, page: number = 1, limit: number = 10, filters: any = {}) {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...Object.fromEntries(Object.entries(filters).filter(([_, value]) => value !== ''))
+  });
+
+  return apiFetch<{
+    success: boolean;
+    data: {
+      customers: any[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    };
+  }>(`/api/customers?${queryParams}`, {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function getCustomer(token: string, customerId: number) {
+  return apiFetch<{
+    success: boolean;
+    data: any;
+  }>(`/api/customers/${customerId}`, {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function createCustomer(token: string, customerData: any) {
+  const formData = new FormData();
+  
+  // Add all text fields
+  Object.keys(customerData).forEach(key => {
+    if (key !== 'invoiceImage' && customerData[key] !== null && customerData[key] !== undefined) {
+      if (typeof customerData[key] === 'object') {
+        formData.append(key, JSON.stringify(customerData[key]));
+      } else {
+        formData.append(key, customerData[key]);
+      }
+    }
+  });
+  
+  // Add invoice image if exists
+  if (customerData.invoiceImage) {
+    formData.append('invoiceImage', customerData.invoiceImage);
+  }
+  
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>('/api/customers', {
+    method: 'POST',
+    body: formData,
+    authToken: token
+  });
+}
+
+export async function updateCustomer(token: string, customerId: number, customerData: any) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/api/customers/${customerId}`, {
+    method: 'PUT',
+    body: JSON.stringify(customerData),
+    authToken: token
+  });
+}
+
+export async function deleteCustomer(token: string, customerId: number) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+  }>(`/api/customers/${customerId}`, {
+    method: 'DELETE',
+    authToken: token
+  });
+}
+
+export async function getCustomerStats(token: string) {
+  return apiFetch<{
+    success: boolean;
+    data: {
+      totalCustomers: number;
+      activeCustomers: number;
+      vipCustomers: number;
+      customersByType: Array<{ subscriptionType: string; count: number }>;
+      customersByStatus: Array<{ subscriptionStatus: string; count: number }>;
+      recentCustomers: any[];
+      financial: {
+        totalCapital: string;
+        totalRevenue: string;
+        netProfit: string;
+      };
+    };
+  }>('/api/customers/stats', {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function getPostUsageStats(token: string) {
+  return apiFetch<{
+    success: boolean;
+    data: {
+      monthlyLimit: number;
+      totalUsed: number;
+      remaining: number;
+      percentage: number;
+      isNearLimit: boolean;
+      isAtLimit: boolean;
+      platformUsage: Record<string, number>;
+      planName: string;
+    };
+  }>('/api/posts/usage-stats', {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function addCustomerInteraction(token: string, customerId: number, interactionData: any) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/api/customers/${customerId}/interactions`, {
+    method: 'POST',
+    body: JSON.stringify(interactionData),
+    authToken: token
+  });
+}
+
+export async function getCustomerInteractions(token: string, customerId: number, page: number = 1, limit: number = 10) {
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString()
+  });
+
+  return apiFetch<{
+    success: boolean;
+    data: {
+      interactions: any[];
+      pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      };
+    };
+  }>(`/api/customers/${customerId}/interactions?${queryParams}`, {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function getCategories(token: string) {
+  return apiFetch<{
+    success: boolean;
+    data: any[];
+  }>('/api/customers/categories', {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function createCategory(token: string, categoryData: any) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>('/api/customers/categories', {
+    method: 'POST',
+    body: JSON.stringify(categoryData),
+    authToken: token
+  });
+}
+
+// Custom Fields API functions
+export async function getCustomFields(token: string) {
+  return apiFetch<{
+    success: boolean;
+    data: any[];
+  }>('/api/custom-fields', {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function createCustomField(token: string, fieldData: any) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>('/api/custom-fields', {
+    method: 'POST',
+    body: JSON.stringify(fieldData),
+    authToken: token
+  });
+}
+
+export async function updateCustomField(token: string, fieldId: number, fieldData: any) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/api/custom-fields/${fieldId}`, {
+    method: 'PUT',
+    body: JSON.stringify(fieldData),
+    authToken: token
+  });
+}
+
+export async function deleteCustomField(token: string, fieldId: number) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+  }>(`/api/custom-fields/${fieldId}`, {
+    method: 'DELETE',
+    authToken: token
+  });
+}
+
+// Employee Management API functions
+export async function createEmployee(token: string, employeeData: any) {
+  return apiFetch<{ success: boolean; employee: any; message?: string }>('/api/employees', {
+    method: 'POST',
+    body: JSON.stringify(employeeData),
+    authToken: token,
+  });
+}
+
+export async function getEmployees(token: string, page = 1, search = '') {
+  return apiFetch<{ success: boolean; employees: any[]; pagination: any }>(`/api/employees?page=${page}&search=${search}`, {
+    authToken: token,
+  });
+}
+
+export async function getEmployee(token: string, employeeId: number) {
+  return apiFetch<{ success: boolean; employee: any }>(`/api/employees/${employeeId}`, {
+    authToken: token,
+  });
+}
+
+export async function updateEmployee(token: string, employeeId: number, employeeData: any) {
+  return apiFetch<{ success: boolean; employee: any; message?: string }>(`/api/employees/${employeeId}`, {
+    method: 'PUT',
+    body: JSON.stringify(employeeData),
+    authToken: token,
+  });
+}
+
+export async function deleteEmployee(token: string, employeeId: number) {
+  return apiFetch<{ success: boolean; message?: string }>(`/api/employees/${employeeId}`, {
+    method: 'DELETE',
+    authToken: token,
+  });
+}
+
+export async function getEmployeeStats(token: string) {
+  return apiFetch<{ success: boolean; stats: any }>('/api/employees/stats', {
+    authToken: token,
+  });
+}
+
+export async function changeEmployeePassword(token: string, employeeId: number, newPassword: string) {
+  return apiFetch<{ success: boolean; message?: string }>(`/api/employees/${employeeId}/password`, {
+    method: 'PUT',
+    body: JSON.stringify({ newPassword }),
+    authToken: token,
+  });
+}
+
+export async function employeeLogin(email: string, password: string) {
+  return apiFetch<{ success: boolean; token: string; employee: any; message?: string }>('/api/employees/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function getEmployeeProfile(token: string) {
+  return apiFetch<{ success: boolean; employee: any; message?: string }>('/api/employees/me', {
+    authToken: token,
+  });
 }
 

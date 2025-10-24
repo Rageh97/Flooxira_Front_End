@@ -32,6 +32,17 @@ interface UserPermissions {
   
   // إدارة المحتوى
   canManageContent: boolean;
+  
+  // تسويق الخدمات
+  canMarketServices: boolean;
+  maxServices: number;
+  
+  // إدارة العملاء
+  canManageCustomers: boolean;
+  
+  // إدارة الموظفين
+  canManageEmployees: boolean;
+  maxEmployees: number;
 }
 
 interface Subscription {
@@ -140,8 +151,8 @@ export default function MySubscriptionPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">اشتراكي</h1>
-          <p className="text-sm text-gray-600">معلومات اشتراكك وصلاحياتك</p>
+          <h1 className="text-2xl font-semibold text-white">اشتراكي</h1>
+          <p className="text-sm text-gray-300">معلومات اشتراكك وصلاحياتك</p>
         </div>
         <div className="text-center py-8">
           <p className="text-gray-600">جاري التحميل...</p>
@@ -154,8 +165,8 @@ export default function MySubscriptionPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">اشتراكي</h1>
-          <p className="text-sm text-gray-600">معلومات اشتراكك وصلاحياتك</p>
+          <h1 className="text-2xl font-semibold text-white">اشتراكي</h1>
+          <p className="text-sm text-gray-300">معلومات اشتراكك وصلاحياتك</p>
         </div>
         <Card>
           <CardContent className="text-center py-12">
@@ -175,8 +186,8 @@ export default function MySubscriptionPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">اشتراكي</h1>
-          <p className="text-sm text-gray-600">معلومات اشتراكك وصلاحياتك</p>
+          <h1 className="text-2xl font-semibold text-white">اشتراكي</h1>
+          <p className="text-sm text-gray-300">معلومات اشتراكك وصلاحياتك</p>
         </div>
         <Card>
           <CardContent className="text-center py-12">
@@ -201,46 +212,46 @@ export default function MySubscriptionPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-800">اشتراكي</h1>
-        <p className="text-sm text-gray-600">معلومات اشتراكك وصلاحياتك</p>
+        <h1 className="text-2xl font-semibold text-white">اشتراكي</h1>
+        <p className="text-sm text-gray-300">معلومات اشتراكك وصلاحياتك</p>
       </div>
 
       {/* Subscription Overview */}
-      <Card>
+      <Card className="gradient-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="h-5 w-5 text-green-600" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Crown className="h-5 w-5 text-white" />
             معلومات الاشتراك
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
             <div>
-              <h3 className="font-semibold text-gray-800 mb-3">تفاصيل الباقة</h3>
+              <h3 className="font-semibold text-white mb-3">تفاصيل الباقة</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">اسم الباقة:</span>
-                  <span className="font-medium">{subscription.plan.name}</span>
+                  <span className="text-gray-300">اسم الباقة:</span>
+                  <span className="font-medium text-white">{subscription.plan.name}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">الحالة:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(subscription.status)}`}>
+                  <span className="text-gray-300">الحالة:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium text-black ${getStatusColor(subscription.status)}`}>
                     {getStatusText(subscription.status)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">تاريخ البداية:</span>
-                  <span>{formatDate(subscription.startedAt)}</span>
+                  <span className="text-gray-300">تاريخ البداية:</span>
+                  <span className="text-white">{formatDate(subscription.startedAt)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">تاريخ الانتهاء:</span>
-                  <span>{formatDate(subscription.expiresAt)}</span>
+                  <span className="text-gray-300">تاريخ الانتهاء:</span>
+                  <span className="text-white">{formatDate(subscription.expiresAt)}</span>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-800 mb-3">مدة الاشتراك</h3>
+              <h3 className="font-semibold text-white mb-3">مدة الاشتراك</h3>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Clock className="h-4 w-4 text-green-600" />
@@ -265,39 +276,39 @@ export default function MySubscriptionPage() {
       </Card>
 
       {/* Permissions */}
-      <Card>
+      <Card className="gradient-border">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-600" />
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Shield className="h-5 w-5 text-green-600" />
             صلاحياتك المتاحة
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[#011910] text-white border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-md font-medium text-white uppercase tracking-wider">
                     الفئة
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-md font-medium text-white uppercase tracking-wider">
                     الميزة
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-md font-medium text-white uppercase tracking-wider">
                     الحالة
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-md font-medium text-white uppercase tracking-wider">
                     الحد المسموح
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-light-custom/80 divide-y divide-green-200">
                 {/* Social Media Platforms */}
                 <tr>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900" rowSpan={permissions.platforms?.length || 1}>
+                  <td className="px-4 py-4 whitespace-nowrap text-md font-medium text-white" rowSpan={permissions.platforms?.length || 1}>
                     📱 المنصات الاجتماعية
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     المنصات المسموحة
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -316,17 +327,17 @@ export default function MySubscriptionPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     {permissions.platforms?.length || 0} منصة
                   </td>
                 </tr>
 
                 {/* Monthly Posts */}
                 <tr>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md font-medium text-white">
                     📝 المنشورات الشهرية
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     عدد المنشورات المسموح شهرياً
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -342,17 +353,17 @@ export default function MySubscriptionPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     {permissions.monthlyPosts === -1 ? 'غير محدود' : `${permissions.monthlyPosts || 0} منشور/شهر`}
                   </td>
                 </tr>
 
                 {/* WhatsApp Management */}
                 <tr>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md font-medium text-white">
                     💬 إدارة الواتساب
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     إدارة الواتساب والرسائل
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -368,17 +379,17 @@ export default function MySubscriptionPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     {permissions.canManageWhatsApp ? `${permissions.whatsappMessagesPerMonth === -1 ? 'غير محدود' : permissions.whatsappMessagesPerMonth || 0} رسالة/شهر` : '-'}
                   </td>
                 </tr>
 
                 {/* Telegram Management */}
                 <tr>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
                     📱 إدارة التليجرام
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     إدارة التليجرام والرسائل
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -394,17 +405,17 @@ export default function MySubscriptionPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     -
                   </td>
                 </tr>
 
                 {/* Salla Integration */}
                 <tr>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
                     🛒 تكامل سلة
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     تكامل مع منصة سلة للتجارة الإلكترونية
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -420,17 +431,17 @@ export default function MySubscriptionPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     -
                   </td>
                 </tr>
 
                 {/* Content Management */}
                 <tr>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
                     🎨 إدارة المحتوى
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     إدارة المحتوى والمنشورات
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
@@ -446,8 +457,90 @@ export default function MySubscriptionPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     -
+                  </td>
+                </tr>
+
+                {/* Service Marketing */}
+                <tr>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    🛍️ تسويق الخدمات
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    تسويق وعرض الخدمات على المنصة
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {permissions.canMarketServices ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        متاح
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        غير متاح
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    {permissions.canMarketServices ? (
+                      permissions.maxServices === -1 ? 'غير محدود' : `${permissions.maxServices || 0} خدمة`
+                    ) : '-'}
+                  </td>
+                </tr>
+
+                {/* Customer Management */}
+                <tr>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    👥 إدارة العملاء
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    إدارة قاعدة بيانات العملاء والمتابعة
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {permissions.canManageCustomers ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        متاح
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        غير متاح
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    {permissions.canManageCustomers ? 'غير محدود' : '-'}
+                  </td>
+                </tr>
+
+                {/* Employee Management */}
+                <tr>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    👨‍💼 إدارة الموظفين
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    إضافة وإدارة الموظفين وصلاحياتهم
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {permissions.canManageEmployees ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        متاح
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        غير متاح
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    {permissions.canManageEmployees ? (
+                      permissions.maxEmployees === 0 ? 'غير محدود' : `${permissions.maxEmployees || 0} موظف`
+                    ) : '-'}
                   </td>
                 </tr>
               </tbody>
@@ -466,7 +559,7 @@ export default function MySubscriptionPage() {
         </Button>
         <Button 
           onClick={() => window.location.href = '/my-subscription-requests'}
-          variant="outline"
+          variant="secondary"
         >
           طلبات الاشتراك
         </Button>

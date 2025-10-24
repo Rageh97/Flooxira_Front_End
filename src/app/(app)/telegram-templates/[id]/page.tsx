@@ -52,6 +52,17 @@ export default function ManageTemplateButtonsPage() {
     }
   }
 
+  function findButtonById(buttons: TelegramTemplateButton[], id: number): TelegramTemplateButton | null {
+    for (const btn of buttons) {
+      if (btn.id === id) return btn;
+      if (Array.isArray(btn.ChildButtons)) {
+        const found = findButtonById(btn.ChildButtons, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
   async function handleAddButton(parentButtonId?: number) {
     if (!template) return;
     const parent = (parentButtonId && Array.isArray(template.buttons)) ? findButtonById(template.buttons, parentButtonId) : null;
@@ -118,33 +129,36 @@ export default function ManageTemplateButtonsPage() {
     }
   }
 
-  function ButtonTree({ nodes, parentId }: { nodes: TelegramTemplateButton[]; parentId?: number }) {
+  function ButtonTree({ nodes, parentId, level = 0 }: { nodes: TelegramTemplateButton[]; parentId?: number; level?: number }) {
     const roots = useMemo(() => nodes.filter((b) => (parentId ? b.parentButtonId === parentId : !b.parentButtonId)).sort((a,b)=> (a.displayOrder||0)-(b.displayOrder||0)), [nodes, parentId]);
     return (
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {roots.map((b) => (
-          <li key={b.id} className="border rounded p-3">
+          <li key={b.id} className={`bg-gray-800/50 border border-emerald-500/20 rounded-xl p-4 hover:border-emerald-500/40 transition-all duration-300 ${level > 0 ? 'mr-4' : ''}`}>
+            <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2 py-0.5 text-xs rounded bg-gray-100">#{b.id}</span>
-              <span className="font-medium">{b.text}</span>
-              <span className="text-xs text-gray-500">{b.buttonType}</span>
+                <span className="px-3 py-1 text-xs rounded-lg bg-emerald-500/20 text-emerald-300 font-bold">#{b.id}</span>
+                <span className="font-bold text-white text-lg">{b.text}</span>
+                <span className="text-xs text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full">{b.buttonType}</span>
+                {level > 0 && (
+                  <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">مستوى {level + 1}</span>
+                )}
               {b.mediaUrl && (
-                <a href={b.mediaUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 underline truncate max-w-[200px]">media</a>
-              )}
-              <div className="ml-auto flex gap-2">
-                <button onClick={() => handleEditButton(b)} className="text-blue-600 text-sm">تعديل</button>
-                <button onClick={() => handleAddButton(b.id)} className="text-emerald-600 text-sm">إضافة زر فرعي</button>
-                <button onClick={() => handleUploadMedia(b)} className="text-purple-600 text-sm">رفع وسائط</button>
-                <button onClick={() => handleSetButtonType(b, "url")} className="text-gray-600 text-sm">نوع: URL</button>
-                <button onClick={() => handleSetButtonType(b, "callback")} className="text-gray-600 text-sm">نوع: Callback</button>
-                <button onClick={() => handleSetUrl(b)} className="text-gray-600 text-sm">تعيين رابط</button>
-                <button onClick={() => handleSetCallback(b)} className="text-gray-600 text-sm">تعيين بيانات</button>
-                <button onClick={() => handleDeleteButton(b)} className="text-red-600 text-sm">حذف</button>
+                  <a href={b.mediaUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline truncate max-w-[200px] bg-blue-500/10 px-2 py-1 rounded">📎 media</a>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => handleEditButton(b)} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">✏️ تعديل</button>
+                <button onClick={() => handleAddButton(b.id)} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">➕ زر فرعي</button>
+                <button onClick={() => handleUploadMedia(b)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">📤 رفع</button>
+                <button onClick={() => handleSetButtonType(b, "url")} className="px-3 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">🔗 URL</button>
+                <button onClick={() => handleSetButtonType(b, "callback")} className="px-3 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">⚡ Callback</button>
+                <button onClick={() => handleDeleteButton(b)} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105 mr-auto">🗑️ حذف</button>
               </div>
             </div>
             {Array.isArray(b.ChildButtons) && b.ChildButtons.length > 0 && (
-              <div className="pl-4 mt-3 border-l">
-                <ButtonTree nodes={b.ChildButtons} parentId={b.id} />
+              <div className="pr-4 mt-4 border-r-2 border-emerald-500/30">
+                <ButtonTree nodes={b.ChildButtons} parentId={b.id} level={level + 1} />
               </div>
             )}
           </li>
@@ -155,40 +169,72 @@ export default function ManageTemplateButtonsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500 mx-auto"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-2xl">🔘</span>
+            </div>
+          </div>
+          <p className="mt-6 text-emerald-300 text-lg font-semibold">جاري تحميل الأزرار...</p>
+        </div>
+      </div>
     );
   }
 
   if (error || !template) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-4"><Link href="/telegram-templates" className="text-blue-600">← الرجوع</Link></div>
-          <div className="p-6 bg-white rounded border">{error || "Template not found"}</div>
+          <div className="mb-4">
+            <Link href="/telegram-templates" className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-2">
+              <span>←</span> الرجوع إلى القوالب
+            </Link>
+          </div>
+          <div className="p-8 card-gradient-green-dark border-red-500/30 rounded-2xl border text-center">
+            <span className="text-6xl mb-4 inline-block">⚠️</span>
+            <p className="text-red-300 text-lg font-semibold">{error || "Template not found"}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-            <div className="text-sm"><Link href="/telegram-templates" className="text-blue-600">← الرجوع</Link></div>
-            <h1 className="text-2xl font-bold mt-1">إدارة أزرار القالب: {template.name}</h1>
+            <Link href="/telegram-templates" className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-2 mb-3">
+              <span>←</span> الرجوع إلى القوالب
+            </Link>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent flex items-center gap-3">
+              <span className="text-3xl">🔘</span>
+              إدارة أزرار: {template.name}
+            </h1>
             </div>
-          <div className="flex gap-2">
-            <button onClick={() => handleAddButton(undefined)} className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-50" disabled={saving}>إضافة زر رئيسي</button>
-            <button onClick={() => router.refresh()} className="px-3 py-2 rounded border" disabled={saving}>تحديث</button>
+          <div className="flex gap-3">
+            <button onClick={() => handleAddButton(undefined)} className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold disabled:opacity-50 hover:from-emerald-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:scale-105 flex items-center gap-2" disabled={saving}>
+              <span>➕</span> إضافة زر رئيسي
+            </button>
+            <button onClick={() => router.refresh()} className="px-6 py-3 rounded-xl border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-500/10 transition-all duration-300 disabled:opacity-50 flex items-center gap-2" disabled={saving}>
+              <span>🔄</span> تحديث
+            </button>
           </div>
         </div>
 
-        <div className="bg-white border rounded p-4">
+        <div className="card-gradient-green-dark border-emerald-500/20 rounded-2xl border p-6 shadow-xl">
           {Array.isArray(template.buttons) && template.buttons.length > 0 ? (
             <ButtonTree nodes={template.buttons} />
           ) : (
-            <div className="text-sm text-gray-600">لا توجد أزرار بعد. ابدأ بإضافة زر رئيسي.</div>
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-full mb-4">
+                <span className="text-5xl">🔘</span>
+              </div>
+              <p className="text-gray-300 text-lg font-semibold">لا توجد أزرار بعد</p>
+              <p className="text-gray-400 mt-2">ابدأ بإضافة زر رئيسي للقالب</p>
+            </div>
           )}
         </div>
 

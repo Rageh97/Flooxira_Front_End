@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, type BotField, type BotDataRow } from "@/lib/api";
+import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, botExportData, type BotField, type BotDataRow } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 type EditableCellProps = {
@@ -12,7 +12,7 @@ type EditableCellProps = {
 function EditableCell({ value, onChange, type = 'text' }: EditableCellProps) {
   return (
     <input
-      className="border rounded px-2 py-1 w-full text-sm"
+      className="border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white"
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       type={type}
@@ -98,7 +98,7 @@ export default function BotContentPage() {
       }
     } catch (error) {
       console.error('Error adding field:', error);
-      alert('فشل في إضافة العمود');
+      alert('فشل في إضافة العمود لا يمكن اضافة اسم عمود موجود مسبقا');
     }
   };
 
@@ -231,6 +231,42 @@ export default function BotContentPage() {
     }
   };
 
+  const handleExportData = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      if (rows.length === 0) {
+        alert('لا توجد بيانات للتصدير');
+        return;
+      }
+
+      setLoading(true);
+      const blob = await botExportData(token);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bot_content_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      setSuccessMessage('تم تصدير البيانات بنجاح!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('فشل في تصدير البيانات');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const startEditRow = (row: BotDataRow) => {
     setEditingRow(row.id);
     setEditingData({ ...row.data });
@@ -256,34 +292,28 @@ export default function BotContentPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-white">إدارة محتوى البوت</h1>
-      
-      {/* Success Message */}
-      {successMessage && (
-        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-          {successMessage}
-        </div>
-      )}
-      
-      {/* Controls */}
+    <div className="w-full mx-auto ">
+         <div className="flex items-center justify-between">
+         <h1 className="text-3xl font-bold mb-6 text-white">إدارة محتوى البوت</h1>
+
+                {/* Controls */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-wrap gap-4">
           <button
             onClick={() => setShowAddField(true)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            className="primary-button after:bg-[#011910] before:bg-[#01191080] text-white px-4 py-2 rounded"
           >
             إضافة عمود جديد
           </button>
           
           <button
             onClick={() => setShowAddRow(true)}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+            className="primary-button after:bg-[#011910] before:bg-[#01191080] text-white px-4 py-2 rounded"
           >
             إضافة صف جديد
           </button>
           
-          <label className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded cursor-pointer">
+          <label className="primary-button after:bg-[#011910] before:bg-[#01191080] text-white px-4 py-2 rounded cursor-pointer">
             رفع ملف Excel
             <input
               type="file"
@@ -292,6 +322,16 @@ export default function BotContentPage() {
               className="hidden"
             />
           </label>
+          
+          {rows.length > 0 && (
+            <button
+              onClick={handleExportData}
+              disabled={loading}
+              className="primary-button  text-white px-4 py-2 rounded"
+            >
+              {loading ? 'جاري التصدير...' : 'تصدير إلى Excel'}
+            </button>
+          )}
           
           {(fields.length > 0 || rows.length > 0) && (
             <button
@@ -303,29 +343,38 @@ export default function BotContentPage() {
           )}
         </div>
       </div>
+          </div>   
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          {successMessage}
+        </div>
+      )}
+
 
       {/* Add Field Modal */}
       {showAddField && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">إضافة عمود جديد</h3>
+        <div className="fixed inset-0 backdrop-blur-lg  flex items-center justify-center z-50">
+          <div className="gradient-border p-6 rounded-lg w-full max-w-3xl" style={{backgroundColor: 'black'}}>
+            <h3 className="text-lg font-semibold mb-4 text-white">إضافة عمود جديد</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">اسم العمود</label>
+                <label className="block text-sm font-medium mb-2 text-white">اسم العمود</label>
                 <input
                   type="text"
                   value={newFieldName}
                   onChange={(e) => setNewFieldName(e.target.value)}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white"
                   placeholder="مثال: اسم_المنتج"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">نوع العمود</label>
+                <label className="block text-sm font-medium mb-2 text-white">نوع العمود</label>
                 <select
                   value={newFieldType}
                   onChange={(e) => setNewFieldType(e.target.value as 'string' | 'number' | 'boolean' | 'date' | 'text')}
-                  className="w-full border rounded px-3 py-2"
+                  className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white appearance-none"
                 >
                   <option value="string">نص</option>
                   <option value="number">رقم</option>
@@ -335,13 +384,13 @@ export default function BotContentPage() {
               <div className="flex gap-2">
                 <button
                   onClick={handleAddField}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                  className="primary-button  text-white px-4 py-2 rounded"
                 >
                   إضافة
                 </button>
                 <button
                   onClick={() => setShowAddField(false)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                  className="primary-button after:bg-red-500 before:bg-red-500 text-white px-4 py-2 rounded"
                 >
                   إلغاء
                 </button>
@@ -353,31 +402,32 @@ export default function BotContentPage() {
 
       {/* Add Row Modal */}
       {showAddRow && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-4xl max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">إضافة صف جديد</h3>
+        <div className="fixed inset-0  backdrop-blur-lg flex items-center justify-center z-50">
+          <div className="gradient-border bg-black p-6 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto" style={{backgroundColor: 'black'}}>
+            <h3 className="text-lg font-semibold mb-4 text-white">إضافة صف جديد</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {fields.map(field => (
+              {/* {fields.map(field => (
                 <div key={field.id}>
-                  <label className="block text-sm font-medium mb-2">{field.fieldName}</label>
+                  <label className="block text-sm font-medium mb-2 text-white">{field.fieldName}</label>
                   <EditableCell
+                  
                     value={editingData[field.fieldName] || ''}
                     onChange={(value) => setEditingData(prev => ({ ...prev, [field.fieldName]: value }))}
                     type={field.fieldType === 'number' ? 'number' : 'text'}
                   />
                 </div>
-              ))}
+              ))} */}
             </div>
             <div className="flex gap-2 mt-4">
               <button
                 onClick={handleAddRow}
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                className="primary-button  text-white px-4 py-2 rounded"
               >
                 إضافة
               </button>
               <button
                 onClick={() => setShowAddRow(false)}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                className="primary-button after:bg-red-500 before:bg-red-500 text-white px-4 py-2 rounded"
               >
                 إلغاء
               </button>
@@ -388,24 +438,24 @@ export default function BotContentPage() {
 
       {/* Clear All Data Confirmation Modal */}
       {showClearConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4 text-red-600">تأكيد الحذف</h3>
-            <p className="mb-4 text-gray-700">
+        <div className="fixed inset-0 backdrop-blur-lg flex items-center justify-center z-50">
+          <div className="gradient-border p-6 rounded-lg max-w-2xl" style={{backgroundColor: 'black'}}>
+            <h3 className="text-lg font-semibold mb-4 text-white">تأكيد الحذف</h3>
+            <p className="mb-4 text-white">
               هل أنت متأكد من حذف جميع البيانات؟ هذا الإجراء لا يمكن التراجع عنه.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={handleClearAllData}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+                className="bg-red-500 inner-shadow hover:bg-red-600 text-white px-4 py-2 rounded"
               >
                 نعم، احذف الكل
               </button>
               <button
                 onClick={() => setShowClearConfirm(false)}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                className="bg-light-custom inner-shadow text-white px-4 py-2 rounded"
               >
-                إلغاء
+                تراجع والغاء
               </button>
             </div>
           </div>
@@ -414,41 +464,33 @@ export default function BotContentPage() {
 
       {/* Data Table */}
       {fields.length === 0 && rows.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد بيانات</h3>
-          <p className="text-gray-500 mb-4">ابدأ برفع ملف Excel أو إضافة عمود جديد</p>
-          <label className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded cursor-pointer">
-            رفع ملف Excel
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleExcelUpload}
-              className="hidden"
-            />
-          </label>
+        <div className="bg-transparent rounded-lg p-8 text-center flex flex-col items-center justify-center mt-0 xl:mt-20">
+          <img src="/head.gif" alt="" />
+          <h3 className="text-2xl font-bold text-white mb-2">يرجى اضافة بيانات لذاكرة الذكاء الاصطناعي</h3>
+          <h3 className="text-xl  text-white mb-2"><span className="text-red-500">ملاحظة:</span>عزيزي العميل كلما كانت البيانات بشكل تفصيلي أكثر كلما كان رد البوت بشكل احترافي أكثر </h3>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b">
-            <h3 className="text-lg font-medium text-gray-900">
+        <div className="bg-transparent rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 bg-[#011910] inner-shadow  mb-2">
+            <h3 className="text-lg font-medium text-white">
               البيانات ({rows.length} صف، {fields.length} عمود)
             </h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-bg-light-custom">
+              <thead className="bg-semidark-custom">
                 <tr>
                   {fields.map(field => (
-                    <th key={field.id} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
+                    <th key={field.id} className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider min-w-[200px]">
                       {field.fieldName}
                     </th>
                   ))}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                     الإجراءات
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-[#011910] divide-y divide-bg-white">
                 {currentRows.map(row => (
                   <tr key={row.id}>
                     {fields.map(field => (
@@ -461,7 +503,7 @@ export default function BotContentPage() {
                           />
                         ) : (
                           <div className="w-full">
-                            <div className="break-words whitespace-pre-wrap text-sm max-h-32 overflow-y-auto border rounded p-2 bg-gray-50 min-h-[40px] max-w-[300px]">
+                            <div className="break-words whitespace-pre-wrap text-sm max-h-32 overflow-y-auto text-white rounded p-2 bg-[#011910] min-h-[40px] max-w-[300px]">
                               {row.data[field.fieldName] !== undefined && row.data[field.fieldName] !== null && row.data[field.fieldName] !== '' 
                                 ? String(row.data[field.fieldName]) 
                                 : <span className="text-gray-400 italic">فارغ</span>}
@@ -470,33 +512,33 @@ export default function BotContentPage() {
                         )}
                       </td>
                     ))}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap  text-sm font-medium flex justify-end items-center" >
                       {editingRow === row.id ? (
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleUpdateRow(row.id)}
-                            className="text-green-600 hover:text-green-900"
+                            className="primary-button  text-white  rounded"
                           >
                             حفظ
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="text-gray-600 hover:text-gray-900"
+                            className="primary-button after:bg-red-500 before:bg-red-500 text-white  rounded"
                           >
                             إلغاء
                           </button>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 justify-end items-center">
                           <button
                             onClick={() => startEditRow(row)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="primary-button  text-white  rounded"
                           >
                             تعديل
                           </button>
                           <button
                             onClick={() => handleDeleteRow(row.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="primary-button after:bg-red-500 before:bg-red-500 text-white  rounded"
                           >
                             حذف
                           </button>

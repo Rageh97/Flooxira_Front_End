@@ -20,6 +20,7 @@ import {
   checkPlatformConnections
 } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
+import { toast } from "sonner";
 import { 
   Calendar, 
   Plus, 
@@ -61,6 +62,18 @@ export default function ContentHomePage() {
   const [itemToDelete, setItemToDelete] = useState<ContentItem | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<ContentCategory | null>(null);
   
+  // Reminder system
+  const [showReminderModal, setShowReminderModal] = useState(false);
+  const [reminderWhatsApp, setReminderWhatsApp] = useState("");
+  const [reminderMessage, setReminderMessage] = useState("");
+  const [itemToRemind, setItemToRemind] = useState<ContentItem | null>(null);
+  const [activeReminders, setActiveReminders] = useState<Set<number>>(new Set());
+  
+  // Message modals
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageText, setMessageText] = useState("");
+  const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('info');
+  
   // Item creation form
   const [itemTitle, setItemTitle] = useState("");
   const [itemBody, setItemBody] = useState("");
@@ -70,8 +83,29 @@ export default function ContentHomePage() {
   const [connections, setConnections] = useState<{[k in Platform]?: boolean}>({});
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [createdItemId, setCreatedItemId] = useState<number | null>(null); // Track newly created item ID
   
   const token = typeof window !== 'undefined' ? (localStorage.getItem("auth_token") || "") : "";
+
+  // Helper function to convert local datetime to ISO string without timezone conversion
+  const localDateTimeToISO = (localDateTime: string): string => {
+    if (!localDateTime) return '';
+    // The datetime-local input gives us a string like "2024-10-13T03:08" (no timezone)
+    // When we create a Date from it, the browser interprets it as LOCAL time
+    // For example: in GMT+3, "2024-10-13T03:08" becomes 2024-10-13 03:08 local = 00:08 UTC
+    // We want to store the USER'S CHOSEN TIME, which means we need to preserve the local interpretation
+    const date = new Date(localDateTime);
+    // date.toISOString() will give us the correct UTC equivalent
+    // Example: User in GMT+3 picks 03:08 local → stored as 00:08 UTC → displays as 03:08 when shown in GMT+3
+    return date.toISOString();
+  };
+
+  // Show message modal
+  const showMessage = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setMessageText(text);
+    setMessageType(type);
+    setShowMessageModal(true);
+  };
 
   const loadCategories = async () => {
     try {
@@ -92,6 +126,8 @@ export default function ContentHomePage() {
       setItemsLoading(true);
       const res = await listContentItems(token, categoryId);
       setItems(res.items);
+      // Also load active reminders when loading items
+      loadActiveReminders();
     } catch (e) {
       console.error(e);
     } finally {
@@ -99,8 +135,35 @@ export default function ContentHomePage() {
     }
   };
 
+  const loadActiveReminders = async () => {
+    try {
+      console.log('[Content] Loading active reminders...');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/content/reminder`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[Content] Reminders response:', data);
+        if (data.success) {
+          const activeReminderIds = new Set<number>(data.reminders.map((r: any) => Number(r.contentItemId)));
+          console.log('[Content] Active reminder IDs:', Array.from(activeReminderIds));
+          setActiveReminders(activeReminderIds);
+        }
+      } else {
+        console.error('[Content] Failed to load reminders:', response.status);
+      }
+    } catch (error) {
+      console.error('Error loading active reminders:', error);
+    }
+  };
+
   useEffect(() => { 
     loadCategories();
+    loadActiveReminders();
     (async () => {
       try {
         const { connections } = await checkPlatformConnections(token);
@@ -127,7 +190,7 @@ export default function ContentHomePage() {
     );
   }
 
-  if (!hasActiveSubscription()) {
+  if (!hasActiveSubscription) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">إدارة المحتوى</h1>
@@ -197,7 +260,7 @@ export default function ContentHomePage() {
       setCategoryToDelete(null);
     } catch (error) {
       console.error('Error deleting category:', error);
-      alert('حدث خطأ أثناء حذف التصنيف');
+      showMessage('حدث خطأ أثناء حذف التصنيف', 'error');
     }
   };
 
@@ -213,73 +276,149 @@ export default function ContentHomePage() {
     if (!itemToDelete) return;
     
     try {
+      console.log('Deleting item:', itemToDelete.id);
       await deleteContentItem(token, itemToDelete.id);
+      console.log('Item deleted successfully');
       if (selectedCategory) {
         await loadItems(selectedCategory.id);
       }
       setShowDeleteModal(false);
       setItemToDelete(null);
+      showMessage('تم حذف العنصر بنجاح', 'success');
     } catch (error) {
       console.error('Error deleting item:', error);
-      alert('حدث خطأ أثناء حذف العنصر');
+      showMessage('حدث خطأ أثناء حذف العنصر', 'error');
     }
   };
 
   const onCreateItem = async () => {
     if (!itemTitle.trim() || !selectedCategory) return;
-    await createContentItem(token, selectedCategory.id, { 
-      title: itemTitle, 
-      body: itemBody, 
-      attachments: itemAttachments 
-    });
-    setItemTitle("");
-    setItemBody("");
-    setItemAttachments([]);
-    setSelectedPlatforms([]);
-    setScheduledAt("");
-    setShowCreateItem(false);
-    await loadItems(selectedCategory.id);
+    
+    try {
+      // Create the content item first (only if not already created)
+      let itemId = createdItemId;
+      
+      if (!itemId) {
+        const itemRes = await createContentItem(token, selectedCategory.id, { 
+          title: itemTitle, 
+          body: itemBody, 
+          attachments: itemAttachments,
+          scheduledAt: scheduledAt ? localDateTimeToISO(scheduledAt) : null
+        });
+        itemId = itemRes.item.id;
+        setCreatedItemId(itemId);
+      }
+      
+      // Update the item with platforms if they are selected
+      if (selectedPlatforms.length > 0 || scheduledAt) {
+        await updateContentItem(token, itemId, {
+          title: itemTitle,
+          body: itemBody,
+          attachments: itemAttachments,
+          platforms: selectedPlatforms,
+          scheduledAt: scheduledAt ? localDateTimeToISO(scheduledAt) : null
+        });
+      }
+
+      // If scheduling is enabled and platforms are selected, schedule the item
+      if (scheduledAt && selectedPlatforms.length > 0) {
+        // Check if platforms are connected
+        const disconnectedPlatforms = selectedPlatforms.filter((p) => connections[p] !== true);
+        if (disconnectedPlatforms.length > 0) {
+          showMessage(`المنصات التالية غير متصلة: ${disconnectedPlatforms.join(', ')}. يرجى ربطها أولاً من صفحة المنصات.`, 'error');
+          // Reset created item ID since we're not finishing the process
+          setCreatedItemId(null);
+          return;
+        }
+
+        // Schedule the item
+        await scheduleContentItem(token, itemId, {
+          platforms: selectedPlatforms as string[],
+          format: 'feed',
+          scheduledAt: localDateTimeToISO(scheduledAt)
+        });
+        
+        showMessage(`تم إنشاء وجدولة العنصر بنجاح على المنصات التالية: ${selectedPlatforms.join(', ')}. تحقق من صفحة الجدولة.`, 'success');
+        router.push('/schedule');
+      } else if (scheduledAt && selectedPlatforms.length === 0) {
+        // Scheduled time but no platforms selected
+        showMessage('⚠️ تم إنشاء العنصر مع تاريخ جدولة، لكن لم يتم جدولته لعدم اختيار منصات. اختر منصات واضغط "جدولة" للنشر.', 'info');
+      } else {
+        showMessage('تم إنشاء العنصر بنجاح', 'success');
+      }
+
+      // Reset form
+      setItemTitle("");
+      setItemBody("");
+      setItemAttachments([]);
+      setSelectedPlatforms([]);
+      setScheduledAt("");
+      setCreatedItemId(null);
+      setShowCreateItem(false);
+      await loadItems(selectedCategory.id);
+    } catch (error) {
+      console.error('Error creating/scheduling item:', error);
+      showMessage('حدث خطأ أثناء إنشاء/جدولة العنصر. تأكد من اتصال المنصات المحددة.', 'error');
+      // Reset created item ID on error
+      setCreatedItemId(null);
+    }
   };
 
   const onScheduleItem = async () => {
     if (!itemTitle.trim() || !selectedCategory) {
-      alert('يرجى إدخال عنوان العنصر');
+      showMessage('يرجى إدخال عنوان العنصر', 'error');
       return;
     }
     
     if (selectedPlatforms.length === 0) {
-      alert('يرجى اختيار منصة واحدة على الأقل للنشر');
+      showMessage('يرجى اختيار منصة واحدة على الأقل للنشر', 'error');
       return;
     }
     
     // Check if platforms are connected
     const disconnectedPlatforms = selectedPlatforms.filter((p) => connections[p] !== true);
     if (disconnectedPlatforms.length > 0) {
-      alert(`المنصات التالية غير متصلة: ${disconnectedPlatforms.join(', ')}. يرجى ربطها أولاً من صفحة المنصات.`);
+      showMessage(`المنصات التالية غير متصلة: ${disconnectedPlatforms.join(', ')}. يرجى ربطها أولاً من صفحة المنصات.`, 'error');
       return;
     }
 
     if (!scheduledAt) {
-      alert('يرجى تحديد تاريخ ووقت الجدولة');
+      showMessage('يرجى تحديد تاريخ ووقت الجدولة', 'error');
       return;
     }
 
     try {
-      // Create the content item first
-      const itemRes = await createContentItem(token, selectedCategory.id, { 
-        title: itemTitle, 
-        body: itemBody, 
-        attachments: itemAttachments 
+      // Create the content item first (only if not already created)
+      let itemId = createdItemId;
+      
+      if (!itemId) {
+        const itemRes = await createContentItem(token, selectedCategory.id, { 
+          title: itemTitle, 
+          body: itemBody, 
+          attachments: itemAttachments,
+          scheduledAt: localDateTimeToISO(scheduledAt)
+        });
+        itemId = itemRes.item.id;
+        setCreatedItemId(itemId);
+      }
+      
+      // Update the item with platforms and schedule info
+      await updateContentItem(token, itemId, {
+        title: itemTitle,
+        body: itemBody,
+        attachments: itemAttachments,
+        platforms: selectedPlatforms,
+        scheduledAt: localDateTimeToISO(scheduledAt)
       });
 
       // Schedule it
-      await scheduleContentItem(token, itemRes.item.id, {
+      await scheduleContentItem(token, itemId, {
         platforms: selectedPlatforms as string[],
         format: 'feed',
-        scheduledAt: new Date(scheduledAt).toISOString()
+        scheduledAt: localDateTimeToISO(scheduledAt)
       });
       
-      alert(`تم جدولة العنصر بنجاح على المنصات التالية: ${selectedPlatforms.join(', ')}. تحقق من صفحة الجدولة.`);
+      showMessage(`تم جدولة العنصر بنجاح على المنصات التالية: ${selectedPlatforms.join(', ')}. تحقق من صفحة الجدولة.`, 'success');
       router.push('/schedule');
 
       // Reset form
@@ -288,11 +427,14 @@ export default function ContentHomePage() {
       setItemAttachments([]);
       setSelectedPlatforms([]);
       setScheduledAt("");
+      setCreatedItemId(null);
       setShowCreateItem(false);
       await loadItems(selectedCategory.id);
     } catch (error) {
       console.error('Error creating/scheduling item:', error);
-      alert('حدث خطأ أثناء إنشاء/جدولة العنصر. تأكد من اتصال المنصات المحددة.');
+      showMessage('حدث خطأ أثناء إنشاء/جدولة العنصر. تأكد من اتصال المنصات المحددة.', 'error');
+      // Reset created item ID on error
+      setCreatedItemId(null);
     }
   };
 
@@ -333,7 +475,7 @@ export default function ContentHomePage() {
       setAiGeneratedContent(response.content);
     } catch (e) {
       console.error('AI generation failed:', e);
-      alert('فشل في إنشاء المحتوى بالذكاء الاصطناعي');
+      showMessage('فشل في إنشاء المحتوى بالذكاء الاصطناعي', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -365,7 +507,7 @@ export default function ContentHomePage() {
         body: itemBody,
         attachments: itemAttachments,
         platforms: selectedPlatforms,
-        scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null
+        scheduledAt: scheduledAt ? localDateTimeToISO(scheduledAt) : null
       });
       
       setShowEditItem(false);
@@ -381,30 +523,30 @@ export default function ContentHomePage() {
       }
     } catch (error) {
       console.error('Error updating item:', error);
-      alert('حدث خطأ أثناء تحديث العنصر');
+      showMessage('حدث خطأ أثناء تحديث العنصر', 'error');
     }
   };
 
   const onScheduleEditedItem = async () => {
     if (!editingItem || !itemTitle.trim()) {
-      alert('يرجى إدخال عنوان العنصر');
+      showMessage('يرجى إدخال عنوان العنصر', 'error');
       return;
     }
     
     if (selectedPlatforms.length === 0) {
-      alert('يرجى اختيار منصة واحدة على الأقل للنشر');
+      showMessage('يرجى اختيار منصة واحدة على الأقل للنشر', 'error');
       return;
     }
     
     // Check if platforms are connected
     const disconnectedPlatforms = selectedPlatforms.filter((p) => connections[p] !== true);
     if (disconnectedPlatforms.length > 0) {
-      alert(`المنصات التالية غير متصلة: ${disconnectedPlatforms.join(', ')}. يرجى ربطها أولاً من صفحة المنصات.`);
+      showMessage(`المنصات التالية غير متصلة: ${disconnectedPlatforms.join(', ')}. يرجى ربطها أولاً من صفحة المنصات.`, 'error');
       return;
     }
 
     if (!scheduledAt) {
-      alert('يرجى تحديد تاريخ ووقت الجدولة');
+      showMessage('يرجى تحديد تاريخ ووقت الجدولة', 'error');
       return;
     }
 
@@ -415,17 +557,17 @@ export default function ContentHomePage() {
         body: itemBody,
         attachments: itemAttachments,
         platforms: selectedPlatforms,
-        scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null
+        scheduledAt: scheduledAt ? localDateTimeToISO(scheduledAt) : null
       });
 
       // Schedule it
       await scheduleContentItem(token, editingItem.id, {
         platforms: selectedPlatforms as string[],
         format: 'feed',
-        scheduledAt: new Date(scheduledAt).toISOString()
+        scheduledAt: localDateTimeToISO(scheduledAt)
       });
       
-      alert(`تم جدولة العنصر بنجاح على المنصات التالية: ${selectedPlatforms.join(', ')}. تحقق من صفحة الجدولة.`);
+      showMessage(`تم جدولة العنصر بنجاح على المنصات التالية: ${selectedPlatforms.join(', ')}. تحقق من صفحة الجدولة.`, 'success');
       router.push('/schedule');
 
       // Reset form
@@ -442,14 +584,97 @@ export default function ContentHomePage() {
       }
     } catch (error) {
       console.error('Error updating/scheduling item:', error);
-      alert('حدث خطأ أثناء تحديث/جدولة العنصر. تأكد من اتصال المنصات المحددة.');
+      showMessage('حدث خطأ أثناء تحديث/جدولة العنصر. تأكد من اتصال المنصات المحددة.', 'error');
+    }
+  };
+
+  // Reminder functions
+  const onSetReminder = (item: ContentItem) => {
+    setItemToRemind(item);
+    setShowReminderModal(true);
+  };
+
+  const onCreateReminder = async () => {
+    if (!itemToRemind || !reminderWhatsApp.trim() || !reminderMessage.trim()) {
+      showMessage('يرجى إدخال رقم الواتساب ورسالة التذكير', 'error');
+      return;
+    }
+
+    if (!itemToRemind.scheduledAt) {
+      showMessage('هذا العنصر غير مجدول', 'error');
+      return;
+    }
+
+    // Check WhatsApp connection status (warning only, not blocking)
+    try {
+      const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/whatsapp/status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const statusData = await statusResponse.json();
+      console.log('[Reminder] WhatsApp status check:', statusData);
+      
+      if (!statusData.connected) {
+        console.warn('[Reminder] WhatsApp not connected - reminder will be created but may not send');
+        // Don't block - just log warning
+      }
+    } catch (error) {
+      console.error('Error checking WhatsApp status:', error);
+      // Don't block - continue with reminder creation
+    }
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/content/reminder`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          itemId: itemToRemind.id,
+          whatsappNumber: reminderWhatsApp,
+          message: reminderMessage,
+          scheduledAt: itemToRemind.scheduledAt,
+          timezoneOffset: new Date().getTimezoneOffset() // Send user's timezone offset
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('[Reminder] Creation response:', result);
+        
+        // Add to active reminders
+        setActiveReminders(prev => new Set(prev).add(itemToRemind.id));
+        setShowReminderModal(false);
+        setReminderWhatsApp("");
+        setReminderMessage("");
+        setItemToRemind(null);
+        
+        // Show success toast with reminder times
+        const description = result.reminder?.reminderTime1Display && result.reminder?.reminderTime2Display
+          ? `⏰ سيتم التذكير في: ${result.reminder.reminderTime1Display} و ${result.reminder.reminderTime2Display}`
+          : "سيتم إرسال رسالة قبل ساعتين وساعة واحدة من موعد النشر.";
+        
+        toast.success("✅ تم إعداد التذكير بنجاح!", {
+          description: description,
+          duration: 6000
+        });
+      } else {
+        const error = await response.json();
+        showMessage(`خطأ في إعداد التذكير: ${error.message || 'حدث خطأ غير متوقع'}`, 'error');
+      }
+    } catch (error) {
+      console.error('Error setting reminder:', error);
+      showMessage('حدث خطأ أثناء إعداد التذكير', 'error');
     }
   };
 
   const togglePlatform = (p: Platform) => {
     // Check if platform is connected before allowing selection
     if (connections[p] !== true) {
-      alert(`المنصة ${p} غير متصلة. يرجى ربطها أولاً من صفحة المنصات.`);
+      showMessage(`المنصة ${p} غير متصلة. يرجى ربطها أولاً من صفحة المنصات.`, 'error');
       return;
     }
     
@@ -508,65 +733,67 @@ export default function ContentHomePage() {
       <div className="container mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Content Management</h1>
-          <p className="text-gray-300 text-lg">إدارة المحتوى الاحترافية للمنصات الاجتماعية</p>
+          <h1 className="text-4xl font-bold text-white mb-2">ادارة وجدولة المحتوى </h1>
+          {/* <p className="text-gray-300 text-lg">إدارة المحتوى الاحترافية للمنصات الاجتماعية</p> */}
           
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <Card className="bg-card border-none">
+            <Card className="gradient-border border-none">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                <div className="flex items-center justify-between gap-3">
+                 <div className="flex items-center gap-2">
+                 <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
                     <FileText className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">{categories.length}</p>
-                    <p className="text-gray-400 text-sm">التصنيفات</p>
-                  </div>
+                    <p className="text-gray-200 text-lg font-bold">التصنيفات</p>
+                 </div>
+                 <p className="text-4xl font-bold text-white">{categories.length}</p>
+                 
                 </div>
               </CardContent>
             </Card>
 
-      <Card className="bg-card border-none">
+      <Card className="gradient-border border-none">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3">
+                 <div className="flex items-center gap-2">
                   <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                     <Calendar className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">{items.length}</p>
-                    <p className="text-gray-400 text-sm">العناصر</p>
-                  </div>
+                    <p className="text-gray-200 text-lg font-bold">العناصر</p>
+                 </div>
+                 <p className="text-4xl font-bold text-white">{items.length}</p>
                 </div>
         </CardContent>
       </Card>
 
-            <Card className="bg-card border-none">
+            <Card className="gradient-border border-none">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3">
+                 <div className="flex items-center gap-2">
                   <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
                     <Clock className="w-6 h-6 text-white" />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">{items.filter(item => item.scheduledAt).length}</p>
-                    <p className="text-gray-400 text-sm">مجدولة</p>
-                  </div>
+                    <p className="text-gray-200 text-lg font-bold">العناصر</p>
+                 </div>
+                 <p className="text-4xl font-bold text-white">{items.length}</p>
                 </div>
+               
               </CardContent>
             </Card>
           </div>
         </div>
 
         {/* Categories Tabs */}
-        <Card className="bg-card border-none mb-6">
+        <Card className="gradient-border border-none mb-6">
           <CardHeader className="border-b border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">التصنيفات</h2>
               <Button 
                 onClick={() => setShowCreateCategory(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="primary-button  text-white font-bold text-lg"
               >
-                <Plus className="w-4 h-4 mr-2" />
+              
                 إضافة تصنيف
               </Button>
             </div>
@@ -579,13 +806,13 @@ export default function ContentHomePage() {
             ) : (
               <div className="flex flex-wrap gap-2 p-4">
                 {categories.map((category) => (
-                  <button
+                  <div
                     key={category.id}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 ${
+                    className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                       selectedCategory?.id === category.id
-                        ? 'bg-green-600 text-white shadow-lg'
-                        : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                        ? 'bg-green-800 inner-shadow text-white shadow-lg'
+                        : 'bg-secondry  text-gray-300'
                     }`}
                   >
                     <span>{category.name}</span>
@@ -598,7 +825,7 @@ export default function ContentHomePage() {
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -679,28 +906,46 @@ export default function ContentHomePage() {
                                 : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
                             }`}
                           >
-                            <div className="text-sm font-semibold mb-1">
-                              {day}
+                            <div className="text-sm font-semibold mb-1 flex items-center justify-between">
+                              <span>{day}</span>
+                              {dayItems.length > 0 && (
+                                <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full">
+                                  {dayItems.length}
+                                </span>
+                              )}
                             </div>
-                            <div className="space-y-1">
-                              {dayItems.slice(0, 2).map((item, idx) => (
+                            <div className={`space-y-1 ${dayItems.length > 2 ? 'max-h-12 overflow-y-auto scrollbar-hide' : ''}`}>
+                              {dayItems.map((item, idx) => (
                                 <div
                                   key={idx}
-                                  className="text-xs bg-green-500 text-white px-1 py-0.5 rounded truncate cursor-pointer hover:bg-green-600"
+                                  className={`text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 flex items-center justify-between ${
+                                    isPast ? 'bg-red-500 text-white' : 'bg-green-500 text-white hover:bg-green-600'
+                                  }`}
                                   title={item.title}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEditItem(item);
-                                  }}
                                 >
-                                  {item.title}
+                                  <span 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onEditItem(item);
+                                    }}
+                                    className="flex-1"
+                                  >
+                                    {item.title}
+                                  </span>
+                                  {isPast && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteItem(item.id);
+                                      }}
+                                      className="ml-1 text-red-200 hover:text-white"
+                                      title="حذف"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </div>
                               ))}
-                              {dayItems.length > 2 && (
-                                <div className="text-xs bg-gray-600 text-white px-1 py-0.5 rounded">
-                                  +{dayItems.length - 2}
-                                </div>
-                              )}
                             </div>
                           </div>
                         );
@@ -726,7 +971,7 @@ export default function ContentHomePage() {
                       <p>لا توجد عناصر بعد</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-hide">
                       {items.map((item) => (
                         <div
                           key={item.id}
@@ -738,11 +983,21 @@ export default function ContentHomePage() {
                               <p className="text-gray-400 text-xs mb-2 line-clamp-2">{item.body}</p>
                               <div className="flex items-center gap-2">
                                 {item.attachments.map((att, idx) => (
-                                  <div key={idx} className="text-xs bg-green-600 text-white px-2 py-1 rounded">
-                                    {att.type === 'image' ? <Image className="w-3 h-3 inline mr-1" /> : 
-                                     att.type === 'video' ? <Video className="w-3 h-3 inline mr-1" /> : 
-                                     <FileText className="w-3 h-3 inline mr-1" />}
-                                    {att.type}
+                                  <div key={idx} className="flex items-center gap-1">
+                                    {att.type === 'image' && att.url ? (
+                                      <img 
+                                        src={att.url} 
+                                        alt="مرفق" 
+                                        className="w-8 h-8 object-cover rounded border"
+                                      />
+                                    ) : (
+                                      <div className="text-xs bg-green-600 text-white px-2 py-1 rounded">
+                                        {att.type === 'image' ? <Image className="w-3 h-3 inline mr-1" /> : 
+                                         att.type === 'video' ? <Video className="w-3 h-3 inline mr-1" /> : 
+                                         <FileText className="w-3 h-3 inline mr-1" />}
+                                        {att.type}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -755,6 +1010,22 @@ export default function ContentHomePage() {
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
+                              {item.scheduledAt && (
+                                <button 
+                                  onClick={() => onSetReminder(item)}
+                                  className={`${activeReminders.has(item.id) ? 'text-green-400' : 'text-blue-400'} hover:text-blue-300`}
+                                  title={activeReminders.has(item.id) ? "التذكير مفعل" : "ذكرني"}
+                                >
+                                  {activeReminders.has(item.id) ? (
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="w-4 h-4" />
+                                      <span className="text-xs">✓</span>
+                                    </div>
+                                  ) : (
+                                    <Clock className="w-4 h-4" />
+                                  )}
+                                </button>
+                              )}
                               <button 
                                 onClick={() => onDeleteItem(item.id)}
                                 className="text-red-400 hover:text-red-300"
@@ -776,30 +1047,30 @@ export default function ContentHomePage() {
 
         {/* Create Category Modal */}
         {showCreateCategory && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="fixed inset-0 bg-black/70  backdrop-blur-lg  flex items-center justify-center z-50">
+            <div className=" gradient-border rounded-lg p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold text-white mb-4">إضافة تصنيف جديد</h3>
               <div className="space-y-4">
                 <Input 
                   placeholder="اسم التصنيف" 
                   value={name} 
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-[#011910] border-gray-300 text-white"
                 />
                 <Textarea 
                   placeholder="وصف التصنيف (اختياري)" 
                   value={description} 
                   onChange={(e) => setDescription(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-[#011910] border-gray-300 text-white"
                 />
                 <div className="flex gap-2">
-                  <Button onClick={onCreateCategory} className="bg-green-600 hover:bg-green-700 text-white flex-1">
+                  <Button onClick={onCreateCategory} className="primary-button text-white font-bold text-lg flex-1">
                     إنشاء
                   </Button>
                   <Button 
                     onClick={() => setShowCreateCategory(false)}
                     variant="secondary"
-                    className="flex-1"
+                    className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
                   >
                     إلغاء
                   </Button>
@@ -811,15 +1082,15 @@ export default function ContentHomePage() {
 
         {/* Create Item Modal */}
         {showCreateItem && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/70  backdrop-blur-lg  flex items-center justify-center z-50">
+            <div className=" gradient-border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-semibold text-white mb-4">إضافة عنصر جديد</h3>
               <div className="space-y-4">
                 <Input 
                   placeholder="عنوان العنصر" 
                   value={itemTitle} 
                   onChange={(e) => setItemTitle(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-[#011910] border-gray-700 text-white"
                 />
                 
                 <div className="space-y-2">
@@ -837,7 +1108,7 @@ export default function ContentHomePage() {
                     placeholder="اكتب المحتوى..." 
                     value={itemBody} 
                     onChange={(e) => setItemBody(e.target.value)}
-                    className="bg-gray-800 border-gray-700 text-white min-h-[100px]"
+                    className="bg-[#011910] border-gray-700 text-white min-h-[100px]"
                   />
                 </div>
 
@@ -848,7 +1119,7 @@ export default function ContentHomePage() {
                     multiple 
                     accept="image/*,video/*"
                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
+                    className="w-full bg-[#011910] border border-gray-700 rounded p-2 text-white"
                   />
                   <div className="flex flex-wrap gap-2">
                     {itemAttachments.map((att, idx) => (
@@ -911,19 +1182,74 @@ export default function ContentHomePage() {
                     type="datetime-local"
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
+                    className="w-full bg-[#011910] border border-gray-700 rounded p-2 text-white"
                   />
                 </div>
 
+                {/* Reminder Button - Only show if scheduled */}
+                {scheduledAt && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-white text-sm">التذكير</label>
+                      <Button
+                        onClick={async () => {
+                          // Create the item first if not already created
+                          try {
+                            let itemId = createdItemId;
+                            
+                            if (!itemId) {
+                              const itemRes = await createContentItem(token, selectedCategory?.id || 0, { 
+                                title: itemTitle, 
+                                body: itemBody, 
+                                attachments: itemAttachments,
+                                scheduledAt: scheduledAt ? localDateTimeToISO(scheduledAt) : null
+                              });
+                              itemId = itemRes.item.id;
+                              setCreatedItemId(itemId);
+                              
+                              // Now set reminder with real item
+                              onSetReminder(itemRes.item);
+                            } else {
+                              // Use existing item
+                              const tempItem = {
+                                id: itemId,
+                                title: itemTitle,
+                                scheduledAt: scheduledAt,
+                                categoryId: selectedCategory?.id || 0,
+                                attachments: itemAttachments,
+                                status: 'draft',
+                                platforms: selectedPlatforms,
+                                body: itemBody
+                              } as ContentItem;
+                              onSetReminder(tempItem);
+                            }
+                          } catch (error) {
+                            console.error('Error creating item for reminder:', error);
+                            showMessage('حدث خطأ أثناء إنشاء العنصر للتذكير', 'error');
+                          }
+                        }}
+                        className="bg-orange-600 hover:bg-orange-700 text-white text-sm"
+                        disabled={!itemTitle.trim() || !scheduledAt}
+                      >
+                        <Clock className="w-4 h-4 mr-2" />
+                        ذكرني
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      سيتم إرسال رسالة تذكير قبل ساعتين وساعة واحدة من موعد النشر
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
-                  <Button onClick={onCreateItem} className="bg-green-600 hover:bg-green-700 text-white flex-1">
-                    <Save className="w-4 h-4 mr-2" />
+                  <Button onClick={onCreateItem} className="primary-button  text-white font-bold text-lg flex-1">
+                    
                     حفظ
                   </Button>
                   <Button 
                     onClick={onScheduleItem}
                     disabled={selectedPlatforms.length === 0 || selectedPlatforms.some(p => connections[p] !== true) || !scheduledAt}
-                    className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                    className="primary-button after:bg-yellow-600  text-white font-bold text-lg flex-1"
                     title={
                       selectedPlatforms.length === 0 
                         ? 'اختر منصة واحدة على الأقل' 
@@ -934,13 +1260,16 @@ export default function ContentHomePage() {
                         : 'جدولة العنصر'
                     }
                   >
-                    <Clock className="w-4 h-4 mr-2" />
+                  
                     جدولة
                   </Button>
                   <Button 
-                    onClick={() => setShowCreateItem(false)}
+                    onClick={() => {
+                      setShowCreateItem(false);
+                      setCreatedItemId(null);
+                    }}
                     variant="secondary"
-                    className="flex-1"
+                    className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
                   >
                     إلغاء
                   </Button>
@@ -952,15 +1281,15 @@ export default function ContentHomePage() {
 
         {/* Edit Item Modal */}
         {showEditItem && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50  backdrop-blur-lg  flex items-center justify-center z-50">
+            <div className=" gradient-border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-semibold text-white mb-4">تحرير العنصر</h3>
               <div className="space-y-4">
                 <Input 
                   placeholder="عنوان العنصر" 
                   value={itemTitle} 
                   onChange={(e) => setItemTitle(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-[#011910] border-gray-300 text-white"
                 />
                 
                 <div className="space-y-2">
@@ -968,9 +1297,9 @@ export default function ContentHomePage() {
                     <label className="text-white text-sm">المحتوى</label>
                     <Button
                       onClick={() => setShowAIModal(true)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white text-xs"
+                      className="primary-button after:bg-purple-600  text-white font-bold text-lg"
                     >
-                      <Sparkles className="w-3 h-3 mr-1" />
+                      
                       إنشاء بالذكاء الاصطناعي
                     </Button>
                   </div>
@@ -978,7 +1307,7 @@ export default function ContentHomePage() {
                     placeholder="اكتب المحتوى..." 
                     value={itemBody} 
                     onChange={(e) => setItemBody(e.target.value)}
-                    className="bg-gray-800 border-gray-700 text-white min-h-[100px]"
+                    className="bg-[#011910] border-gray-300 text-white min-h-[100px]"
                   />
                 </div>
 
@@ -989,7 +1318,7 @@ export default function ContentHomePage() {
                     multiple 
                     accept="image/*,video/*"
                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
+                    className="w-full bg-[#011910] border border-gray-300 rounded p-2 text-white"
                   />
                   <div className="flex flex-wrap gap-2">
                     {itemAttachments.map((att, idx) => (
@@ -1052,13 +1381,46 @@ export default function ContentHomePage() {
                     type="datetime-local"
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
+                    className="w-full bg-[#011910] border border-gray-300 rounded p-2 text-white"
                   />
                 </div>
 
+                {/* Reminder Button - Only show if scheduled */}
+                {scheduledAt && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-white text-sm">التذكير</label>
+                      <Button
+                        onClick={() => {
+                          // Create a temporary item for reminder
+                          const tempItem = {
+                            id: editingItem?.id || Date.now(),
+                            title: itemTitle,
+                            scheduledAt: scheduledAt,
+                            categoryId: selectedCategory?.id || 0,
+                            attachments: itemAttachments,
+                            status: 'draft',
+                            platforms: selectedPlatforms,
+                            body: itemBody
+                          } as ContentItem;
+                          onSetReminder(tempItem);
+                        }}
+                        className="bg-orange-600 hover:bg-orange-700 text-white text-sm"
+                        disabled={!itemTitle.trim() || !scheduledAt}
+                      >
+                        <Clock className="w-4 h-4 mr-2" />
+                        ذكرني
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      سيتم إرسال رسالة تذكير قبل ساعتين وساعة واحدة من موعد النشر
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
-                  <Button onClick={onUpdateItem} className="bg-green-600 hover:bg-green-700 text-white flex-1">
-                    <Save className="w-4 h-4 mr-2" />
+                  <Button onClick={onUpdateItem} className="primary-button a text-white font-bold text-lg flex-1">
+                    
                     تحديث
                   </Button>
                   <Button 
@@ -1079,6 +1441,7 @@ export default function ContentHomePage() {
                     جدولة
                   </Button>
                   <Button 
+                  className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
                     onClick={() => {
                       setShowEditItem(false);
                       setEditingItem(null);
@@ -1089,7 +1452,7 @@ export default function ContentHomePage() {
                       setScheduledAt("");
                     }}
                     variant="secondary"
-                    className="flex-1"
+                    
                   >
                     إلغاء
                   </Button>
@@ -1101,15 +1464,15 @@ export default function ContentHomePage() {
 
         {/* AI Content Generator Modal */}
         {showAIModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 max-w-lg w-full mx-4">
+          <div className="fixed inset-0 bg-black/50  backdrop-blur-lg  flex items-center justify-center z-50">
+            <div className=" gradient-border rounded-lg p-6 max-w-lg w-full mx-4">
               <h3 className="text-lg font-semibold text-white mb-4">إنشاء المحتوى بالذكاء الاصطناعي</h3>
               <div className="space-y-4">
                 <Textarea 
                   placeholder="اكتب البروميت الخاص بك..." 
                   value={aiPrompt} 
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white min-h-[100px]"
+                  className="bg-[#011910] border-gray-300 text-white min-h-[100px]"
                 />
                 
                 {aiGeneratedContent && (
@@ -1125,7 +1488,7 @@ export default function ContentHomePage() {
                   <Button 
                     onClick={generateAIContentHandler} 
                     disabled={isGenerating || !aiPrompt.trim()}
-                    className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
+                    className="primary-button   text-white font-bold text-lg flex-1"
                   >
                     {isGenerating ? 'جاري الإنشاء...' : 'إنشاء المحتوى'}
                   </Button>
@@ -1139,6 +1502,7 @@ export default function ContentHomePage() {
                     </Button>
                   )}
                   <Button 
+                  className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
                     onClick={() => {
                       setShowAIModal(false);
                       setAiPrompt("");
@@ -1156,8 +1520,8 @@ export default function ContentHomePage() {
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="fixed inset-0 bg-black/70  backdrop-blur-lg  flex items-center justify-center z-999">
+            <div className=" gradient-border rounded-lg p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold text-white mb-4">تأكيد الحذف</h3>
               <div className="space-y-4">
                 {categoryToDelete && (
@@ -1202,6 +1566,119 @@ export default function ContentHomePage() {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Reminder Modal */}
+        {showReminderModal && itemToRemind && (
+          <div className="fixed inset-0 bg-black/70  backdrop-blur-lg  flex items-center justify-center z-999">
+            <div className=" gradient-border rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold text-white mb-4">إعداد تذكير</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-gray-300 mb-2">العنصر:</p>
+                  <p className="text-white font-medium">{itemToRemind.title}</p>
+                  <p className="text-gray-400 text-sm">
+                    مجدول في: {itemToRemind.scheduledAt ? new Date(itemToRemind.scheduledAt).toLocaleString('en-US') : 'غير محدد'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-white text-sm">رقم الواتساب</label>
+                  <Input 
+                    placeholder="مثال: +966501234567" 
+                    value={reminderWhatsApp} 
+                    onChange={(e) => setReminderWhatsApp(e.target.value)}
+                    className="bg-[#011910] border-gray-300 text-white"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-white text-sm">رسالة التذكير</label>
+                  <Textarea 
+                    placeholder="اكتب رسالة التذكير..." 
+                    value={reminderMessage} 
+                    onChange={(e) => setReminderMessage(e.target.value)}
+                    className="bg-[#011910] border-gray-300 text-white min-h-[80px]"
+                  />
+                  <p className="text-gray-300 text-xs">
+                    سيتم إرسال هذه الرسالة قبل ساعتين وساعة واحدة من موعد النشر
+                  </p>
+                </div>
+
+                {/* WhatsApp Connection Warning */}
+                <div className="bg-yellow-900 border border-yellow-700 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="text-yellow-400 mt-0.5">⚡</div>
+                    <div className="flex-1">
+                      <p className="text-yellow-200 text-sm font-medium mb-1">تلميح</p>
+                      <p className="text-yellow-300 text-xs">
+                        للحصول على التذكيرات، تأكد من أن جلسة الواتساب الخاصة بك نشطة عند موعد إرسال التذكير.
+                        سيتم إرسال التذكيرات تلقائياً إذا كانت الجلسة متصلة.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={onCreateReminder}
+                    disabled={!reminderWhatsApp.trim() || !reminderMessage.trim()}
+                    className="primary-button text-white font-bold text-lg flex-1"
+                  >
+                  
+                    إعداد التذكير
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setShowReminderModal(false);
+                      setReminderWhatsApp("");
+                      setReminderMessage("");
+                      setItemToRemind(null);
+                    }}
+                    variant="secondary"
+                    className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
+                  >
+                    إلغاء
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Message Modal */}
+        {showMessageModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center gap-3 mb-4">
+                {messageType === 'success' && (
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 text-lg">✓</span>
+                  </div>
+                )}
+                {messageType === 'error' && (
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 text-lg">✗</span>
+                  </div>
+                )}
+                {messageType === 'info' && (
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 text-lg">ℹ</span>
+                  </div>
+                )}
+                <h3 className="text-lg font-semibold text-white">
+                  {messageType === 'success' ? 'نجح' : messageType === 'error' ? 'خطأ' : 'معلومة'}
+                </h3>
+              </div>
+              <p className="text-gray-300 mb-6">{messageText}</p>
+              <Button 
+                onClick={() => setShowMessageModal(false)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                موافق
+              </Button>
             </div>
           </div>
         )}

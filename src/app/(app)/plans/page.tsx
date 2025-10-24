@@ -38,7 +38,7 @@ export default function PlansPage() {
     
     setLoading(true);
     listPlans(token)
-      .then((res) => setPlans(res.plans.filter(plan => plan.isActive)))
+      .then((res) => setPlans(res.plans))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [token]);
@@ -169,7 +169,7 @@ export default function PlansPage() {
                     <div className="space-y-2">
                       {/* Selected Platforms */}
                       <div className="flex flex-wrap gap-1">
-                        {permissions.platforms?.map((platform) => {
+                        {(permissions as any).platforms?.map((platform: string) => {
                           const platformInfo = availablePlatforms.find(p => p.key === platform);
                           return (
                             <span key={platform} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -181,10 +181,10 @@ export default function PlansPage() {
                       </div>
                       
                       {/* Unselected Platforms */}
-                      {permissions.platforms && permissions.platforms.length > 0 && (
+                      {(permissions as any).platforms && (permissions as any).platforms.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {availablePlatforms
-                            .filter(p => !permissions.platforms?.includes(p.key))
+                            .filter(p => !(permissions as any).platforms?.includes(p.key))
                             .map((platform) => (
                               <span key={platform.key} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 <XCircle className="h-3 w-3 mr-1" />
@@ -195,7 +195,7 @@ export default function PlansPage() {
                       )}
                       
                       {/* No Platforms Selected */}
-                      {(!permissions.platforms || permissions.platforms.length === 0) && (
+                      {(!(permissions as any).platforms || (permissions as any).platforms.length === 0) && (
                         <div className="flex flex-wrap gap-1">
                           {availablePlatforms.map((platform) => (
                             <span key={platform.key} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -216,7 +216,7 @@ export default function PlansPage() {
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-xs font-medium text-gray-700">المنشورات الشهرية:</span>
                       <span className="text-xs font-bold text-blue-600">
-                        {permissions.monthlyPosts === -1 ? 'غير محدود' : permissions.monthlyPosts || 0}
+                        {(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts || 0}
                       </span>
                     </div>
 
@@ -224,13 +224,13 @@ export default function PlansPage() {
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-xs font-medium text-gray-700">إدارة الواتساب:</span>
                       <div className="flex items-center gap-1">
-                        {permissions.canManageWhatsApp ? (
+                        {(permissions as any).canManageWhatsApp ? (
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
-                            {permissions.whatsappMessagesPerMonth > 0 && (
+                            {(permissions as any).whatsappMessagesPerMonth > 0 && (
                               <span className="text-xs text-gray-500">
-                                ({permissions.whatsappMessagesPerMonth === -1 ? 'غير محدود' : permissions.whatsappMessagesPerMonth}/شهر)
+                                ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth}/شهر)
                               </span>
                             )}
                           </>
@@ -247,7 +247,7 @@ export default function PlansPage() {
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-xs font-medium text-gray-700">إدارة التليجرام:</span>
                       <div className="flex items-center gap-1">
-                        {permissions.canManageTelegram ? (
+                        {(permissions as any).canManageTelegram ? (
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
@@ -265,7 +265,7 @@ export default function PlansPage() {
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-xs font-medium text-gray-700">تكامل سلة:</span>
                       <div className="flex items-center gap-1">
-                        {permissions.canSallaIntegration ? (
+                        {(permissions as any).canSallaIntegration ? (
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
@@ -283,10 +283,84 @@ export default function PlansPage() {
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-xs font-medium text-gray-700">إدارة المحتوى:</span>
                       <div className="flex items-center gap-1">
-                        {permissions.canManageContent ? (
+                        {(permissions as any).canManageContent ? (
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Customer Management */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">إدارة العملاء:</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canManageCustomers ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Service Marketing */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">تسويق الخدمات:</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canMarketServices ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {(permissions as any).maxServices > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({(permissions as any).maxServices} خدمة)
+                              </span>
+                            )}
+                            {(permissions as any).maxServices === 0 && (
+                              <span className="text-xs text-gray-500">
+                                (غير محدود)
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Employee Management */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">إدارة الموظفين:</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canManageEmployees ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {(permissions as any).maxEmployees > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({(permissions as any).maxEmployees} موظف)
+                              </span>
+                            )}
+                            {(permissions as any).maxEmployees === 0 && (
+                              <span className="text-xs text-gray-500">
+                                (غير محدود)
+                              </span>
+                            )}
                           </>
                         ) : (
                           <>

@@ -51,11 +51,22 @@ export default function PlansAdminPage() {
     permissions: {
       platforms: [] as string[],
       monthlyPosts: 0,
+      canSchedule: false,
+      canAnalytics: false,
+      canTeamManagement: false,
+      maxTeamMembers: 0,
+      canCustomBranding: false,
+      prioritySupport: false,
       canManageWhatsApp: false,
       whatsappMessagesPerMonth: 0,
       canManageTelegram: false,
       canSallaIntegration: false,
-      canManageContent: false
+      canManageContent: false,
+      canManageCustomers: false,
+      canMarketServices: false,
+      maxServices: 0,
+      canManageEmployees: false,
+      maxEmployees: 0
     }
   });
 
@@ -67,11 +78,22 @@ export default function PlansAdminPage() {
     permissions: {
       platforms: [] as string[],
       monthlyPosts: 0,
+      canSchedule: false,
+      canAnalytics: false,
+      canTeamManagement: false,
+      maxTeamMembers: 0,
+      canCustomBranding: false,
+      prioritySupport: false,
       canManageWhatsApp: false,
       whatsappMessagesPerMonth: 0,
       canManageTelegram: false,
       canSallaIntegration: false,
-      canManageContent: false
+      canManageContent: false,
+      canManageCustomers: false,
+      canMarketServices: false,
+      maxServices: 0,
+      canManageEmployees: false,
+      maxEmployees: 0
     }
   });
 
@@ -119,11 +141,22 @@ export default function PlansAdminPage() {
         permissions: {
           platforms: [],
           monthlyPosts: 0,
+          canSchedule: false,
+          canAnalytics: false,
+          canTeamManagement: false,
+          maxTeamMembers: 0,
+          canCustomBranding: false,
+          prioritySupport: false,
           canManageWhatsApp: false,
           whatsappMessagesPerMonth: 0,
           canManageTelegram: false,
           canSallaIntegration: false,
-          canManageContent: false
+          canManageContent: false,
+          canManageCustomers: false,
+          canMarketServices: false,
+          maxServices: 0,
+          canManageEmployees: false,
+          maxEmployees: 0
         }
       });
       loadPlans();
@@ -176,11 +209,22 @@ export default function PlansAdminPage() {
       permissions: plan.permissions || {
         platforms: [],
         monthlyPosts: 0,
+        canSchedule: false,
+        canAnalytics: false,
+        canTeamManagement: false,
+        maxTeamMembers: 0,
+        canCustomBranding: false,
+        prioritySupport: false,
         canManageWhatsApp: false,
         whatsappMessagesPerMonth: 0,
         canManageTelegram: false,
         canSallaIntegration: false,
-        canManageContent: false
+        canManageContent: false,
+        canManageCustomers: false,
+        canMarketServices: false,
+        maxServices: 0,
+        canManageEmployees: false,
+        maxEmployees: 0
       }
     });
     setEditModalOpen(true);
@@ -251,7 +295,26 @@ export default function PlansAdminPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan) => {
             const { price, period } = formatPrice(plan.priceCents, plan.interval);
-            const permissions = plan.permissions || {};
+            const permissions = plan.permissions || {
+              platforms: [],
+              monthlyPosts: 0,
+              canSchedule: false,
+              canAnalytics: false,
+              canTeamManagement: false,
+              maxTeamMembers: 0,
+              canCustomBranding: false,
+              prioritySupport: false,
+              canManageWhatsApp: false,
+              whatsappMessagesPerMonth: 0,
+              canManageTelegram: false,
+              canSallaIntegration: false,
+              canManageContent: false,
+              canManageCustomers: false,
+              canMarketServices: false,
+              maxServices: 0,
+              canManageEmployees: false,
+              maxEmployees: 0
+            };
             
             return (
               <Card key={plan.id} className="relative">
@@ -405,6 +468,80 @@ export default function PlansAdminPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Customer Management */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">إدارة العملاء:</span>
+                      <div className="flex items-center gap-1">
+                        {permissions.canManageCustomers ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Employee Management */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">إدارة الموظفين:</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canManageEmployees ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {(permissions as any).maxEmployees > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({(permissions as any).maxEmployees} موظف)
+                              </span>
+                            )}
+                            {(permissions as any).maxEmployees === 0 && (
+                              <span className="text-xs text-gray-500">
+                                (غير محدود)
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Service Marketing */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">تسويق الخدمات:</span>
+                      <div className="flex items-center gap-1">
+                        {permissions.canMarketServices ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {permissions.maxServices > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({permissions.maxServices} خدمة)
+                              </span>
+                            )}
+                            {permissions.maxServices === 0 && (
+                              <span className="text-xs text-gray-500">
+                                (غير محدود)
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -548,7 +685,7 @@ export default function PlansAdminPage() {
                 />
                 <Button
                   type="button"
-                  variant={newPlan.permissions.monthlyPosts === -1 ? "default" : "outline"}
+                  variant={newPlan.permissions.monthlyPosts === -1 ? "default" : "secondary"}
                   onClick={() => setNewPlan({
                     ...newPlan,
                     permissions: { ...newPlan.permissions, monthlyPosts: newPlan.permissions.monthlyPosts === -1 ? 0 : -1 }
@@ -578,6 +715,96 @@ export default function PlansAdminPage() {
                   />
                   <span>إدارة المحتوى</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Customer Management */}
+            <div>
+              <Label>إدارة العملاء</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newPlan.permissions.canManageCustomers}
+                    onChange={(e) => setNewPlan({
+                      ...newPlan,
+                      permissions: { ...newPlan.permissions, canManageCustomers: e.target.checked }
+                    })}
+                  />
+                  <span>إدارة العملاء</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">السماح بإدارة قاعدة بيانات العملاء واشتراكاتهم</p>
+              </div>
+            </div>
+
+            {/* Employee Management */}
+            <div>
+              <Label>إدارة الموظفين</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={newPlan.permissions.canManageEmployees}
+                    onChange={(e) => setNewPlan({
+                      ...newPlan,
+                      permissions: { ...newPlan.permissions, canManageEmployees: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل إدارة الموظفين</span>
+                </label>
+                {newPlan.permissions.canManageEmployees && (
+                  <div>
+                    <Label>الحد الأقصى للموظفين</Label>
+                    <Input
+                      type="number"
+                      value={newPlan.permissions.maxEmployees}
+                      onChange={(e) => setNewPlan({
+                        ...newPlan,
+                        permissions: { ...newPlan.permissions, maxEmployees: parseInt(e.target.value) || 0 }
+                      })}
+                      placeholder="0 = غير محدود"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">0 = غير محدود</p>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">السماح بإضافة وإدارة الموظفين وصلاحياتهم</p>
+              </div>
+            </div>
+
+            {/* Service Marketing */}
+            <div>
+              <Label>تسويق الخدمات</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={newPlan.permissions.canMarketServices}
+                    onChange={(e) => setNewPlan({
+                      ...newPlan,
+                      permissions: { ...newPlan.permissions, canMarketServices: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل تسويق الخدمات</span>
+                </label>
+                {newPlan.permissions.canMarketServices && (
+                  <div>
+                    <Label>عدد الخدمات المسموح بها</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="عدد الخدمات (0 = غير محدود)"
+                      value={newPlan.permissions.maxServices || ''}
+                      onChange={(e) => setNewPlan({
+                        ...newPlan,
+                        permissions: { ...newPlan.permissions, maxServices: parseInt(e.target.value) || 0 }
+                      })}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      عدد الخدمات التي يمكن للمستخدم تسويقها. اترك 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -612,7 +839,7 @@ export default function PlansAdminPage() {
                       />
                       <Button
                         type="button"
-                        variant={newPlan.permissions.whatsappMessagesPerMonth === -1 ? "default" : "outline"}
+                        variant={newPlan.permissions.whatsappMessagesPerMonth === -1 ? "default" : "secondary"}
                         onClick={() => setNewPlan({
                           ...newPlan,
                           permissions: { ...newPlan.permissions, whatsappMessagesPerMonth: newPlan.permissions.whatsappMessagesPerMonth === -1 ? 0 : -1 }
@@ -669,7 +896,7 @@ export default function PlansAdminPage() {
             <div className="flex justify-end gap-2">
               <Button
                 onClick={() => setCreateModalOpen(false)}
-                variant="outline"
+                variant="secondary"
               >
                 إلغاء
               </Button>
@@ -802,7 +1029,7 @@ export default function PlansAdminPage() {
                 />
                 <Button
                   type="button"
-                  variant={editPlan.permissions.monthlyPosts === -1 ? "default" : "outline"}
+                  variant={editPlan.permissions.monthlyPosts === -1 ? "default" : "secondary"}
                   onClick={() => setEditPlan({
                     ...editPlan,
                     permissions: { ...editPlan.permissions, monthlyPosts: editPlan.permissions.monthlyPosts === -1 ? 0 : -1 }
@@ -832,6 +1059,96 @@ export default function PlansAdminPage() {
                   />
                   <span>إدارة المحتوى</span>
                 </label>
+              </div>
+            </div>
+
+            {/* Customer Management */}
+            <div>
+              <Label>إدارة العملاء</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={editPlan.permissions.canManageCustomers}
+                    onChange={(e) => setEditPlan({
+                      ...editPlan,
+                      permissions: { ...editPlan.permissions, canManageCustomers: e.target.checked }
+                    })}
+                  />
+                  <span>إدارة العملاء</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">السماح بإدارة قاعدة بيانات العملاء واشتراكاتهم</p>
+              </div>
+            </div>
+
+            {/* Employee Management */}
+            <div>
+              <Label>إدارة الموظفين</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={editPlan.permissions.canManageEmployees}
+                    onChange={(e) => setEditPlan({
+                      ...editPlan,
+                      permissions: { ...editPlan.permissions, canManageEmployees: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل إدارة الموظفين</span>
+                </label>
+                {editPlan.permissions.canManageEmployees && (
+                  <div>
+                    <Label>الحد الأقصى للموظفين</Label>
+                    <Input
+                      type="number"
+                      value={editPlan.permissions.maxEmployees}
+                      onChange={(e) => setEditPlan({
+                        ...editPlan,
+                        permissions: { ...editPlan.permissions, maxEmployees: parseInt(e.target.value) || 0 }
+                      })}
+                      placeholder="0 = غير محدود"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">0 = غير محدود</p>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">السماح بإضافة وإدارة الموظفين وصلاحياتهم</p>
+              </div>
+            </div>
+
+            {/* Service Marketing */}
+            <div>
+              <Label>تسويق الخدمات</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={editPlan.permissions.canMarketServices}
+                    onChange={(e) => setEditPlan({
+                      ...editPlan,
+                      permissions: { ...editPlan.permissions, canMarketServices: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل تسويق الخدمات</span>
+                </label>
+                {editPlan.permissions.canMarketServices && (
+                  <div>
+                    <Label>عدد الخدمات المسموح بها</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="عدد الخدمات (0 = غير محدود)"
+                      value={editPlan.permissions.maxServices || ''}
+                      onChange={(e) => setEditPlan({
+                        ...editPlan,
+                        permissions: { ...editPlan.permissions, maxServices: parseInt(e.target.value) || 0 }
+                      })}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      عدد الخدمات التي يمكن للمستخدم تسويقها. اترك 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -866,7 +1183,7 @@ export default function PlansAdminPage() {
                       />
                       <Button
                         type="button"
-                        variant={editPlan.permissions.whatsappMessagesPerMonth === -1 ? "default" : "outline"}
+                        variant={editPlan.permissions.whatsappMessagesPerMonth === -1 ? "default" : "secondary"}
                         onClick={() => setEditPlan({
                           ...editPlan,
                           permissions: { ...editPlan.permissions, whatsappMessagesPerMonth: editPlan.permissions.whatsappMessagesPerMonth === -1 ? 0 : -1 }
@@ -923,7 +1240,7 @@ export default function PlansAdminPage() {
             <div className="flex justify-end gap-2">
               <Button
                 onClick={() => setEditModalOpen(false)}
-                variant="outline"
+                variant="secondary"
               >
                 إلغاء
               </Button>

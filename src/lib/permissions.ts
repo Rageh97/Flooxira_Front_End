@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { apiFetch } from './api';
 
 interface UserPermissions {
@@ -10,6 +10,11 @@ interface UserPermissions {
   canManageTelegram: boolean;
   canSallaIntegration: boolean;
   canManageContent: boolean;
+  canManageCustomers: boolean;
+  canMarketServices: boolean;
+  maxServices: number;
+  canManageEmployees: boolean;
+  maxEmployees: number;
 }
 
 interface Subscription {
@@ -30,11 +35,7 @@ export function usePermissions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadPermissions();
-  }, []);
-
-  const loadPermissions = async () => {
+  const loadPermissions = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("auth_token");
@@ -42,6 +43,23 @@ export function usePermissions() {
         setPermissions(null);
         setSubscription(null);
         return;
+      }
+
+      // Check if user is an employee first
+      try {
+        console.log('Checking if user is employee...');
+        const employeeResponse = await apiFetch('/api/employees/me', { authToken: token });
+        console.log('Employee response:', employeeResponse);
+        if (employeeResponse.success) {
+          // User is an employee - use employee permissions
+          console.log('User is employee, permissions:', employeeResponse.employee.permissions);
+          setPermissions(employeeResponse.employee.permissions);
+          setSubscription(null); // Employees don't have subscriptions
+          return;
+        }
+      } catch (error) {
+        console.log('Not an employee, error:', error);
+        // Not an employee, continue with owner logic
       }
 
       // Try multiple endpoints to find the correct one
@@ -95,7 +113,11 @@ export function usePermissions() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadPermissions();
+  }, [loadPermissions]);
 
   const hasPermission = (permission: keyof UserPermissions): boolean => {
     if (!permissions) return false;
@@ -123,6 +145,14 @@ export function usePermissions() {
     return hasPermission('canSallaIntegration');
   };
 
+  const canManageCustomers = (): boolean => {
+    return hasPermission('canManageCustomers');
+  };
+
+  const canMarketServices = (): boolean => {
+    return hasPermission('canMarketServices');
+  };
+
   const getWhatsAppMessagesLimit = (): number => {
     return permissions?.whatsappMessagesPerMonth || 0;
   };
@@ -131,11 +161,32 @@ export function usePermissions() {
     return permissions?.monthlyPosts || 0;
   };
 
-  const hasActiveSubscription = (): boolean => {
-    return Boolean(subscription?.status === 'active' && 
+  const getMaxServices = (): number => {
+    return permissions?.maxServices || 0;
+  };
+
+  const canManageEmployees = (): boolean => {
+    return Boolean(permissions?.canManageEmployees);
+  };
+
+  const getMaxEmployees = (): number => {
+    return permissions?.maxEmployees || 0;
+  };
+
+  const hasActiveSubscription = useMemo((): boolean => {
+    // إذا كان موظف، يعتبر لديه اشتراك نشط (لأن المالك لديه اشتراك)
+    if (permissions && !permissions.canManageEmployees) {
+      console.log('Employee has active subscription (inherited from owner)');
+      return true;
+    }
+    
+    // للمالك، يتحقق من الـ subscription
+    const isActive = Boolean(subscription?.status === 'active' && 
            subscription?.expiresAt && 
            new Date(subscription.expiresAt) > new Date());
-  };
+    console.log('Owner subscription status:', isActive, subscription);
+    return isActive;
+  }, [subscription, permissions]);
 
   return {
     permissions,
@@ -148,8 +199,13 @@ export function usePermissions() {
     canManageTelegram,
     canManageContent,
     canSallaIntegration,
+    canManageCustomers,
+    canMarketServices,
+    canManageEmployees,
     getWhatsAppMessagesLimit,
     getMonthlyPostsLimit,
+    getMaxServices,
+    getMaxEmployees,
     hasActiveSubscription,
     reloadPermissions: loadPermissions
   };

@@ -120,7 +120,7 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
       const instagram = instagramAccounts.find(ig => ig.instagramId === instagramId);
       
       if (instagram) {
-        await selectInstagramAccount(token, instagramId, instagram.username);
+        await selectInstagramAccount(token, instagram.pageId, instagramId, instagram.username);
         setSelectedInstagram(instagramId);
         
         // Complete the setup

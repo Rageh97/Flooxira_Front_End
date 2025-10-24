@@ -30,13 +30,13 @@ import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 
 const PLATFORMS = {
-  facebook: { name: "Facebook", icon: "👥", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
-  instagram: { name: "Instagram", icon: "📷", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/instagram` },
-  youtube: { name: "YouTube", icon: "▶️", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/youtube` },
-  tiktok: { name: "TikTok", icon: "🎵", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/tiktok` },
-  linkedin: { name: "LinkedIn", icon: "💼", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/linkedin` },
-  pinterest: { name: "Pinterest", icon: "📌", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/pinterest` },
-  twitter: { name: "Twitter (X)", icon: "𝕏", connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/twitter` }
+  facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
+  instagram: { name: "Instagram", icon: <img className="w-12 h-12" src="/insta.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/instagram` },
+  youtube: { name: "YouTube", icon: <img className="w-12 h-12" src="/youtube.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/youtube` },
+  // tiktok: { name: "TikTok", icon: <img className="w-10 h-10" src="/tiktok.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/tiktok` },
+  linkedin: { name: "LinkedIn", icon: <img className="w-12 h-12" src="/linkedin.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/linkedin` },
+  // pinterest: { name: "Pinterest", icon: <img className="w-10 h-10" src="/pinterest.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/pinterest` },
+  twitter: { name: "Twitter (X)", icon: <img className="w-12 h-12" src="/x.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/twitter` }
 };
 
 function SettingsContent() {
@@ -50,7 +50,7 @@ function SettingsContent() {
   const [showFacebookSelection, setShowFacebookSelection] = useState<boolean>(false);
   const [showYouTubeSelection, setShowYouTubeSelection] = useState<boolean>(false);
   const [availableFacebookPages, setAvailableFacebookPages] = useState<any[]>([]);
-  const [currentFacebookPage, setCurrentFacebookPage] = useState<{pageId: string, pageName: string, fanCount: number} | null>(null);
+  const [currentFacebookPage, setCurrentFacebookPage] = useState<{pageId: string, pageName: string, fanCount: number, instagramId?: string, instagramUsername?: string} | null>(null);
   const [showFacebookPageManager, setShowFacebookPageManager] = useState<boolean>(false);
   const [creds, setCreds] = useState<Record<string, { clientId: string; redirectUri?: string }>>({});
   const [edit, setEdit] = useState<{ platform: string; clientId: string; clientSecret: string; redirectUri?: string } | null>(null);
@@ -210,25 +210,60 @@ function SettingsContent() {
   // Load Facebook pages and current page
   const loadFacebookPages = async () => {
     try {
-      if (!token) return;
+      if (!token) {
+        console.log('❌ No token available');
+        return;
+      }
       
       // Load available pages
+      console.log('🔄 Loading Facebook pages...');
+      console.log('📝 Token exists:', token ? 'Yes' : 'No');
+      
       const pagesData = await getAvailableFacebookPages(token);
-      if (pagesData.success) {
-        setAvailableFacebookPages(pagesData.pages || []);
+      
+      console.log('📦 Full pages data received:', JSON.stringify(pagesData, null, 2));
+      console.log('✅ Success:', pagesData.success);
+      console.log('📄 Pages array:', pagesData.pages);
+      console.log('📊 Pages count:', pagesData.pages?.length || 0);
+      
+      if (pagesData.success && pagesData.pages && Array.isArray(pagesData.pages)) {
+        console.log('✅ Setting available pages:', pagesData.pages.length);
+        console.log('📋 Pages list:', pagesData.pages);
+        setAvailableFacebookPages(pagesData.pages);
+        
+        if (pagesData.pages.length === 0) {
+          alert('⚠️ لم يتم العثور على صفحات Facebook.\n\nتأكد من:\n1. أنك تملك صفحة (وليس حساب شخصي فقط)\n2. أن التطبيق لديه صلاحيات pages_read_engagement');
+        }
+      } else {
+        console.log('❌ No pages data or not successful');
+        console.log('Response:', pagesData);
+        setAvailableFacebookPages([]);
+        
+        if (pagesData.message) {
+          alert(`⚠️ ${pagesData.message}`);
+        }
       }
       
       // Load current page
       const currentPageData = await getCurrentFacebookPage(token);
+      console.log('Current page data:', currentPageData);
+      
       if (currentPageData.success) {
         setCurrentFacebookPage({
           pageId: currentPageData.pageId,
           pageName: currentPageData.pageName,
-          fanCount: currentPageData.fanCount
+          fanCount: currentPageData.fanCount,
+          instagramId: currentPageData.instagramId,
+          instagramUsername: currentPageData.instagramUsername
         });
       }
     } catch (error) {
-      console.error('Error loading Facebook pages:', error);
+      console.error('❌ Error loading Facebook pages:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      alert(`خطأ في تحميل الصفحات:\n\n${error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}\n\nتحقق من Console للمزيد من التفاصيل`);
     }
   };
 
@@ -238,15 +273,15 @@ function SettingsContent() {
       if (!token) return;
       
       await switchFacebookPage(token, pageId, pageName);
-      setCurrentFacebookPage({
-        pageId,
-        pageName,
-        fanCount: 0 // Will be updated when page info is fetched
-      });
       setShowFacebookPageManager(false);
       
-      // Reload pages to get updated info
+      // Reload pages to get updated info including Instagram
       await loadFacebookPages();
+      
+      // Reload platform details to update Instagram info
+      if (connectedPlatforms.includes('instagram')) {
+        await loadPlatformDetails('instagram');
+      }
     } catch (error) {
       console.error('Error switching Facebook page:', error);
       alert('فشل في تغيير صفحة Facebook');
@@ -266,6 +301,14 @@ function SettingsContent() {
       loadFacebookPages();
     }
   }, [connectedPlatforms, token, currentFacebookPage]);
+
+  // Load Instagram details when currentFacebookPage has Instagram
+  useEffect(() => {
+    if (currentFacebookPage?.instagramId && token) {
+      console.log('📷 Instagram detected, loading details...');
+      loadPlatformDetails('instagram');
+    }
+  }, [currentFacebookPage?.instagramId, token]);
 
   // Load platform details
   const loadPlatformDetails = async (platform: string) => {
@@ -328,7 +371,7 @@ function SettingsContent() {
     );
   }
 
-  if (!hasActiveSubscription()) {
+  if (!hasActiveSubscription) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold text-white">إعدادات الحساب</h1>
@@ -421,172 +464,50 @@ function SettingsContent() {
 
   return (
     <div className="space-y-8">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg p-6 border border-blue-500/30">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">إعدادات النظام</h1>
-            <p className="text-gray-300 text-lg">إدارة شاملة لاتصالات المنصات الاجتماعية والتكاملات</p>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-400">الحالة</div>
-            <div className="text-green-400 font-medium">🟢 متصل</div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Platform Connections */}
-      <Card className="card-gradient-green-teal card-hover-effect">
-        <CardHeader className="border-b border-teal-500/20">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-white">اتصالات المنصات</h2>
-            <div className="text-teal-400">🔗</div>
-          </div>
-          <p className="text-sm text-gray-300">إدارة اتصالاتك مع المنصات الاجتماعية</p>
+  <Card className="bg-dark-custom border-none inner-shadow">
+        <CardHeader className="border-text-primary/50 text-white">
+          <h2 className="text-lg font-semibold">ملخص الاتصالات</h2>
         </CardHeader>
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Object.entries(PLATFORMS)
-              .filter(([key, platform]) => hasPlatformAccess(key))
-              .map(([key, platform]) => {
-              const isConnected = isPlatformConnected(key);
-              
-              return (
-                <Card key={key} className={`card-hover-effect ${
-                  isConnected ? 'card-gradient-green' : 'card-default'
-                }`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-center mb-4">
-                      <div className="flex flex-col items-center justify-center space-x-3">
-                        <div className="text-2xl">{platform.icon}</div>
-                        <div>
-                          <h3 className="font-semibold text-primary">{platform.name}</h3>
-                          <div className="flex items-center space-x-2">
-                            <div className={`w-3 h-3 rounded-full ${
-                              isConnected ? 'bg-green-500' : 'bg-red-500'
-                            }`}></div>
-                            <span className={`text-sm ${
-                              isConnected ? 'status-online' : 'status-offline'
-                            }`}>
-                              {isConnected ? 'متصل' : 'غير متصل'}
-                            </span>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 gradient-border rounded-lg border border-green-500/30">
+              <div className="text-2xl font-bold text-green-400">{connectedPlatforms.length}</div>
+              <div className="text-sm text-white">منصات متصلة</div>
             </div>
-                  </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 ">
-                      {isConnected ? (
-                        <div className="space-y-2 ">
-                          <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => handleDisconnect(key)}
-                            disabled={processing === key}
-                          >
-                            {processing === key ? 'جاري قطع الاتصال...' : 'قطع الاتصال'}
-                          </Button>
-                          <p className="text-xs text-green-600 text-center">
-                            يمكنك الآن النشر على {platform.name}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <Button
-                            size="sm" 
-                            className="w-full button-primary"
-                            onClick={() => handleConnect(key)}
-                            disabled={processing === key}
-                          >
-                            {processing === key ? 'جاري المعالجة...' : 'ربط الحساب'}
-                          </Button>
-                          <p className="text-xs text-gray-500 text-center">
-                            قم بربط حسابك للنشر على {platform.name}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            <div className="text-center p-4 gradient-border rounded-lg border border-green-600/30">
+              <div className="text-2xl font-bold text-green-600">{Object.keys(PLATFORMS).length - connectedPlatforms.length}</div>
+              <div className="text-sm text-gray-300">منصات غير متصلة</div>
             </div>
+            <div className="text-center p-4 gradient-border rounded-lg border border-green-200/30">
+              <div className="text-2xl font-bold text-green-100">{Math.round((connectedPlatforms.length / Object.keys(PLATFORMS).length) * 100)}%</div>
+              <div className="text-sm text-white">نسبة الاتصال</div>
+            </div>
+            <div className="text-center p-4 gradient-border rounded-lg border border-green-100/30">
+              <div className="text-2xl font-bold text-green-50">{Object.keys(PLATFORMS).length}</div>
+              <div className="text-sm text-white">إجمالي المنصات</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
+      
+     
 
-      {/* Facebook Page Management */}
-      {connectedPlatforms.includes('facebook') && (
-        <Card className="bg-card border-none">
-          <CardHeader className="border-text-primary/50 text-primary">
-            <h2 className="text-lg font-semibold">إدارة صفحة Facebook</h2>
-            <p className="text-sm text-gray-400">اختر صفحة Facebook للنشر عليها</p>
-          </CardHeader>
-          <CardContent>
-            {currentFacebookPage ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="text-2xl">👥</div>
-                    <div>
-                      <div className="font-semibold text-blue-900">{currentFacebookPage.pageName}</div>
-                      <div className="text-sm text-blue-700">
-                        {currentFacebookPage.fanCount} معجب • الصفحة النشطة للنشر
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                </div>
-                
-                <Button 
-                  onClick={() => {
-                    setShowFacebookPageManager(true);
-                    loadFacebookPages(); // Load pages when opening modal
-                  }}
-                  variant="secondary"
-                  className="w-full"
-                >
-                  تغيير صفحة Facebook
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-4">👥</div>
-                <h3 className="text-lg font-semibold text-gray-600 mb-2">لا توجد صفحة محددة</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  اختر صفحة Facebook للنشر عليها
-                </p>
-                <Button 
-                  onClick={() => {
-                    setShowFacebookPageManager(true);
-                    loadFacebookPages(); // Load pages when opening modal
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  اختيار صفحة Facebook
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">
+      <Card className="gradient-border">
+        <CardHeader className="border-text-primary/50 text-white">
           <h2 className="text-lg font-semibold">تكوين تطبيقات المنصات لكل مستخدم</h2>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {Object.entries(PLATFORMS).map(([key, platform]) => (
-              <Card key={`creds-${key}`} className="border-none bg-semidark-custom">
+              <Card key={`creds-${key}`} className="border-none inner-shadow bg-dark-custom">
                 <CardContent className="p-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center">
+                    <div className="flex items-center flex-col space-x-2">
                       <div className="text-xl">{platform.icon}</div>
                       <div className="font-semibold text-primary">{platform.name}</div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-300">
+                  <div className="text-xs text-gray-300 text-center">
                     <div>Client ID: {creds[key]?.clientId ? <span className="text-green-500">محدد</span> : <span className="text-red-500">غير محدد</span>}</div>
                     {creds[key]?.redirectUri && (<div>Redirect URI: <span className="break-all">{creds[key]?.redirectUri}</span></div>)}
                   </div>
@@ -623,7 +544,7 @@ function SettingsContent() {
           )}
 
           {edit && (
-            <div className="mt-4 p-4 bg-light-custom rounded-lg space-y-3">
+            <div className="mt-4 p-4 bg-[#011910] rounded-lg space-y-3">
               <div className="text-sm text-primary font-semibold">تعديل إعدادات {PLATFORMS[edit.platform as keyof typeof PLATFORMS].name}</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input className="px-3 py-2 rounded bg-white text-black" placeholder="Client ID" value={edit.clientId} onChange={e => setEdit({ ...edit, clientId: e.target.value })} />
@@ -631,13 +552,161 @@ function SettingsContent() {
                 <input className="px-3 py-2 rounded bg-white text-black" placeholder="Redirect URI (اختياري)" value={edit.redirectUri || ''} onChange={e => setEdit({ ...edit, redirectUri: e.target.value })} />
               </div>
               <div className="flex gap-2">
-                <Button size="sm" className="button-primary" onClick={async () => { await upsertPlatformCredential(token, edit.platform, { clientId: edit.clientId, clientSecret: edit.clientSecret, redirectUri: edit.redirectUri }); setEdit(null); await loadCredentials(); }}>حفظ</Button>
-                <Button size="sm" variant="secondary" onClick={() => setEdit(null)}>إلغاء</Button>
+                <Button size="sm" className="primary-button" onClick={async () => { 
+                  try {
+                    await upsertPlatformCredential(token, edit.platform, { clientId: edit.clientId, clientSecret: edit.clientSecret, redirectUri: edit.redirectUri }); 
+                    setEdit(null); 
+                    await loadCredentials();
+                    alert('تم حفظ الإعدادات بنجاح');
+                  } catch (error: any) {
+                    console.error('Error saving credentials:', error);
+                    alert(`خطأ في حفظ الإعدادات: ${error.message || 'حدث خطأ غير متوقع'}`);
+                  }
+                }}>حفظ</Button>
+                <Button size="sm" className="primary-button after:bg-red-500" onClick={() => setEdit(null)}>إلغاء</Button>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* .......................... */}
+       {/* Platform Connections */}
+       <Card className="gradient-border">
+        <CardHeader className="border-b border-teal-500/20">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">اتصالات المنصات</h2>
+            <div className="text-teal-400">🔗</div>
+          </div>
+          <p className="text-sm text-gray-300">إدارة اتصالاتك مع المنصات الاجتماعية</p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {Object.entries(PLATFORMS)
+              .filter(([key, platform]) => hasPlatformAccess(key))
+              .map(([key, platform]) => {
+              const isConnected = isPlatformConnected(key);
+              
+              return (
+                <Card key={key} className={`border-none inner-shadow ${
+                  isConnected ? 'card-gradient-green' : 'bg-dark-custom'
+                }`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-center mb-4">
+                      <div className="flex flex-col items-center justify-center space-x-3">
+                        <div className="text-2xl">{platform.icon}</div>
+                        <div className="flex items-center justify-center flex-col gap-1">
+                          <h3 className="font-semibold text-primary">{platform.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              isConnected ? 'bg-green-500' : 'bg-red-500'
+                            }`}></div>
+                            <span className={`text-sm ${
+                              isConnected ? 'status-online' : 'status-offline'
+                            }`}>
+                              {isConnected ? 'متصل' : 'غير متصل'}
+                            </span>
+            </div>
+                  </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 ">
+                      {isConnected ? (
+                        <div className="space-y-2 ">
+                          <Button 
+                           
+                            size="sm" 
+                            className="w-full bg-red-500 text-white"
+                            onClick={() => handleDisconnect(key)}
+                            disabled={processing === key}
+                          >
+                            {processing === key ? 'جاري قطع الاتصال...' : 'قطع الاتصال'}
+                          </Button>
+                          <p className="text-xs text-white text-center">
+                            يمكنك الآن النشر على {platform.name}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Button
+                            size="sm" 
+                            className="w-full button-primary"
+                            onClick={() => handleConnect(key)}
+                            disabled={processing === key}
+                          >
+                            {processing === key ? 'جاري المعالجة...' : 'ربط الحساب'}
+                          </Button>
+                          <p className="text-xs text-gray-500 text-center">
+                            قم بربط حسابك للنشر على {platform.name}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+            </div>
+        </CardContent>
+      </Card>
+      {/* Facebook Page Management */}
+      {connectedPlatforms.includes('facebook') && (
+        <Card className="bg-card border-none">
+          <CardHeader className="border-text-primary/50 text-primary">
+            <h2 className="text-lg font-semibold">إدارة صفحة Facebook</h2>
+            <p className="text-sm text-gray-400">اختر صفحة Facebook للنشر عليها</p>
+          </CardHeader>
+          <CardContent>
+            {currentFacebookPage ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <img className="w-10 h-10" src="/facebook.gif" alt="" />
+                    <div>
+                      <div className="font-semibold text-blue-900">{currentFacebookPage.pageName}</div>
+                      <div className="text-sm text-blue-700">
+                        {currentFacebookPage.fanCount} معجب • الصفحة النشطة للنشر
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                </div>
+                
+                <Button 
+                  onClick={() => {
+                    setShowFacebookPageManager(true);
+                    loadFacebookPages(); // Load pages when opening modal
+                  }}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  تغيير صفحة Facebook
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                                   <img className="w-10 h-10" src="/facebook.gif" alt="" />
+
+                <h3 className="text-lg font-semibold text-gray-600 mb-2">لا توجد صفحة محددة</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  اختر صفحة Facebook للنشر عليها
+                </p>
+                <Button 
+                  onClick={() => {
+                    setShowFacebookPageManager(true);
+                    loadFacebookPages(); // Load pages when opening modal
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  اختيار صفحة Facebook
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
 
       {/* Platform Details Section */}
       {connectedPlatforms.length > 0 && (
@@ -652,7 +721,8 @@ function SettingsContent() {
               {isPlatformConnected('facebook') && (
                 <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="text-3xl">👥</div>
+                  <img className="w-10 h-10" src="/facebook.gif" alt="" />
+
                     <div>
                       <h3 className="font-bold text-blue-900">صفحة Facebook</h3>
                       <p className="text-sm text-blue-700">الصفحة المحددة للنشر</p>
@@ -682,7 +752,7 @@ function SettingsContent() {
               )}
 
               {/* Instagram Account */}
-              {isPlatformConnected('facebook') && platformDetails.facebook?.instagramId && (
+              {isPlatformConnected('facebook') && currentFacebookPage?.instagramId && (
                 <div className="p-6 bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="text-3xl">📷</div>
@@ -697,7 +767,7 @@ function SettingsContent() {
                     <div className="space-y-2">
                       <div className="text-sm">
                         <span className="font-semibold text-pink-900">اسم المستخدم:</span>
-                        <span className="text-pink-700 ml-2">@{platformDetails.instagram.username || 'غير محدد'}</span>
+                        <span className="text-pink-700 ml-2">@{platformDetails.instagram.username || currentFacebookPage.instagramUsername || 'غير محدد'}</span>
                       </div>
                       <div className="text-sm">
                         <span className="font-semibold text-pink-900">المتابعون:</span>
@@ -709,7 +779,13 @@ function SettingsContent() {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-pink-600">فشل في تحميل التفاصيل</div>
+                    <div className="space-y-2">
+                      <div className="text-sm">
+                        <span className="font-semibold text-pink-900">اسم المستخدم:</span>
+                        <span className="text-pink-700 ml-2">@{currentFacebookPage.instagramUsername || 'غير محدد'}</span>
+                      </div>
+                      {/* <div className="text-sm text-pink-600">جاري تحميل التفاصيل الإضافية...</div> */}
+                    </div>
                   )}
                 </div>
               )}
@@ -865,31 +941,7 @@ function SettingsContent() {
         }}
       />
 
-      <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">
-          <h2 className="text-lg font-semibold">ملخص الاتصالات</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-500/30">
-              <div className="text-2xl font-bold text-green-400">{connectedPlatforms.length}</div>
-              <div className="text-sm text-white">منصات متصلة</div>
-            </div>
-            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-600/30">
-              <div className="text-2xl font-bold text-green-600">{Object.keys(PLATFORMS).length - connectedPlatforms.length}</div>
-              <div className="text-sm text-gray-300">منصات غير متصلة</div>
-            </div>
-            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-200/30">
-              <div className="text-2xl font-bold text-green-100">{Math.round((connectedPlatforms.length / Object.keys(PLATFORMS).length) * 100)}%</div>
-              <div className="text-sm text-white">نسبة الاتصال</div>
-            </div>
-            <div className="text-center p-4 bg-white/10 rounded-lg border border-green-100/30">
-              <div className="text-2xl font-bold text-green-50">{Object.keys(PLATFORMS).length}</div>
-              <div className="text-sm text-white">إجمالي المنصات</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    
 
       {/* Facebook Page Manager Modal */}
       {showFacebookPageManager && (
@@ -902,27 +954,40 @@ function SettingsContent() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {availableFacebookPages.map((page) => (
-                  <div
-                    key={page.id}
-                    className={`flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-gray-50 ${
-                      currentFacebookPage?.pageId === page.id ? 'border-blue-500 bg-blue-50' : ''
-                    }`}
-                    onClick={() => handleSwitchFacebookPage(page.id, page.name)}
+              {availableFacebookPages.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">لا توجد صفحات متاحة أو جاري التحميل...</p>
+                  <Button
+                    onClick={loadFacebookPages}
+                    variant="secondary"
+                    className="mb-2"
                   >
-                    <div>
-                      <p className="font-medium">{page.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {page.fan_count ? `${page.fan_count} معجب` : '0 معجب'}
-                      </p>
+                    إعادة التحميل
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {availableFacebookPages.map((page) => (
+                    <div
+                      key={page.id}
+                      className={`flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-gray-50 ${
+                        currentFacebookPage?.pageId === page.id ? 'border-blue-500 bg-blue-50' : ''
+                      }`}
+                      onClick={() => handleSwitchFacebookPage(page.id, page.name)}
+                    >
+                      <div>
+                        <p className="font-medium">{page.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {page.fan_count ? `${page.fan_count} معجب` : '0 معجب'}
+                        </p>
+                      </div>
+                      {currentFacebookPage?.pageId === page.id && (
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      )}
                     </div>
-                    {currentFacebookPage?.pageId === page.id && (
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
               <div className="flex gap-2 mt-4">
                 <Button
                   onClick={() => setShowFacebookPageManager(false)}
@@ -966,3 +1031,4 @@ export default function SettingsPage() {
     </Suspense>
   );
 }
+

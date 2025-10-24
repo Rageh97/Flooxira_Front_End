@@ -61,9 +61,15 @@ export interface PersonalityTemplate {
   farewellPrompt: string;
 }
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export interface AvailableModels {
-  openai: string[];
-  gemini: string[];
+  openai: ModelInfo[];
+  gemini: ModelInfo[];
 }
 
 export interface TestResponse {

@@ -116,11 +116,11 @@ export default function MySubscriptionRequestsPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">طلبات الاشتراك الخاصة بي</h1>
-          <p className="text-sm text-gray-600">متابعة حالة طلبات الاشتراك</p>
+          <h1 className="text-2xl font-semibold text-white">طلبات الاشتراك الخاصة بي</h1>
+          <p className="text-sm text-white">متابعة حالة طلبات الاشتراك</p>
         </div>
         <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحميل...</p>
+          <p className="text-white">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -129,8 +129,8 @@ export default function MySubscriptionRequestsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-800">طلبات الاشتراك الخاصة بي</h1>
-        <p className="text-sm text-gray-600">متابعة حالة طلبات الاشتراك</p>
+        <h1 className="text-2xl font-semibold text-white">طلبات الاشتراك الخاصة بي</h1>
+        <p className="text-sm text-white">متابعة حالة طلبات الاشتراك</p>
       </div>
 
       {/* Requests List */}
@@ -181,7 +181,7 @@ export default function MySubscriptionRequestsPage() {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-gray-600">تاريخ الطلب:</span>
-                          <span>{new Date(request.createdAt).toLocaleDateString('ar-SA')}</span>
+                          <span>{new Date(request.createdAt).toLocaleDateString('en-US')}</span>
                         </div>
                       </div>
                     </div>

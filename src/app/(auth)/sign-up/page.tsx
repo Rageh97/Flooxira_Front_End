@@ -24,28 +24,28 @@ export default function SignUpPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 ">
       <div>
-        <h1 className="text-xl font-semibold">إنشاء حساب</h1>
+        <h1 className="text-xl font-semibold text-white">إنشاء حساب</h1>
       </div>
       <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
         <div>
-          <label className="block text-sm font-medium mb-1">الاسم</label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" />
+          <label className="block text-sm font-medium mb-1 text-white">الاسم</label>
+          <Input className="placeholder-white/60 text-white"  value={name} onChange={(e) => setName(e.target.value)} placeholder="اسمك" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">البريد الإلكتروني</label>
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
+          <label className="block text-sm font-medium mb-1 text-white">البريد الإلكتروني</label>
+          <Input className="placeholder-white/60 text-white" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">رقم الهاتف</label>
-          <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1234567890" />
+          <label className="block text-sm font-medium mb-1 text-white">رقم الهاتف</label>
+          <Input className="placeholder-white/60 text-white" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1234567890" />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">كلمة المرور</label>
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          <label className="block text-sm font-medium mb-1 text-white">كلمة المرور</label>
+          <Input className="placeholder-white/60 text-white" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
-        <div className="text-sm">لديك حساب بالفعل؟ <Link href="/sign-in" className="text-gray-700 hover:underline">تسجيل الدخول</Link></div>
+        <div className="text-sm text-white">لديك حساب بالفعل؟ <Link href="/sign-in" className="text-gray-300 hover:underline">تسجيل الدخول</Link></div>
         <Button className="w-full" disabled={mutation.isPending}>{mutation.isPending ? "جاري الإنشاء..." : "إنشاء حساب"}</Button>
         {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
       </form>

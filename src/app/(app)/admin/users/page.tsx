@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { getAllUsers } from "@/lib/api";
 
 type User = {
@@ -15,10 +17,15 @@ type User = {
 };
 
 export default function UsersAdminPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [token, setToken] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const usersPerPage = 10;
 
   // Read token from localStorage only on the client
   useEffect(() => {
@@ -31,11 +38,15 @@ export default function UsersAdminPage() {
     if (!token) return;
     
     setLoading(true);
-    getAllUsers(token)
-      .then((res) => setUsers(res.users))
+    getAllUsers(token, currentPage, usersPerPage)
+      .then((res) => {
+        setUsers(res.users);
+        setTotalPages(res.totalPages || 1);
+        setTotalUsers(res.total || 0);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, currentPage]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -45,6 +56,10 @@ export default function UsersAdminPage() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleUserClick = (userId: number) => {
+    router.push(`/admin/users/${userId}`);
   };
 
   if (loading) {
@@ -71,7 +86,7 @@ export default function UsersAdminPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">إدارة المستخدمين</h2>
-        <span className="text-sm text-gray-300">{users.length} إجمالي المستخدمين</span>
+        <span className="text-sm text-gray-300">{totalUsers} إجمالي المستخدمين</span>
       </div>
       
       <Card className="bg-card border-none">
@@ -98,7 +113,11 @@ export default function UsersAdminPage() {
                 </thead>
                 <tbody className="text-center">
                   {users.map((user) => (
-                    <tr key={user.id} className="border-b border-gray-600 hover:bg-gray-700/30">
+                    <tr 
+                      key={user.id} 
+                      className="border-b border-gray-600 hover:bg-gray-700/30 cursor-pointer transition-colors"
+                      onClick={() => handleUserClick(user.id)}
+                    >
                       <td className="py-3 px-4 text-sm text-gray-300">{user.id}</td>
                       <td className="py-3 px-4 text-sm font-medium text-white">
                         {user.name || 'لا يوجد اسم'}
@@ -133,6 +152,53 @@ export default function UsersAdminPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card className="bg-card border-none">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                عرض {((currentPage - 1) * usersPerPage) + 1} - {Math.min(currentPage * usersPerPage, totalUsers)} من {totalUsers} مستخدم
+              </div>
+              <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  السابق
+                </Button>
+                <div className="flex items-center space-x-1 rtl:space-x-reverse">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "secondary"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  التالي
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

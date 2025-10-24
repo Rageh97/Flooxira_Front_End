@@ -32,7 +32,7 @@ export default function LinkedInPage() {
     );
   }
 
-  if (!hasActiveSubscription()) {
+  if (!hasActiveSubscription) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">LinkedIn</h1>

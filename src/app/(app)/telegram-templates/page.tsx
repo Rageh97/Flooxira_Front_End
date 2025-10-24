@@ -112,35 +112,55 @@ export default function TelegramTemplatesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">جاري تحميل القوالب...</p>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500 mx-auto"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-2xl">📝</span>
+            </div>
+          </div>
+          <p className="mt-6 text-emerald-300 text-lg font-semibold">جاري تحميل القوالب...</p>
+          <div className="mt-2 flex justify-center gap-1">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">📝 Telegram Templates</h1>
-          <p className="text-gray-600">إدارة القوالب التفاعلية للتيليجرام</p>
+        <div className="mb-8 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl mb-4 shadow-lg">
+            <span className="text-3xl">📝</span>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent mb-2">
+            Telegram Templates
+          </h1>
+          <p className="text-gray-400 text-lg">إدارة القوالب التفاعلية للتيليجرام بسهولة واحترافية</p>
         </div>
+
         {/* Action Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-center">
+        <div className="card-gradient-green-dark border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">إدارة القوالب</h2>
-              <p className="text-gray-600 mt-1">إنشاء وتعديل القوالب التفاعلية</p>
+              <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                إدارة القوالب
+              </h2>
+              <p className="text-emerald-200/80">إنشاء وتعديل القوالب التفاعلية بكل سهولة</p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center gap-2"
+              className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-3.5 rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 font-bold flex items-center gap-2 shadow-lg hover:shadow-emerald-500/50 hover:scale-105"
             >
-              ➕ إضافة قالب جديد
+              <span className="text-xl">➕</span>
+              إضافة قالب جديد
             </button>
           </div>
         </div>
@@ -149,62 +169,75 @@ export default function TelegramTemplatesPage() {
         <AutoReplyPanel templates={templates} />
 
         {/* Test Templates */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">🧪 اختبار القوالب</h3>
-          <div className="flex gap-4 items-end">
+        <div className="card-gradient-green-emerald border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-2xl">🧪</span>
+            اختبار القوالب
+          </h3>
+          <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">رسالة الاختبار</label>
+              <label className="block text-sm font-semibold text-emerald-200 mb-2">رسالة الاختبار</label>
               <input
                 type="text"
                 placeholder="اكتب رسالة لاختبار القوالب..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-gray-500"
                 value={testMessage}
                 onChange={(e) => setTestMessage(e.target.value)}
               />
             </div>
             <button
               onClick={handleTestTemplate}
-              className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors font-semibold"
+              className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-bold shadow-lg hover:shadow-green-500/50 hover:scale-105 whitespace-nowrap"
             >
-              اختبار
+              ✨ اختبار الآن
             </button>
           </div>
           
           {testResult && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-md">
+            <div className="mt-4 p-4 bg-gray-800/50 rounded-xl border border-emerald-500/20">
               {testResult.found ? (
                 <div>
-                  <div className="text-green-600 font-semibold mb-2">✅ تم العثور على قالب مطابق!</div>
-                  <div className="text-sm text-gray-700">
-                    <strong>اسم القالب:</strong> {testResult.template.name}<br/>
-                    <strong>الكلمات المفتاحية:</strong> {testResult.template.triggerKeywords?.join(', ')}<br/>
-                    <strong>النص:</strong> {testResult.template.bodyText}
+                  <div className="text-emerald-400 font-bold mb-3 flex items-center gap-2">
+                    <span className="text-xl">✅</span>
+                    تم العثور على قالب مطابق!
+                  </div>
+                  <div className="text-sm text-gray-300 space-y-1 bg-gray-900/50 p-3 rounded-lg">
+                    <div><span className="text-emerald-400 font-semibold">اسم القالب:</span> {testResult.template.name}</div>
+                    <div><span className="text-emerald-400 font-semibold">الكلمات المفتاحية:</span> {testResult.template.triggerKeywords?.join(', ')}</div>
+                    <div><span className="text-emerald-400 font-semibold">النص:</span> {testResult.template.bodyText}</div>
                   </div>
                 </div>
               ) : (
-                <div className="text-orange-600 font-semibold">⚠️ لم يتم العثور على قالب مطابق</div>
+                <div className="text-orange-400 font-bold flex items-center gap-2">
+                  <span className="text-xl">⚠️</span>
+                  لم يتم العثور على قالب مطابق
+                </div>
               )}
             </div>
           )}
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="card-gradient-green-dark border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-xl">🔍</span>
+            تصفية وبحث
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">البحث</label>
+              <label className="block text-sm font-semibold text-emerald-200 mb-2">البحث</label>
               <input
                 type="text"
                 placeholder="ابحث في القوالب..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-gray-500"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">الحالة</label>
+              <label className="block text-sm font-semibold text-emerald-200 mb-2">الحالة</label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
                 value={filters.isActive === undefined ? '' : filters.isActive.toString()}
                 onChange={(e) => setFilters({ 
                   ...filters, 
@@ -217,25 +250,25 @@ export default function TelegramTemplatesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">نوع القالب</label>
+              <label className="block text-sm font-semibold text-emerald-200 mb-2">نوع القالب</label>
               <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
                 value={filters.templateType}
                 onChange={(e) => setFilters({ ...filters, templateType: e.target.value })}
               >
                 <option value="">جميع الأنواع</option>
-                <option value="text">نص</option>
-                <option value="media">وسائط</option>
-                <option value="poll">استطلاع</option>
-                <option value="quiz">اختبار</option>
+                <option value="text">📝 نص</option>
+                <option value="media">🎬 وسائط</option>
+                <option value="poll">📊 استطلاع</option>
+                <option value="quiz">🧠 اختبار</option>
               </select>
             </div>
             <div className="flex items-end">
               <button
                 onClick={() => setFilters({ isActive: undefined, templateType: '', search: '' })}
-                className="w-full bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+                className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-2.5 rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-300 font-semibold shadow-lg hover:scale-105"
               >
-                مسح الفلاتر
+                🔄 مسح الفلاتر
               </button>
             </div>
           </div>
@@ -254,14 +287,17 @@ export default function TelegramTemplatesPage() {
         </div>
 
         {templates.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📱</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد قوالب</h3>
-            <p className="text-gray-600 mb-4">ابدأ بإنشاء قالب تفاعلي جديد للتيليجرام</p>
+          <div className="text-center py-16 card-gradient-green-dark border-emerald-500/20 rounded-2xl border">
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-full mb-6">
+              <span className="text-6xl">📱</span>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">لا توجد قوالب بعد</h3>
+            <p className="text-emerald-200 mb-6 text-lg">ابدأ بإنشاء قالب تفاعلي جديد للتيليجرام</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-8 py-3.5 rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 font-bold shadow-lg hover:shadow-emerald-500/50 hover:scale-105 inline-flex items-center gap-2"
             >
+              <span className="text-xl">✨</span>
               إنشاء أول قالب
             </button>
           </div>
@@ -319,67 +355,75 @@ function TemplateCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="card-gradient-green-dark border-emerald-500/30 rounded-2xl overflow-hidden shadow-xl hover:shadow-emerald-500/20 transition-all duration-300 hover:scale-[1.02] border">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl">{getTemplateTypeIcon(template.templateType)}</span>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-xl flex items-center justify-center">
+              <span className="text-2xl">{getTemplateTypeIcon(template.templateType)}</span>
+            </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{template.name}</h3>
-              <p className="text-sm text-gray-500">{getTemplateTypeLabel(template.templateType)}</p>
+              <h3 className="text-lg font-bold text-white">{template.name}</h3>
+              <p className="text-sm text-emerald-300">{getTemplateTypeLabel(template.templateType)}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className={`px-2 py-1 text-xs rounded-full ${
+          <div className="flex items-center gap-2">
+            <span className={`px-3 py-1 text-xs font-bold rounded-full ${
               template.isActive 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
+                ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg' 
+                : 'bg-red-500/20 text-red-300 border border-red-500/30'
             }`}>
-              {template.isActive ? 'نشط' : 'غير نشط'}
+              {template.isActive ? '✓ نشط' : '✕ غير نشط'}
             </span>
           </div>
         </div>
 
         {template.description && (
-          <p className="text-gray-600 text-sm mb-4">{template.description}</p>
+          <p className="text-gray-300 text-sm mb-4 bg-gray-800/50 p-3 rounded-lg border border-emerald-500/10">{template.description}</p>
         )}
 
-        <div className="text-sm text-gray-500 mb-4">
+        <div className="text-sm text-gray-400 mb-4 bg-gray-900/50 p-3 rounded-lg">
           <p className="truncate">{template.bodyText}</p>
         </div>
 
         {template.mediaUrl && (
-          <div className="mb-4">
-            <div className="text-xs text-gray-500 mb-1">وسائط القالب</div>
-            <a href={template.mediaUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline truncate inline-block max-w-full">
+          <div className="mb-4 bg-gray-800/50 p-3 rounded-lg border border-emerald-500/10">
+            <div className="text-xs text-emerald-400 mb-1 font-semibold">📎 وسائط القالب</div>
+            <a href={template.mediaUrl} target="_blank" rel="noreferrer" className="text-emerald-300 hover:text-emerald-200 underline truncate inline-block max-w-full text-sm">
               {template.mediaUrl}
             </a>
           </div>
         )}
 
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-          <span>{template.buttons?.length || 0} أزرار</span>
-          <span>{template.variables?.length || 0} متغيرات</span>
+        <div className="flex items-center justify-between text-sm mb-4">
+          <div className="flex gap-4">
+            <span className="text-emerald-300 font-semibold bg-emerald-500/10 px-3 py-1 rounded-lg">
+              🔘 {template.buttons?.length || 0} أزرار
+            </span>
+            <span className="text-green-300 font-semibold bg-green-500/10 px-3 py-1 rounded-lg">
+              📊 {template.variables?.length || 0} متغيرات
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <Link
             href={`/telegram-templates/${template.id}`}
-            className="bg-purple-600 text-white px-3 py-2 rounded-md text-sm hover:bg-purple-700 transition-colors"
+            className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2.5 rounded-xl text-sm hover:from-purple-700 hover:to-purple-800 transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
           >
-            إدارة الأزرار
+            🔘 إدارة الأزرار
           </Link>
           <button
             onClick={() => onEdit(template)}
-            className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
+            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-xl text-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-bold shadow-lg hover:scale-105"
           >
-            تعديل
+            ✏️ تعديل
           </button>
           <button
             onClick={() => onDelete(template.id)}
-            className="flex-1 bg-red-600 text-white px-3 py-2 rounded-md text-sm hover:bg-red-700 transition-colors"
+            className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2.5 rounded-xl text-sm hover:from-red-700 hover:to-red-800 transition-all duration-300 font-bold shadow-lg hover:scale-105"
           >
-            حذف
+            🗑️ حذف
           </button>
         </div>
       </div>
@@ -432,20 +476,26 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">⚙️ إعدادات الرد التلقائي</h3>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+    <div className="card-gradient-green-emerald border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+      <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+        <span className="text-2xl">⚙️</span>
+        إعدادات الرد التلقائي
+      </h3>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between bg-gray-800/50 p-4 rounded-xl border border-emerald-500/20">
           <div>
-            <div className="text-sm font-medium text-gray-900">تفعيل الرد التلقائي بقالب محدد</div>
-            <div className="text-xs text-gray-500">سيتم إرسال هذا القالب تلقائياً عند وصول أي رسالة</div>
+            <div className="text-sm font-bold text-white mb-1">تفعيل الرد التلقائي بقالب محدد</div>
+            <div className="text-xs text-emerald-200">سيتم إرسال هذا القالب تلقائياً عند وصول أي رسالة</div>
           </div>
-          <input type="checkbox" checked={autoReplyEnabled} onChange={(e)=>setAutoReplyEnabled(e.target.checked)} />
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked={autoReplyEnabled} onChange={(e)=>setAutoReplyEnabled(e.target.checked)} className="sr-only peer" />
+            <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-green-600"></div>
+          </label>
         </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">القالب الافتراضي</label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-md" value={autoReplyTemplateId} onChange={(e)=>setAutoReplyTemplateId(e.target.value)}>
+            <label className="block text-sm font-semibold text-emerald-200 mb-2">القالب الافتراضي</label>
+            <select className="w-full px-4 py-3 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white" value={autoReplyTemplateId} onChange={(e)=>setAutoReplyTemplateId(e.target.value)}>
               <option value="">بدون</option>
               {templates.filter(t=>t.isActive).map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
@@ -454,8 +504,8 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
           </div>
         </div>
         <div className="flex justify-end">
-          <button onClick={save} disabled={loading} className="bg-emerald-600 text-white px-4 py-2 rounded-md">
-            {loading ? 'جارِ الحفظ...' : 'حفظ الإعدادات'}
+          <button onClick={save} disabled={loading} className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-8 py-3 rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 font-bold shadow-lg hover:shadow-emerald-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+            {loading ? '⏳ جارِ الحفظ...' : '💾 حفظ الإعدادات'}
           </button>
         </div>
       </div>

@@ -150,51 +150,73 @@ export default function WhatsAppGroupsPage() {
         </div>
       )}
 
-      <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">المجموعات</CardHeader>
+      <Card className="gradient-border border-none">
+        <CardHeader className="border-text-primary/50 text-white font-bold text-xl">حملة اعلانية للمجموعات </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Button onClick={handleListGroups} variant="secondary" disabled={loading}>تحديث</Button>
-            <span className="text-sm text-white">{groups.length} مجموعة</span>
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-white">اختر المجموعات</label>
-              <div className="space-y-2 max-h-48 overflow-y-auto border border-text-primary rounded-md p-2">
-                <div className="flex items-center gap-2">
-                  <input className="" type="checkbox" checked={selectedGroupNames.length === groups.length && groups.length > 0} onChange={(e) => setSelectedGroupNames(e.target.checked ? groups.map(g => g.name) : [])} />
-                  <span className="text-sm text-white ">اختر الكل</span>
-                </div>
+          {/* <div className="flex items-center gap-2">
+          <span className="text-sm text-white">{groups.length} </span>
+          </div> */}
+
+
+
+          <div className="flex gap-4">
+
+
+           <div className="w-full flex flex-col gap-4">
+           <div>
+              <label className="block text-sm font-medium mb-2 text-white">اختر المجموعة</label>
+              <select
+                className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none appearance-none"
+                value={selectedGroupNames[0] || ""}
+                onChange={(e) => setSelectedGroupNames(e.target.value ? [e.target.value] : [])}
+              >
+                <option value="">-- اختر مجموعة --</option>
                 {groups.map(g => (
-                  <label key={g.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedGroupNames.includes(g.name)}
-                      onChange={(e) => {
-                        const next = new Set(selectedGroupNames);
-                        if (e.target.checked) next.add(g.name); else next.delete(g.name);
-                        setSelectedGroupNames(Array.from(next));
-                      }}
-                    />
-                    <span className="text-white">{g.name} ({g.participantsCount})</span>
-                  </label>
+                  <option key={g.id} value={g.name}>{g.name} ({g.participantsCount})</option>
                 ))}
-              </div>
+              </select>
             </div>
-            <div className="space-y-3">
+
+            
+            <div className="flex flex-col mt-2.5">
+  <label className="block text-sm font-medium mb-2 text-white">
+    ارفع (صورة / فيديو)
+  </label>
+
+  <div className="relative ">
+    <input
+      id="file-upload"
+      type="file"
+      accept="image/*,video/*"
+      onChange={(e) => setGroupMedia(e.target.files?.[0] || null)}
+      className="hidden"
+    />
+
+    <label
+      htmlFor="file-upload"
+      className="cursor-pointer flex items-center justify-center bg-[#011910] rounded-md  inner-shadow px-4 py-2 text-sm font-medium  hover:text-white transition"
+    >
+      <img className="w-10 h-10" src="/img.gif" alt="" />
+    </label>
+  </div>
+              </div>
+           </div>
+
+
+
+            <div className="w-full flex flex-col gap-4">
+
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">الرسالة</label>
-                <textarea className="w-full px-3 py-2 border border-text-primary outline-none rounded-md bg-gray-700/30 text-white placeholder-white" rows={3} placeholder="اكتب رسالتك... (اختياري إذا تم إرفاق وسائط)" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
+                <textarea className="w-full h-15 px-3 py-2 bg-[#011910] rounded-md text-white inner-shadow outline-none" rows={3} placeholder="اكتب رسالتك التسويقية" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-2 text-white">الوسائط (صورة/فيديو)</label>
-                <input className="text-orange-500" type="file" accept="image/*,video/*" onChange={(e) => setGroupMedia(e.target.files?.[0] || null)} />
-              </div>
+
+
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
                 <input 
                   type="datetime-local" 
-                  className="w-full px-3 py-2 border border-text-primary outline-none rounded-md bg-gray-700/30 text-white" 
+                  className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none" 
                   value={groupScheduleAt} 
                   onChange={(e) => {
                     const value = e.target.value;
@@ -206,31 +228,22 @@ export default function WhatsAppGroupsPage() {
                   }} 
                 />
               </div>
+
             </div>
           </div>
+
+
+
+
           <div className="flex gap-2">
-            <Button onClick={handleSendToGroup} disabled={loading || selectedGroupNames.length === 0 || (!groupMessage && !groupMedia)}>إرسال</Button>
-            <Button onClick={handleExportGroupMembers} disabled={loading || selectedGroupNames.length === 0} variant="secondary">تصدير الأعضاء</Button>
+            <button className="w-50 h-18 primary-button text-white text-2xl font-bold" onClick={handleSendToGroup} disabled={loading || selectedGroupNames.length === 0 || (!groupMessage && !groupMedia)}>إرسال</button>
+            <button className="w-50 primary-button text-white text-xl font-bold after:bg-red-800 before:bg-[#01191080]" onClick={handleExportGroupMembers} disabled={loading || selectedGroupNames.length === 0} variant="secondary">تصدير الأعضاء</button>
           </div>
+
+
         </CardContent>
       </Card>
 
-      {/* <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">نشر الحالة</CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-white">الصورة</label>
-              <input className="text-white" type="file" accept="image/*" onChange={(e) => setStatusImage(e.target.files?.[0] || null)} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-white">التعليق</label>
-              <input className="w-full px-3 py-2 border border-text-primary outline-none rounded-md bg-gray-700/30 text-white placeholder-white" placeholder="اكتب تعليقاً..." value={statusCaption} onChange={(e) => setStatusCaption(e.target.value)} />
-            </div>
-          </div>
-          <Button onClick={handlePostStatus} disabled={loading || !statusImage}>نشر الحالة</Button>
-        </CardContent>
-      </Card> */}
     </div>
   );
 }

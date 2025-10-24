@@ -13,6 +13,10 @@ export function CardContent({ children, className }: PropsWithChildren<{ classNa
 export function CardTitle({ children, className }: PropsWithChildren<{ className?: string }>) {
   return <div className={clsx("text-lg font-semibold", className)}>{children}</div>;
 }
+export function CardDescription({ children, className }: PropsWithChildren<{ className?: string }>) {
+  return <div className={clsx("text-sm text-muted-foreground", className)}>{children}</div>;
+}
+
 
 
 

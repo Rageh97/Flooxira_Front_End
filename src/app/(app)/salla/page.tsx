@@ -43,7 +43,7 @@ export default function SallaEventsPage() {
     );
   }
 
-  if (!hasActiveSubscription()) {
+  if (!hasActiveSubscription) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">تكامل سلة</h1>
@@ -85,12 +85,12 @@ export default function SallaEventsPage() {
   return (
     <div className="space-y-4 text-white">
       <h1 className="text-xl font-semibold">Salla Webhooks</h1>
-      <div className="p-4 border rounded-md space-y-2">
+      <div className="p-4 gradient-border rounded-md space-y-2">
         <div className="text-sm">Your webhook URL:</div>
-        <code className="block break-all bg-black/20 p-2 rounded text-white">{webhookUrl}</code>
+        <code className="block break-all bg-[#011910] p-2 rounded text-white">{webhookUrl}</code>
       </div>
 
-      <div className="p-4 border rounded-md">
+      <div className="p-4 gradient-border rounded-md">
         <h2 className="font-medium mb-2">Recent Events</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {events.map((e) => {

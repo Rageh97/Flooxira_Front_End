@@ -9,10 +9,10 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "md", ...props }, ref) => {
-    const base = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
+    const base = "inline-flex items-center cursor-pointer justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
     const variants: Record<string, string> = {
       default: "bg-black text-white hover:bg-black/90",
-      secondary: "bg-gray-200 hover:bg-gray-300 text-gray-900",
+      secondary: "bg-gray-200  text-gray-900",
       ghost: "bg-transparent hover:bg-gray-100",
       destructive: "bg-red-600 text-white hover:bg-red-700",
     };

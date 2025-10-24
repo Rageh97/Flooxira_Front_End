@@ -8,8 +8,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ className, ...p
     <input
       ref={ref}
       className={clsx(
-        "h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-sm outline-none ring-offset-2 placeholder:text-gray-400",
-        "focus-visible:ring-2 focus-visible:ring-black",
+        "h-9 w-full rounded-lg  bg-[#011910] px-3 py-3 text-sm outline-none border-1 border-gray-300  placeholder:text-gray-400",
+        "",
         className
       )}
       {...props}

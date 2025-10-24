@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { 
   uploadKnowledgeBase, 
   getKnowledgeBase, 
@@ -20,7 +21,8 @@ import {
   telegramBotGetBotChats,
   telegramBotGetContacts,
   telegramBotCreateCampaign,
-  telegramBotListCampaigns
+  telegramBotListCampaigns,
+  telegramBotDisconnect
 } from "@/lib/api";
 import { listTags } from "@/lib/tagsApi";
 import { usePermissions } from "@/lib/permissions";
@@ -31,8 +33,7 @@ export default function TelegramBotPage() {
   const { canManageTelegram, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [knowledgeEntries, setKnowledgeEntries] = useState<Array<{ id: number; keyword: string; answer: string; isActive: boolean }>>([]);
   const [file, setFile] = useState<File | null>(null);
   const [groups, setGroups] = useState<Array<{ id: string; name: string; type: string }>>([]);
@@ -57,7 +58,6 @@ export default function TelegramBotPage() {
   const [campaignWhen, setCampaignWhen] = useState<string>("");
   const [campaignThrottle, setCampaignThrottle] = useState<number>(1500);
   const [campaignMediaUrl, setCampaignMediaUrl] = useState<string>("");
-  const [campaignMediaFile, setCampaignMediaFile] = useState<File | null>(null);
   const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   // Auto-reply & templates admin
@@ -95,6 +95,7 @@ export default function TelegramBotPage() {
       loadBotInfo();
       loadActiveTemplatesList();
       loadBotSettingsUI();
+      loadCampaigns(); // Load campaigns on initial load
       listTags().then(res=> { if (res?.success) setAvailableTags(res.data || []); }).catch(()=>{});
     }
   }, [token]);
@@ -112,6 +113,13 @@ export default function TelegramBotPage() {
     } catch {}
   }, []);
 
+  // Load campaigns when campaigns tab is active
+  useEffect(() => {
+    if (activeTab === 'campaigns' && token) {
+      loadCampaigns();
+    }
+  }, [activeTab, token]);
+
   // Check permissions
   if (permissionsLoading) {
     return (
@@ -124,7 +132,7 @@ export default function TelegramBotPage() {
     );
   }
 
-  if (!hasActiveSubscription()) {
+  if (!hasActiveSubscription) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
@@ -171,7 +179,7 @@ export default function TelegramBotPage() {
         setKnowledgeEntries(data.entries);
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     }
   }
 
@@ -190,8 +198,10 @@ export default function TelegramBotPage() {
   async function loadBotInfo() {
     try {
       const res = await telegramBotInfo(token);
+      console.log('Bot info response:', res); // Debug log
       setBotInfo(res.bot || null);
-    } catch {
+    } catch (e) {
+      console.error('Error loading bot info:', e); // Debug log
       // ignore
     }
   }
@@ -229,9 +239,9 @@ export default function TelegramBotPage() {
           buttonColorDefault: buttonColorDefault || null,
         })
       });
-      setSuccess("تم حفظ الإعدادات");
+      toast.success("تم حفظ الإعدادات");
     } catch (e:any) {
-      setError(e?.message || "فشل في حفظ الإعدادات");
+      toast.error(e?.message || "فشل في حفظ الإعدادات");
     }
   }
 
@@ -243,7 +253,7 @@ export default function TelegramBotPage() {
         setContacts(res.contacts || []);
       }
     } catch (e:any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally { setLoading(false); }
   }
 
@@ -251,20 +261,21 @@ export default function TelegramBotPage() {
     try {
       setLoading(true);
       const res = await telegramBotListCampaigns(token);
+      console.log('Campaigns response:', res); // Debug log
       if (res.success) setCampaigns(res.jobs || []);
     } catch (e:any) {
-      setError(e.message);
+      console.error('Error loading campaigns:', e); // Debug log
+      toast.error(e.message);
     } finally { setLoading(false); }
   }
 
   async function createCampaign() {
     if (selectedTargets.length === 0 || !campaignMessage.trim()) {
-      setError('Select at least one target and enter a message');
+      toast.error('اختر هدف واحد على الأقل وأدخل رسالة');
       return;
     }
     try {
       setLoading(true);
-      setError("");
       const payload: any = { targets: selectedTargets, message: campaignMessage.trim(), throttleMs: campaignThrottle };
       if (campaignMediaUrl.trim()) {
         payload.mediaUrl = campaignMediaUrl.trim();
@@ -275,35 +286,34 @@ export default function TelegramBotPage() {
       }
       const res = await telegramBotCreateCampaign(token, payload);
       if (res.success) {
-        setSuccess('تم جدولة الحملة بنجاح');
+        toast.success('تم جدولة الحملة بنجاح');
         setCampaignMessage('');
         setCampaignWhen('');
         setSelectedTargets([]);
         await loadCampaigns();
       }
     } catch (e:any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally { setLoading(false); }
   }
 
   async function sendCampaignNow() {
     if (selectedTargets.length === 0 || !campaignMessage.trim()) {
-      setError('Select at least one target and enter a message');
+      toast.error('اختر هدف واحد على الأقل وأدخل رسالة');
       return;
     }
     try {
       setLoading(true);
-      setError("");
       const payload: any = { targets: selectedTargets, message: campaignMessage.trim(), throttleMs: campaignThrottle };
       if (campaignMediaUrl.trim()) payload.mediaUrl = campaignMediaUrl.trim();
       await telegramBotCreateCampaign(token, payload);
-      setSuccess('تم إرسال الحملة الآن');
+      toast.success('تم إرسال الحملة الآن');
       setCampaignMessage('');
       setCampaignMediaUrl('');
       setSelectedTargets([]);
       await loadCampaigns();
     } catch (e:any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally { setLoading(false); }
   }
 
@@ -314,10 +324,10 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetChat(token, chatId);
       if (res.success) {
         setChatInfo(res.chat);
-        setSuccess("تم تحميل معلومات المحادثة!");
+        toast.success("تم تحميل معلومات المحادثة!");
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -330,10 +340,10 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetChatAdmins(token, chatId);
       if (res.success) {
         setChatAdmins(res.administrators || []);
-        setSuccess("تم تحميل الأدمن!");
+        toast.success("تم تحميل الأدمن!");
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -343,15 +353,14 @@ export default function TelegramBotPage() {
     if (!chatId || !promoteMemberId) return;
     try {
       setLoading(true);
-      setError("");
       const res = await telegramBotPromoteMember(token, chatId, promoteMemberId, permissions);
       if (res.success) {
-        setSuccess("تم ترقية العضو بنجاح!");
+        toast.success("تم ترقية العضو بنجاح!");
         setPromoteMemberId("");
         await loadChatAdmins();
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -363,10 +372,10 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetUpdates(token);
       if (res.success) {
         setUpdates(res.updates || []);
-        setSuccess("تم تحميل التحديثات!");
+        toast.success("تم تحميل التحديثات!");
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -383,10 +392,10 @@ export default function TelegramBotPage() {
           members: res.members || [],
           note: res.note || ''
         });
-        setSuccess("تم تحميل الأعضاء!");
+        toast.success("تم تحميل الأعضاء!");
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -396,13 +405,12 @@ export default function TelegramBotPage() {
     if (!chatId) return;
     try {
       setLoading(true);
-      setError("");
       const res = await telegramBotExportMembers(token, chatId);
       if (res.success) {
-        setSuccess(`Excel file downloaded: ${res.filename}`);
+        toast.success(`تم تحميل ملف Excel: ${res.filename}`);
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -414,10 +422,10 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetBotChats(token);
       if (res.success) {
         setBotChats(res.chats || []);
-        setSuccess(`تم العثور على ${res.total || 0} محادثة حيث بوتك نشط!`);
+        toast.success(`تم العثور على ${res.total || 0} محادثة حيث بوتك نشط!`);
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -428,17 +436,16 @@ export default function TelegramBotPage() {
     
     try {
       setLoading(true);
-      setError("");
       const result = await uploadKnowledgeBase(token, file);
       if (result.success) {
-        setSuccess("تم رفع قاعدة المعرفة بنجاح!");
+        toast.success("تم رفع قاعدة المعرفة بنجاح!");
         setFile(null);
         await loadKnowledgeBase();
       } else {
-        setError(result.message || "فشل الرفع");
+        toast.error(result.message || "فشل الرفع");
       }
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -449,7 +456,7 @@ export default function TelegramBotPage() {
       await deleteKnowledgeEntry(token, id);
       await loadKnowledgeBase();
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     }
   }
 
@@ -459,9 +466,9 @@ export default function TelegramBotPage() {
       // Save OpenAI key and auto-response settings
       localStorage.setItem('telegram_openai_key', openaiKey);
       localStorage.setItem('telegram_auto_response', autoResponse.toString());
-      setSuccess("تم حفظ الإعدادات بنجاح!");
+      toast.success("تم حفظ الإعدادات بنجاح!");
     } catch (e: any) {
-      setError(e.message);
+      toast.error(e.message);
     } finally {
       setLoading(false);
     }
@@ -469,9 +476,9 @@ export default function TelegramBotPage() {
 
   const tabs = [
     { id: "overview", name: "نظرة عامة", icon: "🤖" },
-    { id: "chat-management", name: "إدارة المحادثات", icon: "👥" },
+    // { id: "chat-management", name: "إدارة المحادثات", icon: "👥" },
     { id: "admin-tools", name: "أدوات الإدارة", icon: "⚙️" },
-    { id: "groups", name: "مجموعاتي والقنوات", icon: "🏢" },
+    // { id: "groups", name: "مجموعاتي والقنوات", icon: "🏢" },
     { id: "contacts", name: "جهات الاتصال", icon: "👤" },
     { id: "campaigns", name: "الحملات", icon: "📣" },
     
@@ -503,122 +510,32 @@ export default function TelegramBotPage() {
         </CardContent>
       </Card> */}
 
-      {/* Status Messages */}
-      {error && (
-        <div className="rounded-md p-4 bg-red-50 text-red-700">
-          {error}
-        </div>
-      )}
 
-      {success && (
-        <div className="rounded-md p-4 bg-green-50 text-green-700">
-          {success}
-        </div>
-      )}
+  
 
-      {/* Bot Connection Status */}
-      <Card className="bg-card border-none">
-        <CardHeader className="border-text-primary/50 text-primary">
-          <h3 className="text-lg font-semibold text-white">حالة البوت</h3>
-        </CardHeader>
-        <CardContent className="space-y-4">
-         
-          {botInfo ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <div>
-                    <div className="text-white font-medium">@{botInfo.username}</div>
-                    <div className="text-gray-400 text-sm">{botInfo.name} • ID: {botInfo.botUserId}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={async () => {
-                      try {
-                        setLoading(true);
-                        setError("");
-                        const res = await telegramBotTest(token);
-                        if (res.success) {
-                          setSuccess(`Bot test successful! Can join groups: ${res.bot?.can_join_groups}`);
-                        } else {
-                          setError(res.message || "Bot test failed");
-                        }
-                      } catch (e: any) {
-                        setError(e.message || "Bot test failed");
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    disabled={loading}
-                  >
-                    {loading ? 'جاري الاختبار...' : 'اختبار البوت'}
-                  </Button>
-                  <div className="text-green-500 text-sm">متصل</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="md:col-span-2">
-                <Input
-                  placeholder="123456:ABC-DEF..."
-                  value={botToken}
-                  onChange={(e) => setBotToken(e.target.value)}
-                />
-              </div>
-              <div>
-                <Button
-                  className="w-full"
-                  disabled={loading || !botToken}
-                  onClick={async () => {
-                    try {
-                      setLoading(true);
-                      setError("");
-                      setSuccess("");
-                      const res = await telegramBotConnect(token, botToken);
-                      if (res.success) {
-                        setSuccess("تم ربط البوت بنجاح");
-                        setBotToken("");
-                        await loadBotInfo();
-                      } else {
-                        setError(res.message || "فشل في ربط البوت");
-                      }
-                    } catch (e: any) {
-                      setError(e.message || "فشل في ربط البوت");
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                >
-                  {loading ? 'جاري الاتصال...' : 'ربط البوت'}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
 
       {/* Route-based content only (no inner tabs) */}
-      {botInfo && (
-          <div className="mt-6">{renderTabContent()}</div>
-      )}
-    </div>
+      <div className="mt-8">
+        <div className="mb-6">
+          {/* <h2 className="text-xl font-semibold text-white mb-2">نظرة عامة</h2> */}
+          {/* <p className="text-gray-400 text-sm">استخدم الأدوات أدناه لإدارة بوت التليجرام الخاص بك</p> */}
+        </div>
+        {renderTabContent()}
+      </div>
+        </div>
   );
 
   function renderTabContent() {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
-      case "chat-management":
-        return renderChatManagementTab();
+      // case "chat-management":
+      //   return renderChatManagementTab();
       case "admin-tools":
         return renderAdminToolsTab();
-      case "groups":
-        return renderGroupsTab();
+      // case "groups":
+      //   return renderGroupsTab();
       case "contacts":
         return renderContactsTab();
       case "campaigns":
@@ -630,91 +547,288 @@ export default function TelegramBotPage() {
 
   function renderOverviewTab() {
     return (
-      <Card className="bg-card border-none">
-        {/* <CardHeader>
-          <h3 className="text-lg font-semibold text-white">Bot Overview</h3>
-          <p className="text-sm text-gray-400">Manage your Telegram bot configuration and AI responses</p>
+    <>
+      {/* Bot Connection Status */}
+      <Card className="gradient-border">
+        <CardHeader className="border-text-primary/50 text-primary">
+          <div className="flex items-center justify-between gap-3">
+         
+           
+           
+                <div className="flex items-center gap-3">
+            <img className="w-14 h-14" src="/Bot.gif" alt="" />
+             <div className="flex flex-col gap-1">
+             <h3 className="text-lg font-semibold text-white">حالة البوت</h3>
+             <p className="text-sm text-gray-400">إدارة اتصال بوت التليجرام</p>
+                  </div>
+                </div>
+            <div className="text-center">
+                {/* <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white text-2xl">🔌</span>
+                </div> */}
+                 {/* Disconnect Button */}
+              {botInfo && (
+              <div className="flex justify-center">
+                <Button
+                  className="primary-button after:bg-red-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+                  disabled={loading}
+                    onClick={async () => {
+                      try {
+                        setLoading(true);
+                      const res = await telegramBotDisconnect(token);
+                        if (res.success) {
+                        toast.success("تم قطع اتصال البوت بنجاح");
+                        setBotInfo(null);
+                        } else {
+                        toast.error(res.message || "فشل في قطع اتصال البوت");
+                        }
+                      } catch (e: any) {
+                      toast.error(e.message || "فشل في قطع اتصال البوت");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>جاري قطع الاتصال...</span>
+                </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span>🔌</span>
+                      <span>قطع الاتصال</span>
+                </div>
+                  )}
+                </Button>
+              </div>
+              )}
+               
+              </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-2 text-white">OpenAI API Key</label>
-              <Input
-                type="password"
-                placeholder="sk-..."
-                value={openaiKey}
-                onChange={(e) => setOpenaiKey(e.target.value)}
-                className="w-full"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                Enable AI-powered responses using OpenAI
-              </p>
+          {botInfo ? (
+            <div className="space-y-6">
+              {/* Bot Info Display */}
+              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+              <div className="flex items-center justify-between">
+                 
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-green-400 text-sm font-medium">متصل</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    
+                  <div className="flex items-end gap-1 flex-col">
+                      <div className="text-white font-semibold text-lg">@{botInfo.username || 'غير محدد'}</div>
+                      <div className="text-gray-400 text-sm">{botInfo.name || 'غير محدد'}</div>
+                      <div className="text-gray-500 text-xs">ID: {botInfo.botUserId || 'غير محدد'}</div>
+                  </div>
+                  <div className="w-15 h-15  rounded-full flex items-center justify-center">
+                      <img className="w-15 h-15" src="/bott.gif" alt="" />
+                    </div>
+                </div>
+                </div>
+              </div>
+
+             
             </div>
-            <div className="flex items-center space-x-3 pt-8">
-              <input
-                type="checkbox"
-                id="auto-response"
-                checked={autoResponse}
-                onChange={(e) => setAutoResponse(e.target.checked)}
-                className="rounded"
-              />
-              <label htmlFor="auto-response" className="text-sm text-white">
-                Enable Auto Response to Messages
-              </label>
+          ) : (
+            <div className="space-y-4">
+              {/* Bot Connection Status */}
+              <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-red-400 text-sm font-medium">غير متصل</span>
+                </div>
+                <p className="text-red-300 text-sm">البوت غير متصل. يرجى إدخال توكن البوت للاتصال.</p>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">توكن البوت</label>
+                  <Input
+                    placeholder="أدخل توكن البوت من @BotFather"
+                    value={botToken}
+                    onChange={(e) => setBotToken(e.target.value)}
+                    className="bg-[#011910] py-3 border-gray-100 text-white placeholder-gray-500"
+                  />
+                  <p className="text-xs text-green-500 mt-1">احصل على التوكن من @BotFather في التليجرام</p>
+                </div>
+                 
+                <Button
+                   className={`${!botToken ? 'primary-button after:bg-[#011910]' : 'primary-button'} w-full text-white py-3 rounded-lg font-medium transition-colors`}
+                  disabled={loading || !botToken}
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      const res = await telegramBotConnect(token, botToken);
+                      if (res.success) {
+                        toast.success("تم ربط البوت بنجاح");
+                        setBotToken("");
+                        await loadBotInfo();
+                      } else {
+                        toast.error(res.message || "فشل في ربط البوت");
+                      }
+                    } catch (e: any) {
+                      toast.error(e.message || "فشل في ربط البوت");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>جاري الاتصال...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span>🔌</span>
+                      <span>ربط البوت</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <div className="space-y-6">
+        <Card className="gradient-border">
+          <CardHeader className="border-text-primary/50 text-primary">
+            <div className="flex items-center gap-3">
+              
+              <div>
+                <p className="text-xl text-white">أدوات وادارة البوت</p>
+    </div>
+            </div>
+        </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10  rounded-lg flex items-center justify-center">
+                  <img  className="text-white" src="/true.png" alt="" />
+                  </div>
+            <div>
+                    <div className="text-white font-semibold">المحادثات</div>
+                    <div className="text-gray-400 text-sm">إدارة المحادثات</div>
+            </div>
             </div>
           </div>
-          <Button 
-            onClick={saveOpenAISettings}
-            disabled={loading}
-            className="bg-blue-500 text-white"
-          >
-            {loading ? 'Saving...' : 'Save Settings'}
-          </Button>
-        </CardContent> */}
+              
+              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10  rounded-lg flex items-center justify-center">
+                    <img  className="text-white" src="/true.png" alt="" />
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">المجموعات</div>
+                    <div className="text-gray-400 text-sm">إدارة المجموعات</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10  rounded-lg flex items-center justify-center">
+                  <img  className="text-white" src="/true.png" alt="" />
+                  </div>
+            <div>
+                    <div className="text-white font-semibold">الحملات</div>
+                    <div className="text-gray-400 text-sm">إدارة الحملات</div>
+            </div>
+            </div>
+          </div>
+            </div>
+            
+            
+          </CardContent>
       </Card>
-    );
-  }
+      </div>
+    </>
+  );
+}
 
   function renderContactsTab() {
     return (
-      <Card className="bg-card border-none">
-        <CardHeader>
+      <Card className="gradient-border">
+        <CardHeader className="border-text-primary/50 text-primary">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-lg">👥</span>
+            </div>
+            <div>
           <h3 className="text-lg font-semibold text-white">جهات الاتصال</h3>
           <p className="text-sm text-gray-400">المستخدمون الذين بدأوا بوتك (النشاط الأخير)</p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button onClick={loadContacts} disabled={loading} className="bg-blue-500 text-white">
-            {loading ? 'جاري التحميل...' : 'تحديث جهات الاتصال'}
+          <div className="flex gap-3">
+            <Button 
+              onClick={loadContacts} 
+              disabled={loading} 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>جاري التحميل...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span>🔄</span>
+                  <span>تحديث جهات الاتصال</span>
+                </div>
+              )}
           </Button>
+          </div>
           {contacts.length > 0 && (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Button
                 onClick={() => {
                   const all = contacts.map((c:any)=> c.chatId);
                   setSelectedTargets(Array.from(new Set([...(selectedTargets as string[]), ...all])));
-                  setSuccess(`تم إضافة ${all.length} جهة اتصال إلى الأهداف`);
+                  toast.success(`تم إضافة ${all.length} جهة اتصال إلى الأهداف`);
                 }}
-                className="bg-yellow-600 text-white"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                اختر جميع جهات الاتصال
+                <div className="flex items-center gap-2">
+                  <span>✅</span>
+                  <span>اختر جميع جهات الاتصال</span>
+                </div>
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => setSelectedTargets([])}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
-                مسح الأهداف
+                <div className="flex items-center gap-2">
+                  <span>🗑️</span>
+                  <span>مسح الأهداف</span>
+                </div>
               </Button>
             </div>
           )}
           {contacts.length > 0 && (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
               {contacts.map((c:any, i:number) => (
-                <div key={i} className="p-3 bg-gray-800 rounded flex items-center justify-between">
-                  <div className="text-sm text-white">
-                    <div className="font-medium">{c.chatTitle || 'User'}</div>
+                <div key={i} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 flex items-center justify-between hover:bg-gray-800/70 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-medium">
+                        {(c.chatTitle || 'User').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-white font-medium">{c.chatTitle || 'User'}</div>
                     <div className="text-gray-400 text-xs">{c.chatType} • {c.chatId}</div>
                   </div>
-                  <div className="flex gap-2 items-center">
+                  </div>
+                  <div className="flex gap-3 items-center">
                     <input
                       type="checkbox"
                       checked={selectedTargets.includes(c.chatId)}
@@ -725,10 +839,17 @@ export default function TelegramBotPage() {
                           setSelectedTargets((prev: string[]) => prev.filter((x: string) => x !== c.chatId));
                         }
                       }}
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <Button size="sm" className="bg-emerald-600 text-white" onClick={() => {
+                    <Button 
+                      size="sm" 
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors" 
+                      onClick={() => {
                       if (!selectedTargets.includes(c.chatId)) setSelectedTargets((prev: string[]) => [...prev, c.chatId]);
-                    }}>Add</Button>
+                      }}
+                    >
+                      إضافة
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -742,475 +863,570 @@ export default function TelegramBotPage() {
   function renderCampaignsTab() {
     return (
       <div className="space-y-6">
-      <Card className="bg-card border-none">
-        <CardHeader>
-            <h3 className="text-lg font-semibold text-white">Create Campaign</h3>
-            <p className="text-sm text-gray-400">Select targets from Groups/Contacts and schedule a message</p>
+        {!botInfo && (
+          <Card className="gradient-border">
+            <CardContent className="text-center py-12">
+              <div className="text-gray-400">
+                <div className="text-6xl mb-4">🤖</div>
+                <h3 className="text-lg font-semibold text-white mb-2">البوت غير متصل</h3>
+                <p className="text-gray-400 mb-4">تحتاج إلى ربط البوت أولاً لإنشاء الحملات</p>
+                <Button 
+                  onClick={() => setActiveTab('overview')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  الذهاب إلى صفحة الاتصال
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {botInfo && (
+          <>
+            <Card className="gradient-border">
+          <CardHeader className="border-text-primary/50 text-primary">
+            <div className="flex items-center justify-between gap-3">
+              
+              <div>
+                <h3 className="text-lg font-semibold text-white">إنشاء حملة إعلانية</h3>
+              </div>
+              <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={loadBotChats} 
+                    disabled={loading} 
+                    className="primary-button"
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>جاري التحميل...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                       
+                        <span>تحميل المجموعات</span>
+                      </div>
+                    )}
+                  </Button>
+                  {botChats.length > 0 && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                      const all = botChats.map((c:any)=> c.id);
+                      setSelectedTargets(prev => Array.from(new Set([...(prev||[]), ...all])));
+                      toast.success(`✅ تم إضافة ${all.length} مجموعة/قناة إلى الأهداف`);
+                      }} 
+                      className="primary-button after:bg-red-600"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>✓</span>
+                        <span> تحديد الكل </span>
+                      </div>
+                    </Button>
+                  )}
+                </div>
+            </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
           <div>
-              <label className="block text-sm font-medium mb-2 text-white">Selected Targets ({selectedTargets.length})</label>
+              <label className="block text-sm font-medium mb-3 text-white">حدد المجموعة أو القناة المستهدفة({selectedTargets.length})</label>
               {selectedTargets.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {selectedTargets.map(t => (
-                    <span key={t} className="text-xs bg-gray-700 text-yellow-300 px-2 py-1 rounded inline-flex items-center gap-2">
-                      {t}
-                      <button className="text-red-400" onClick={() => setSelectedTargets((prev: string[]) => prev.filter((x: string) => x !== t))}>×</button>
+                    <span key={t} className="text-xs bg-gradient-to-r from-green-600 to-green-700 text-white px-3 py-1.5 rounded-lg inline-flex items-center gap-2 shadow-md">
+                      🎯 {t}
+                      <button className="text-white hover:text-red-300 font-bold" onClick={() => setSelectedTargets((prev: string[]) => prev.filter((x: string) => x !== t))}>×</button>
                     </span>
                   ))}
                 </div>
               ) : (
-                <div className="text-sm text-gray-400">Pick chats from Groups or Contacts tabs.</div>
+                // <div className="p-6 bg-[#011910] rounded-lg border border-gray-700 text-center">
+                //   <div className="text-gray-400">
+                //     <div className="text-4xl mb-3">🎯</div>
+                //     <div className="font-semibold text-lg mb-2">لم يتم اختيار أي أهداف بعد</div>
+                //     <div className="text-sm">استخدم الأزرار أدناه لتحميل واختيار المجموعات أو جهات الاتصال</div>
+                //   </div>
+                // </div>
+                ""
               )}
             </div>
-            {/* Tag picker */}
-            <div>
-              <label className="block text-sm font-medium text-white mb-2">Tags (optional)</label>
-              {availableTags.length === 0 ? (
-                <div className="text-xs text-gray-400">No tags yet. Create tags in Tags section.</div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {availableTags.map((t:any)=> (
-                    <button key={t.id} onClick={()=>{
-                      setSelectedTagIds(prev=> prev.includes(t.id) ? prev.filter(x=>x!==t.id) : [...prev, t.id]);
-                    }} className={`px-2 py-1 rounded text-xs border ${selectedTagIds.includes(t.id)? 'bg-yellow-600 text-white border-yellow-700':'bg-gray-800 text-gray-200 border-gray-700'}`}>
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+           
 
-            {/* Contacts picker inside Campaigns */}
-            <div className="space-y-2">
+            {/* Groups picker inside Campaigns */}
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-white">Pick Contacts</label>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={loadContacts} disabled={loading} className="bg-blue-500 text-white">
-                    {loading ? 'جاري التحميل...' : 'تحديث جهات الاتصال'}
-                  </Button>
-                  {contacts.length > 0 && (
-                    <Button size="sm" onClick={() => {
-                      const all = contacts.map((c:any)=> c.chatId);
-                      setSelectedTargets(prev => Array.from(new Set([...(prev||[]), ...all])));
-                      setSuccess(`تم إضافة ${all.length} جهة اتصال إلى الأهداف`);
-                    }} className="bg-yellow-600 text-white">
-                      اختر جميع جهات الاتصال
-                    </Button>
-                  )}
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center">
+                    <span className="text-white text-sm">📢</span>
                 </div>
+                  <label className="text-lg font-semibold text-white">  المجموعات والقنوات وجهات الاتصال</label>
+                </div>
+              
               </div>
-              {contacts.length > 0 && (
-                <div className="max-h-64 overflow-y-auto space-y-2 p-2 bg-gray-900/40 rounded-md border border-gray-800">
-                  {contacts.map((c:any, i:number) => (
-                    <div key={i} className="p-2 bg-gray-800 rounded flex items-center justify-between">
-                      <div className="text-xs text-white">
-                        <div className="font-medium">{c.chatTitle || 'User'}</div>
-                        <div className="text-gray-400">{c.chatType} • {c.chatId}</div>
+              {botChats.length > 0 ? (
+                <div className="max-h-64 overflow-y-auto space-y-3 p-4 bg-[#011910] rounded-lg border border-gray-700 custom-scrollbar">
+                  {botChats.map((c:any, i:number) => (
+                    <div key={i} className="p-4 bg-gray-800/50 rounded-lg flex items-center justify-between hover:bg-gray-800/70 transition-colors border border-gray-700">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-medium">
+                            {c.title.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-white text-sm mb-1 flex items-center gap-2">
+                          {c.title}
+                            {c.type === 'channel' && <span className="text-xs bg-purple-500 px-2 py-0.5 rounded">قناة</span>}
+                            {c.type === 'supergroup' && <span className="text-xs bg-green-500 px-2 py-0.5 rounded">مجموعة</span>}
+                            {c.type === 'group' && <span className="text-xs bg-blue-500 px-2 py-0.5 rounded">مجموعة</span>}
+                            {c.type === 'private' && <span className="text-xs bg-red-500 px-2 py-0.5 rounded">خاص</span>}
+                        </div>
+                          <div className="text-gray-400 text-xs flex items-center gap-2">
+                          <span>🆔 {c.id}</span>
+                          
+                          {c.memberCount && <span>• 👥 {c.memberCount.toLocaleString()}</span>}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
-                          checked={selectedTargets.includes(c.chatId)}
+                          checked={selectedTargets.includes(c.id)}
                           onChange={(e)=>{
                             if (e.target.checked) {
-                              if (!selectedTargets.includes(c.chatId)) setSelectedTargets(prev => [...prev, c.chatId]);
+                              if (!selectedTargets.includes(c.id)) setSelectedTargets(prev => [...prev, c.id]);
                             } else {
-                              setSelectedTargets(prev => prev.filter(x => x !== c.chatId));
+                              setSelectedTargets(prev => prev.filter(x => x !== c.id));
                             }
                           }}
+                          className="w-4 h-4 rounded border-gray-600"
                         />
-                        <Button size="sm" className="bg-emerald-600 text-white" onClick={() => {
-                          if (!selectedTargets.includes(c.chatId)) setSelectedTargets(prev => [...prev, c.chatId]);
-                        }}>Add</Button>
-            </div>
+                        <Button 
+                          size="sm" 
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors" 
+                          onClick={() => {
+                          if (!selectedTargets.includes(c.id)) setSelectedTargets(prev => [...prev, c.id]);
+                          }}
+                        >
+                          + إضافة
+                  </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="p-6 bg-gray-800/30 rounded-lg border border-gray-700 text-center">
+                  <div className="text-gray-400">
+                    <div className="text-4xl mb-3">🤖</div>
+                    <div className="font-semibold text-lg mb-2">لا توجد مجموعات محملة</div>
+                    <div className="text-sm">اضغط على "تحميل المجموعات" أعلاه</div>
+                  </div>
+                </div>
               )}
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-2 text-white">Message</label>
+              <label className="block text-lg font-medium mb-3 text-white">الرسالة التسويقية</label>
             <textarea
-                placeholder="Your promotional message..."
+                placeholder="اكتب الرسالة التسويقية الإعلانية هنا..."
                 value={campaignMessage}
                 onChange={(e) => setCampaignMessage(e.target.value)}
-                className="w-full h-28 p-3 border rounded-md bg-gray-800 text-white border-gray-600"
+                className="w-full h-32 p-4 bg-[#011910] border rounded-lg  text-white border-gray-600 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">Schedule At (optional)</label>
-                <Input type="datetime-local" value={campaignWhen} onChange={(e)=>setCampaignWhen(e.target.value)} />
+                <label className="block text-sm font-medium mb-2 text-white">وقت الجدولة (اختياري)</label>
+                <Input 
+                  type="datetime-local" 
+                  value={campaignWhen} 
+                  onChange={(e)=>setCampaignWhen(e.target.value)}
+                  className="bg-[#011910] border-gray-700 text-white"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">Throttle (ms)</label>
-                <Input type="number" value={campaignThrottle} onChange={(e)=>setCampaignThrottle(Number(e.target.value||1500))} />
+                <label className="block text-sm font-medium mb-2 text-white">فترة التأخير (ملي ثانية)</label>
+                <Input 
+                  type="number" 
+                  value={campaignThrottle} 
+                  onChange={(e)=>setCampaignThrottle(Number(e.target.value||1500))}
+                  className="bg-[#011910] border-gray-700 text-white"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-white">Media URL (optional)</label>
-                <Input placeholder="https://... (image/video/document)" value={campaignMediaUrl} onChange={(e)=>setCampaignMediaUrl(e.target.value)} />
-                <p className="text-xs text-gray-400 mt-1">If provided, media will be sent with the message.</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <input type="file" onChange={(e)=> setCampaignMediaFile(e.target.files?.[0] || null)} className="text-xs text-gray-300" />
-                  <Button size="sm" className="bg-blue-600 text-white" disabled={loading || !campaignMediaFile} onClick={async ()=>{
-                    if (!campaignMediaFile) return;
-                    try {
-                      setLoading(true);
+                <label className="block text-sm font-medium mb-2 text-white">رفع الوسائط (اختياري)</label>
+                <div className="mt-2">
+                  <input 
+                    type="file" 
+                    accept="image/*,video/*,.pdf,.doc,.docx"
+                    onChange={async (e)=> {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      try {
+                        setUploadingMedia(true);
                       const form = new FormData();
-                      form.append('file', campaignMediaFile);
-                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/uploads`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+                        form.append('file', file);
+                        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/uploads`, { 
+                          method: 'POST', 
+                          headers: { Authorization: `Bearer ${token}` }, 
+                          body: form 
+                        });
                       const data = await res.json();
                       if (data?.url) {
                         setCampaignMediaUrl(data.url);
-                        setSuccess('Media uploaded');
+                          toast.success('تم رفع الوسائط بنجاح');
                       } else {
-                        setError('Upload failed');
+                          toast.error('فشل في رفع الوسائط');
+                        }
+                      } catch (e:any) { 
+                        toast.error(e.message); 
+                      } finally { 
+                        setUploadingMedia(false); 
                       }
-                    } catch (e:any) { setError(e.message); } finally { setLoading(false); }
-                  }}>Upload</Button>
+                    }} 
+                    className="text-sm text-gray-300 bg-[#011910] border border-gray-700 rounded-lg p-2 w-full" 
+                  />
+                  <p className="text-xs text-gray-400 mt-1">اختر صورة أو فيديو أو ملف ليتم رفعه تلقائياً</p>
+                  
+                  {uploadingMedia && (
+                    <div className="mt-2 p-2 bg-blue-900/20 border border-blue-700 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-xs text-blue-400">جاري رفع الوسائط...</p>
                 </div>
               </div>
+                  )}
+                  
+                  {campaignMediaUrl && !uploadingMedia && (
+                    <div className="mt-2 p-2 bg-green-900/20 border border-green-700 rounded-lg">
+                      <p className="text-xs text-green-400">✅ تم رفع الوسائط بنجاح</p>
+                      <button 
+                        onClick={() => setCampaignMediaUrl('')}
+                        className="text-xs text-red-400 hover:text-red-300 mt-1"
+                      >
+                        إزالة الوسائط
+                      </button>
+                </div>
+                  )}
+              </div>
+      </div>
+      </div>
+            <div className="flex gap-3 pt-4">
+              <Button 
+                onClick={createCampaign} 
+                disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>جاري الجدولة...</span>
             </div>
-            <div className="flex gap-3">
-              <Button onClick={createCampaign} disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} className="bg-green-600 text-white">
-                {loading ? 'Scheduling...' : 'Schedule Campaign'}
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>📅</span>
+                    <span>جدولة الحملة</span>
+              </div>
+            )}
           </Button>
-              <Button onClick={sendCampaignNow} disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} className="bg-emerald-600 text-white" variant="secondary">
-                {loading ? 'Sending...' : 'Send Now'}
+            <Button 
+                onClick={sendCampaignNow} 
+                disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>جاري الإرسال...</span>
+                      </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>🚀</span>
+                    <span>إرسال الآن</span>
+              </div>
+            )}
               </Button>
-                  <Button onClick={loadCampaigns} disabled={loading} variant="secondary">
-                {loading ? 'Loading...' : 'Refresh Campaigns'}
+              <Button 
+                onClick={loadCampaigns} 
+                disabled={loading} 
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>جاري التحميل...</span>
+            </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span>🔄</span>
+                    <span>تحديث الحملات</span>
+              </div>
+            )}
               </Button>
             </div>
         </CardContent>
       </Card>
 
-        <Card className="bg-card border-none">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-white">Recent Campaigns</h3>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {campaigns.length === 0 && <div className="text-sm text-gray-400">No campaigns yet.</div>}
-            {campaigns.map((j:any,i:number)=> (
-              <div key={i} className="p-3 bg-gray-800 rounded flex items-center justify-between">
-                <div className="text-sm text-white">
-                  <div className="font-medium">#{j.id} • {j.status}</div>
-                  <div className="text-gray-400 text-xs">Scheduled: {new Date(j.scheduledAt).toLocaleString()}</div>
+        {/* <Card className="gradient-border">
+          <CardHeader className="border-text-primary/50 text-primary">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-lg">📋</span>
                 </div>
-                <div className="text-xs text-gray-400">Created: {new Date(j.createdAt).toLocaleString()}</div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">الحملات الأخيرة</h3>
+                <p className="text-sm text-gray-400">عرض الحملات المنشأة مؤخراً</p>
+              </div>
+                        </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {campaigns.length === 0 && !loading && (
+              <div className="p-6 bg-gray-800/30 rounded-lg border border-gray-700 text-center">
+                <div className="text-gray-400">
+                  <div className="text-4xl mb-3">📋</div>
+                  <div className="font-semibold text-lg mb-2">لا توجد حملات بعد</div>
+                  <div className="text-sm">قم بإنشاء حملة جديدة أعلاه</div>
+                </div>
+              </div>
+            )}
+            {loading && (
+              <div className="p-6 bg-gray-800/30 rounded-lg border border-gray-700 text-center">
+                <div className="text-gray-400">
+                  <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                  <div className="font-semibold text-lg mb-2">جاري تحميل الحملات...</div>
+                </div>
+              </div>
+            )}
+            {campaigns.map((j:any,i:number)=> (
+              <div key={i} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 flex items-center justify-between hover:bg-gray-800/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">#{j.id || i+1}</span>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-white text-sm">الحملة #{j.id || i+1}</div>
+                    <div className="text-gray-400 text-xs">الحالة: {j.status || 'غير محدد'}</div>
+                    <div className="text-gray-500 text-xs">مجدولة: {j.scheduledAt ? new Date(j.scheduledAt).toLocaleString() : 'غير محدد'}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    j.status === 'completed' ? 'bg-green-100 text-green-800' :
+                    j.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    j.status === 'failed' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {j.status || 'غير محدد'}
+                  </span>
+                  <div className="text-xs text-gray-400">
+                    منشأة: {j.createdAt ? new Date(j.createdAt).toLocaleString() : 'غير محدد'}
+                  </div>
+                </div>
               </div>
             ))}
           </CardContent>
-        </Card>
+        </Card> */}
+          </>
+        )}
       </div>
     );
   }
 
-  function renderChatManagementTab() {
-    return (
-      <div className="space-y-6">
-        <Card className="bg-card border-none">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-white">Chat Information</h3>
-            <p className="text-sm text-gray-400">Get details about groups, channels, or users</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <Input
-                placeholder="Chat ID or @username"
-                value={chatId}
-                onChange={(e) => setChatId(e.target.value)}
-                className="flex-1"
-              />
-              <Button 
-                onClick={loadChatInfo}
-                disabled={loading || !chatId}
-                className="bg-blue-500 text-white"
-              >
-                {loading ? 'Loading...' : 'Get Info'}
-              </Button>
-            </div>
-            
-            {chatInfo && (
-              <div className="mt-4 p-4 bg-gray-800 rounded-lg">
-                <h4 className="text-white font-medium mb-2">Chat Details</h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="text-gray-400">Title:</span> <span className="text-white">{chatInfo.title || chatInfo.first_name || 'N/A'}</span></div>
-                  <div><span className="text-gray-400">Type:</span> <span className="text-white">{chatInfo.type}</span></div>
-                  <div><span className="text-gray-400">ID:</span> <span className="text-white">{chatInfo.id}</span></div>
-                  {chatInfo.description && <div><span className="text-gray-400">Description:</span> <span className="text-white">{chatInfo.description}</span></div>}
-                  {chatInfo.member_count && <div><span className="text-gray-400">Members:</span> <span className="text-white">{chatInfo.member_count}</span></div>}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        <Card className="bg-card border-none">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-white">Chat Administrators</h3>
-            <p className="text-sm text-gray-400">View and manage chat administrators</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              onClick={loadChatAdmins}
-              disabled={loading || !chatId}
-              className="bg-purple-500 text-white"
-                variant="secondary"
-            >
-              {loading ? 'Loading...' : 'Load Administrators'}
-            </Button>
-            
-            {chatAdmins.length > 0 && (
-              <div className="space-y-2">
-                {chatAdmins.map((admin, index) => (
-                  <div key={index} className="p-3 bg-gray-800 rounded-lg flex items-center justify-between">
-                    <div>
-                      <div className="text-white font-medium">
-                        {admin.user.first_name} {admin.user.last_name || ''}
-                        {admin.user.username && <span className="text-gray-400"> (@{admin.user.username})</span>}
-                      </div>
-                      <div className="text-sm text-gray-400">{admin.status}</div>
-                    </div>
-                    <div className="text-xs text-gray-500">ID: {admin.user.id}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card border-none">
-          <CardHeader>
-            <h3 className="text-lg font-semibold text-white">Group/Channel Members</h3>
-            <p className="text-sm text-gray-400">View and export member information</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-3">
-              <Button 
-                onClick={loadChatMembers}
-                disabled={loading || !chatId}
-                className="bg-blue-500 text-white"
-              >
-                {loading ? 'Loading...' : 'Load Members'}
-              </Button>
-              <Button 
-                onClick={exportMembers}
-                disabled={loading || !chatId || chatMembers.members.length === 0}
-                className="bg-green-500 text-white"
-              >
-                {loading ? 'Exporting...' : 'Export to Excel'}
-              </Button>
-            </div>
-            
-            {chatMembers.note && (
-              <div className="p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
-                <p className="text-yellow-400 text-sm">
-                  <strong>⚠️ Note:</strong> {chatMembers.note}
-                </p>
-              </div>
-            )}
-            
-            {chatMembers.totalCount > 0 && (
-              <div className="p-3 bg-gray-800 rounded-lg">
-                <div className="text-sm text-gray-300">
-                  <strong>Total Members:</strong> {chatMembers.totalCount} • 
-                  <strong> Showing:</strong> {chatMembers.members.length} administrators
-                </div>
-              </div>
-            )}
-            
-            {chatMembers.members.length > 0 && (
-              <div className="space-y-2">
-                {chatMembers.members.map((member: any, index: number) => (
-                  <div key={index} className="p-3 bg-gray-800 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="text-white font-medium">
-                          {member.first_name} {member.last_name}
-                          {member.username && <span className="text-gray-400"> (@{member.username})</span>}
-                          {member.is_bot && <span className="text-blue-400 ml-2">[BOT]</span>}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          Status: {member.status} • ID: {member.id}
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {member.status === 'creator' && '👑'}
-                        {member.status === 'administrator' && '⚙️'}
-                        {member.status === 'member' && '👤'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   function renderAdminToolsTab() {
     return (
-      <Card className="bg-card border-none">
-        <CardHeader>
-          <h3 className="text-lg font-semibold text-white">Administrator Tools</h3>
-          <p className="text-sm text-gray-400">Promote members and manage permissions</p>
+      <Card className="gradient-border">
+        <CardHeader className="border-text-primary/50 text-primary">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-lg">⚙️</span>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">أدوات الإدارة</h3>
+              <p className="text-sm text-gray-400">ترقية الأعضاء وإدارة الصلاحيات</p>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Chat ID</label>
+              <label className="block text-sm font-medium mb-2 text-white">معرف المحادثة</label>
               <Input
-                placeholder="Chat ID or @username"
+                placeholder="معرف المحادثة أو @username"
                 value={chatId}
                 onChange={(e) => setChatId(e.target.value)}
+                className="bg-gray-800 border-gray-700 text-white placeholder-gray-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-white">Member ID</label>
+              <label className="block text-sm font-medium mb-2 text-white">معرف العضو</label>
               <Input
-                placeholder="User ID to promote"
+                placeholder="معرف المستخدم للترقية"
                 value={promoteMemberId}
                 onChange={(e) => setPromoteMemberId(e.target.value)}
+                className="bg-gray-800 border-gray-700 text-white placeholder-gray-500"
               />
             </div>
           </div>
 
           <div>
-            <h4 className="text-white font-medium mb-3">Administrator Permissions</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h4 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
+              <span>🔐</span>
+              <span>صلاحيات المدير</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="text-gray-300 font-semibold text-sm flex items-center gap-2">
+                  <span>⚡</span>
+                  <span>الصلاحيات الأساسية</span>
+                </h5>
               <div className="space-y-3">
-                <h5 className="text-gray-300 font-medium text-sm">Basic Permissions</h5>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_manage_chat}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_chat: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Manage Chat (Full Access)</span>
+                    <span className="text-sm text-white font-medium">إدارة المحادثة (وصول كامل)</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_delete_messages}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_delete_messages: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Delete Messages</span>
+                    <span className="text-sm text-white font-medium">حذف الرسائل</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_restrict_members}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_restrict_members: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Restrict Members</span>
+                    <span className="text-sm text-white font-medium">تقييد الأعضاء</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_promote_members}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_promote_members: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Promote Members</span>
+                    <span className="text-sm text-white font-medium">ترقية الأعضاء</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_invite_users}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_invite_users: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Invite Users</span>
+                    <span className="text-sm text-white font-medium">دعوة المستخدمين</span>
                   </label>
                 </div>
               </div>
               
+              <div className="space-y-4">
+                <h5 className="text-gray-300 font-semibold text-sm flex items-center gap-2">
+                  <span>🚀</span>
+                  <span>الصلاحيات المتقدمة</span>
+                </h5>
               <div className="space-y-3">
-                <h5 className="text-gray-300 font-medium text-sm">Advanced Permissions</h5>
-                <div className="space-y-2">
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_change_info}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_change_info: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Change Chat Info</span>
+                    <span className="text-sm text-white font-medium">تغيير معلومات المحادثة</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_pin_messages}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_pin_messages: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Pin Messages</span>
+                    <span className="text-sm text-white font-medium">تثبيت الرسائل</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_manage_video_chats}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_video_chats: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Manage Video Chats</span>
+                    <span className="text-sm text-white font-medium">إدارة المحادثات المرئية</span>
                   </label>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
                       checked={permissions.can_manage_topics}
                     onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_topics: e.target.checked }))}
-                      className="rounded"
+                      className="w-4 h-4 rounded border-gray-600"
                     />
-                    <span className="text-sm text-white">Manage Topics (Forums)</span>
+                    <span className="text-sm text-white font-medium">إدارة المواضيع (المنتديات)</span>
                   </label>
                 </div>
               </div>
             </div>
             
-            <div className="mt-4 space-y-3">
-              <div className="p-3 bg-blue-900/20 border border-blue-500/20 rounded-lg">
-                <p className="text-blue-300 text-sm">
-                  <strong>💡 Tip:</strong> Start with basic permissions like "Delete Messages" and "Restrict Members". 
-                  "Manage Chat" gives full access to all features.
+            <div className="mt-6 space-y-4">
+              <div className="p-4 bg-blue-900/20 border border-blue-500/20 rounded-lg">
+                <p className="text-blue-300 text-sm flex items-start gap-2">
+                  <span>💡</span>
+                  <span><strong>نصيحة:</strong> ابدأ بالصلاحيات الأساسية مثل "حذف الرسائل" و "تقييد الأعضاء". "إدارة المحادثة" تعطي وصول كامل لجميع الميزات.</span>
                 </p>
               </div>
               
-              <div className="p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
-                <p className="text-yellow-300 text-sm">
-                  <strong>⚠️ Important:</strong> Member promotion only works in <strong>supergroups</strong> and <strong>channels</strong>. 
-                  Regular groups don't support this feature. Convert your group to a supergroup first.
+              <div className="p-4 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
+                <p className="text-yellow-300 text-sm flex items-start gap-2">
+                  <span>⚠️</span>
+                  <span><strong>مهم:</strong> ترقية الأعضاء تعمل فقط في <strong>المجموعات الفائقة</strong> و <strong>القنوات</strong>. المجموعات العادية لا تدعم هذه الميزة. قم بتحويل مجموعتك إلى مجموعة فائقة أولاً.</span>
                 </p>
               </div>
               
               {botInfo && (
-                <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-lg">
-                  <p className="text-red-300 text-sm">
-                            <strong>🤖 Bot User ID:</strong> <code className="bg-red-900/30 px-1 rounded">{botInfo.botUserId}</code>
+                <div className="p-4 bg-red-900/20 border border-red-500/20 rounded-lg">
+                  <p className="text-red-300 text-sm flex items-start gap-2">
+                    <span>🤖</span>
+                    <span><strong>معرف البوت:</strong> <code className="bg-red-900/30 px-2 py-1 rounded text-xs">{botInfo.botUserId}</code></span>
                   </p>
-                  <p className="text-red-300 text-xs mt-1">
-                    <strong>Note:</strong> Don't use the bot's ID to promote it. The bot needs to be promoted by a human admin first.
+                  <p className="text-red-300 text-xs mt-2 flex items-start gap-2">
+                    <span>📝</span>
+                    <span><strong>ملاحظة:</strong> لا تستخدم معرف البوت لترقيته. البوت يحتاج إلى ترقية من مدير بشري أولاً.</span>
                   </p>
                 </div>
               )}
             </div>
           </div>
 
+          <div className="pt-4">
           <Button 
             onClick={promoteMember}
             disabled={loading || !chatId || !promoteMemberId}
-            className="bg-orange-500 text-white"
-          >
-            {loading ? 'Promoting...' : 'Promote Member'}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>جاري الترقية...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span>⬆️</span>
+                  <span>ترقية العضو</span>
+                </div>
+              )}
           </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -1239,7 +1455,7 @@ export default function TelegramBotPage() {
                 onClick={() => {
                   const all = botChats.map((c:any)=> c.id);
                   setSelectedTargets(Array.from(new Set([...selectedTargets, ...all])));
-                  setSuccess(`Added ${all.length} chats to targets`);
+                  toast.success(`تم إضافة ${all.length} محادثة إلى الأهداف`);
                 }}
                 disabled={loading || botChats.length===0}
                 className="bg-yellow-600 text-white"
@@ -1288,7 +1504,7 @@ export default function TelegramBotPage() {
                           <button
                             onClick={() => {
                               navigator.clipboard.writeText(chat.id);
-                              setSuccess(`Chat ID copied: ${chat.id}`);
+                              toast.success(`تم نسخ معرف المحادثة: ${chat.id}`);
                             }}
                             className="text-xs text-blue-400 ml-2 hover:text-blue-300"
                           >
@@ -1325,7 +1541,7 @@ export default function TelegramBotPage() {
                           onClick={() => {
                             setChatId(chat.id);
                             setActiveTab('chat-management');
-                            setSuccess(`Switched to Chat Management for ${chat.title}`);
+                            toast.success(`تم التبديل إلى إدارة المحادثة: ${chat.title}`);
                           }}
                           className="bg-green-500 text-white text-xs"
                         >
@@ -1335,7 +1551,7 @@ export default function TelegramBotPage() {
                           size="sm"
                           onClick={() => {
                             if (!selectedTargets.includes(chat.id)) setSelectedTargets((prev: string[]) => ([...prev, chat.id] as string[]));
-                            setSuccess(`Added ${chat.id} to targets`);
+                            toast.success(`تم إضافة ${chat.id} إلى الأهداف`);
                           }}
                           className="bg-emerald-600 text-white text-xs"
                         >
@@ -1348,13 +1564,12 @@ export default function TelegramBotPage() {
                             onClick={async () => {
                               try {
                                 setLoading(true);
-                                setError("");
                                 const res = await telegramBotExportMembers(token, chat.id);
                                 if (res.success) {
-                                  setSuccess(`Excel file downloaded: ${res.filename}`);
+                                  toast.success(`تم تحميل ملف Excel: ${res.filename}`);
                                 }
                               } catch (e: any) {
-                                setError(e.message);
+                                toast.error(e.message);
                               } finally {
                                 setLoading(false);
                               }
@@ -1390,4 +1605,6 @@ export default function TelegramBotPage() {
     );
   }
 }
+
+
 

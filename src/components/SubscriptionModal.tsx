@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -27,10 +27,13 @@ interface SubscriptionModalProps {
 export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }: SubscriptionModalProps) {
   const [step, setStep] = useState<'method' | 'usdt' | 'coupon'>('method');
   const [usdtData, setUsdtData] = useState({ walletAddress: '', receiptFile: null as File | null });
-  const [couponData, setCouponData] = useState({ code: '' });
+  const [couponData, setCouponData] = useState({ code: '', discountKeyword: '' });
   const [loading, setLoading] = useState(false);
-  const [subscriptionRequestId, setSubscriptionRequestId] = useState<number | null>(null);
   const { showSuccess, showError, showInfo } = useToast();
+  
+  // Discount preview state
+  const [discountInfo, setDiscountInfo] = useState<{ type: string; value: number; finalPrice: number } | null>(null);
+  const [verifyingDiscount, setVerifyingDiscount] = useState(false);
 
   const formatPrice = (priceCents: number, interval: string) => {
     const price = (priceCents / 100).toFixed(2);
@@ -39,6 +42,65 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
   };
 
   const { price, period } = formatPrice(plan.priceCents, plan.interval);
+  
+  // Calculate final price with discount
+  const getFinalPrice = () => {
+    if (!discountInfo) return price;
+    return `$${discountInfo.finalPrice.toFixed(2)}`;
+  };
+  
+  // Auto-verify discount when coupon code is entered
+  useEffect(() => {
+    if (step === 'coupon' && couponData.code.trim().length >= 4) {
+      const timer = setTimeout(async () => {
+        setVerifyingDiscount(true);
+        try {
+          // Build query parameters
+          const params = new URLSearchParams({
+            code: couponData.code,
+            planId: plan.id.toString()
+          });
+          
+          if (couponData.discountKeyword.trim()) {
+            params.append('discountKeyword', couponData.discountKeyword.trim());
+          }
+          
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/coupons/verify?${params.toString()}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (result.success && result.valid) {
+            const originalPrice = plan.priceCents / 100;
+            const finalPrice = result.finalPrice || originalPrice;
+            
+            setDiscountInfo({
+              type: result.coupon.discountType,
+              value: result.appliedDiscount || result.coupon.discountValue,
+              finalPrice: finalPrice
+            });
+          } else {
+            // Clear discount if invalid
+            setDiscountInfo(null);
+          }
+        } catch (error) {
+          console.error('Auto verify discount error:', error);
+          setDiscountInfo(null);
+        } finally {
+          setVerifyingDiscount(false);
+        }
+      }, 500); // Wait 500ms after user stops typing
+      
+      return () => clearTimeout(timer);
+    } else if (couponData.code.trim().length < 4) {
+      // Clear discount if code is too short
+      setDiscountInfo(null);
+    }
+  }, [couponData.code, couponData.discountKeyword, step, plan.id, plan.priceCents, token]);
 
   const handleMethodSelect = (method: 'usdt' | 'coupon') => {
     if (method === 'usdt') {
@@ -49,18 +111,14 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
   };
 
   const handleUSDTSubmit = async () => {
-    if (!usdtData.walletAddress.trim()) return;
+    if (!usdtData.walletAddress.trim() || !usdtData.receiptFile) return;
     
     setLoading(true);
     try {
-      const result = await onSubscribe('usdt', { walletAddress: usdtData.walletAddress });
-      
-      // If subscription request was created successfully and we have a receipt file
-      if (result && result.subscriptionRequest && usdtData.receiptFile) {
-        setSubscriptionRequestId(result.subscriptionRequest.id);
-        await uploadReceipt(token, result.subscriptionRequest.id, usdtData.receiptFile);
-      }
-      
+      await onSubscribe('usdt', { 
+        walletAddress: usdtData.walletAddress,
+        receiptFile: usdtData.receiptFile 
+      });
       onClose();
     } catch (error) {
       console.error('USDT subscription error:', error);
@@ -74,8 +132,18 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
     
     setLoading(true);
     try {
-      // Validate and activate coupon directly
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/subscription-requests/validate-coupon?code=${couponData.code}&planId=${plan.id}`, {
+      // Build query parameters
+      const params = new URLSearchParams({
+        code: couponData.code,
+        planId: plan.id.toString()
+      });
+      
+      if (couponData.discountKeyword.trim()) {
+        params.append('discountKeyword', couponData.discountKeyword.trim());
+      }
+      
+      // Try to validate and activate with coupon/discount code
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/subscription-requests/validate-coupon?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -84,18 +152,19 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
       
       const result = await response.json();
       
+      // If activated successfully (either subscription coupon or discount code)
       if (result.success && result.activated) {
-        showSuccess('تم تفعيل القسيمة بنجاح!', 'تم تفعيل اشتراكك في الباقة.');
+        showSuccess('تم تفعيل الاشتراك بنجاح!', 'تم تفعيل اشتراكك في الباقة.');
         onClose();
-      } else if (result.success && result.valid) {
-        // Coupon is valid but user needs to be authenticated
-        showInfo('القسيمة صحيحة', 'يرجى تسجيل الدخول أولاً.');
-      } else {
-        showError('خطأ في القسيمة', result.message);
+        window.location.reload(); // Reload to update subscription status
+        return;
       }
+      
+      // If validation failed
+      showError('خطأ في الكود', result.message || 'الكود غير صحيح');
     } catch (error) {
-      console.error('Coupon subscription error:', error);
-      showError('خطأ في تفعيل القسيمة', 'يرجى المحاولة مرة أخرى.');
+      console.error('Coupon submission error:', error);
+      showError('خطأ في التحقق من الكود', 'يرجى المحاولة مرة أخرى.');
     } finally {
       setLoading(false);
     }
@@ -104,9 +173,9 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
   const resetModal = () => {
     setStep('method');
     setUsdtData({ walletAddress: '', receiptFile: null });
-    setCouponData({ code: '' });
+    setCouponData({ code: '', discountKeyword: '' });
     setLoading(false);
-    setSubscriptionRequestId(null);
+    setDiscountInfo(null);
   };
 
   const handleClose = () => {
@@ -134,10 +203,26 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               <CardTitle className="text-lg text-green-800">{plan.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-green-600">{price}</span>
-                <span className="text-sm text-green-600">{period}</span>
-              </div>
+              {discountInfo ? (
+                <div className="space-y-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-lg text-gray-500 line-through">{price}</span>
+                    <span className="text-xs text-gray-500">{period}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-green-600">{getFinalPrice()}</span>
+                    <span className="text-sm text-green-600">{period}</span>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                      خصم {discountInfo.type === 'percentage' ? `${discountInfo.value}%` : `$${discountInfo.value}`}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-green-600">{price}</span>
+                  <span className="text-sm text-green-600">{period}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -148,7 +233,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               
               <div className="grid gap-3">
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full h-auto p-4 justify-start hover:bg-green-50 hover:border-green-300"
                   onClick={() => handleMethodSelect('usdt')}
                 >
@@ -164,7 +249,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
                 </Button>
 
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full h-auto p-4 justify-start hover:bg-blue-50 hover:border-blue-300"
                   onClick={() => handleMethodSelect('coupon')}
                 >
@@ -267,39 +352,79 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="coupon-code">كود القسيمة</Label>
-                <Input
-                  id="coupon-code"
-                  placeholder="أدخل كود القسيمة"
-                  value={couponData.code}
-                  onChange={(e) => setCouponData({ ...couponData, code: e.target.value })}
-                />
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <div className="flex items-start gap-2">
-                  <Gift className="h-4 w-4 text-blue-600 mt-0.5" />
-                  <div className="text-sm text-blue-800">
-                    <p className="font-medium">كيفية الحصول على قسيمة:</p>
-                    <p>قم بزيارة متجرنا للحصول على كود القسيمة</p>
-                    <a 
-                      href="#" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      زيارة المتجر →
-                    </a>
-                  </div>
+                <Label htmlFor="coupon-code">أدخل كود القسيمة</Label>
+                <div className="relative">
+                  <Input
+                    id="coupon-code"
+                    placeholder="أدخل كود القسيمة"
+                    value={couponData.code}
+                    onChange={(e) => setCouponData({ ...couponData, code: e.target.value })}
+                  />
+                  {verifyingDiscount && (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="discount-keyword">أدخل كود الخصم إذا كان لديك كود الخصم</Label>
+                <Input
+                  id="discount-keyword"
+                  placeholder="أدخل كود الخصم"
+                  value={couponData.discountKeyword}
+                  onChange={(e) => setCouponData({ ...couponData, discountKeyword: e.target.value })}
+                />
+                <p className="text-xs text-gray-500">أدخل كود الخصم الكامل مع كلمة الخصم في النهاية</p>
+              </div>
+
+              {discountInfo && couponData.discountKeyword ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-semibold text-green-800">تم تطبيق كود الخصم!</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">السعر الأصلي:</span>
+                      <span className="line-through text-gray-500">{price} {period}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">الخصم:</span>
+                      <span className="text-orange-600 font-medium">
+                        {discountInfo.type === 'percentage' 
+                          ? `${discountInfo.value}%` 
+                          : `$${discountInfo.value}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-base pt-2 border-t border-green-300">
+                      <span className="text-gray-800 font-semibold">السعر بعد الخصم:</span>
+                      <span className="text-green-700 font-bold text-lg">{getFinalPrice()} {period}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Gift className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium mb-1">💡 يمكنك استخدام:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li><strong>قسيمة اشتراك:</strong> تفعل الباقة مباشرة بدون دفع</li>
+                        <li><strong>كود خصم:</strong> يفعل الباقة بسعر مخفض مباشرة</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <Button 
                 onClick={handleCouponSubmit}
                 disabled={loading || !couponData.code.trim()}
                 className="w-full bg-green-600 hover:bg-green-700"
               >
-                {loading ? 'جاري التحقق...' : 'تفعيل القسيمة'}
+                {loading ? 'جاري التحقق...' : 'تفعيل الاشتراك'}
               </Button>
             </div>
           )}

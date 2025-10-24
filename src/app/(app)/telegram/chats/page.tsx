@@ -5,8 +5,11 @@ import {
   telegramBotGetContacts,
   telegramBotGetChatHistory,
   telegramBotSendMessage,
+  telegramBotSendMedia,
+  telegramBotSendSticker,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { EmojiPickerModal } from "@/components/AnimatedEmoji";
 
 type Contact = {
   chatId: string;
@@ -25,6 +28,9 @@ type ChatItem = {
   messageType: "incoming" | "outgoing";
   messageContent: string;
   timestamp: string;
+  mediaType?: string;
+  mediaUrl?: string;
+  stickerId?: string;
 };
 
 export default function TelegramChatsPage() {
@@ -37,6 +43,10 @@ export default function TelegramChatsPage() {
   const [messageText, setMessageText] = useState("");
   const [sending, setSending] = useState(false);
   const [query, setQuery] = useState("");
+  const [selectedMedia, setSelectedMedia] = useState<File | null>(null);
+  const [mediaType, setMediaType] = useState<string>("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const listEndRef = useRef<HTMLDivElement | null>(null);
 
   const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : ""), []);
@@ -70,12 +80,44 @@ export default function TelegramChatsPage() {
   }, [history, activeChatId]);
 
   async function handleSend() {
-    if (!token || !activeChatId || !messageText.trim()) return;
+    if (!token || !activeChatId || (!messageText.trim() && !selectedMedia)) return;
+    
     try {
       setSending(true);
+      
+      if (selectedMedia) {
+        // Send media
+        const formData = new FormData();
+        formData.append('media', selectedMedia);
+        formData.append('chatId', activeChatId);
+        formData.append('caption', messageText.trim());
+        
+        await telegramBotSendMedia(token, activeChatId, mediaType, selectedMedia, messageText.trim());
+        
+        // Optimistic append for media
+        setHistory((prev) => [
+          {
+            id: Date.now(),
+            userId: user?.id || 0,
+            chatId: activeChatId,
+            chatType: "private",
+            chatTitle: contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "",
+            messageType: "outgoing",
+            messageContent: messageText.trim() || `[${mediaType}]`,
+            timestamp: new Date().toISOString(),
+            mediaType: mediaType,
+            mediaUrl: URL.createObjectURL(selectedMedia),
+          },
+          ...prev,
+        ]);
+        
+        setSelectedMedia(null);
+        setMediaType("");
+      } else {
+        // Send text message
       await telegramBotSendMessage(token, activeChatId, messageText.trim());
-      setMessageText("");
-      // Optimistic append
+        
+        // Optimistic append for text
       setHistory((prev) => [
         {
           id: Date.now(),
@@ -89,9 +131,40 @@ export default function TelegramChatsPage() {
         },
         ...prev,
       ]);
+      }
+      
+      setMessageText("");
     } finally {
       setSending(false);
     }
+  }
+
+  function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setSelectedMedia(file);
+    
+    // Determine media type
+    if (file.type.startsWith('image/')) {
+      setMediaType('photo');
+    } else if (file.type.startsWith('video/')) {
+      setMediaType('video');
+    } else if (file.type.startsWith('audio/')) {
+      setMediaType('audio');
+    } else {
+      setMediaType('document');
+    }
+  }
+
+  function removeSelectedMedia() {
+    setSelectedMedia(null);
+    setMediaType("");
+  }
+
+  function handleEmojiSelect(emoji: string) {
+    setMessageText(prev => prev + emoji);
+    setShowEmojiPicker(false);
   }
 
   function getInitials(name: string) {
@@ -137,20 +210,20 @@ export default function TelegramChatsPage() {
 
   return (
     <div className="flex h-[calc(100vh-140px)] gap-4">
-      <aside className="w-80 border rounded-md flex flex-col bg-white">
+      <aside className="w-80 gradient-border inner-shadow rounded-md flex flex-col ">
         <div className="p-2 border-b">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="البحث في المحادثات..."
-            className="w-full border rounded px-2 py-1"
+            className="w-full  bg-semidark-custom rounded px-2 py-1 text-white"
           />
         </div>
         <div className="flex-1 overflow-auto">
           {loadingContacts ? (
             <div className="p-3 text-sm">جاري تحميل المحادثات...</div>
           ) : filtered.length === 0 ? (
-            <div className="p-3 text-sm">لا توجد محادثات بعد</div>
+            <div className="p-3 text-sm text-white">لا توجد محادثات بعد</div>
           ) : (
             <ul>
               {filtered.map((c) => {
@@ -159,7 +232,7 @@ export default function TelegramChatsPage() {
                 return (
                   <li
                     key={c.chatId}
-                    className={`px-3 py-2 cursor-pointer border-b flex items-center gap-3 ${isActive ? "bg-gray-100" : "hover:bg-gray-50"}`}
+                    className={`px-3 py-2 cursor-pointer flex items-center gap-3 ${isActive ? "bg-light-custom inner-shadow" : "bg-secondry"}`}
                     onClick={() => setActiveChatId(c.chatId.toString())}
                     title={String(title)}
                   >
@@ -167,9 +240,9 @@ export default function TelegramChatsPage() {
                       {getInitials(String(title))}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{title}</div>
-                      <div className="text-[11px] text-gray-500 flex justify-between gap-2">
-                        <span className="capitalize">{c.chatType}</span>
+                      <div className="text-sm font-medium truncate text-white">{title}</div>
+                      <div className="text-[11px] text-white flex justify-between gap-2">
+                        <span className="capitalize text-green-500">{c.chatType}</span>
                         <span>{new Date(c.lastMessageTime).toLocaleString()}</span>
                       </div>
                     </div>
@@ -181,16 +254,16 @@ export default function TelegramChatsPage() {
         </div>
       </aside>
 
-      <section className="flex-1 border rounded-md flex flex-col bg-white">
+      <section className="flex-1 inner-shadow rounded-md flex flex-col gradient-border">
         <div className="px-4 py-2 border-b flex items-center justify-between">
-          <div className="font-semibold truncate">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
+          <div className="font-semibold text-white truncate">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
         </div>
         <div className="flex-1 overflow-auto px-4 py-3 flex flex-col-reverse">
           <div ref={listEndRef} />
           {loadingHistory ? (
             <div className="text-sm text-gray-600">جاري تحميل الرسائل...</div>
           ) : history.length === 0 ? (
-            <div className="text-sm text-gray-600">لا توجد رسائل بعد.</div>
+            <div className="text-sm text-white">لا توجد رسائل بعد.</div>
           ) : (
             <div className="space-y-4">
               {groupedByDay.map((g) => (
@@ -203,9 +276,44 @@ export default function TelegramChatsPage() {
                   <ul className="space-y-3">
                     {g.items.map((m) => (
                       <li key={m.id} className={`flex ${m.messageType === "outgoing" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm ${m.messageType === "outgoing" ? "bg-blue-600 text-white rounded-tr-sm" : "bg-gray-100 rounded-tl-sm"}`}>
-                          <div>{m.messageContent}</div>
-                          <div className={`text-[10px] opacity-70 mt-1 ${m.messageType === "outgoing" ? "text-white/80" : "text-gray-600"}`}>
+                        <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm text-white shadow-sm ${m.messageType === "outgoing" ? "bg-card inner-shadow text-white rounded-tr-sm" : "bg-light-custom inner-shadow rounded-tl-sm"}`}>
+                          {/* Media display */}
+                          {m.mediaUrl && (
+                            <div className="mb-2">
+                              {m.mediaType === 'photo' && (
+                                <img 
+                                  src={m.mediaUrl} 
+                                  alt="Media" 
+                                  className="max-w-full h-auto rounded-lg"
+                                />
+                              )}
+                              {m.mediaType === 'video' && (
+                                <video 
+                                  src={m.mediaUrl} 
+                                  controls 
+                                  className="max-w-full h-auto rounded-lg"
+                                />
+                              )}
+                              {m.mediaType === 'audio' && (
+                                <audio 
+                                  src={m.mediaUrl} 
+                                  controls 
+                                  className="w-full"
+                                />
+                              )}
+                              {m.mediaType === 'document' && (
+                                <div className="p-2 bg-gray-700 rounded-lg flex items-center gap-2">
+                                  <span className="text-blue-400">📄</span>
+                                  <span className="text-sm">مستند</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Message content */}
+                          {m.messageContent && <div>{m.messageContent}</div>}
+                          
+                          <div className={`text-[10px] opacity-70 mt-1 ${m.messageType === "outgoing" ? "text-white/80" : "text-white/80"}`}>
                             {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
@@ -217,7 +325,63 @@ export default function TelegramChatsPage() {
             </div>
           )}
         </div>
-        <div className="p-3 border-t flex gap-2">
+        <div className="p-3 border-t">
+          {/* Selected media preview */}
+          {selectedMedia && (
+            <div className="mb-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-300">
+                    {mediaType === 'photo' && '🖼️ صورة'}
+                    {mediaType === 'video' && '🎥 فيديو'}
+                    {mediaType === 'audio' && '🎵 صوت'}
+                    {mediaType === 'document' && '📄 مستند'}
+                  </span>
+                  <span className="text-xs text-gray-400">{selectedMedia.name}</span>
+                </div>
+                <button
+                  onClick={removeSelectedMedia}
+                  className="text-red-400 hover:text-red-300 text-sm"
+                >
+                  إزالة
+                </button>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex gap-1">
+            {/* Media upload button */}
+            <label className="flex items-center justify-centerrounded-lg cursor-pointer transition-colors">
+              <input
+                type="file"
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+             <img src="/img.gif" alt="" className="w-10 h-10" />
+            </label>
+            
+            {/* Emoji button */}
+            <button
+              onClick={() => setShowEmojiPicker(true)}
+              className="flex items-center justify-center rounded-lg transition-colors"
+            >
+              <img src="/imogi.gif" alt="" className="w-10 h-10" />
+            </button>
+                 
+          <button
+              disabled={sending || (!messageText.trim() && !selectedMedia) || !activeChatId}
+            onClick={handleSend}
+              className="px-1 py-2 rounded text-white disabled:opacity-50"
+            >
+              {sending ? (
+                <div className="w-10 h-10 flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <img src="/telegram.gif" alt="" className="w-10 h-10" />
+              )}
+          </button>
           <input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
@@ -228,16 +392,18 @@ export default function TelegramChatsPage() {
               }
             }}
             placeholder="اكتب رسالة..."
-            className="flex-1 border rounded px-3 py-2"
+              className="flex-1 bg-[#011910] py-4 border border-gray-300 rounded-2xl text-white placeholder-white/50 px-1"
           />
-          <button
-            disabled={sending || !messageText.trim() || !activeChatId}
-            onClick={handleSend}
-            className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
-          >
-            إرسال
-          </button>
+       
+          </div>
         </div>
+        
+        {/* Emoji Picker Modal */}
+        <EmojiPickerModal
+          isOpen={showEmojiPicker}
+          onClose={() => setShowEmojiPicker(false)}
+          onEmojiSelect={handleEmojiSelect}
+        />
       </section>
     </div>
   );

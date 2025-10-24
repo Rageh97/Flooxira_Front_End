@@ -3,12 +3,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PropsWithChildren } from "react";
 import { clsx } from "clsx";
+import AdminGuard from "@/components/AdminGuard";
 
 const adminTabs = [
   { href: "/admin/users", label: "المستخدمين" },
+  { href: "/admin/subscriptions", label: "المشتركين" },
   { href: "/admin/plans", label: "الباقات" },
   { href: "/admin/subscription-requests", label: "طلبات الاشتراك" },
   { href: "/admin/coupons", label: "إدارة القسائم" },
+  { href: "/admin/tutorials", label: "الشروحات" },
+  { href: "/admin/reviews", label: "التقييمات" },
   { href: "/admin/analytics", label: "التحليلات" },
 ];
 
@@ -16,7 +20,8 @@ export default function AdminLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
 
   return (
-    <div className="space-y-4">
+    <AdminGuard>
+      <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold text-white">لوحة تحكم الإدارة</h1>
         <p className="text-sm text-gray-300">أدوات وإعدادات الإدارة.</p>
@@ -45,6 +50,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
         </div>
       </div>
     </div>
+    </AdminGuard>
   );
 }
 

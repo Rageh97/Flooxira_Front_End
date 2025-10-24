@@ -313,7 +313,7 @@ export default function SchedulePage() {
     );
   }
 
-  if (!hasActiveSubscription()) {
+  if (!hasActiveSubscription) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold text-white">الجدولة</h1>
@@ -337,20 +337,20 @@ export default function SchedulePage() {
     <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-white">الجدولة</h1>
-        <p className="text-gray-600">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p>
+        <p className="text-gray-300">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p>
       </div>
 
-      <Card className="bg-card border-none">
+      <Card className="gradient-border">
         <CardHeader className="border-text-primary/50">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-white">
               {monthNames[currentMonth - 1]} {currentYear}
             </h2>
             <div className="flex items-center gap-2">
-              <Button className="text-primary" variant="secondary" onClick={() => navigateMonth('prev')}>
+              <Button className="text-white bg-light-custom inner-shadow" variant="secondary" onClick={() => navigateMonth('prev')}>
                 ← السابق
               </Button>
-              <Button className="text-primary" variant="secondary" onClick={() => navigateMonth('next')}>
+              <Button className="text-white bg-light-custom inner-shadow" variant="secondary" onClick={() => navigateMonth('next')}>
                 التالي →
               </Button>
             </div>
@@ -397,7 +397,7 @@ export default function SchedulePage() {
               <div className="text-xs text-white">
                 التقويم: {daysInMonth} يوم، يبدأ في اليوم {firstDay}
                     </div>
-              <div className="grid grid-cols-7 gap-2  rounded-lg p-4 bg-light-custom">
+              <div className="grid grid-cols-7 gap-2  rounded-lg p-4 bg-secondry inner-shadow">
                 {/* Day headers */}
                 {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
                   <div key={day} className="p-3 text-center font-semibold text-primary bg-dark-custom rounded ">
@@ -483,17 +483,17 @@ export default function SchedulePage() {
 
       {/* Edit Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-lg flex items-center justify-center z-50">
+          <div className="gradient-border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">العناصر المجدولة</h3>
+              <h3 className="text-lg font-semibold text-white">العناصر المجدولة</h3>
               <Button variant="secondary" onClick={handleCancelSchedule}>
                 إغلاق
               </Button>
             </div>
             
             {selectedDaySchedules.length === 0 ? (
-              <p className="text-gray-500">لا توجد عناصر مجدولة لهذا اليوم</p>
+              <p className="text-gray-300">لا توجد عناصر مجدولة لهذا اليوم</p>
             ) : (
               <div className="space-y-4">
                 {selectedDaySchedules.map(({ type, item }) => (

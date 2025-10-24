@@ -25,6 +25,15 @@ export default function CategoryDetailPage() {
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [connections, setConnections] = useState<{[k in Platform]?: boolean}>({});
 
+  // Helper function to convert local datetime to ISO string without timezone conversion
+  const localDateTimeToISO = (localDateTime: string): string => {
+    if (!localDateTime) return '';
+    // datetime-local gives a string without timezone info
+    // Browser interprets it as local time and converts to UTC correctly
+    const date = new Date(localDateTime);
+    return date.toISOString();
+  };
+
   const load = async () => {
     if (!categoryId) return;
     try {
@@ -75,7 +84,7 @@ export default function CategoryDetailPage() {
     if (!selectedItem) return;
     await updateContentItem(token, selectedItem.id, {
       title, body, attachments, platforms,
-      scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+      scheduledAt: scheduledAt ? localDateTimeToISO(scheduledAt) : null,
     });
     await load();
   };
@@ -141,7 +150,7 @@ export default function CategoryDetailPage() {
     await scheduleContentItem(token, selectedItem.id, {
       platforms: platforms as string[],
       format: 'feed',
-      scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null
+      scheduledAt: scheduledAt ? localDateTimeToISO(scheduledAt) : null
     });
     alert('Scheduled! Check Schedules.');
     router.push('/schedule');
@@ -187,7 +196,7 @@ export default function CategoryDetailPage() {
           <CardContent className="space-y-2">
             <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
             <Textarea placeholder="Write anything..." value={body} onChange={(e) => setBody(e.target.value)} />
-            <input type="file" onChange={(e) => e.target.files && onUpload(e.target.files[0])} />
+            <input type="file" onChange={(e) => e.target.files && onUpload(e.target.files)} />
             <div className="flex flex-wrap gap-2">
               {attachments.map((a, idx) => (
                 <div key={idx} className="text-xs bg-gray-800 px-2 py-1 rounded">

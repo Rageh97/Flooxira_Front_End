@@ -51,7 +51,7 @@ export default function Timeline({ events, title }: TimelineProps) {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-SA', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -112,6 +112,8 @@ export default function Timeline({ events, title }: TimelineProps) {
     </Card>
   );
 }
+
+
 
 
 

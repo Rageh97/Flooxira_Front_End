@@ -278,7 +278,7 @@ export default function SubscriptionRequestsAdminPage() {
                           <h3 className="font-semibold text-gray-800 mb-2">التاريخ</h3>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-gray-500" />
-                            <span>{new Date(request.createdAt).toLocaleDateString('ar-SA')}</span>
+                            <span>{new Date(request.createdAt).toLocaleDateString('en-US')}</span>
                           </div>
                         </div>
                       </div>

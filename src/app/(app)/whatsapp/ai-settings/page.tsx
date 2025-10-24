@@ -7,12 +7,12 @@ import {
   getBotSettings, 
   updateBotSettings, 
   resetBotSettings, 
-  testAIResponse,
   getAvailableModels,
   getPersonalityTemplates,
   type BotSettings,
   type PersonalityTemplate,
-  type AvailableModels
+  type AvailableModels,
+  type ModelInfo
 } from '@/lib/botSettingsApi';
 
 export default function AISettingsPage() {
@@ -20,11 +20,8 @@ export default function AISettingsPage() {
   const [settings, setSettings] = useState<BotSettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [testing, setTesting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [testMessage, setTestMessage] = useState('');
-  const [testResponse, setTestResponse] = useState('');
   const [availableModels, setAvailableModels] = useState<AvailableModels | null>(null);
   const [templates, setTemplates] = useState<Record<string, PersonalityTemplate> | null>(null);
   const [activeTab, setActiveTab] = useState('general');
@@ -104,28 +101,7 @@ export default function AISettingsPage() {
     }
   };
 
-  const handleTest = async () => {
-    if (!testMessage.trim()) return;
-    
-    setTesting(true);
-    setTestResponse('');
-    setError('');
-    
-    try {
-      const res = await testAIResponse(testMessage);
-      if (res.success) {
-        setTestResponse(res.data.response);
-      } else {
-        setError(res.message || 'فشل في اختبار استجابة الذكاء الاصطناعي');
-      }
-    } catch (error) {
-      console.error('Error testing AI:', error);
-      setError('فشل في اختبار استجابة الذكاء الاصطناعي');
-    } finally {
-      setTesting(false);
-    }
-  };
-
+ 
   const applyTemplate = (templateKey: string) => {
     if (!templates || !settings) return;
     
@@ -159,7 +135,7 @@ export default function AISettingsPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-white">إعدادات بوت الذكاء الاصطناعي</h1>
+      {/* <h1 className="text-3xl font-bold gradient-border mb-6 text-white">إعدادات بوت الذكاء الاصطناعي</h1> */}
       
       {/* Status Messages */}
       {error && (
@@ -174,8 +150,8 @@ export default function AISettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="mb-6">
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      <div className="gradient-border mb-6">
+        <div className="flex space-x-1 bg-secondry inner-shadow p-1 rounded-lg">
           {[
             { id: 'general', label: 'عام' },
             { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
@@ -183,15 +159,14 @@ export default function AISettingsPage() {
             { id: 'business', label: 'الأعمال' },
             { id: 'prompts', label: 'الرسائل المخصصة' },
             { id: 'advanced', label: 'متقدم' },
-            { id: 'test', label: 'اختبار' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'gradient-border text-white'
+                  : 'text-white '
               }`}
             >
               {tab.label}
@@ -202,7 +177,7 @@ export default function AISettingsPage() {
 
       {/* General Settings */}
       {activeTab === 'general' && (
-        <Card className="mb-6">
+        <Card className="gradient-border mb-6 text-white">
           <CardHeader>
             <CardTitle>الإعدادات العامة</CardTitle>
           </CardHeader>
@@ -213,7 +188,7 @@ export default function AISettingsPage() {
                 <select
                   value={settings.responseLength}
                   onChange={(e) => setSettings({...settings, responseLength: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                 >
                   <option value="short">قصير</option>
                   <option value="medium">متوسط</option>
@@ -226,7 +201,7 @@ export default function AISettingsPage() {
                 <select
                   value={settings.language}
                   onChange={(e) => setSettings({...settings, language: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                 >
                   <option value="arabic">عربي</option>
                   <option value="english">إنجليزي</option>
@@ -241,7 +216,7 @@ export default function AISettingsPage() {
                   type="checkbox"
                   checked={settings.includeEmojis}
                   onChange={(e) => setSettings({...settings, includeEmojis: e.target.checked})}
-                  className="mr-2"
+                  className="mx-2"
                 />
                 تضمين الإيموجي
               </label>
@@ -251,7 +226,7 @@ export default function AISettingsPage() {
                   type="checkbox"
                   checked={settings.includeGreetings}
                   onChange={(e) => setSettings({...settings, includeGreetings: e.target.checked})}
-                  className="mr-2"
+                  className="mx-2"
                 />
                 تضمين التحيات
               </label>
@@ -261,7 +236,7 @@ export default function AISettingsPage() {
                   type="checkbox"
                   checked={settings.includeFarewells}
                   onChange={(e) => setSettings({...settings, includeFarewells: e.target.checked})}
-                  className="mr-2"
+                  className="mx-2"
                 />
                 تضمين الوداع
               </label>
@@ -272,7 +247,7 @@ export default function AISettingsPage() {
 
       {/* AI Models Settings */}
       {activeTab === 'ai' && (
-        <Card className="mb-6">
+        <Card className="gradient-border mb-6 text-white">
           <CardHeader>
             <CardTitle>تكوين نماذج الذكاء الاصطناعي</CardTitle>
           </CardHeader>
@@ -283,16 +258,26 @@ export default function AISettingsPage() {
                 <select
                   value={settings.aiProvider}
                   onChange={(e) => setSettings({...settings, aiProvider: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                 >
                   <option value="openai">OpenAI فقط</option>
                   <option value="gemini">Gemini فقط</option>
                   <option value="both">كلاهما (احتياطي)</option>
                 </select>
               </div>
-              
               <div>
-                <label className="block text-sm font-medium mb-2">درجة الحرارة</label>
+              <label className="block text-sm font-medium mb-2">الحد الأقصى للرموز</label>
+              <input
+                type="number"
+                min="100"
+                max="4000"
+                value={settings.maxTokens}
+                onChange={(e) => setSettings({...settings, maxTokens: parseInt(e.target.value)})}
+                className="w-full p-2 border rounded-md bg-[#011910]"
+              />
+            </div>
+              {/* <div>
+                <label className="block text-sm font-medium mb-2"> جودة الرد</label>
                 <input
                   type="range"
                   min="0"
@@ -303,7 +288,7 @@ export default function AISettingsPage() {
                   className="w-full"
                 />
                 <div className="text-sm text-gray-600 mt-1">{settings.temperature}</div>
-              </div>
+              </div> */}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,10 +297,10 @@ export default function AISettingsPage() {
                 <select
                   value={settings.openaiModel}
                   onChange={(e) => setSettings({...settings, openaiModel: e.target.value})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                 >
-                  {availableModels?.openai.map(model => (
-                    <option key={model} value={model}>{model}</option>
+                  {availableModels?.openai.map((model, index) => (
+                    <option key={model.id || index} value={model.id}>{model.name}</option>
                   ))}
                 </select>
               </div>
@@ -325,33 +310,23 @@ export default function AISettingsPage() {
                 <select
                   value={settings.geminiModel}
                   onChange={(e) => setSettings({...settings, geminiModel: e.target.value})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                 >
-                  {availableModels?.gemini.map(model => (
-                    <option key={model} value={model}>{model}</option>
+                  {availableModels?.gemini.map((model, index) => (
+                    <option key={model.id || index} value={model.id}>{model.name}</option>
                   ))}
                 </select>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">الحد الأقصى للرموز</label>
-              <input
-                type="number"
-                min="100"
-                max="4000"
-                value={settings.maxTokens}
-                onChange={(e) => setSettings({...settings, maxTokens: parseInt(e.target.value)})}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
+          
           </CardContent>
         </Card>
       )}
 
       {/* Personality Settings */}
       {activeTab === 'personality' && (
-        <Card className="mb-6">
+        <Card className="gradient-border mb-6 text-white">
           <CardHeader>
             <CardTitle>الشخصية والنبرة</CardTitle>
           </CardHeader>
@@ -362,7 +337,7 @@ export default function AISettingsPage() {
                 <select
                   value={settings.personality}
                   onChange={(e) => setSettings({...settings, personality: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                 >
                   <option value="professional">مهني</option>
                   <option value="friendly">ودود</option>
@@ -378,7 +353,7 @@ export default function AISettingsPage() {
                 <select
                   value={settings.dialect}
                   onChange={(e) => setSettings({...settings, dialect: e.target.value as any})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                 >
                   <option value="saudi">سعودي</option>
                   <option value="egyptian">مصري</option>
@@ -402,7 +377,7 @@ export default function AISettingsPage() {
               <select
                 value={settings.tone}
                 onChange={(e) => setSettings({...settings, tone: e.target.value as any})}
-                className="w-full p-2 border rounded-md"
+                className="w-full p-2 border rounded-md bg-[#011910]"
               >
                 <option value="formal">رسمي</option>
                 <option value="informal">غير رسمي</option>
@@ -411,7 +386,7 @@ export default function AISettingsPage() {
             </div>
 
             {/* Personality Templates */}
-            {templates && (
+            {/* {templates && (
               <div>
                 <label className="block text-sm font-medium mb-2">قوالب سريعة</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -427,14 +402,14 @@ export default function AISettingsPage() {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
           </CardContent>
         </Card>
       )}
 
       {/* Business Settings */}
       {activeTab === 'business' && (
-        <Card className="mb-6">
+        <Card className="gradient-border mb-6 text-white">
           <CardHeader>
             <CardTitle>معلومات الأعمال</CardTitle>
           </CardHeader>
@@ -446,7 +421,7 @@ export default function AISettingsPage() {
                   type="text"
                   value={settings.businessName || ''}
                   onChange={(e) => setSettings({...settings, businessName: e.target.value})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                   placeholder="اسم عملك"
                 />
               </div>
@@ -457,7 +432,7 @@ export default function AISettingsPage() {
                   type="text"
                   value={settings.businessType || ''}
                   onChange={(e) => setSettings({...settings, businessType: e.target.value})}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-[#011910]"
                   placeholder="مثال: التجارة الإلكترونية، مطعم، خدمات"
                 />
               </div>
@@ -468,7 +443,7 @@ export default function AISettingsPage() {
               <textarea
                 value={settings.businessDescription || ''}
                 onChange={(e) => setSettings({...settings, businessDescription: e.target.value})}
-                className="w-full p-2 border rounded-md h-24"
+                className="w-full p-2 border rounded-md h-24 bg-[#011910]"
                 placeholder="اوصف عملك وما تقدمه"
               />
             </div>
@@ -478,7 +453,7 @@ export default function AISettingsPage() {
               <textarea
                 value={settings.targetAudience || ''}
                 onChange={(e) => setSettings({...settings, targetAudience: e.target.value})}
-                className="w-full p-2 border rounded-md h-24"
+                className="w-full p-2 border rounded-md h-24 bg-[#011910]"
                 placeholder="اوصف عملاءك المستهدفين"
               />
             </div>
@@ -488,7 +463,7 @@ export default function AISettingsPage() {
 
       {/* Custom Prompts */}
       {activeTab === 'prompts' && (
-        <Card className="mb-6">
+        <Card className="gradient-border mb-6 text-white">
           <CardHeader>
             <CardTitle>الرسائل المخصصة</CardTitle>
           </CardHeader>
@@ -498,7 +473,7 @@ export default function AISettingsPage() {
               <textarea
                 value={settings.systemPrompt || ''}
                 onChange={(e) => setSettings({...settings, systemPrompt: e.target.value})}
-                className="w-full p-2 border rounded-md h-32"
+                className="w-full p-2 border rounded-md h-32 bg-[#011910]"
                 placeholder="رسالة النظام الرئيسية التي تحدد سلوك البوت"
               />
             </div>
@@ -509,7 +484,7 @@ export default function AISettingsPage() {
                 <textarea
                   value={settings.greetingPrompt || ''}
                   onChange={(e) => setSettings({...settings, greetingPrompt: e.target.value})}
-                  className="w-full p-2 border rounded-md h-24"
+                  className="w-full p-2 border rounded-md h-24 bg-[#011910]"
                   placeholder="كيف يجب أن يحيا البوت العملاء"
                 />
               </div>
@@ -519,7 +494,7 @@ export default function AISettingsPage() {
                 <textarea
                   value={settings.farewellPrompt || ''}
                   onChange={(e) => setSettings({...settings, farewellPrompt: e.target.value})}
-                  className="w-full p-2 border rounded-md h-24"
+                  className="w-full p-2 border rounded-md h-24 bg-[#011910]"
                   placeholder="كيف يجب أن يودع البوت العملاء"
                 />
               </div>
@@ -530,7 +505,7 @@ export default function AISettingsPage() {
               <textarea
                 value={settings.salesPrompt || ''}
                 onChange={(e) => setSettings({...settings, salesPrompt: e.target.value})}
-                className="w-full p-2 border rounded-md h-24"
+                className="w-full p-2 border rounded-md h-24 bg-[#011910]"
                 placeholder="كيف يجب أن يتعامل البوت مع محادثات المبيعات"
               />
             </div>
@@ -540,7 +515,7 @@ export default function AISettingsPage() {
               <textarea
                 value={settings.objectionHandlingPrompt || ''}
                 onChange={(e) => setSettings({...settings, objectionHandlingPrompt: e.target.value})}
-                className="w-full p-2 border rounded-md h-24"
+                className="w-full p-2 border rounded-md h-24 bg-[#011910]"
                 placeholder="كيف يجب أن يتعامل البوت مع اعتراضات العملاء"
               />
             </div>
@@ -550,7 +525,7 @@ export default function AISettingsPage() {
 
       {/* Advanced Settings */}
       {activeTab === 'advanced' && (
-        <Card className="mb-6">
+        <Card className="gradient-border mb-6 text-white">
           <CardHeader>
             <CardTitle>الإعدادات المتقدمة</CardTitle>
           </CardHeader>
@@ -561,7 +536,7 @@ export default function AISettingsPage() {
                   type="checkbox"
                   checked={settings.enableContextMemory}
                   onChange={(e) => setSettings({...settings, enableContextMemory: e.target.checked})}
-                  className="mr-2"
+                  className="mx-2"
                 />
                 تفعيل ذاكرة السياق
               </label>
@@ -571,7 +546,7 @@ export default function AISettingsPage() {
                   type="checkbox"
                   checked={settings.enableFallback}
                   onChange={(e) => setSettings({...settings, enableFallback: e.target.checked})}
-                  className="mr-2"
+                  className="mx-2"
                 />
                 تفعيل الردود الاحتياطية
               </label>
@@ -585,7 +560,7 @@ export default function AISettingsPage() {
                 max="50"
                 value={settings.contextWindow}
                 onChange={(e) => setSettings({...settings, contextWindow: parseInt(e.target.value)})}
-                className="w-full p-2 border rounded-md"
+                className="w-full p-2 border rounded-md bg-[#011910]"
               />
             </div>
 
@@ -594,7 +569,7 @@ export default function AISettingsPage() {
               <textarea
                 value={settings.fallbackMessage || ''}
                 onChange={(e) => setSettings({...settings, fallbackMessage: e.target.value})}
-                className="w-full p-2 border rounded-md h-24"
+                className="w-full p-2 border rounded-md h-24 bg-[#011910]"
                 placeholder="رسالة ترسل عندما لا يستطيع الذكاء الاصطناعي الرد"
               />
             </div>
@@ -605,7 +580,7 @@ export default function AISettingsPage() {
                   type="checkbox"
                   checked={settings.trackConversations}
                   onChange={(e) => setSettings({...settings, trackConversations: e.target.checked})}
-                  className="mr-2"
+                  className="mx-2"
                 />
                 تتبع المحادثات
               </label>
@@ -615,7 +590,7 @@ export default function AISettingsPage() {
                   type="checkbox"
                   checked={settings.trackPerformance}
                   onChange={(e) => setSettings({...settings, trackPerformance: e.target.checked})}
-                  className="mr-2"
+                  className="mx-2"
                 />
                 تتبع الأداء
               </label>
@@ -624,48 +599,13 @@ export default function AISettingsPage() {
         </Card>
       )}
 
-      {/* Test AI */}
-      {activeTab === 'test' && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>اختبار استجابة الذكاء الاصطناعي</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">رسالة الاختبار</label>
-              <input
-                type="text"
-                value={testMessage}
-                onChange={(e) => setTestMessage(e.target.value)}
-                className="w-full p-2 border rounded-md"
-                placeholder="اكتب رسالة اختبار لترى كيف يرد البوت"
-              />
-            </div>
-            
-            <Button
-              onClick={handleTest}
-              disabled={!testMessage.trim() || testing}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              {testing ? 'جاري الاختبار...' : 'اختبار الاستجابة'}
-            </Button>
-
-            {testResponse && (
-              <div className="mt-4 p-4 bg-gray-50 border rounded-md">
-                <h4 className="font-medium mb-2">رد الذكاء الاصطناعي:</h4>
-                <p className="text-gray-700">{testResponse}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Action Buttons */}
       <div className="flex gap-4">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-green-500 hover:bg-green-600"
+          className="primary-button "
         >
           {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
         </Button>
@@ -673,8 +613,8 @@ export default function AISettingsPage() {
         <Button
           onClick={handleReset}
           disabled={saving}
-          variant="outline"
-          className="border-red-300 text-red-600 hover:bg-red-50"
+          variant="secondary"
+          className="primary-button after:bg-red-500"
         >
           {saving ? 'جاري إعادة التعيين...' : 'إعادة تعيين إلى الافتراضي'}
         </Button>
