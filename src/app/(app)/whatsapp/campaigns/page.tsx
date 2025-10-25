@@ -46,6 +46,17 @@ export default function WhatsAppCampaignsPage() {
       return;
     }
 
+    // التحقق من القيود
+    if (campaignThrottle < 5) {
+      setError("الحد الأدنى للدقائق بين الرسائل هو 5 دقائق");
+      return;
+    }
+
+    if (campaignDailyCap && campaignDailyCap > 500) {
+      setError("الحد الأقصى للأرقام في اليوم هو 500 رقم");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -92,6 +103,12 @@ export default function WhatsAppCampaignsPage() {
   async function handleSendToTag() {
     if (!selectedTagId || !tagCampaignTemplate.trim()) {
       setError("يرجى اختيار تصنيف وإدخال نص المحتوى التسويقي");
+      return;
+    }
+
+    // التحقق من القيود
+    if (campaignThrottle < 5) {
+      setError("الحد الأدنى للدقائق بين الرسائل هو 5 دقائق");
       return;
     }
     try {
@@ -200,7 +217,8 @@ export default function WhatsAppCampaignsPage() {
     <div className="flex w-full gap-4">
           <div className=" w-full">
             <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (دقائق بين الرسائل)</label>
-            <input min="1" max="100" type="number" className="bg-[#011910] rounded-md p-2 text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '1'))} />
+            <input min="5" max="100" type="number" className="bg-[#011910] rounded-md p-2 text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
+            <p className="text-xs text-gray-300 mt-1">الحد الأدنى: 5 دقائق</p>
           </div>
 
 
@@ -215,7 +233,8 @@ export default function WhatsAppCampaignsPage() {
           
             <div className=" w-full">
               <label className="block text-sm font-medium mb-2 text-white">الحد اليومي (أرقام/يوم، اختياري)</label>
-              <input placeholder="أقصى عدد 100" min="1" max="100" type="number" className=" bg-[#011910] rounded-md  text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : 1)} />
+              <input placeholder="أقصى عدد 500" min="1" max="500" type="number" className=" bg-[#011910] rounded-md  text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : 1)} />
+              <p className="text-xs text-gray-300 mt-1">الحد الأقصى: 500 رقم</p>
             </div>
             
             <div className="w-full">
@@ -302,7 +321,8 @@ export default function WhatsAppCampaignsPage() {
            
             <div>
             <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (دقائق بين الرسائل)</label>
-             <input placeholder="1" min="1" max="100" type="number" className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '1'))} />
+             <input placeholder="5" min="5" max="100" type="number" className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
+             <p className="text-xs text-gray-300 mt-1">الحد الأدنى: 5 دقائق</p>
           </div>
 
 

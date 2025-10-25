@@ -310,40 +310,33 @@ export default function CustomersPage() {
     }
   };
 
-  // Export contacts function
+  // Export contacts function - فقط الأرقام
   const handleExportContacts = () => {
     try {
-      const exportData = customers.map(customer => ({
-        'الاسم': customer.name,
-        'البريد الإلكتروني': customer.email,
-        'الهاتف': customer.phone,
-        'الفئة': customer.category?.name || '',
-        'المنتج': customer.productName,
-        'اسم المتجر': customer.storeName || '',
-        'نوع الاشتراك': customer.subscriptionType,
-        'تاريخ البداية': customer.subscriptionStartDate,
-        'تاريخ الانتهاء': customer.subscriptionEndDate,
-        'الحالة': customer.subscriptionStatus === 'active' ? 'نشط' : 'غير نشط',
-        'سعر الشراء': (customer as any).purchasePrice || 0,
-        'سعر البيع': (customer as any).salePrice || 0,
-        'الربح': ((customer as any).salePrice || 0) - ((customer as any).purchasePrice || 0),
-        'العلامات': customer.tags.join(', '),
-        'وسائل التواصل': Object.entries(customer.socialMedia)
-          .map(([platform, handle]) => `${platform}: ${handle}`)
-          .join(', ')
-      }));
+      // تصدير الأرقام فقط
+      const phoneNumbers = customers
+        .filter(customer => customer.phone && customer.phone.trim() !== '')
+        .map(customer => ({
+          'الاسم': customer.name,
+          'رقم الهاتف': customer.phone
+        }));
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      if (phoneNumbers.length === 0) {
+        toast.error('لا توجد أرقام هواتف للتصدير');
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(phoneNumbers);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'جهات الاتصال');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'أرقام الهواتف');
       
-      const fileName = `جهات_الاتصال_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `أرقام_الهواتف_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
       
-      toast.success('تم تصدير جهات الاتصال بنجاح');
+      toast.success(`تم تصدير ${phoneNumbers.length} رقم هاتف بنجاح`);
     } catch (error) {
       console.error('Error exporting contacts:', error);
-      toast.error('فشل في تصدير جهات الاتصال');
+      toast.error('فشل في تصدير أرقام الهواتف');
     }
   };
 
@@ -547,23 +540,42 @@ export default function CustomersPage() {
 
       const customers = response.data.customers;
       
-      // تحضير البيانات للتصدير
-      const exportData = customers.map(customer => ({
-        'الاسم': customer.name,
-        'البريد الإلكتروني': customer.email || '',
-        'رقم الهاتف': customer.phone || '',
-        'التصنيف': customer.category?.name || '',
-        'اسم المنتج': customer.productName || '',
-        'اسم المتجر': customer.storeName || '',
-        'نوع الاشتراك': customer.subscriptionType || '',
-        'تاريخ بداية الاشتراك': customer.subscriptionStartDate ? new Date(customer.subscriptionStartDate).toLocaleDateString('en-US') : '',
-        'تاريخ انتهاء الاشتراك': customer.subscriptionEndDate ? new Date(customer.subscriptionEndDate).toLocaleDateString('en-US') : '',
-        'حالة الاشتراك': getSubscriptionStatus(customer) === 'active' ? 'نشط' : getSubscriptionStatus(customer) === 'expired' ? 'منتهي' : 'غير نشط',
-        'العنوان': customer.address || '',
-        'تاريخ آخر اتصال': customer.lastContactDate ? new Date(customer.lastContactDate).toLocaleDateString('en-US') : '',
-        'تاريخ المتابعة التالية': customer.nextFollowUpDate ? new Date(customer.nextFollowUpDate).toLocaleDateString('en-US') : '',
-        'تاريخ الإنشاء': new Date(customer.createdAt).toLocaleDateString('en-US')
-      }));
+      // تحضير البيانات للتصدير - كل البيانات
+      const exportData = customers.map(customer => {
+        const baseData = {
+          'الاسم': customer.name,
+          'البريد الإلكتروني': customer.email || '',
+          'رقم الهاتف': customer.phone || '',
+          'التصنيف': customer.category?.name || '',
+          'اسم المنتج': customer.productName || '',
+          'اسم المتجر': customer.storeName || '',
+          'نوع الاشتراك': customer.subscriptionType || '',
+          'تاريخ بداية الاشتراك': customer.subscriptionStartDate ? new Date(customer.subscriptionStartDate).toLocaleDateString('en-US') : '',
+          'تاريخ انتهاء الاشتراك': customer.subscriptionEndDate ? new Date(customer.subscriptionEndDate).toLocaleDateString('en-US') : '',
+          'حالة الاشتراك': getSubscriptionStatus(customer) === 'active' ? 'نشط' : getSubscriptionStatus(customer) === 'expired' ? 'منتهي' : 'غير نشط',
+          'العنوان': customer.address || '',
+          'سعر الشراء': (customer as any).purchasePrice || 0,
+          'سعر البيع': (customer as any).salePrice || 0,
+          'الربح': ((customer as any).salePrice || 0) - ((customer as any).purchasePrice || 0),
+          'العلامات': customer.tags.join(', '),
+          'وسائل التواصل': Object.entries(customer.socialMedia)
+            .map(([platform, handle]) => `${platform}: ${handle}`)
+            .join(', '),
+          'تاريخ آخر اتصال': customer.lastContactDate ? new Date(customer.lastContactDate).toLocaleDateString('en-US') : '',
+          'تاريخ المتابعة التالية': customer.nextFollowUpDate ? new Date(customer.nextFollowUpDate).toLocaleDateString('en-US') : '',
+          'تاريخ الإنشاء': new Date(customer.createdAt).toLocaleDateString('en-US'),
+          'صورة الفاتورة': (customer as any).invoiceImage || ''
+        };
+
+        // إضافة الحقول المخصصة
+        const customFieldsData = {};
+        customFields.forEach(field => {
+          const value = customer.customFields?.[field.name];
+          customFieldsData[field.label] = value || '';
+        });
+
+        return { ...baseData, ...customFieldsData };
+      });
 
       // إنشاء ملف Excel
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -828,7 +840,7 @@ export default function CustomersPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="gradient-border border-none">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
@@ -857,7 +869,7 @@ export default function CustomersPage() {
             </CardContent>
           </Card>
 
-          <Card className="gradient-border border-none">
+          {/* <Card className="gradient-border border-none">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -869,7 +881,7 @@ export default function CustomersPage() {
                 <p className="text-4xl font-bold text-white">{stats.vipCustomers}</p>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card className="gradient-border border-none">
             <CardContent className="p-4">
@@ -944,9 +956,10 @@ export default function CustomersPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+           <div className="flex items-center gap-2">
+             {/* Search */}
+             <div className="relative w-full">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-white" />
               <Input
                 placeholder="البحث بالاسم، البريد الإلكتروني، الهاتف..."
                 value={searchTerm}
@@ -954,20 +967,22 @@ export default function CustomersPage() {
                 className="pl-10"
               />
             </div>
-
-            {/* Filters Row */}
-            <div className="flex flex-col md:flex-row gap-4">
-           
-
-              {/* Product Filter */}
-              <div className="flex-1">
-                <Label className="text-white">المنتج</Label>
+               {/* Product Filter */}
+               <div className="w-full">
+                {/* <Label className="text-white">المنتج</Label> */}
                 <Input
                   placeholder="فلترة بالمنتج"
                   value={filters.product}
                   onChange={(e) => setFilters(prev => ({ ...prev, product: e.target.value }))}
                 />
               </div>
+           </div>
+
+            {/* Filters Row */}
+            <div className="flex flex-col md:flex-row gap-4">
+           
+
+           
 
               {/* Subscription Status Filter */}
               <div className="flex-1">
@@ -1053,10 +1068,10 @@ export default function CustomersPage() {
                   {Array.from(new Set(customers.map(c => c.storeName).filter(Boolean))).map((storeName) => (
                     <Button
                       key={storeName}
-                      variant={filters.storeName === storeName ? 'default' : 'secondary'}
+                      // variant={filters.storeName === storeName ? 'default' : 'secondary'}
                       size="sm"
                       onClick={() => setFilters(prev => ({ ...prev, storeName: storeName || '' }))}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      className={`${filters.storeName === storeName ? 'bg-blue-500 inner-shadow text-white' : 'bg-gray-600 text-black '}`}
                     >
                       {storeName}
                     </Button>
@@ -1095,9 +1110,9 @@ export default function CustomersPage() {
                   <tr className="border-b border-green-200">
                     <th className="text-right p-4 font-semibold text-white border-r border-green-300">الاسم</th>
                     <th className="text-right p-4 font-semibold text-white border-r border-green-300">معلومات الاتصال</th>
+                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">اسم المتجر</th>
                     <th className="text-right p-4 font-semibold text-white border-r border-green-300">التصنيف</th>
                     <th className="text-right p-4 font-semibold text-white border-r border-green-300">المنتج</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">اسم المتجر</th>
                     <th className="text-right p-4 font-semibold text-white border-r border-green-300">سعر الشراء</th>
                     <th className="text-right p-4 font-semibold text-white border-r border-green-300">سعر البيع</th>
                     <th className="text-right p-4 font-semibold text-white border-r border-green-300">الربح</th>
@@ -1145,6 +1160,15 @@ export default function CustomersPage() {
                         </div>
                       </td>
                       <td className="p-4 border-r border-green-100">
+                        {customer.storeName ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-white">{customer.storeName}</span>
+                          </div>
+                        ) : (
+                          <span className="text-white">-</span>
+                        )}
+                      </td>
+                      <td className="p-4 border-r border-green-100">
                         {customer.category ? (
                           <Badge style={{ backgroundColor: customer.category.color, color: 'white' }} className="shadow-sm">
                             {customer.category.name}
@@ -1163,15 +1187,7 @@ export default function CustomersPage() {
                           <span className="text-white">-</span>
                         )}
                       </td>
-                      <td className="p-4 border-r border-green-100">
-                        {customer.storeName ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-white">{customer.storeName}</span>
-                          </div>
-                        ) : (
-                          <span className="text-white">-</span>
-                        )}
-                      </td>
+                    
                       <td className="p-4 border-r border-green-100">
                         {(customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
