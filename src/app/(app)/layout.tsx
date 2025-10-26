@@ -97,8 +97,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
         if (!token) return;
         
         const res = await getPostUsageStats(token);
-        if (res.success) {
-          setPlanName(res.data.planName);
+        if (res.success && res.data) {
+          setPlanName(res.data.planName || 'غير محدد');
         }
       } catch (error) {
         console.error('Failed to load plan name:', error);

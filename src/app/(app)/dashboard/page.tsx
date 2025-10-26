@@ -327,16 +327,14 @@ export default function DashboardPage() {
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <p className="text-xl text-gray-300 mt-1">
+          <div className="text-xl text-gray-300 mt-1">
              الاشتراكات 
-            </p>
-            <p>
-            <div>
-          <p className="text-xl text-gray-300 mt-1">
-              الفعالة
-            </p>
           </div>
-            </p>
+          <div>
+            <div className="text-xl text-gray-300 mt-1">
+              الفعالة
+            </div>
+          </div>
           </div>
 
 
@@ -371,16 +369,14 @@ export default function DashboardPage() {
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <p className="text-xl text-gray-300 mt-1">
+          <div className="text-xl text-gray-300 mt-1">
              الرسائل  
-            </p>
-            <p>
-            <div>
-          <p className="text-xl text-gray-300 mt-1">
-          المتبقية
-            </p>
           </div>
-            </p>
+          <div>
+            <div className="text-xl text-gray-300 mt-1">
+              المتبقية
+            </div>
+          </div>
           </div>
 
 
@@ -436,16 +432,14 @@ export default function DashboardPage() {
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <p className="text-xl text-gray-300 mt-1">
+          <div className="text-xl text-gray-300 mt-1">
              اجمالي 
-            </p>
-            <p>
-            <div>
-          <p className="text-xl text-gray-300 mt-1">
-              الربح
-            </p>
           </div>
-            </p>
+          <div>
+            <div className="text-xl text-gray-300 mt-1">
+              الربح
+            </div>
+          </div>
           </div>
 
 

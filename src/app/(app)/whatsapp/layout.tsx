@@ -56,12 +56,22 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
         console.log('[WhatsApp Layout] Remaining:', remaining);
         console.log('[WhatsApp Layout] Stats:', whatsappStats);
         
-        setMessagesRemaining(remaining);
+        // If limit is 0 or undefined, set a default limit
+        if (limit === 0 || !limit) {
+          console.log('[WhatsApp Layout] No limit set, using default');
+          setMessagesRemaining(30); // Default limit
+        } else {
+          setMessagesRemaining(remaining);
+        }
       } else {
         console.error('[WhatsApp Layout] Response not OK:', response.status);
+        // Set default values if API fails
+        setMessagesRemaining(30); // Default limit instead of 0
       }
     } catch (error) {
       console.error('Error checking messages:', error);
+      // Set default limit if there's an error
+      setMessagesRemaining(30);
     } finally {
       setCheckingMessages(false);
     }
