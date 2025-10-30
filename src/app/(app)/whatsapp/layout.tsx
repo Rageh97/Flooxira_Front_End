@@ -12,6 +12,7 @@ const whatsappTabs = [
   { href: "/whatsapp", label: "الاتصال", exact: true },
   { href: "/whatsapp/ai-settings", label: "إعدادات الذكاء الاصطناعي" },
   { href: "/whatsapp/bot-content", label: "محتوى البوت" },
+  { href: "/whatsapp/appointments", label: "إدارة المواعيد" },
   { href: "/whatsapp/settings", label: " أوقات عمل البوت" },
   { href: "/whatsapp/chats", label: "المحادثات" },
   { href: "/whatsapp/groups", label: "المجموعات" },
@@ -176,9 +177,9 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
     <div className="space-y-6">
       {/* Warning banner if messages are running low */}
       {messagesRemaining > 0 && messagesRemaining <= 10 && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="bg-card border-none">
           <CardContent className="py-3">
-            <div className="flex items-center gap-2 text-yellow-800">
+            <div className="flex items-center gap-2 text-yellow-300">
               <AlertCircle className="w-5 h-5" />
               <span className="font-medium">
                 تحذير: لديك {messagesRemaining} رسالة متبقية فقط في باقتك
@@ -204,7 +205,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
                   "px-4 py-2 rounded-md text-sm font-medium transition-colors",
                   isActive
                     ? "gradient-border text-white"
-                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                    : "text-gray-300 hover:text-white hover:bg-blue-700"
                 )}
               >
                 {tab.label}

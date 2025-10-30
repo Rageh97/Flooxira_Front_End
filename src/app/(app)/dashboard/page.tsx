@@ -65,7 +65,7 @@ export default function DashboardPage() {
       id: 1,
       title: "مرحباً بك في منصة إدارة السوشيال ميديا",
       description: "أنشئ، جدول، وانشر محتواك على جميع منصات التواصل الاجتماعي من مكان واحد",
-      image: "/banner.png",
+      image: "/bannerr.png",
       link: "/create-post",
       buttonText: "ابدأ النشر الآن",
       backgroundColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -246,7 +246,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-green-400">{stats?.published || 0}</div>
+           <div className="text-[55px]  font-bold text-primary">{stats?.published || 0}</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -282,8 +282,8 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-green-400">{stats?.scheduled || 0}</div>
-            <div className=" text-xs text-green-300">
+           <div className="text-[55px]  font-bold text-primary">{stats?.scheduled || 0}</div>
+            <div className=" text-xs text-primary">
               شهر (أكتوبر)
             </div>
            </div>
@@ -319,7 +319,7 @@ export default function DashboardPage() {
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             <h3 className="text-sm font-medium text-white"> عدد العملاء </h3>
             </div>
-            <div className="text-green-400">📈</div>
+            <div className="text-primary">📈</div>
           </CardHeader>
           <CardContent className="px-4">
           
@@ -342,7 +342,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-green-400">{customerStats?.totalCustomers || 0}</div>
+           <div className="text-[55px]  font-bold text-primary">{customerStats?.totalCustomers || 0}</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -361,7 +361,7 @@ export default function DashboardPage() {
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             <h3 className="text-sm font-medium text-white"> عدد رسائل الواتساب </h3>
             </div>
-            <div className="text-green-400">{whatsappStats?.messagesLimit || 0}</div>
+            <div className="text-primary">{whatsappStats?.messagesLimit || 0}</div>
           </CardHeader>
           <CardContent className="px-4 flex flex-col">
           
@@ -384,7 +384,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-green-400">{whatsappStats?.messagesRemaining || 0}</div>
+           <div className="text-[55px]  font-bold text-primary">{whatsappStats?.messagesRemaining || 0}</div>
             
            </div>
 
@@ -395,7 +395,7 @@ export default function DashboardPage() {
           <div className=" flex items-center gap-1">
               <div className="flex-1 bg-gray-900 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full transition-all duration-500"
+                  className="bg-light-custom h-full transition-all duration-500"
                   style={{ 
                     width: whatsappStats?.messagesLimit 
                       ? `${Math.min(100, (whatsappStats.messagesRemaining / whatsappStats.messagesLimit) * 100)}%` 
@@ -447,7 +447,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xl  font-bold text-green-400">{customerStats?.financial?.netProfit || 0} ر.س</div>
+           <div className="text-xl  font-bold text-primary">{customerStats?.financial?.netProfit || 0} ر.س</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -577,7 +577,7 @@ export default function DashboardPage() {
 
             <div className="flex w-full items-center gap-2">
             <Link className="w-full h-28  rounded-lg" href="/create-post">
-              <Button className="w-full relative h-full bg-semidark-custom border border-text-primary text-white p-4 h-auto">
+              <Button className="w-full relative h-full gradient-border border border-text-primary text-white p-4 h-auto">
 
 
                 <div className="flex items-center   w-full ">
@@ -590,7 +590,7 @@ export default function DashboardPage() {
             </Link>
             
             <Link className="w-full h-28" href="/schedule">
-              <Button className="w-full h-full bg-semidark-custom border border-text-primary text-white p-4 h-auto">
+              <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center w-full">
                 <img className="w-10 h-10 " src="/hour.gif" alt="" />
                   <div className="font-medium text-xl"> المنشورات المجدولة</div>
@@ -601,7 +601,7 @@ export default function DashboardPage() {
             
            <div className="flex w-full items-center gap-2">
            <Link className="w-full h-28" href="/settings">
-                <Button className="w-full h-full bg-semidark-custom border border-text-primary text-white p-4 h-auto">
+                <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                   <div className="flex items-center w-full">
                 <img className="w-10 h-10 " src="/setting.gif" alt="" />
                   <div className="font-medium text-xl">إدارة الحسابات</div>
@@ -610,7 +610,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link className="w-full h-28" href="/customers">
-              <Button className="w-full h-full bg-semidark-custom border border-text-primary text-white p-4 h-auto">
+              <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center w-full">
                 <img className="w-10 h-10 " src="/clients.gif" alt="" />
                   <div className="font-medium text-xl">ادارة العملاء </div>

@@ -17,10 +17,18 @@ export default function UsageStats({ platform, showAll = false, className = '' }
   useEffect(() => {
     loadStats();
     
-    // Refresh stats every minute
-    const interval = setInterval(loadStats, 60000);
+    // Refresh stats every minute - with proper cleanup
+    let isMounted = true;
+    const interval = setInterval(() => {
+      if (isMounted) {
+        loadStats();
+      }
+    }, 60000);
     
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [platform, showAll]);
 
   const loadStats = async () => {

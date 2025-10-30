@@ -301,19 +301,19 @@ export default function BotContentPage() {
         <div className="flex flex-wrap gap-4">
           <button
             onClick={() => setShowAddField(true)}
-            className="primary-button after:bg-[#011910] before:bg-[#01191080] text-white px-4 py-2 rounded"
+            className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded"
           >
             إضافة عمود جديد
           </button>
           
           <button
             onClick={() => setShowAddRow(true)}
-            className="primary-button after:bg-[#011910] before:bg-[#01191080] text-white px-4 py-2 rounded"
+            className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded"
           >
             إضافة صف جديد
           </button>
           
-          <label className="primary-button after:bg-[#011910] before:bg-[#01191080] text-white px-4 py-2 rounded cursor-pointer">
+          <label className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded cursor-pointer">
             رفع ملف Excel
             <input
               type="file"

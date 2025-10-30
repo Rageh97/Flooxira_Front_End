@@ -33,8 +33,13 @@ import {
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
 
+interface ServiceWithApproval extends Service {
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string | null;
+}
+
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<ServiceWithApproval[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [token, setToken] = useState<string>("");
@@ -123,7 +128,7 @@ export default function ServicesPage() {
       setCreateModalOpen(false);
       resetForm();
       loadServices();
-      showSuccess("تم إنشاء الخدمة بنجاح!");
+      showSuccess("تم إنشاء الخدمة بنجاح! الخدمة الآن قيد الانتظار للموافقة من الإدارة.");
     } catch (e: any) {
       showError("خطأ في إنشاء الخدمة", e.message);
     }
@@ -419,6 +424,11 @@ export default function ServicesPage() {
                                 {service.category}
                               </div>
                             )}
+                            {service.rejectionReason && (
+                              <div className="text-xs text-red-400 mt-1">
+                                سبب الرفض: {service.rejectionReason}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -428,15 +438,32 @@ export default function ServicesPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {service.isActive ? (
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                            نشط
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                            غير نشط
-                          </span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {/* Show approval status first */}
+                          {service.approvalStatus === 'pending' && (
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                              قيد الانتظار
+                            </span>
+                          )}
+                          {service.approvalStatus === 'approved' && (
+                            <>
+                              {service.isActive ? (
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                  نشط
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                  غير نشط
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {service.approvalStatus === 'rejected' && (
+                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                              مرفوضة
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1 text-sm text-white">
@@ -453,13 +480,15 @@ export default function ServicesPage() {
                       </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
-                          <Button
-                            onClick={() => openEditModal(service)}
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          {service.approvalStatus !== 'approved' && (
+                            <Button
+                              onClick={() => openEditModal(service)}
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             onClick={() => handleDeleteService(service.id)}
                             size="sm"
@@ -488,6 +517,15 @@ export default function ServicesPage() {
               أضف تفاصيل الخدمة التي تريد تسويقها
             </DialogDescription>
           </DialogHeader>
+
+          {/* Notice about approval */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-yellow-800">
+              <p className="font-medium">ملاحظة هامة:</p>
+              <p>الخدمة ستكون قيد الانتظار حتى يتم الموافقة عليها من الإدارة. لن تظهر في السوق إلا بعد القبول.</p>
+            </div>
+          </div>
 
           <div className="space-y-4">
             <div>

@@ -15,6 +15,8 @@ interface UserPermissions {
   maxServices: number;
   canManageEmployees: boolean;
   maxEmployees: number;
+  canUseAI: boolean;
+  aiCredits: number;
 }
 
 interface Subscription {
@@ -29,6 +31,13 @@ interface Subscription {
   };
 }
 
+// Simple in-memory cache to prevent multiple simultaneous API calls
+let cachedPermissions: UserPermissions | null = null;
+let cachedSubscription: Subscription | null = null;
+let lastLoadTime = 0;
+let loadingPromise: Promise<void> | null = null;
+const CACHE_DURATION = 30000; // 30 seconds cache
+
 export function usePermissions() {
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -37,74 +46,110 @@ export function usePermissions() {
 
   const loadPermissions = useCallback(async () => {
     try {
+      // If already loading, wait for the existing promise
+      if (loadingPromise) {
+        await loadingPromise;
+        setPermissions(cachedPermissions);
+        setSubscription(cachedSubscription);
+        setLoading(false);
+        return;
+      }
+      
+      // Use cache if it's fresh (less than 30 seconds old)
+      const now = Date.now();
+      if (cachedPermissions && now - lastLoadTime < CACHE_DURATION) {
+        console.log('Using cached permissions');
+        setPermissions(cachedPermissions);
+        setSubscription(cachedSubscription);
+        setLoading(false);
+        return;
+      }
+      
       setLoading(true);
       const token = localStorage.getItem("auth_token");
       if (!token) {
+        cachedPermissions = null;
+        cachedSubscription = null;
         setPermissions(null);
         setSubscription(null);
         return;
       }
 
-      // Check if user is an employee first
-      try {
-        console.log('Checking if user is employee...');
-        const employeeResponse = await apiFetch('/api/employees/me', { authToken: token });
-        console.log('Employee response:', employeeResponse);
-        if (employeeResponse.success) {
-          // User is an employee - use employee permissions
-          console.log('User is employee, permissions:', employeeResponse.employee.permissions);
-          setPermissions(employeeResponse.employee.permissions);
-          setSubscription(null); // Employees don't have subscriptions
-          return;
-        }
-      } catch (error) {
-        console.log('Not an employee, error:', error);
-        // Not an employee, continue with owner logic
-      }
-
-      // Try multiple endpoints to find the correct one
-      const endpoints = [
-        '/api/subscription-requests/my-subscription',
-        '/api/subscription/my-subscription',
-        '/subscription-requests/my-subscription',
-        '/subscription/my-subscription'
-      ];
-
-      let response = null;
-      let lastError = null;
-
-      for (const endpoint of endpoints) {
+      // Create loading promise to prevent duplicate calls
+      loadingPromise = (async () => {
         try {
-          response = await apiFetch(endpoint, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          console.log(`Success with endpoint: ${endpoint}`, response);
-          break;
-        } catch (error: any) {
-          console.log(`Failed with endpoint: ${endpoint}`, error.message);
-          lastError = error;
-          continue;
-        }
-      }
+          // Check if user is an employee first
+          try {
+            const employeeResponse = await apiFetch('/api/employees/me', { authToken: token });
+            if (employeeResponse.success) {
+              // User is an employee - use employee permissions
+              cachedPermissions = employeeResponse.employee.permissions;
+              cachedSubscription = null;
+              setPermissions(cachedPermissions);
+              setSubscription(null);
+              lastLoadTime = Date.now();
+              return;
+            }
+          } catch (error) {
+            // Not an employee, continue with owner logic
+          }
 
-      if (!response) {
-        throw lastError || new Error('All endpoints failed');
-      }
+          // Try multiple endpoints to find the correct one
+          const endpoints = [
+            '/api/subscription-requests/my-subscription',
+            '/api/subscription/my-subscription',
+            '/subscription-requests/my-subscription',
+            '/subscription/my-subscription'
+          ];
 
-      if ((response as any).success) {
-        if ((response as any).subscription) {
-          setSubscription((response as any).subscription);
-          setPermissions((response as any).subscription.plan.permissions);
-        } else {
-          setPermissions(null);
-          setSubscription(null);
+          let response = null;
+          let lastError = null;
+
+          for (const endpoint of endpoints) {
+            try {
+              response = await apiFetch(endpoint, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              });
+              break;
+            } catch (error: any) {
+              lastError = error;
+              continue;
+            }
+          }
+
+          if (!response) {
+            throw lastError || new Error('All endpoints failed');
+          }
+
+          if ((response as any).success) {
+            if ((response as any).subscription) {
+              cachedSubscription = (response as any).subscription;
+              cachedPermissions = (response as any).subscription.plan.permissions;
+              setSubscription(cachedSubscription);
+              setPermissions(cachedPermissions);
+              lastLoadTime = Date.now();
+            } else {
+              cachedPermissions = null;
+              cachedSubscription = null;
+              setPermissions(null);
+              setSubscription(null);
+              lastLoadTime = Date.now();
+            }
+          } else {
+            cachedPermissions = null;
+            cachedSubscription = null;
+            setPermissions(null);
+            setSubscription(null);
+            lastLoadTime = Date.now();
+          }
+        } finally {
+          loadingPromise = null;
         }
-      } else {
-        setPermissions(null);
-        setSubscription(null);
-      }
+      })();
+      
+      await loadingPromise;
     } catch (err: any) {
       console.error('Error loading permissions:', err);
       setError(err.message);
@@ -173,6 +218,14 @@ export function usePermissions() {
     return permissions?.maxEmployees || 0;
   };
 
+  const canUseAI = (): boolean => {
+    return Boolean(permissions?.canUseAI);
+  };
+
+  const getAICredits = (): number => {
+    return permissions?.aiCredits || 0;
+  };
+
   const hasActiveSubscription = useMemo((): boolean => {
     // إذا كان موظف، يعتبر لديه اشتراك نشط (لأن المالك لديه اشتراك)
     if (permissions && !permissions.canManageEmployees) {
@@ -206,6 +259,8 @@ export function usePermissions() {
     getMonthlyPostsLimit,
     getMaxServices,
     getMaxEmployees,
+    canUseAI,
+    getAICredits,
     hasActiveSubscription,
     reloadPermissions: loadPermissions
   };

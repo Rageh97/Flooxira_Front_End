@@ -46,7 +46,7 @@ export default function SignUpPage() {
           <Input className="placeholder-white/60 text-white" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
         <div className="text-sm text-white">لديك حساب بالفعل؟ <Link href="/sign-in" className="text-gray-300 hover:underline">تسجيل الدخول</Link></div>
-        <Button className="w-full" disabled={mutation.isPending}>{mutation.isPending ? "جاري الإنشاء..." : "إنشاء حساب"}</Button>
+        <Button className="w-full primary-button" disabled={mutation.isPending}>{mutation.isPending ? "جاري الإنشاء..." : "إنشاء حساب"}</Button>
         {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
       </form>
     </div>

@@ -66,7 +66,9 @@ export default function PlansAdminPage() {
       canMarketServices: false,
       maxServices: 0,
       canManageEmployees: false,
-      maxEmployees: 0
+      maxEmployees: 0,
+      canUseAI: false,
+      aiCredits: 0
     }
   });
 
@@ -93,7 +95,9 @@ export default function PlansAdminPage() {
       canMarketServices: false,
       maxServices: 0,
       canManageEmployees: false,
-      maxEmployees: 0
+      maxEmployees: 0,
+      canUseAI: false,
+      aiCredits: 0
     }
   });
 
@@ -156,7 +160,9 @@ export default function PlansAdminPage() {
           canMarketServices: false,
           maxServices: 0,
           canManageEmployees: false,
-          maxEmployees: 0
+          maxEmployees: 0,
+          canUseAI: false,
+          aiCredits: 0
         }
       });
       loadPlans();
@@ -206,25 +212,27 @@ export default function PlansAdminPage() {
       priceCents: plan.priceCents.toString(),
       interval: plan.interval,
       isActive: plan.isActive,
-      permissions: plan.permissions || {
-        platforms: [],
-        monthlyPosts: 0,
-        canSchedule: false,
-        canAnalytics: false,
-        canTeamManagement: false,
-        maxTeamMembers: 0,
-        canCustomBranding: false,
-        prioritySupport: false,
-        canManageWhatsApp: false,
-        whatsappMessagesPerMonth: 0,
-        canManageTelegram: false,
-        canSallaIntegration: false,
-        canManageContent: false,
-        canManageCustomers: false,
-        canMarketServices: false,
-        maxServices: 0,
-        canManageEmployees: false,
-        maxEmployees: 0
+      permissions: {
+        platforms: plan.permissions?.platforms || [],
+        monthlyPosts: plan.permissions?.monthlyPosts || 0,
+        canSchedule: plan.permissions?.canSchedule || false,
+        canAnalytics: plan.permissions?.canAnalytics || false,
+        canTeamManagement: plan.permissions?.canTeamManagement || false,
+        maxTeamMembers: plan.permissions?.maxTeamMembers || 0,
+        canCustomBranding: plan.permissions?.canCustomBranding || false,
+        prioritySupport: plan.permissions?.prioritySupport || false,
+        canManageWhatsApp: plan.permissions?.canManageWhatsApp || false,
+        whatsappMessagesPerMonth: plan.permissions?.whatsappMessagesPerMonth || 0,
+        canManageTelegram: plan.permissions?.canManageTelegram || false,
+        canSallaIntegration: plan.permissions?.canSallaIntegration || false,
+        canManageContent: plan.permissions?.canManageContent || false,
+        canManageCustomers: plan.permissions?.canManageCustomers || false,
+        canMarketServices: plan.permissions?.canMarketServices || false,
+        maxServices: plan.permissions?.maxServices || 0,
+        canManageEmployees: plan.permissions?.canManageEmployees || false,
+        maxEmployees: plan.permissions?.maxEmployees || 0,
+        canUseAI: (plan.permissions as any)?.canUseAI || false,
+        aiCredits: (plan.permissions as any)?.aiCredits || 0
       }
     });
     setEditModalOpen(true);
@@ -295,25 +303,27 @@ export default function PlansAdminPage() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan) => {
             const { price, period } = formatPrice(plan.priceCents, plan.interval);
-            const permissions = plan.permissions || {
-              platforms: [],
-              monthlyPosts: 0,
-              canSchedule: false,
-              canAnalytics: false,
-              canTeamManagement: false,
-              maxTeamMembers: 0,
-              canCustomBranding: false,
-              prioritySupport: false,
-              canManageWhatsApp: false,
-              whatsappMessagesPerMonth: 0,
-              canManageTelegram: false,
-              canSallaIntegration: false,
-              canManageContent: false,
-              canManageCustomers: false,
-              canMarketServices: false,
-              maxServices: 0,
-              canManageEmployees: false,
-              maxEmployees: 0
+            const permissions = {
+              platforms: plan.permissions?.platforms || [],
+              monthlyPosts: plan.permissions?.monthlyPosts || 0,
+              canSchedule: plan.permissions?.canSchedule || false,
+              canAnalytics: plan.permissions?.canAnalytics || false,
+              canTeamManagement: plan.permissions?.canTeamManagement || false,
+              maxTeamMembers: plan.permissions?.maxTeamMembers || 0,
+              canCustomBranding: plan.permissions?.canCustomBranding || false,
+              prioritySupport: plan.permissions?.prioritySupport || false,
+              canManageWhatsApp: plan.permissions?.canManageWhatsApp || false,
+              whatsappMessagesPerMonth: plan.permissions?.whatsappMessagesPerMonth || 0,
+              canManageTelegram: plan.permissions?.canManageTelegram || false,
+              canSallaIntegration: plan.permissions?.canSallaIntegration || false,
+              canManageContent: plan.permissions?.canManageContent || false,
+              canManageCustomers: plan.permissions?.canManageCustomers || false,
+              canMarketServices: plan.permissions?.canMarketServices || false,
+              maxServices: plan.permissions?.maxServices || 0,
+              canManageEmployees: plan.permissions?.canManageEmployees || false,
+              maxEmployees: plan.permissions?.maxEmployees || 0,
+              canUseAI: (plan.permissions as any)?.canUseAI || false,
+              aiCredits: (plan.permissions as any)?.aiCredits || 0
             };
             
             return (
@@ -529,6 +539,34 @@ export default function PlansAdminPage() {
                               </span>
                             )}
                             {permissions.maxServices === 0 && (
+                              <span className="text-xs text-gray-500">
+                                (غير محدود)
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* AI Features */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">الذكاء الاصطناعي (AI):</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canUseAI ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {(permissions as any).aiCredits > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({(permissions as any).aiCredits} كريديت/شهر)
+                              </span>
+                            )}
+                            {(permissions as any).aiCredits === 0 && (
                               <span className="text-xs text-gray-500">
                                 (غير محدود)
                               </span>
@@ -802,6 +840,43 @@ export default function PlansAdminPage() {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       عدد الخدمات التي يمكن للمستخدم تسويقها. اترك 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* AI Features */}
+            <div>
+              <Label>ميزات الذكاء الاصطناعي (AI)</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={newPlan.permissions.canUseAI}
+                    onChange={(e) => setNewPlan({
+                      ...newPlan,
+                      permissions: { ...newPlan.permissions, canUseAI: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل ميزة AI</span>
+                </label>
+                {newPlan.permissions.canUseAI && (
+                  <div>
+                    <Label>كريديت AI الشهرية</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="عدد الكريديت (0 = غير محدود)"
+                      value={newPlan.permissions.aiCredits || ''}
+                      onChange={(e) => setNewPlan({
+                        ...newPlan,
+                        permissions: { ...newPlan.permissions, aiCredits: parseInt(e.target.value) || 0 }
+                      })}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
                     </p>
                   </div>
                 )}
@@ -1146,6 +1221,43 @@ export default function PlansAdminPage() {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       عدد الخدمات التي يمكن للمستخدم تسويقها. اترك 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* AI Features */}
+            <div>
+              <Label>ميزات الذكاء الاصطناعي (AI)</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={editPlan.permissions.canUseAI}
+                    onChange={(e) => setEditPlan({
+                      ...editPlan,
+                      permissions: { ...editPlan.permissions, canUseAI: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل ميزة AI</span>
+                </label>
+                {editPlan.permissions.canUseAI && (
+                  <div>
+                    <Label>كريديت AI الشهرية</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="عدد الكريديت (0 = غير محدود)"
+                      value={editPlan.permissions.aiCredits || ''}
+                      onChange={(e) => setEditPlan({
+                        ...editPlan,
+                        permissions: { ...editPlan.permissions, aiCredits: parseInt(e.target.value) || 0 }
+                      })}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
                     </p>
                   </div>
                 )}

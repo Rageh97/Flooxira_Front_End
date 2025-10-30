@@ -36,8 +36,8 @@ export default function SignInPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-14 ">
+      <div className="flex items-center justify-center flex-col gap-2">
         <h1 className="text-xl font-semibold text-white">تسجيل الدخول</h1>
         <p className="text-sm text-white">مرحباً بعودتك. يرجى إدخال بياناتك.</p>
       </div>
@@ -51,11 +51,12 @@ export default function SignInPage() {
           <Input className="placeholder-white/60 text-white" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
         <div className="flex items-center justify-between text-sm">
-          <Link href="/sign-up" className="text-gray-300 hover:underline">إنشاء حساب</Link>
           <Link href="/forgot-password" className="text-gray-300 hover:underline">نسيت كلمة المرور؟</Link>
         </div>
-        <Button className="w-full" disabled={mutation.isPending}>{mutation.isPending ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}</Button>
+        <Button className="w-full primary-button" disabled={mutation.isPending}>{mutation.isPending ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}</Button>
         {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
+        <Link href="/sign-up" className="w-full primary-button after:bg-[#131240]">إنشاء حساب</Link>
+
       </form>
     </div>
   );

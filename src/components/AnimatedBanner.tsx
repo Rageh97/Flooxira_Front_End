@@ -95,7 +95,7 @@ const AnimatedBanner: React.FC<AnimatedBannerProps> = ({
             >
               {/* Banner Container */}
               <div
-                className="relative w-full h-[300px] md:h-[400px] lg:h-[320px] overflow-hidden group cursor-pointer"
+                className="relative w-full h-[120px] lg:h-[320px] overflow-hidden group cursor-pointer"
                 style={{
                   background: banner.backgroundColor,
                 }}
@@ -107,7 +107,7 @@ const AnimatedBanner: React.FC<AnimatedBannerProps> = ({
                     <img
                       src={banner.image}
                       alt={banner.title}
-                      className="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700"
+                      className="w-full h-full  opacity-90  transition-transform duration-700"
                     />
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>

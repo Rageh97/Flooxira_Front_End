@@ -134,7 +134,7 @@ export default function AISettingsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="w-full mx-auto ">
       {/* <h1 className="text-3xl font-bold gradient-border mb-6 text-white">إعدادات بوت الذكاء الاصطناعي</h1> */}
       
       {/* Status Messages */}
@@ -150,8 +150,8 @@ export default function AISettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="gradient-border mb-6">
-        <div className="flex space-x-1 bg-secondry inner-shadow p-1 rounded-lg">
+      <div className=" mb-3">
+        <div className="flex justify-center space-x-1 gradient-border inner-shadow p-3 rounded-lg">
           {[
             { id: 'general', label: 'عام' },
             { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
@@ -165,7 +165,7 @@ export default function AISettingsPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'gradient-border text-white'
+                  ? 'bg-secondry text-white'
                   : 'text-white '
               }`}
             >

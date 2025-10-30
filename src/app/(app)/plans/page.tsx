@@ -370,6 +370,34 @@ export default function PlansPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* AI Features */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">الذكاء الاصطناعي (AI):</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canUseAI ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {(permissions as any).aiCredits > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({(permissions as any).aiCredits} كريديت/شهر)
+                              </span>
+                            )}
+                            {(permissions as any).aiCredits === 0 && (
+                              <span className="text-xs text-gray-500">
+                                (غير محدود)
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <Button 

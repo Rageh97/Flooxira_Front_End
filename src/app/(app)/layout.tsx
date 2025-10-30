@@ -10,9 +10,12 @@ import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
+import RippleGrid from '@/components/RippleGrid';
+
 
 const navItems = [
   { href: "/dashboard", label: " الرئيسية", img: "/home.png" },
+  { href: "/ask-ai", label: "  اسأل Ai", img: "/ai.png" },
   { href: "/whatsapp", label: "إدارة واتساب", img: "/whats.png" },
   { href: "/telegram", label: "إدارة تليجرام", img: "/tele.png" },
   { href: "/create-post", label: "إنشاء منشور", img:"/plus.png" },
@@ -68,6 +71,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         }
         
         // إظهار العناصر حسب الصلاحيات
+        if (item.href === '/ask-ai' && !permissions?.canUseAI) return false;
         if (item.href === '/whatsapp' && !permissions?.canManageWhatsApp) return false;
         if (item.href === '/telegram' && !permissions?.canManageTelegram) return false;
         if (item.href === '/customers' && !permissions?.canManageCustomers) return false;
@@ -112,7 +116,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   return (
     <AuthGuard>
-    <div className="min-h-screen bg-gradient-custom ">
+    <div className="flex  h-screen overflow-hidden">
+  
       {/* Mobile sidebar + overlay */}
       <div className={clsx("fixed inset-0 z-40 md:hidden", sidebarOpen ? "block" : "hidden")}> 
         <div
@@ -207,26 +212,26 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </aside>
       </div>
 
-      {/* Desktop fixed sidebar */}
-      <aside className="hidden overflow-y-auto scrollbar-hide md:block fixed inset-y-0 right-0 z-20 w-[240px]  bg-secondry  border-r border-[#08c47d50] text-white flex flex-col">
-        <div className="px-4 py-4 w-full ">
-          <Image src="/Flooxira Logoo.png.gif" alt="logo" width={200} height={150} />
+      {/* Desktop sidebar - fixed position */}
+      <aside className="hidden  md:flex w-[240px] h-screen bg- border-l  border-gray-600 text-white flex-col overflow-hidden flex-shrink-0">
+        <div className="px-4 py-1 w-full flex-shrink-0">
+          <Image src="/Logo.png" alt="logo" width={200} height={130} />
         </div>
-        <div className="border-t border-gray-600 p-2">
+        <div className="border-t border-gray-600 p-2 flex-shrink-0 w-full">
           <div className="flex items-center justify-between">
             <div className="text-sm flex items-center gap-2">
               <img src="/user.gif" alt="" className="w-10 h-10 rounded-full" />
-              <div className="flex items-center flex-col">
-                {!loading && user && <span className="font-medium">{user.name }</span>}
+              <div className="flex items-start  flex-col">
+                {!loading && user && <span className="font-medium text-lg">{user.name }</span>}
                 {planName && (
-                  <span className="text-xs text-yellow-400"> {planName}</span>
+                  <span className="text-xs text-primary gradient-border  p-1"> {planName}</span>
                 )}
               </div>
             </div>
            
           </div>
         </div>
-        <nav className="px-2 py-2 space-y-1 flex-1 ">
+        <nav className="px-2 py-2 space-y-1 flex-1 overflow-y-auto scrollbar-hide">
           {visibleNavItems.map((item) => (
             <Link
               key={item.href}
@@ -305,12 +310,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </div> */}
           
       </aside>
-      {/* Content area with left padding to account for fixed sidebar on md+ */}
-      <div className="flex flex-col min-h-screen md:pr-[240px]">
+      {/* Content area - independent scrolling */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile menu button */}
         <div className="md:hidden fixed top-4 left-4 z-30">
           <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-dark-custom hover:bg-semidark-custom  border border-gray-600"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-dark-custom hover:bg-semidark-custom border border-gray-600"
             aria-label="Open sidebar"
             onClick={() => setSidebarOpen(true)}
           >
@@ -318,7 +323,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             ☰
           </button>
         </div>
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6">
           {children}
         </main>
       </div>

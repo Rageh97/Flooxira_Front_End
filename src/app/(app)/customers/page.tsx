@@ -1091,45 +1091,45 @@ export default function CustomersPage() {
       </Card>
 
       {/* Customers Table */}
-      <Card className='bg-transparent border-none'>
-        <CardHeader className='bg-[#011910]  border-none'>
+      <Card className='bg-card border-none'>
+        <CardHeader className=' border-none'>
           <CardTitle className='text-white'>قائمة العملاء</CardTitle>
           <CardDescription className='text-primary'>
             عرض {customers.length} من أصل {pagination.total} عميل
           </CardDescription>
         </CardHeader>
-        <CardContent className='bg-[#011910] border-none '>
+        <CardContent className=' border-none '>
           {loading ? (
             <div className="flex justify-center items-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-green-200 shadow-lg bg-transparent">
+            <div className="overflow-x-auto rounded-lg border border-green-200 shadow-lg">
               <table className="w-full min-w-[1200px]">
-                <thead className="bg-[#011910] text-white">
-                  <tr className="border-b border-green-200">
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">الاسم</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">معلومات الاتصال</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">اسم المتجر</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">التصنيف</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">المنتج</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">سعر الشراء</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">سعر البيع</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">الربح</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">صورة الفاتورة</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">نوع الاشتراك</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">فترة الاشتراك</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">حالة الاشتراك</th>
+                <thead className=" text-white">
+                  <tr className="border-b border-gray-600">
+                    <th className="text-right p-4 font-semibold text-white border-r">الاسم</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">معلومات الاتصال</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">اسم المتجر</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">التصنيف</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">المنتج</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">سعر الشراء</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">سعر البيع</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">الربح</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">صورة الفاتورة</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">نوع الاشتراك</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">فترة الاشتراك</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">حالة الاشتراك</th>
                     {customFields.map((field) => (
-                      <th key={field.id} className="text-right p-4 font-semibold text-white border-r border-green-200">{field.label}</th>
+                      <th key={field.id} className="text-right p-4 font-semibold text-white border-r">{field.label}</th>
                     ))}
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">تاريخ الإنشاء</th>
-                    <th className="text-right p-4 font-semibold text-white border-r border-green-300">الإجراءات</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">تاريخ الإنشاء</th>
+                    <th className="text-right p-4 font-semibold text-white border-r">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="bg-transparent">
                   {customers.map((customer, index) => (
-                    <tr key={customer.id} className={`border-b text-white border-green-100 bg-light-custom transition-all duration-200 ${index % 2 === 0 ? 'bg-green-25' : 'bg-white'} group`}>
+                    <tr key={customer.id} className={`border-b text-white border-green-100  transition-all duration-200 ${index % 2 === 0 ? 'bg-green-25' : 'bg-white'} group`}>
                       <td className="p-4 border-r border-green-100">
                         <div className="font-medium">{customer.name}</div>
                         {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 0 && (

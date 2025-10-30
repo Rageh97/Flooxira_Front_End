@@ -133,7 +133,7 @@ export default function ServicesSlider() {
 
   return (
     <div className=" border-none ">
-      <CardHeader className="flex items-center justify-between bg-dark-custom rounded-lg mb-3 border-none">
+      <CardHeader className="flex items-center justify-between gradient-border rounded-lg mb-3 border-none">
         <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
           <Package className="h-5 w-5 " />
         <h3 className="text-white text-3xl font-bold"> خدمات التجار</h3>
@@ -146,7 +146,7 @@ export default function ServicesSlider() {
                   size="sm"
                   variant={selectedCategory === null ? "default" : "secondary"}
                   onClick={() => setSelectedCategory(null)}
-                  className={selectedCategory === null ? "bg-light-custom border-1 border-green-500 " : "bg-white text-black "}
+                  className={selectedCategory === null ? "bg-semidark-custom border-1 border-blue-500 " : "bg-white text-black "}
                 >
                   الكل ({allServices.length})
                 </Button>
@@ -158,7 +158,7 @@ export default function ServicesSlider() {
                       size="sm"
                       variant={selectedCategory === category ? "default" : "secondary"}
                       onClick={() => setSelectedCategory(category)}
-                      className={selectedCategory === category ? "bg-light-custom border-1 border-green-500" : "bg-white text-black "}
+                      className={selectedCategory === category ? "bg-semidark-custom border-1 border-blue-500" : "bg-white text-black "}
                     >
                       {category} ({count})
                     </Button>
@@ -274,7 +274,7 @@ export default function ServicesSlider() {
                     key={service.id}
                     className="flex-shrink-0 pl-3 w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/6"
                   >
-                    <div className="h-full rounded-lg bg-secondry pt-1  hover:shadow-lg transition-all duration-300 cursor-pointer  hover:border-purple-300">
+                    <div className="h-full rounded-lg gradient-border pt-1  hover:shadow-lg transition-all duration-300 cursor-pointer  hover:border-purple-300">
                       <div className="p-0 rounded-lg">
                         {/* Service Image */}
                         {service.image && (

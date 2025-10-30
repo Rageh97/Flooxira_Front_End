@@ -729,8 +729,8 @@ export default function ContentHomePage() {
   const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
 
   return (
-    <div className="min-h-screen bg-gradient-custom">
-      <div className="container mx-auto p-6">
+    <div className="min-h-screen w-full">
+      <div className="container mx-auto w-full">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">ادارة وجدولة المحتوى </h1>
@@ -811,7 +811,7 @@ export default function ContentHomePage() {
                     onClick={() => setSelectedCategory(category)}
                     className={`px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                       selectedCategory?.id === category.id
-                        ? 'bg-green-800 inner-shadow text-white shadow-lg'
+                        ? 'bg-blue-900  text-white shadow-lg'
                         : 'bg-secondry  text-gray-300'
                     }`}
                   >
@@ -975,7 +975,7 @@ export default function ContentHomePage() {
                       {items.map((item) => (
                         <div
                           key={item.id}
-                          className="p-3 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors cursor-pointer content-card"
+                          className="p-3  rounded-lg hover:bg-gray-700 transition-colors cursor-pointer content-card"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">

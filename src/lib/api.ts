@@ -2160,3 +2160,254 @@ export async function getEmployeeProfile(token: string) {
   });
 }
 
+// AI API functions
+export interface AIConversation {
+  id: number;
+  userId: number;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages?: AIMessage[];
+}
+
+export interface AIMessage {
+  id: number;
+  conversationId: number;
+  role: 'user' | 'assistant';
+  content: string;
+  creditsUsed: number;
+  createdAt: string;
+}
+
+export interface AIStats {
+  totalCredits: number;
+  usedCredits: number;
+  remainingCredits: number;
+  isUnlimited: boolean;
+  conversationsCount: number;
+  resetAt: string | null;
+}
+
+export async function getAIConversations(token: string) {
+  return apiFetch<{ success: boolean; conversations: AIConversation[] }>('/api/ai/conversations', {
+    authToken: token,
+  });
+}
+
+export async function createAIConversation(token: string, title?: string) {
+  return apiFetch<{ success: boolean; conversation: AIConversation }>('/api/ai/conversations', {
+    method: 'POST',
+    body: JSON.stringify({ title }),
+    authToken: token,
+  });
+}
+
+export async function getAIConversation(token: string, conversationId: number) {
+  return apiFetch<{ success: boolean; conversation: AIConversation; messages: AIMessage[] }>(`/api/ai/conversations/${conversationId}`, {
+    authToken: token,
+  });
+}
+
+export async function sendAIMessage(token: string, conversationId: number, content: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    userMessage: AIMessage; 
+    assistantMessage: AIMessage; 
+    remainingCredits: number;
+    conversation: AIConversation;
+  }>(`/api/ai/conversations/${conversationId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+    authToken: token,
+  });
+}
+
+export async function deleteAIConversation(token: string, conversationId: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/ai/conversations/${conversationId}`, {
+    method: 'DELETE',
+    authToken: token,
+  });
+}
+
+export async function updateAIConversationTitle(token: string, conversationId: number, title: string) {
+  return apiFetch<{ success: boolean; conversation: AIConversation }>(`/api/ai/conversations/${conversationId}/title`, {
+    method: 'PUT',
+    body: JSON.stringify({ title }),
+    authToken: token,
+  });
+}
+
+export async function getAIStats(token: string) {
+  return apiFetch<{ success: boolean; stats: AIStats }>('/api/ai/stats', {
+    authToken: token,
+  });
+}
+
+// ===== APPOINTMENTS API =====
+export interface Appointment {
+  id: number;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  serviceType: string;
+  serviceDescription?: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  duration: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  location?: string;
+  notes?: string;
+  source: string;
+  assignedTo?: number;
+  price?: number;
+  paymentStatus: 'pending' | 'paid' | 'partial' | 'refunded';
+  followUpDate?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+  assignedUser?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+export interface AppointmentStats {
+  total: number;
+  pending: number;
+  confirmed: number;
+  completed: number;
+  cancelled: number;
+  today: number;
+  upcoming: number;
+  serviceStats: Array<{ serviceType: string; count: number }>;
+  priorityStats: Array<{ priority: string; count: number }>;
+}
+
+export async function createAppointment(token: string, appointmentData: Partial<Appointment>) {
+  return apiFetch<{ success: boolean; appointment: Appointment; message: string }>('/api/appointments', {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify(appointmentData)
+  });
+}
+
+export async function getAppointments(token: string, params: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  priority?: string;
+  serviceType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  search?: string;
+  assignedTo?: number;
+} = {}) {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.set(key, value.toString());
+    }
+  });
+
+  return apiFetch<{
+    success: boolean;
+    appointments: Appointment[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }>(`/api/appointments?${queryParams.toString()}`, {
+    authToken: token
+  });
+}
+
+export async function getAppointment(token: string, appointmentId: number) {
+  return apiFetch<{ success: boolean; appointment: Appointment }>(`/api/appointments/${appointmentId}`, {
+    authToken: token
+  });
+}
+
+export async function updateAppointment(token: string, appointmentId: number, updateData: Partial<Appointment>) {
+  return apiFetch<{ success: boolean; appointment: Appointment; message: string }>(`/api/appointments/${appointmentId}`, {
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify(updateData)
+  });
+}
+
+export async function deleteAppointment(token: string, appointmentId: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/appointments/${appointmentId}`, {
+    method: 'DELETE',
+    authToken: token
+  });
+}
+
+export async function getAppointmentStats(token: string, params: { dateFrom?: string; dateTo?: string } = {}) {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.set(key, value.toString());
+    }
+  });
+
+  return apiFetch<{ success: boolean; stats: AppointmentStats }>(`/api/appointments/stats?${queryParams.toString()}`, {
+    authToken: token
+  });
+}
+
+export async function exportAppointments(token: string, params: {
+  dateFrom?: string;
+  dateTo?: string;
+  status?: string;
+} = {}): Promise<Blob> {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.set(key, value.toString());
+    }
+  });
+
+  const response = await fetch(`${API_URL}/api/appointments/export?${queryParams.toString()}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  
+  if (!response.ok) {
+    throw new Error('فشل في تصدير المواعيد');
+  }
+  
+  return response.blob();
+}
+
+export async function checkAppointmentAvailability(token: string, params: {
+  date: string;
+  time: string;
+  duration?: number;
+}) {
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      queryParams.set(key, value.toString());
+    }
+  });
+
+  return apiFetch<{
+    success: boolean;
+    available: boolean;
+    conflictingAppointment?: {
+      id: number;
+      customerName: string;
+      appointmentDate: string;
+      appointmentTime: string;
+    };
+  }>(`/api/appointments/check-availability?${queryParams.toString()}`, {
+    authToken: token
+  });
+}
+

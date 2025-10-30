@@ -785,7 +785,7 @@ export default function CreatePostPage() {
         <CardHeader className="border-b border-green-500/30 pb-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center font-bold shadow-lg">
               1
             </div>
             <div>
@@ -798,8 +798,8 @@ export default function CreatePostPage() {
               onClick={() => { setContentType('articles'); setType('text'); setFormat('feed'); }}
               className={`group relative p-4 inner-shadow rounded-2xl transition-all duration-300 flex items-center gap-2 ${
                 contentType === 'articles' 
-                  ? 'bg-green-700 scale-105 inner-shadow ' 
-                  : 'bg-[#011910] inner-shadow'
+                  ? 'bg-semidark-custom scale-105 inner-shadow ' 
+                  : ' inner-shadow'
               }`}
             >
               <div className="text-xl mb-4">📝</div>
@@ -841,7 +841,7 @@ export default function CreatePostPage() {
               onClick={() => { setContentType('stories'); setType('photo'); setFormat('story'); }}
               className={`group relative p-8 rounded-2xl transition-all duration-300 ${
                 contentType === 'stories' 
-                  ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-2xl scale-105 ring-4 ring-green-400/50' 
+                  ? 'bg-light-custom shadow-2xl scale-105 ring-4 ring-green-400/50' 
                   : 'bg-gradient-to-br from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 hover:scale-105 shadow-lg'
               }`}
             >
@@ -866,8 +866,8 @@ export default function CreatePostPage() {
   }}
   className={`group relative  flex items-center gap-2 p-4 rounded-2xl transition-all duration-300 overflow-hidden 
   ${contentType === 'stories'
-    ? 'bg-green-700 scale-105 inner-shadow '
-    : 'bg-[#011910] inner-shadow'
+    ? 'bg-semidark-custom scale-105 inner-shadow '
+    : 'inner-shadow'
   }`}
 >
   {/* خلفية زجاجية داخلية (تعمل فقط في الحالة المفعلة) */}
@@ -899,7 +899,7 @@ export default function CreatePostPage() {
         <CardHeader className="border-b border-green-500/30 pb-4">
           <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold shadow-lg">
+          <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center  font-bold shadow-lg">
               2
             </div>
             <div>
@@ -943,7 +943,7 @@ export default function CreatePostPage() {
                       </p>
                       <Button 
                         onClick={() => window.location.href = '/settings'}
-                        className="primary-button after:bg-[#011910] text-white px-8 py-3 text-lg font-semibold shadow-lg"
+                        className="primary-button after:bg-[#131240] text-white px-8 py-3 text-lg font-semibold shadow-lg"
                       >
                         الذهاب إلى ادارة الحسابات
                       </Button>
@@ -1087,7 +1087,7 @@ export default function CreatePostPage() {
                       disabled={!isConnected}
                           className={`relative p-6 rounded-xl transition-all duration-300 ${
                         isSelected
-                              ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-2xl ring-4 ring-green-400/50' 
+                              ? 'bg-light-custom shadow-2xl ring-4 ring-green-400/50' 
                           : isConnected
                               ? 'bg-card inner-shadow shadow-lg'
                               : 'bg-gray-800 opacity-70 cursor-not-allowed'
@@ -1253,7 +1253,7 @@ export default function CreatePostPage() {
       <Card className="gradient-border ">
         <CardHeader className="border-b border-green-500/30 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-bold shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center  font-bold shadow-lg">
               3
             </div>
             <div>
@@ -1544,6 +1544,8 @@ export default function CreatePostPage() {
     </div>
   );
 }
+
+
 
 
 

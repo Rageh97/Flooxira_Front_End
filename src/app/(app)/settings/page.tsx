@@ -512,7 +512,7 @@ function SettingsContent() {
                     {creds[key]?.redirectUri && (<div>Redirect URI: <span className="break-all">{creds[key]?.redirectUri}</span></div>)}
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="button-primary flex-1" onClick={() => setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '', redirectUri: creds[key]?.redirectUri })}>تعيين/تعديل</Button>
+                    <Button size="sm" className="primary-button flex-1" onClick={() => setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '', redirectUri: creds[key]?.redirectUri })}>تعيين/تعديل</Button>
                     {creds[key]?.clientId && (
                       <Button size="sm" variant="secondary" className="flex-1" onClick={async () => { await deletePlatformCredential(token, key); await loadCredentials(); }}>حذف</Button>
                     )}
@@ -631,7 +631,7 @@ function SettingsContent() {
                         <div className="space-y-2">
                           <Button
                             size="sm" 
-                            className="w-full button-primary"
+                            className="w-full primary-button"
                             onClick={() => handleConnect(key)}
                             disabled={processing === key}
                           >

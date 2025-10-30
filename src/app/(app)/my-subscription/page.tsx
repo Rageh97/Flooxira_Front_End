@@ -43,6 +43,10 @@ interface UserPermissions {
   // إدارة الموظفين
   canManageEmployees: boolean;
   maxEmployees: number;
+  
+  // ميزات الذكاء الاصطناعي
+  canUseAI: boolean;
+  aiCredits: number;
 }
 
 interface Subscription {
@@ -540,6 +544,34 @@ export default function MySubscriptionPage() {
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     {permissions.canManageEmployees ? (
                       permissions.maxEmployees === 0 ? 'غير محدود' : `${permissions.maxEmployees || 0} موظف`
+                    ) : '-'}
+                  </td>
+                </tr>
+
+                {/* AI Features */}
+                <tr>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    🤖 الذكاء الاصطناعي
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    استخدام AI لإنشاء المحتوى (Ask AI)
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {permissions.canUseAI ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        متاح
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        غير متاح
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    {permissions.canUseAI ? (
+                      permissions.aiCredits === 0 ? 'غير محدود' : `${permissions.aiCredits || 0} كريديت/شهر`
                     ) : '-'}
                   </td>
                 </tr>

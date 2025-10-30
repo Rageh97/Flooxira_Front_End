@@ -46,12 +46,15 @@
   /* Custom color scheme */
   --color-bg-dark: #0f1827;
   --color-bg-dark-2: #122f29;
-  --color-bg-secondry: #01191070;
-  --color-bg-semidark: #122f29;
-  --color-bg-light: #134a2b;
-  --color-text-primary: #08c47d;
+  --color-bg-secondry: #131240;
+  --color-bg-semidark: #131240;
+  --color-bg-light: #74e2ff;
+  --color-text-primary: #74e2ff;
   --color-bg-card: #00000060;
 }
+/* #131240
+#74e2ff
+#232670 */
 
 :root {
   --radius: 0.625rem;
@@ -127,7 +130,13 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    background-image: url('/ooo.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    backdrop-filter: blur(30px);
+    /* @apply bg-background text-foreground; */
     font-family: Almarai, sans-serif;
 
   }
@@ -609,7 +618,7 @@
   }
 }
 /* ............................................................ */
-.gradient-border {
+/* .gradient-border {
   position: relative; 
   overflow: hidden; 
   border: 1px solid rgba(0, 0, 0, 0.2); 
@@ -637,7 +646,39 @@
   width: 70%;
   border-radius: 9999px;
   top: 0px; 
+} */
+.gradient-border {
+  position: relative; 
+  overflow: hidden; 
+  border: 1px solid rgba(255, 255, 255, 0.2); 
+  background: linear-gradient(to bottom, #13124060, rgba(159, 185, 255, 0.35));
+  backdrop-filter: blur(15px) saturate(200%);
+  -webkit-backdrop-filter: blur(15px) saturate(200%);
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 32px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 }
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  height: 2px; 
+  background: linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%, 
+      #74e2ff 50%,       
+      rgba(255, 255, 255, 0) 100%
+  );
+  left: 50%; 
+  transform: translateX(-50%); 
+  width: 70%;
+  border-radius: 9999px;
+  top: 0px; 
+}
+/* #131240
+#74e2ff
+#232670 */
 /* ......................................................................... */
 .gradient-border-service {
   position: relative; 
@@ -708,7 +749,7 @@
 /* .............................................. */
 /* From Uiverse.io by kleenpulse */ 
 .primary-button {
-  --border-color: linear-gradient(-45deg, #ffae00, #00a156, #00fffb);
+  --border-color: linear-gradient(-45deg, #d83aff, #005f96, #00fffb);
   --border-width: 0.125em;
   --curve-size: 0.5em;
   --blur: 30px;
