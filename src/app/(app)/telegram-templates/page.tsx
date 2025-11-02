@@ -113,53 +113,38 @@ export default function TelegramTemplatesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-emerald-500 mx-auto"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl">📝</span>
-            </div>
-          </div>
-          <p className="mt-6 text-emerald-300 text-lg font-semibold">جاري تحميل القوالب...</p>
-          <div className="mt-2 flex justify-center gap-1">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
-          </div>
-        </div>
+       <Loader  text="جاري تحميل القوالب..." size="lg" variant="warning" showDots fullScreen />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen  p-6">
+      <div className="w-full mx-auto">
         {/* Page Header */}
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl mb-4 shadow-lg">
-            <span className="text-3xl">📝</span>
-          </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent mb-2">
-            Telegram Templates
+         
+          <h1 className="text-4xl font-bold text-primary mb-2">
+            ادارة القوالب
           </h1>
           <p className="text-gray-400 text-lg">إدارة القوالب التفاعلية للتيليجرام بسهولة واحترافية</p>
         </div>
 
         {/* Action Header */}
-        <div className="card-gradient-green-dark border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+        <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div>
               <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
                 إدارة القوالب
               </h2>
-              <p className="text-emerald-200/80">إنشاء وتعديل القوالب التفاعلية بكل سهولة</p>
+              <p className="text-primary">إنشاء وتعديل القوالب التفاعلية بكل سهولة</p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-3.5 rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 font-bold flex items-center gap-2 shadow-lg hover:shadow-emerald-500/50 hover:scale-105"
+              className="primary-button"
             >
-              <span className="text-xl">➕</span>
+              
               إضافة قالب جديد
             </button>
           </div>
@@ -169,14 +154,14 @@ export default function TelegramTemplatesPage() {
         <AutoReplyPanel templates={templates} />
 
         {/* Test Templates */}
-        <div className="card-gradient-green-emerald border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+        <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
           <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <span className="text-2xl">🧪</span>
             اختبار القوالب
           </h3>
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-emerald-200 mb-2">رسالة الاختبار</label>
+              <label className="block text-sm font-semibold text-primary mb-2">رسالة الاختبار</label>
               <input
                 type="text"
                 placeholder="اكتب رسالة لاختبار القوالب..."
@@ -187,7 +172,7 @@ export default function TelegramTemplatesPage() {
             </div>
             <button
               onClick={handleTestTemplate}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 font-bold shadow-lg hover:shadow-green-500/50 hover:scale-105 whitespace-nowrap"
+              className="primary-button"
             >
               ✨ اختبار الآن
             </button>
@@ -218,7 +203,7 @@ export default function TelegramTemplatesPage() {
         </div>
 
         {/* Filters */}
-        <div className="card-gradient-green-dark border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+        <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <span className="text-xl">🔍</span>
             تصفية وبحث
@@ -266,7 +251,7 @@ export default function TelegramTemplatesPage() {
             <div className="flex items-end">
               <button
                 onClick={() => setFilters({ isActive: undefined, templateType: '', search: '' })}
-                className="w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white px-4 py-2.5 rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-300 font-semibold shadow-lg hover:scale-105"
+                className="w-full primary-button after:bg-red-500"
               >
                 🔄 مسح الفلاتر
               </button>
@@ -287,7 +272,7 @@ export default function TelegramTemplatesPage() {
         </div>
 
         {templates.length === 0 && !loading && (
-          <div className="text-center py-16 card-gradient-green-dark border-emerald-500/20 rounded-2xl border">
+          <div className="text-center py-16 gradient-border rounded-2xl ">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-full mb-6">
               <span className="text-6xl">📱</span>
             </div>
@@ -295,9 +280,8 @@ export default function TelegramTemplatesPage() {
             <p className="text-emerald-200 mb-6 text-lg">ابدأ بإنشاء قالب تفاعلي جديد للتيليجرام</p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-8 py-3.5 rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 font-bold shadow-lg hover:shadow-emerald-500/50 hover:scale-105 inline-flex items-center gap-2"
+              className="primary-button"
             >
-              <span className="text-xl">✨</span>
               إنشاء أول قالب
             </button>
           </div>
@@ -324,6 +308,7 @@ export default function TelegramTemplatesPage() {
 
 // Template Card Component
 import Link from 'next/link';
+import Loader from '@/components/Loader';
 
 function TemplateCard({ 
   template, 
@@ -355,7 +340,7 @@ function TemplateCard({
   };
 
   return (
-    <div className="card-gradient-green-dark border-emerald-500/30 rounded-2xl overflow-hidden shadow-xl hover:shadow-emerald-500/20 transition-all duration-300 hover:scale-[1.02] border">
+    <div className="gradient-border rounded-2xl overflow-hidden shadow-xl hover:shadow-emerald-500/20 transition-all duration-300 hover:scale-[1.02] border">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -364,7 +349,7 @@ function TemplateCard({
             </div>
             <div>
               <h3 className="text-lg font-bold text-white">{template.name}</h3>
-              <p className="text-sm text-emerald-300">{getTemplateTypeLabel(template.templateType)}</p>
+              <p className="text-sm text-primary">{getTemplateTypeLabel(template.templateType)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -379,10 +364,10 @@ function TemplateCard({
         </div>
 
         {template.description && (
-          <p className="text-gray-300 text-sm mb-4 bg-gray-800/50 p-3 rounded-lg border border-emerald-500/10">{template.description}</p>
+          <p className="text-gray-300 text-sm mb-4 bg-secondry p-3 rounded-lg border border-emerald-500/10">{template.description}</p>
         )}
 
-        <div className="text-sm text-gray-400 mb-4 bg-gray-900/50 p-3 rounded-lg">
+        <div className="text-sm text-gray-400 mb-4 bg-secondry p-3 rounded-lg">
           <p className="truncate">{template.bodyText}</p>
         </div>
 
@@ -397,31 +382,31 @@ function TemplateCard({
 
         <div className="flex items-center justify-between text-sm mb-4">
           <div className="flex gap-4">
-            <span className="text-emerald-300 font-semibold bg-emerald-500/10 px-3 py-1 rounded-lg">
+            <span className="text-primary font-semibold bg-secondry px-3 py-1 rounded-lg">
               🔘 {template.buttons?.length || 0} أزرار
             </span>
-            <span className="text-green-300 font-semibold bg-green-500/10 px-3 py-1 rounded-lg">
+            {/* <span className="text-green-300 font-semibold bg-green-500/10 px-3 py-1 rounded-lg">
               📊 {template.variables?.length || 0} متغيرات
-            </span>
+            </span> */}
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <Link
             href={`/telegram-templates/${template.id}`}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-2.5 rounded-xl text-sm hover:from-purple-700 hover:to-purple-800 transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
+            className="flex-1 primary-button  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
           >
             🔘 إدارة الأزرار
           </Link>
           <button
             onClick={() => onEdit(template)}
-            className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-xl text-sm hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-bold shadow-lg hover:scale-105"
+            className="flex-1 primary-button  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
           >
             ✏️ تعديل
           </button>
           <button
             onClick={() => onDelete(template.id)}
-            className="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2.5 rounded-xl text-sm hover:from-red-700 hover:to-red-800 transition-all duration-300 font-bold shadow-lg hover:scale-105"
+            className="flex-1 primary-button after:bg-red-500  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
           >
             🗑️ حذف
           </button>
@@ -476,7 +461,7 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
   };
 
   return (
-    <div className="card-gradient-green-emerald border-emerald-500/20 rounded-2xl shadow-xl p-6 mb-6 border">
+    <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
       <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
         <span className="text-2xl">⚙️</span>
         إعدادات الرد التلقائي
@@ -485,7 +470,7 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
         <div className="flex items-center justify-between bg-gray-800/50 p-4 rounded-xl border border-emerald-500/20">
           <div>
             <div className="text-sm font-bold text-white mb-1">تفعيل الرد التلقائي بقالب محدد</div>
-            <div className="text-xs text-emerald-200">سيتم إرسال هذا القالب تلقائياً عند وصول أي رسالة</div>
+            <div className="text-xs text-primary">سيتم إرسال هذا القالب تلقائياً عند وصول أي رسالة</div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" checked={autoReplyEnabled} onChange={(e)=>setAutoReplyEnabled(e.target.checked)} className="sr-only peer" />
@@ -494,7 +479,7 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-emerald-200 mb-2">القالب الافتراضي</label>
+            <label className="block text-sm font-semibold text-primary mb-2">القالب الافتراضي</label>
             <select className="w-full px-4 py-3 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white" value={autoReplyTemplateId} onChange={(e)=>setAutoReplyTemplateId(e.target.value)}>
               <option value="">بدون</option>
               {templates.filter(t=>t.isActive).map(t => (
@@ -504,7 +489,7 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
           </div>
         </div>
         <div className="flex justify-end">
-          <button onClick={save} disabled={loading} className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-8 py-3 rounded-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 font-bold shadow-lg hover:shadow-emerald-500/50 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={save} disabled={loading} className="primary-button">
             {loading ? '⏳ جارِ الحفظ...' : '💾 حفظ الإعدادات'}
           </button>
         </div>
@@ -577,16 +562,16 @@ function TemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="gradient-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-100">
               {template ? 'تعديل القالب' : 'إنشاء قالب جديد'}
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="bg-red-500 text-white w-8 h-8 rounded-full "
             >
               ✕
             </button>
@@ -596,20 +581,20 @@ function TemplateModal({
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">اسم القالب *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">اسم القالب *</label>
                 <input
                   type="text"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">نوع القالب *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">نوع القالب *</label>
                 <select
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.templateType}
                   onChange={(e) => setFormData({ ...formData, templateType: e.target.value as any })}
                 >
@@ -622,9 +607,9 @@ function TemplateModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">الوصف</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">الوصف</label>
               <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={2}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -634,10 +619,10 @@ function TemplateModal({
             {/* Template Content */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">النص الرئيسي *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">النص الرئيسي *</label>
                 <textarea
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={4}
                   value={formData.bodyText}
                   onChange={(e) => setFormData({ ...formData, bodyText: e.target.value })}
@@ -646,18 +631,18 @@ function TemplateModal({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">النص العلوي</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">النص العلوي</label>
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={2}
                     value={formData.headerText}
                     onChange={(e) => setFormData({ ...formData, headerText: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">النص السفلي</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">النص السفلي</label>
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={2}
                     value={formData.footerText}
                     onChange={(e) => setFormData({ ...formData, footerText: e.target.value })}
@@ -670,9 +655,9 @@ function TemplateModal({
             {formData.templateType === 'media' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">نوع الوسائط</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">نوع الوسائط</label>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={formData.mediaType}
                     onChange={(e) => setFormData({ ...formData, mediaType: e.target.value as any })}
                   >
@@ -685,10 +670,10 @@ function TemplateModal({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">رابط الوسائط</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">رابط الوسائط</label>
                   <input
                     type="url"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={formData.mediaUrl}
                     onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
                   />
@@ -719,9 +704,9 @@ function TemplateModal({
             {(formData.templateType === 'poll' || formData.templateType === 'quiz') && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">خيارات الاستطلاع (مفصولة بفاصلة)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">خيارات الاستطلاع (مفصولة بفاصلة)</label>
                   <textarea
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows={3}
                     value={formData.pollOptions}
                     onChange={(e) => setFormData({ ...formData, pollOptions: e.target.value })}
@@ -732,19 +717,19 @@ function TemplateModal({
                 {formData.templateType === 'quiz' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">الإجابة الصحيحة (رقم الخيار)</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">الإجابة الصحيحة (رقم الخيار)</label>
                       <input
                         type="number"
                         min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.correctAnswer}
                   onChange={(e) => setFormData({ ...formData, correctAnswer: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">التفسير</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">التفسير</label>
                       <textarea
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         rows={2}
                         value={formData.explanation}
                         onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
@@ -756,9 +741,9 @@ function TemplateModal({
             )}
 
             {/* Variables */}
-            <div>
+            {/* <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">المتغيرات</h3>
+                <h3 className="text-lg font-medium text-gray-300">المتغيرات</h3>
                 <button
                   type="button"
                   onClick={() => setShowVariableForm(true)}
@@ -797,25 +782,25 @@ function TemplateModal({
                   ))}
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Settings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">كلمات التشغيل (مفصولة بفاصلة)</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">كلمات التشغيل (مفصولة بفاصلة)</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.triggerKeywords}
                   onChange={(e) => setFormData({ ...formData, triggerKeywords: e.target.value })}
                   placeholder="مرحبا, أهلا, مرحب"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">ترتيب العرض</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">ترتيب العرض</label>
                 <input
                   type="number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.displayOrder}
                   onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
                 />
@@ -828,23 +813,23 @@ function TemplateModal({
                     checked={formData.isActive}
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   />
-                  <span className="text-sm font-medium text-gray-700">نشط</span>
+                  <span className="text-sm font-medium text-gray-300">نشط</span>
                 </label>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                className="primary-button after:bg-red-500 transition-colors"
               >
                 إلغاء
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="primary-button transition-colors"
               >
                 {template ? 'تحديث' : 'إنشاء'}
               </button>
@@ -915,21 +900,21 @@ function VariableFormModal({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">اسم المتغير *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">اسم المتغير *</label>
               <input
                 type="text"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.variableName}
                 onChange={(e) => setFormData({ ...formData, variableName: e.target.value })}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">نوع المتغير *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">نوع المتغير *</label>
               <select
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.variableType}
                 onChange={(e) => setFormData({ ...formData, variableType: e.target.value as any })}
               >
@@ -943,10 +928,10 @@ function VariableFormModal({
 
             {formData.variableType === 'select' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">الخيارات (مفصولة بفاصلة)</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الخيارات (مفصولة بفاصلة)</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.options}
                   onChange={(e) => setFormData({ ...formData, options: e.target.value })}
                   placeholder="الخيار الأول, الخيار الثاني, الخيار الثالث"
@@ -955,20 +940,20 @@ function VariableFormModal({
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">القيمة الافتراضية</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">القيمة الافتراضية</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.defaultValue}
                 onChange={(e) => setFormData({ ...formData, defaultValue: e.target.value })}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">النص التوضيحي</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">النص التوضيحي</label>
               <input
                 type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.placeholder}
                 onChange={(e) => setFormData({ ...formData, placeholder: e.target.value })}
               />
@@ -982,7 +967,7 @@ function VariableFormModal({
                   checked={formData.isRequired}
                   onChange={(e) => setFormData({ ...formData, isRequired: e.target.checked })}
                 />
-                <span className="text-sm font-medium text-gray-700">مطلوب</span>
+                <span className="text-sm font-medium text-gray-300">مطلوب</span>
               </label>
             </div>
 
@@ -990,7 +975,7 @@ function VariableFormModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-gray-300 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
               >
                 إلغاء
               </button>

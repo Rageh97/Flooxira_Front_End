@@ -34,12 +34,16 @@ import {
   Download,
   Settings,
   Save,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer, getCustomerStats, getCategories, getCustomFields, createCustomField, updateCustomField, deleteCustomField } from '@/lib/api';
 import { usePermissions } from '@/lib/permissions';
 import * as XLSX from 'xlsx';
+import Loader from '@/components/Loader';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface CustomField {
   id: number;
@@ -160,6 +164,14 @@ export default function CustomersPage() {
   const [invoiceImagePreview, setInvoiceImagePreview] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string>('');
+  
+  // Loading states for operations
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
+  const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
+  const [isAddingField, setIsAddingField] = useState(false);
+  const [isUpdatingField, setIsUpdatingField] = useState(false);
+  const [isDeletingField, setIsDeletingField] = useState(false);
+  const [isDeletingCustomer, setIsDeletingCustomer] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -167,6 +179,13 @@ export default function CustomersPage() {
     fetchCategories();
     loadCustomFields();
   }, [pagination.page, filters, searchTerm]);
+
+  // Reset to page 1 when filters or search change
+  useEffect(() => {
+    if (pagination.page !== 1) {
+      setPagination(prev => ({ ...prev, page: 1 }));
+    }
+  }, [filters, searchTerm]);
 
   const loadCustomFields = async () => {
     try {
@@ -199,9 +218,11 @@ export default function CustomersPage() {
     }
 
     try {
+      setIsAddingField(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         console.error('No auth token found in handleAddCustomField');
+        setIsAddingField(false);
         return;
       }
 
@@ -231,6 +252,8 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error adding custom field:', error);
       toast.error('فشل في إضافة الحقل');
+    } finally {
+      setIsAddingField(false);
     }
   };
 
@@ -242,8 +265,12 @@ export default function CustomersPage() {
     if (!editingCustomField) return;
 
     try {
+      setIsUpdatingField(true);
       const token = localStorage.getItem('auth_token');
-      if (!token) return;
+      if (!token) {
+        setIsUpdatingField(false);
+        return;
+      }
 
       const fieldData = {
         name: editingCustomField.name,
@@ -266,6 +293,8 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error updating custom field:', error);
       toast.error('فشل في تحديث الحقل');
+    } finally {
+      setIsUpdatingField(false);
     }
   };
 
@@ -284,9 +313,11 @@ export default function CustomersPage() {
     if (!fieldToDelete) return;
 
     try {
+      setIsDeletingField(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         console.error('No auth token found');
+        setIsDeletingField(false);
         return;
       }
 
@@ -307,6 +338,8 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error deleting custom field:', error);
       toast.error('فشل في حذف الحقل');
+    } finally {
+      setIsDeletingField(false);
     }
   };
 
@@ -428,8 +461,12 @@ export default function CustomersPage() {
 
   const handleCreateCustomer = async () => {
     try {
+      setIsCreatingCustomer(true);
       const token = localStorage.getItem('auth_token');
-      if (!token) return;
+      if (!token) {
+        setIsCreatingCustomer(false);
+        return;
+      }
       
       // Add invoice image to formData
       const customerData = {
@@ -457,6 +494,8 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error creating customer:', error);
       toast.error('فشل في إنشاء العميل');
+    } finally {
+      setIsCreatingCustomer(false);
     }
   };
 
@@ -464,8 +503,12 @@ export default function CustomersPage() {
     if (!selectedCustomer) return;
 
     try {
+      setIsUpdatingCustomer(true);
       const token = localStorage.getItem('auth_token');
-      if (!token) return;
+      if (!token) {
+        setIsUpdatingCustomer(false);
+        return;
+      }
 
       // Add invoice image to formData
       const customerData = {
@@ -486,6 +529,8 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error updating customer:', error);
       toast.error('فشل في تحديث العميل');
+    } finally {
+      setIsUpdatingCustomer(false);
     }
   };
 
@@ -502,8 +547,12 @@ export default function CustomersPage() {
     if (!customerToDelete) return;
 
     try {
+      setIsDeletingCustomer(true);
       const token = localStorage.getItem('auth_token');
-      if (!token) return;
+      if (!token) {
+        setIsDeletingCustomer(false);
+        return;
+      }
 
       const response = await deleteCustomer(token, customerToDelete.id);
       if (response.success) {
@@ -516,6 +565,8 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error deleting customer:', error);
       toast.error('فشل في حذف العميل');
+    } finally {
+      setIsDeletingCustomer(false);
     }
   };
 
@@ -568,7 +619,7 @@ export default function CustomersPage() {
         };
 
         // إضافة الحقول المخصصة
-        const customFieldsData = {};
+        const customFieldsData: Record<string, any> = {};
         customFields.forEach(field => {
           const value = customer.customFields?.[field.name];
           customFieldsData[field.label] = value || '';
@@ -611,6 +662,8 @@ export default function CustomersPage() {
       socialMedia: {},
       storeName: ''
     });
+    setInvoiceImage(null);
+    setInvoiceImagePreview(null);
   };
 
   const openEditDialog = (customer: Customer) => {
@@ -632,6 +685,27 @@ export default function CustomersPage() {
       socialMedia: customer.socialMedia,
       storeName: customer.storeName || ''
     });
+    
+    // Load existing invoice image if available
+    const existingInvoiceImage = (customer as any).invoiceImage;
+    if (existingInvoiceImage) {
+      // Build proper image URL for preview
+      let imageUrl = existingInvoiceImage;
+      if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        if (imageUrl.startsWith('/uploads/')) {
+          imageUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${imageUrl}`;
+        } else if (!imageUrl.includes('/')) {
+          imageUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/uploads/customers/${imageUrl}`;
+        } else {
+          imageUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+        }
+      }
+      setInvoiceImagePreview(imageUrl);
+    } else {
+      setInvoiceImagePreview(null);
+    }
+    setInvoiceImage(null); // Clear file input - user needs to re-upload if they want to change
+    
     setIsEditDialogOpen(true);
   };
 
@@ -688,16 +762,44 @@ export default function CustomersPage() {
       storeName: ''
     });
     setSearchTerm('');
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.pages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+      // Scroll to top when page changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Show fullscreen loader during operations
+  if (isCreatingCustomer || isUpdatingCustomer || isAddingField || isUpdatingField || isDeletingField || isDeletingCustomer) {
+    let loaderText = "جاري المعالجة...";
+    if (isCreatingCustomer) loaderText = "جاري إنشاء العميل...";
+    else if (isUpdatingCustomer) loaderText = "جاري تحديث العميل...";
+    else if (isAddingField) loaderText = "جاري إضافة الحقل...";
+    else if (isUpdatingField) loaderText = "جاري تحديث الحقل...";
+    else if (isDeletingField) loaderText = "جاري حذف الحقل...";
+    else if (isDeletingCustomer) loaderText = "جاري حذف العميل...";
+    
+    return (
+      <Loader 
+        text={loaderText} 
+        size="lg" 
+        variant="success"
+        showDots
+        fullScreen
+      />
+    );
+  }
 
   // Check permissions loading state
   if (permissionsLoading) {
     return (
       <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-4">إدارة العملاء</h1>
-        <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
-        </div>
+       
+        <Loader text="جاري التحقق من الصلاحيات..." size="lg" variant="warning" showDots fullScreen={false} className="py-16" />
       </div>
     );
   }
@@ -992,6 +1094,7 @@ export default function CustomersPage() {
                     variant={filters.subscriptionStatus === 'all' ? 'default' : 'secondary'}
                     size="sm"
                     onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'all' }))}
+                    className="bg-blue-600 "
                   >
                     جميع الحالات
                   </Button>
@@ -1015,7 +1118,7 @@ export default function CustomersPage() {
                     variant={filters.subscriptionStatus === 'inactive' ? 'default' : 'secondary'}
                     size="sm"
                     onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'inactive' }))}
-                    className="bg-gray-600 hover:bg-gray-700 text-white"
+                    className="bg-yellow-600 text-white"
                   >
                     غير نشط
                   </Button>
@@ -1032,6 +1135,7 @@ export default function CustomersPage() {
                     variant={filters.category === '' ? 'default' : 'secondary'}
                     size="sm"
                     onClick={() => filterByCategory('')}
+                    className="bg-blue-600 "
                   >
                     الكل
                   </Button>
@@ -1062,6 +1166,7 @@ export default function CustomersPage() {
                     variant={filters.storeName === '' ? 'default' : 'secondary'}
                     size="sm"
                     onClick={() => setFilters(prev => ({ ...prev, storeName: '' }))}
+                    className="bg-blue-600 "
                   >
                     الكل
                   </Button>
@@ -1071,7 +1176,7 @@ export default function CustomersPage() {
                       // variant={filters.storeName === storeName ? 'default' : 'secondary'}
                       size="sm"
                       onClick={() => setFilters(prev => ({ ...prev, storeName: storeName || '' }))}
-                      className={`${filters.storeName === storeName ? 'bg-blue-500 inner-shadow text-white' : 'bg-gray-600 text-black '}`}
+                      className={`${filters.storeName === storeName ? 'bg-blue-500  ' : 'bg-gray-600 text-black '}`}
                     >
                       {storeName}
                     </Button>
@@ -1091,12 +1196,73 @@ export default function CustomersPage() {
       </Card>
 
       {/* Customers Table */}
-      <Card className='bg-card border-none'>
+      <Card className='gradient-border border-none'>
         <CardHeader className=' border-none'>
           <CardTitle className='text-white'>قائمة العملاء</CardTitle>
-          <CardDescription className='text-primary'>
+          <CardDescription className='text-primary flex items-center justify-between'>
             عرض {customers.length} من أصل {pagination.total} عميل
+              {/* Pagination Controls */}
+          {pagination.pages > 1 && (
+            <div className="flex items-center justify-between mt-4 px-4 py-3 ">
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                  className="bg-transparent border border-green-400 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                  السابق
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                    let pageNum;
+                    if (pagination.pages <= 5) {
+                      pageNum = i + 1;
+                    } else if (pagination.page <= 3) {
+                      pageNum = i + 1;
+                    } else if (pagination.page >= pagination.pages - 2) {
+                      pageNum = pagination.pages - 4 + i;
+                    } else {
+                      pageNum = pagination.page - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pagination.page === pageNum ? "default" : "secondary"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className={
+                          pagination.page === pageNum
+                            ? "bg-green-600 text-white hover:bg-green-700"
+                            : "bg-transparent border border-green-400 text-white hover:bg-green-600"
+                        }
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.pages}
+                  className="bg-transparent border border-green-400 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  التالي
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
           </CardDescription>
+          
         </CardHeader>
         <CardContent className=' border-none '>
           {loading ? (
@@ -1105,32 +1271,32 @@ export default function CustomersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-green-200 shadow-lg">
-              <table className="w-full min-w-[1200px]">
-                <thead className=" text-white">
-                  <tr className="border-b border-gray-600">
-                    <th className="text-right p-4 font-semibold text-white border-r">الاسم</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">معلومات الاتصال</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">اسم المتجر</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">التصنيف</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">المنتج</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">سعر الشراء</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">سعر البيع</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">الربح</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">صورة الفاتورة</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">نوع الاشتراك</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">فترة الاشتراك</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">حالة الاشتراك</th>
+              <Table className="w-full ">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className='border-r '>الاسم</TableHead>
+                    <TableHead className='border-r '>معلومات الاتصال</TableHead>
+                    <TableHead className='border-r '>اسم المتجر</TableHead>
+                    <TableHead className='border-r '>التصنيف</TableHead>
+                    <TableHead className='border-r '>المنتج</TableHead>
+                    <TableHead className='border-r '>سعر الشراء</TableHead>
+                    <TableHead className='border-r '>سعر البيع</TableHead>
+                    <TableHead className='border-r '>الربح</TableHead>
+                    <TableHead className='border-r '>صورة الفاتورة</TableHead>
+                    <TableHead className='border-r '>نوع الاشتراك</TableHead>
+                    <TableHead className='border-r '>فترة الاشتراك</TableHead>
+                    <TableHead className='border-r '>حالة الاشتراك</TableHead>
                     {customFields.map((field) => (
-                      <th key={field.id} className="text-right p-4 font-semibold text-white border-r">{field.label}</th>
+                      <TableHead className='border-r' key={field.id} >{field.label}</TableHead>
                     ))}
-                    <th className="text-right p-4 font-semibold text-white border-r">تاريخ الإنشاء</th>
-                    <th className="text-right p-4 font-semibold text-white border-r">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-transparent">
+                    <TableHead className='border-r' >تاريخ الإنشاء</TableHead>
+                    <TableHead className='border-r' >الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody >
                   {customers.map((customer, index) => (
-                    <tr key={customer.id} className={`border-b text-white border-green-100  transition-all duration-200 ${index % 2 === 0 ? 'bg-green-25' : 'bg-white'} group`}>
-                      <td className="p-4 border-r border-green-100">
+                    <TableRow key={customer.id} className={`border-b text-white border-green-100  transition-all duration-200 ${index % 2 === 0 ? '' : ''} group`}>
+                      <TableCell className="p-4 border-r border-green-100">
                         <div className="font-medium">{customer.name}</div>
                         {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -1142,8 +1308,8 @@ export default function CustomersPage() {
                             ))}
                           </div>
                         )}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         <div className="space-y-1 text-sm">
                           {customer.email && (
                             <div className="flex items-center gap-1">
@@ -1158,8 +1324,8 @@ export default function CustomersPage() {
                             </div>
                           )}
                         </div>
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {customer.storeName ? (
                           <div className="flex items-center gap-1">
                             <span className="text-white">{customer.storeName}</span>
@@ -1167,8 +1333,8 @@ export default function CustomersPage() {
                         ) : (
                           <span className="text-white">-</span>
                         )}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {customer.category ? (
                           <Badge style={{ backgroundColor: customer.category.color, color: 'white' }} className="shadow-sm">
                             {customer.category.name}
@@ -1176,8 +1342,8 @@ export default function CustomersPage() {
                         ) : (
                           <span className="text-green-400">-</span>
                         )}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {customer.productName ? (
                           <div className="flex items-center gap-1">
                             <Package className="w-3 h-3 text-white" />
@@ -1186,9 +1352,9 @@ export default function CustomersPage() {
                         ) : (
                           <span className="text-white">-</span>
                         )}
-                      </td>
+                      </TableCell>
                     
-                      <td className="p-4 border-r border-green-100">
+                      <TableCell className="p-4 border-r border-green-100">
                         {(customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
                             {parseFloat((customer as any).purchasePrice || 0)} ر.س
@@ -1196,8 +1362,8 @@ export default function CustomersPage() {
                         ) : (
                           <span className="text-white">-</span>
                         )}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {(customer as any).salePrice !== null && (customer as any).salePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
                             {parseFloat((customer as any).salePrice || 0).toFixed(2)} ر.س
@@ -1205,8 +1371,8 @@ export default function CustomersPage() {
                         ) : (
                           <span className="text-white">-</span>
                         )}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {((customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined) || 
                          ((customer as any).salePrice !== null && (customer as any).salePrice !== undefined) ? (
                           <span className={`text-sm font-bold px-2 py-1 rounded ${
@@ -1219,8 +1385,8 @@ export default function CustomersPage() {
                         ) : (
                           <span className="text-white">-</span>
                         )}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {(() => {
                           const invoiceImage = (customer as any).invoiceImage;
                           console.log('Customer:', customer.name, 'Invoice Image:', invoiceImage);
@@ -1228,22 +1394,50 @@ export default function CustomersPage() {
                           console.log('Invoice Image length:', invoiceImage?.length);
                           
                           if (invoiceImage && invoiceImage.trim() !== '') {
+                            // Build proper image URL
+                            let imageUrl = invoiceImage;
+                            
+                            // If it's a relative path or just a filename, prepend API URL
+                            if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+                              // If it starts with /uploads/, just prepend API URL
+                              if (imageUrl.startsWith('/uploads/')) {
+                                imageUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${imageUrl}`;
+                              } 
+                              // If it's just a filename (no /), it's in customers folder
+                              else if (!imageUrl.includes('/')) {
+                                imageUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/uploads/customers/${imageUrl}`;
+                              }
+                              // If it has a path but no protocol, prepend API URL
+                              else {
+                                imageUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+                              }
+                            }
+                            
+                            console.log('Final image URL:', imageUrl);
+                            
                             return (
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center ">
                                 <img
-                                  src={invoiceImage}
+                                  src={imageUrl}
                                   alt="صورة الفاتورة"
-                                  className="w-12 h-12 object-cover rounded  cursor-pointer hover:opacity-80"
-                                  onClick={() => showImage(invoiceImage)}
+                                  className="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80"
+                                  crossOrigin="anonymous"
+                                  onClick={() => showImage(imageUrl)}
                                   onError={(e) => {
-                                    console.error('Error loading invoice image:', invoiceImage);
+                                    console.error('Error loading invoice image:', imageUrl);
+                                    console.error('Error details:', e);
+                                    // Try to show fallback
+                                    e.currentTarget.onerror = null; // Prevent infinite loop
                                     e.currentTarget.style.display = 'none';
+                                  }}
+                                  onLoad={() => {
+                                    console.log('Image loaded successfully:', imageUrl);
                                   }}
                                 />
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => window.open(invoiceImage, '_blank')}
+                                  onClick={() => window.open(imageUrl, '_blank')}
                                 >
                                   <Download className="w-4 h-4" />
                                 </Button>
@@ -1253,15 +1447,15 @@ export default function CustomersPage() {
                             return <span className="text-muted-foreground">-</span>;
                           }
                         })()}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {customer.subscriptionType ? (
                           <span className="text-green-700 bg-green-50 px-2 py-1 rounded text-sm">{customer.subscriptionType}</span>
                         ) : (
                           <span className="text-green-400">-</span>
                         )}
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         <div className="text-sm">
                           {customer.subscriptionStartDate && (
                             <div className="flex items-center gap-1">
@@ -1279,30 +1473,30 @@ export default function CustomersPage() {
                             <span className="text-green-400">-</span>
                           )}
                         </div>
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         {getSubscriptionStatusBadge(customer)}
-                      </td>
+                      </TableCell>
                       {customFields.map((field) => {
                         const value = customer.customFields?.[field.name];
                         return (
-                          <td key={field.id} className="p-4 border-r border-green-100">
+                          <TableCell key={field.id} className="p-4 border-r border-green-100">
                             <div className="text-sm">
                               {value ? (
-                                <span className="text-green-700">{value}</span>
+                                <span className="text-white">{value}</span>
                               ) : (
                                 <span className="text-green-400">-</span>
                               )}
                             </div>
-                          </td>
+                          </TableCell>
                         );
                       })}
-                      <td className="p-4 border-r border-green-100">
+                      <TableCell className="p-4 border-r border-green-100">
                         <div className="text-sm text-white">
                           {formatDate(customer.createdAt)}
                         </div>
-                      </td>
-                      <td className="p-4 border-r border-green-100">
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
                         <div className="flex items-center gap-2">
                           <Button 
                             variant="ghost" 
@@ -1321,13 +1515,15 @@ export default function CustomersPage() {
                             <Trash2 className="h-6 w-6" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
+
+        
         </CardContent>
       </Card>
 
@@ -1398,10 +1594,10 @@ export default function CustomersPage() {
 
       {/* Image Modal */}
       {showImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm   flex items-center justify-center z-50">
+          <div className="gradient-border rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">صورة الفاتورة</h3>
+              <h3 className="text-lg text-white font-semibold">صورة الفاتورة</h3>
               <Button
                 variant="ghost"
                 onClick={() => setShowImageModal(false)}
@@ -1763,7 +1959,7 @@ function CustomFieldsDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>إدارة الحقول المخصصة</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className='text-primary'>
             إضافة وتعديل الحقول المخصصة للعملاء
           </DialogDescription>
         </DialogHeader>
@@ -1811,7 +2007,7 @@ function CustomFieldsDialog({
                     placeholder="اختر نوع الحقل"
                   />
                 </div> */}
-                <div>
+                {/* <div>
                   <Label htmlFor="fieldPlaceholder">النص التوضيحي</Label>
                   <Input
                     id="fieldPlaceholder"
@@ -1819,9 +2015,9 @@ function CustomFieldsDialog({
                     onChange={(e) => setNewField({ ...newField, placeholder: e.target.value })}
                     placeholder="النص الذي يظهر في الحقل"
                   />
-                </div>
+                </div> */}
               </div>
-              <div className="flex items-center space-x-2">
+              {/* <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   id="fieldRequired"
@@ -1829,7 +2025,7 @@ function CustomFieldsDialog({
                   onChange={(e) => setNewField({ ...newField, required: e.target.checked })}
                 />
                 <Label htmlFor="fieldRequired">حقل مطلوب</Label>
-              </div>
+              </div> */}
               <div className="flex justify-end">
                 <Button className='primary-button' onClick={onAddField}>
                   
@@ -1847,7 +2043,7 @@ function CustomFieldsDialog({
             <CardContent>
               <div className="space-y-4">
                 {customFields.map((field) => (
-                  <div key={field.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={field.id} className="flex items-center justify-between bg-secondry p-4 border border-blue-300 rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">{field.label}</h4>
@@ -1855,31 +2051,31 @@ function CustomFieldsDialog({
                           <span className="text-red-500 text-xs">*</span>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-primary">
                         {field.name} • {getFieldTypeLabel(field.type)}
                         {field.placeholder && ` • ${field.placeholder}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
+                      {/* <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onEditField(field)}
                       >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                        <Edit className="h-6 w-6 text-blue-500" />
+                      </Button> */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onDeleteField(field.id)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-6 w-6 text-red-300" />
                       </Button>
                     </div>
                   </div>
                 ))}
                 {customFields.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-gray-400">
                     لا توجد حقول مخصصة
                   </div>
                 )}
@@ -1889,7 +2085,7 @@ function CustomFieldsDialog({
         </div>
 
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="destructive" onClick={onClose}>
             إغلاق
           </Button>
         </div>
@@ -1949,7 +2145,7 @@ function DeleteFieldDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>تأكيد الحذف</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className='text-primary'>
             هل أنت متأكد من حذف الحقل "{field?.label}"؟ هذا الإجراء لا يمكن التراجع عنه.
           </DialogDescription>
         </DialogHeader>

@@ -482,7 +482,7 @@ export default function WhatsAppChatsPage() {
           <CardHeader className="border-text-primary/50 text-primary flex items-center justify-between">
 
           <div className="flex items-center gap-1">
-          <h3 className="text-sm font-medium text-white bg-light-custom p-1 rounded-md inner-shadow">جهات الاتصال {contacts.length}</h3>
+          <h3 className="text-sm font-medium text-white  p-1 rounded-md inner-shadow">جهات الاتصال {contacts.length}</h3>
               <div className={`w-3 h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
               <span className="text-sm text-white">
                 {botStatus?.isPaused ? 'البوت متوقف' : 'البوت نشط'}
@@ -498,7 +498,7 @@ export default function WhatsAppChatsPage() {
            
            <div className="flex items-center gap-2">
                   <img className="w-10 h-10" src="/user.gif" alt="" />
-           <span className="text-white font-medium bg-light-custom p-1 rounded-md ">
+           <span className="text-white font-medium  p-1 rounded-md ">
                     {selectedContact ? `  ${selectedContact.replace('@c.us', '')}` : 'اختر جهة اتصال لعرض الرسائل'}
                   </span>
            </div>
@@ -567,7 +567,7 @@ export default function WhatsAppChatsPage() {
                     <Button 
                       size="sm" 
                       onClick={openTagModal}
-                      className="text-xs bg-light-custom hover:bg-[#08c47d]"
+                      className="text-xs primary-button"
                     >
                       + إضافة إلى تصنيف
                     </Button>
@@ -587,7 +587,7 @@ export default function WhatsAppChatsPage() {
                   }}
                   className={`p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
                     selectedContact === contact.contactNumber
-                      ? 'bg-light-custom inner-shadow'
+                      ? ' inner-shadow'
                       : 'bg-secondry'
                   }`}
                 >
@@ -597,7 +597,46 @@ export default function WhatsAppChatsPage() {
                   )}
                    <div className="flex flex-col">
                    <div className="font-medium text-md text-white">عميل جديد</div>
-                    <div className="font-medium text-sm text-white">{contact.contactNumber.replace('@c.us', '')}</div>
+                    <div className="font-medium text-sm text-white">
+                      {(() => {
+                        // Remove WhatsApp suffixes
+                        let num = contact.contactNumber.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '');
+                        // Remove all non-digits
+                        num = num.replace(/\D/g, '');
+                        
+                        // ✅ Egypt numbers: 20XXXXXXXXXX -> 01XXXXXXXXX or 01234567890
+                        if (num.startsWith('20') && num.length === 12) {
+                          num = '0' + num.substring(2);
+                          // Format: 01XX XXX XXXX
+                          if (num.length === 11 && num.startsWith('01')) {
+                            return num.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                          }
+                        }
+                        // ✅ Egypt local: 01234567890
+                        else if (num.startsWith('01') && num.length === 11) {
+                          return num.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                        }
+                        // ✅ Saudi: 966501234567 -> 0501234567
+                        else if (num.startsWith('966') && num.length === 12) {
+                          num = '0' + num.substring(3);
+                          if (num.length === 10 && num.startsWith('05')) {
+                            return num.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                          }
+                        }
+                        // ✅ Saudi local: 0501234567
+                        else if (num.startsWith('05') && num.length === 10) {
+                          return num.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                        }
+                        // ✅ Other international formats
+                        else if (num.length >= 11) {
+                          // Format with spaces
+                          return num.replace(/(\d{2,3})(\d{3})(\d{3})(\d+)/, '$1 $2 $3 $4');
+                        }
+                        
+                        // Return as is if not in expected format
+                        return num || contact.contactNumber;
+                      })()}
+                    </div>
                     
                    </div>
                   {/* <div className="text-xs text-orange-300">
@@ -608,7 +647,7 @@ export default function WhatsAppChatsPage() {
                   {contactTags[contact.contactNumber] && contactTags[contact.contactNumber].length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {contactTags[contact.contactNumber].map((tag, index) => (
-                          <span key={index} className="text-xs bg-light-custom text-white px-2 py-1 rounded-full">
+                          <span key={index} className="text-xs bg-secondry border-1 border-blue-300 text-white px-2 py-1 rounded-full">
                             {tag}
                           </span>
                         ))}
@@ -622,7 +661,7 @@ export default function WhatsAppChatsPage() {
             {/* Chat Header */}
             
             {/* Messages Display */}
-            <div className="flex-1 overflow-y-auto p-4 scrollbar-hideيشس">
+            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
               {selectedContact ? (
                 <div className="space-y-3">
                     {chats.length === 0 ? (
@@ -643,7 +682,7 @@ export default function WhatsAppChatsPage() {
                               className={`max-w-xs p-3 rounded-lg ${
                                 chat.messageType === 'outgoing'
                                   ? 'bg-card inner-shadow text-white'
-                                  : 'bg-light-custom inner-shadow text-gray-200'
+                                  : ' inner-shadow text-gray-200'
                               }`}
                             >
                               {/* Media Content */}
@@ -726,7 +765,7 @@ export default function WhatsAppChatsPage() {
               <div className="border-t border-gray-700 p-4  flex-shrink-0">
                 {/* Media Upload Section */}
                 {mediaFile && (
-                  <div className="mb-4 p-4 bg-gray-700 rounded-lg">
+                  <div className="mb-4 p-4 bg-dark-custom rounded-lg">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-medium text-white">معاينة الوسائط</h4>
                       <Button 
@@ -760,7 +799,7 @@ export default function WhatsAppChatsPage() {
                         placeholder="أضف تعليق (اختياري)..."
                         value={mediaCaption}
                         onChange={(e) => setMediaCaption(e.target.value)}
-                        className="w-full px-3 bg-[#011910] py-2 border border-gray-500 rounded-md focus:outline-none  text-white placeholder-gray-400 "
+                        className="w-full px-3 bg-[#01191040] py-2 border border-gray-500 rounded-md focus:outline-none  text-white placeholder-gray-400 "
                       />
                       <div className="flex gap-2">
                         <Button 
@@ -813,7 +852,7 @@ export default function WhatsAppChatsPage() {
                     placeholder="اكتب رسالتك..."
                     value={testMessage}
                     onChange={(e) => setTestMessage(e.target.value)}
-                    className="flex-1 px-3 bg-[#011910] py-4 border border-gray-300 rounded-2xl   text-white placeholder-white/50 "
+                    className="flex-1 px-3 bg-[#01191040] py-4 border border-blue-300 rounded-2xl   text-white placeholder-white/50 "
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && !loading) {
                         handleSendMessage(selectedContact, testMessage);
@@ -847,20 +886,54 @@ export default function WhatsAppChatsPage() {
               <div>
                 <label className="block text-sm text-gray-300 mb-1">جهة الاتصال</label>
                 <select
-                  className="w-full bg-[#011910]  rounded px-3 py-2 text-white"
+                  className="w-full bg-[#01191040]  rounded px-3 py-2 text-white"
                   value={selectedContactForTag}
                   onChange={(e) => setSelectedContactForTag(e.target.value)}
                 >
                   <option value="">اختر جهة اتصال</option>
                   {contacts.map(c => (
-                    <option key={c.contactNumber} value={c.contactNumber}>{c.contactNumber}</option>
+                    <option key={c.contactNumber} value={c.contactNumber}>
+                      {(() => {
+                        // Remove WhatsApp suffixes
+                        let num = c.contactNumber.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '');
+                        // Remove all non-digits
+                        num = num.replace(/\D/g, '');
+                        
+                        // ✅ Egypt numbers: 20XXXXXXXXXX -> 01XXXXXXXXX or 01234567890
+                        if (num.startsWith('20') && num.length === 12) {
+                          num = '0' + num.substring(2);
+                          // Format: 01XX XXX XXXX
+                          if (num.length === 11 && num.startsWith('01')) {
+                            return num.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                          }
+                        }
+                        // ✅ Egypt local: 01234567890
+                        else if (num.startsWith('01') && num.length === 11) {
+                          return num.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                        }
+                        // ✅ Saudi: 966501234567 -> 0501234567
+                        else if (num.startsWith('966') && num.length === 12) {
+                          num = '0' + num.substring(3);
+                          if (num.length === 10 && num.startsWith('05')) {
+                            return num.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                          }
+                        }
+                        // ✅ Saudi local: 0501234567
+                        else if (num.startsWith('05') && num.length === 10) {
+                          return num.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                        }
+                        
+                        // Return as is if not in expected format
+                        return num || c.contactNumber;
+                      })()}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm text-gray-300 mb-1">التصنيف</label>
                 <select
-                  className="w-full bg-[#011910]  rounded px-3 py-2 text-white"
+                  className="w-full bg-[#01191040]  rounded px-3 py-2 text-white"
                   value={selectedTagId ?? ''}
                   onChange={(e) => setSelectedTagId(parseInt(e.target.value))}
                 >
@@ -872,7 +945,7 @@ export default function WhatsAppChatsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <input
-                  className="flex-1 bg-[#011910]  rounded px-3 py-2 text-white placeholder-white"
+                  className="flex-1 bg-[#01191040]  rounded px-3 py-2 text-white placeholder-white"
                   placeholder="إنشاء تصنيف سريع"
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
@@ -883,7 +956,7 @@ export default function WhatsAppChatsPage() {
               </div>
               <div className="flex items-center w-full gap-2 pt-2">
                 <button className="w-full text-white primary-button after:bg-red-700 before:bg-red-700"  onClick={() => setShowTagModal(false)}>إلغاء</button>
-                <button  onClick={handleAddToTag} disabled={!selectedTagId || !selectedContactForTag || tagLoading} className="after:bg-[#011910] before:bg-[#01191080]  w-full primary-button">
+                <button  onClick={handleAddToTag} disabled={!selectedTagId || !selectedContactForTag || tagLoading} className="after:bg-[#01191040] before:bg-[#01191080]  w-full primary-button">
                   {tagLoading ? 'جاري الإضافة...' : 'إضافة'}
                 </button>
               </div>

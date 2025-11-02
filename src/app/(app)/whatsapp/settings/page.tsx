@@ -288,7 +288,7 @@ export default function WhatsAppSettingsPage() {
             <Button 
               onClick={saveSettings}
               disabled={saving}
-              className="bg-green-500 hover:bg-green-600"
+              className="primary-button"
             >
               {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
             </Button>

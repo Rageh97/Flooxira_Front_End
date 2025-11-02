@@ -11,6 +11,7 @@ import { clsx } from "clsx";
 import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import RippleGrid from '@/components/RippleGrid';
+import { X, Megaphone } from "lucide-react";
 
 
 const navItems = [
@@ -43,6 +44,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [planName, setPlanName] = useState<string>("");
+  const [newsBarClosed, setNewsBarClosed] = useState(false);
 
   // تحديد العناصر المتاحة حسب نوع المستخدم
   const visibleNavItems = useMemo(() => {
@@ -323,6 +325,53 @@ export default function AppLayout({ children }: PropsWithChildren) {
             ☰
           </button>
         </div>
+        
+        {/* News Bar - Fixed at top */}
+        {!newsBarClosed && (
+          <div className="w-full bg-card text-white px-4 py-3 shadow-lg z-20 flex items-center justify-between gap-4 overflow-hidden">
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <Megaphone className="w-5 h-5 flex-shrink-0 animate-pulse text-yellow-200" />
+            </div>
+            <div className="flex-1 min-w-0 overflow-hidden relative">
+              <div 
+                className="whitespace-nowrap"
+                style={{
+                  animation: 'scroll-text 30s linear infinite',
+                  display: 'inline-block',
+                  willChange: 'transform'
+                }}
+              >
+                <span className="text-sm font-semibold inline-block mr-12">
+                  مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
+                </span>
+                <span className="text-sm font-semibold inline-block mr-12">
+                  • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
+                </span>
+                <span className="text-sm font-semibold inline-block mr-12">
+                  • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
+                </span>
+                {/* Duplicate for seamless loop */}
+                <span className="text-sm font-semibold inline-block mr-12">
+                  مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
+                </span>
+                <span className="text-sm font-semibold inline-block mr-12">
+                  • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
+                </span>
+                <span className="text-sm font-semibold inline-block mr-12">
+                  • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setNewsBarClosed(true)}
+              className=" cursor-pointer  rounded-full p-1.5 transition-colors active:scale-95 "
+              aria-label="إغلاق الشريط الإخباري"
+            >
+              <X className="w-4 h-4 text-red-400" />
+            </button>
+          </div>
+        )}
+        
         <main className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6">
           {children}
         </main>

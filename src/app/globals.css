@@ -348,6 +348,16 @@
     animation: heartbeat 1s ease-in-out infinite;
   }
 
+  /* Scrolling text animation */
+  @keyframes scroll-text {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
   /* WhatsApp Emoji Styles */
   .whatsapp-emoji {
     font-size: 1.2em;

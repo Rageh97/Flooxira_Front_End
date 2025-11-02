@@ -10,6 +10,7 @@ import { usePermissions } from "@/lib/permissions";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 import AnimatedEmoji, { EmojiPickerModal } from "@/components/AnimatedEmoji";
 import { useToast } from "@/components/ui/toast-provider";
+import Loader from "@/components/Loader";
 
 // Platform configuration with icons and supported content types
 const PLATFORMS = {
@@ -118,6 +119,9 @@ export default function CreatePostPage() {
   
   // Emoji state
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  
+  // Action type state for loader text
+  const [actionType, setActionType] = useState<'schedule' | 'publish'>('publish');
 
   // Helper function to get all platforms (for initial display)
   const getAllPlatforms = () => {
@@ -502,11 +506,7 @@ export default function CreatePostPage() {
   if (permissionsLoading) {
     return (
       <div className="space-y-8">
-        <h1 className="text-3xl font-bold text-white">إنشاء منشور جديد</h1>
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent"></div>
-          <p className="text-gray-400 mt-4">جاري التحقق من الصلاحيات...</p>
-        </div>
+        <Loader text="جاري التحقق من الصلاحيات..." size="lg" variant="warning" showDots fullScreen={false} className="py-16" />
       </div>
     );
   }
@@ -705,6 +705,19 @@ export default function CreatePostPage() {
     }
   };
 
+
+  // Show fullscreen loader during post creation/scheduling
+  if (mutation.isPending) {
+    return (
+      <Loader 
+        text={actionType === 'schedule' ? "جاري حفظ وجدولة المنشور..." : "جاري نشر المنشور..."} 
+        size="lg" 
+        variant="success"
+        showDots
+        fullScreen
+      />
+    );
+  }
 
   return (
     <div className="w-full mx-auto space-y-8 pb-12">
@@ -1426,7 +1439,10 @@ export default function CreatePostPage() {
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">
             <Button 
-              onClick={() => mutation.mutate()} 
+              onClick={() => {
+                setActionType(when ? 'schedule' : 'publish');
+                mutation.mutate();
+              }} 
               disabled={
                 mutation.isPending || 
                 platforms.length === 0 || 
@@ -1435,26 +1451,23 @@ export default function CreatePostPage() {
               }
               className=" h-14 primary-button after:bg-yellow-600 text-white text-lg font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {mutation.isPending ? (
+              {when ? (
                 <span className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  جاري الحفظ...
-                </span>
-              ) : when ? (
-                <span className="flex items-center gap-2">
-                
                   حفظ وجدولة
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-               
-               حفظ وجدولة
+                  حفظ وجدولة
                 </span>
               )}
             </Button>
             
             <Button  
-              onClick={() => { setWhen(""); mutation.mutate(); }} 
+              onClick={() => { 
+                setWhen(""); 
+                setActionType('publish');
+                mutation.mutate(); 
+              }} 
               disabled={
                 mutation.isPending || 
                 platforms.length === 0 ||
@@ -1463,17 +1476,9 @@ export default function CreatePostPage() {
               }
               className=" h-14 primary-button text-white text-lg font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {mutation.isPending ? (
-                <span className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  جاري النشر...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                 
-                  نشر الآن
-                </span>
-              )}
+              <span className="flex items-center gap-2">
+                نشر الآن
+              </span>
             </Button>
           </div>
           

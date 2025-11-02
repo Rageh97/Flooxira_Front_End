@@ -21,7 +21,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/50 scrollbar-hide  backdrop-blur-lg  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/80 scrollbar-hide  backdrop-blur-lg  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -38,7 +38,11 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed scrollbar-hide  top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-semidark-custom  text-white   z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4   p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        "fixed scrollbar-hide top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white z-50 grid w-full max-w-lg gap-4 p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        // ✅ Apply gradient-border styles without position conflict
+        "overflow-hidden border border-white/20 bg-gradient-to-b from-[#13124060] to-[rgba(159,185,255,0.35)] backdrop-blur-[15px] [backdrop-filter:saturate(200%)]",
+        "before:content-[''] before:absolute before:h-[2px] before:bg-gradient-to-r before:from-transparent before:via-[#74e2ff] before:to-transparent before:left-1/2 before:-translate-x-1/2 before:w-[70%] before:rounded-full before:top-0",
+        "shadow-[0_8px_32px_rgba(255,255,255,0.1),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(255,255,255,0.1)]",
         className
       )}
       {...props}

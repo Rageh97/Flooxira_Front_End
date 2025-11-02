@@ -1933,15 +1933,52 @@ export async function createCustomer(token: string, customerData: any) {
 }
 
 export async function updateCustomer(token: string, customerId: number, customerData: any) {
-  return apiFetch<{
-    success: boolean;
-    message: string;
-    data: any;
-  }>(`/api/customers/${customerId}`, {
-    method: 'PUT',
-    body: JSON.stringify(customerData),
-    authToken: token
-  });
+  // If there's an invoiceImage file, use FormData, otherwise use JSON
+  if (customerData.invoiceImage && customerData.invoiceImage instanceof File) {
+    const formData = new FormData();
+    
+    // Add all text fields
+    Object.keys(customerData).forEach(key => {
+      if (key !== 'invoiceImage' && customerData[key] !== null && customerData[key] !== undefined) {
+        if (typeof customerData[key] === 'object') {
+          formData.append(key, JSON.stringify(customerData[key]));
+        } else {
+          formData.append(key, customerData[key]);
+        }
+      }
+    });
+    
+    // Add invoice image if exists
+    if (customerData.invoiceImage) {
+      formData.append('invoiceImage', customerData.invoiceImage);
+    }
+    
+    return apiFetch<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(`/api/customers/${customerId}`, {
+      method: 'PUT',
+      body: formData,
+      authToken: token
+    });
+  } else {
+    // Remove invoiceImage from data if it's not a File (to preserve existing image)
+    const dataWithoutImage = { ...customerData };
+    if (dataWithoutImage.invoiceImage && !(dataWithoutImage.invoiceImage instanceof File)) {
+      delete dataWithoutImage.invoiceImage;
+    }
+    
+    return apiFetch<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(`/api/customers/${customerId}`, {
+      method: 'PUT',
+      body: JSON.stringify(dataWithoutImage),
+      authToken: token
+    });
+  }
 }
 
 export async function deleteCustomer(token: string, customerId: number) {

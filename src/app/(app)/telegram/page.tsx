@@ -26,6 +26,7 @@ import {
 } from "@/lib/api";
 import { listTags } from "@/lib/tagsApi";
 import { usePermissions } from "@/lib/permissions";
+import Loader from "@/components/Loader";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -124,10 +125,14 @@ export default function TelegramBotPage() {
   if (permissionsLoading) {
     return (
       <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
-        <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
-        </div>
+        <Loader 
+          text="جاري التحقق من الصلاحيات..." 
+          size="lg" 
+          variant="primary"
+          showDots
+          fullScreen={false}
+          className="py-16"
+        />
       </div>
     );
   }
@@ -596,7 +601,7 @@ export default function TelegramBotPage() {
                 </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span>🔌</span>
+                      
                       <span>قطع الاتصال</span>
                 </div>
                   )}
@@ -611,7 +616,7 @@ export default function TelegramBotPage() {
           {botInfo ? (
             <div className="space-y-6">
               {/* Bot Info Display */}
-              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+              <div className="bg-secondry rounded-lg p-4 border border-gray-700">
               <div className="flex items-center justify-between">
                  
                 <div className="flex items-center gap-2">
@@ -652,13 +657,13 @@ export default function TelegramBotPage() {
                     placeholder="أدخل توكن البوت من @BotFather"
                     value={botToken}
                     onChange={(e) => setBotToken(e.target.value)}
-                    className="bg-[#011910] py-3 border-gray-100 text-white placeholder-gray-500"
+                    className="py-3  text-white placeholder-gray-500"
                   />
                   <p className="text-xs text-green-500 mt-1">احصل على التوكن من @BotFather في التليجرام</p>
                 </div>
                  
                 <Button
-                   className={`${!botToken ? 'primary-button after:bg-[#011910]' : 'primary-button'} w-full text-white py-3 rounded-lg font-medium transition-colors`}
+                   className={`${!botToken ? 'primary-button after:bg-[#011910]' : 'primary-button'} w-50 text-white py-3 rounded-lg font-medium transition-colors`}
                   disabled={loading || !botToken}
                   onClick={async () => {
                     try {
@@ -679,13 +684,13 @@ export default function TelegramBotPage() {
                   }}
                 >
                   {loading ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 ">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       <span>جاري الاتصال...</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span>🔌</span>
+                      
                       <span>ربط البوت</span>
                     </div>
                   )}
@@ -707,7 +712,7 @@ export default function TelegramBotPage() {
         </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+              <div className="bg-[#01191060] rounded-lg p-4 border border-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10  rounded-lg flex items-center justify-center">
                   <img  className="text-white" src="/true.png" alt="" />
@@ -719,7 +724,7 @@ export default function TelegramBotPage() {
             </div>
           </div>
               
-              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+              <div className="bg-[#01191060] rounded-lg p-4 border border-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10  rounded-lg flex items-center justify-center">
                     <img  className="text-white" src="/true.png" alt="" />
@@ -731,7 +736,7 @@ export default function TelegramBotPage() {
                 </div>
               </div>
               
-              <div className="bg-[#011910] rounded-lg p-4 border border-gray-700">
+              <div className="bg-[#01191060] rounded-lg p-4 border border-gray-700">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10  rounded-lg flex items-center justify-center">
                   <img  className="text-white" src="/true.png" alt="" />
@@ -1016,7 +1021,7 @@ export default function TelegramBotPage() {
                   ))}
                 </div>
               ) : (
-                <div className="p-6 bg-gray-800/30 rounded-lg border border-gray-700 text-center">
+                <div className="p-6 bg-secondry rounded-lg border border-gray-700 text-center">
                   <div className="text-gray-400">
                     <div className="text-4xl mb-3">🤖</div>
                     <div className="font-semibold text-lg mb-2">لا توجد مجموعات محملة</div>
@@ -1032,7 +1037,7 @@ export default function TelegramBotPage() {
                 placeholder="اكتب الرسالة التسويقية الإعلانية هنا..."
                 value={campaignMessage}
                 onChange={(e) => setCampaignMessage(e.target.value)}
-                className="w-full h-32 p-4 bg-[#011910] border rounded-lg  text-white border-gray-600 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full h-32 p-4 bg-[#01191040] border rounded-lg  text-white border-blue-300 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1057,7 +1062,7 @@ export default function TelegramBotPage() {
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">رفع الوسائط (اختياري)</label>
                 <div className="mt-2">
-                  <input 
+                  <Input 
                     type="file" 
                     accept="image/*,video/*,.pdf,.doc,.docx"
                     onChange={async (e)=> {
@@ -1117,7 +1122,7 @@ export default function TelegramBotPage() {
               <Button 
                 onClick={createCampaign} 
                 disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="primary-button after:bg-yellow-500"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -1126,7 +1131,7 @@ export default function TelegramBotPage() {
             </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span>📅</span>
+
                     <span>جدولة الحملة</span>
               </div>
             )}
@@ -1134,7 +1139,7 @@ export default function TelegramBotPage() {
             <Button 
                 onClick={sendCampaignNow} 
                 disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="primary-button "
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -1143,7 +1148,6 @@ export default function TelegramBotPage() {
                       </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span>🚀</span>
                     <span>إرسال الآن</span>
               </div>
             )}
@@ -1151,7 +1155,7 @@ export default function TelegramBotPage() {
               <Button 
                 onClick={loadCampaigns} 
                 disabled={loading} 
-                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="primary-button after:bg-green-500"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -1160,7 +1164,6 @@ export default function TelegramBotPage() {
             </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span>🔄</span>
                     <span>تحديث الحملات</span>
               </div>
             )}

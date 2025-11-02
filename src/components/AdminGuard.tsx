@@ -3,7 +3,8 @@
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { RefreshCw, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
+import Loader from '@/components/Loader';
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -31,23 +32,25 @@ export default function AdminGuard({ children, fallback }: AdminGuardProps) {
 
   if (loading) {
     return fallback || (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center space-y-4">
-          <RefreshCw className="h-8 w-8 animate-spin text-green-600" />
-          <span className="text-gray-600">جاري التحقق من الصلاحيات...</span>
-        </div>
-      </div>
+      <Loader 
+        text="جاري التحقق من الصلاحيات..." 
+        size="lg" 
+        variant="success"
+        showDots
+        fullScreen
+      />
     );
   }
 
   if (!user) {
     return fallback || (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center space-y-4">
-          <RefreshCw className="h-8 w-8 animate-spin text-green-600" />
-          <span className="text-gray-600">جاري إعادة التوجيه لتسجيل الدخول...</span>
-        </div>
-      </div>
+      <Loader 
+        text="جاري إعادة التوجيه لتسجيل الدخول..." 
+        size="lg" 
+        variant="primary"
+        showDots
+        fullScreen
+      />
     );
   }
 

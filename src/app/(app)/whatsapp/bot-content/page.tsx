@@ -2,6 +2,8 @@
 import React from "react";
 import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, botExportData, type BotField, type BotDataRow } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import Loader from "@/components/Loader";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type EditableCellProps = {
   value: any;
@@ -35,6 +37,15 @@ export default function BotContentPage() {
   const [itemsPerPage] = React.useState(10);
   const [successMessage, setSuccessMessage] = React.useState('');
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
+  
+  // Loading states for operations
+  const [isAddingField, setIsAddingField] = React.useState(false);
+  const [isAddingRow, setIsAddingRow] = React.useState(false);
+  const [isUpdatingRow, setIsUpdatingRow] = React.useState(false);
+  const [isDeletingRow, setIsDeletingRow] = React.useState(false);
+  const [isClearingData, setIsClearingData] = React.useState(false);
+  const [isUploadingExcel, setIsUploadingExcel] = React.useState(false);
+  const [isExportingData, setIsExportingData] = React.useState(false);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -76,9 +87,11 @@ export default function BotContentPage() {
     if (!newFieldName.trim()) return;
     
     try {
+      setIsAddingField(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('يجب تسجيل الدخول أولاً');
+        setIsAddingField(false);
         return;
       }
 
@@ -99,14 +112,18 @@ export default function BotContentPage() {
     } catch (error) {
       console.error('Error adding field:', error);
       alert('فشل في إضافة العمود لا يمكن اضافة اسم عمود موجود مسبقا');
+    } finally {
+      setIsAddingField(false);
     }
   };
 
   const handleAddRow = async () => {
     try {
+      setIsAddingRow(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('يجب تسجيل الدخول أولاً');
+        setIsAddingRow(false);
         return;
       }
 
@@ -124,14 +141,18 @@ export default function BotContentPage() {
     } catch (error) {
       console.error('Error adding row:', error);
       alert('فشل في إضافة الصف');
+    } finally {
+      setIsAddingRow(false);
     }
   };
 
   const handleUpdateRow = async (rowId: number) => {
     try {
+      setIsUpdatingRow(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('يجب تسجيل الدخول أولاً');
+        setIsUpdatingRow(false);
         return;
       }
 
@@ -149,6 +170,8 @@ export default function BotContentPage() {
     } catch (error) {
       console.error('Error updating row:', error);
       alert('فشل في تحديث الصف');
+    } finally {
+      setIsUpdatingRow(false);
     }
   };
 
@@ -156,9 +179,11 @@ export default function BotContentPage() {
     if (!confirm('هل أنت متأكد من حذف هذا الصف؟')) return;
     
     try {
+      setIsDeletingRow(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('يجب تسجيل الدخول أولاً');
+        setIsDeletingRow(false);
         return;
       }
 
@@ -174,14 +199,18 @@ export default function BotContentPage() {
     } catch (error) {
       console.error('Error deleting row:', error);
       alert('فشل في حذف الصف');
+    } finally {
+      setIsDeletingRow(false);
     }
   };
 
   const handleClearAllData = async () => {
     try {
+      setIsClearingData(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('يجب تسجيل الدخول أولاً');
+        setIsClearingData(false);
         return;
       }
 
@@ -202,6 +231,8 @@ export default function BotContentPage() {
     } catch (error) {
       console.error('Error clearing data:', error);
       alert('فشل في حذف البيانات');
+    } finally {
+      setIsClearingData(false);
     }
   };
 
@@ -210,9 +241,11 @@ export default function BotContentPage() {
     if (!file) return;
 
     try {
+      setIsUploadingExcel(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('يجب تسجيل الدخول أولاً');
+        setIsUploadingExcel(false);
         return;
       }
 
@@ -228,23 +261,27 @@ export default function BotContentPage() {
     } catch (error) {
       console.error('Error uploading Excel:', error);
       alert('فشل في رفع الملف');
+    } finally {
+      setIsUploadingExcel(false);
     }
   };
 
   const handleExportData = async () => {
     try {
+      setIsExportingData(true);
       const token = localStorage.getItem('auth_token');
       if (!token) {
         alert('يجب تسجيل الدخول أولاً');
+        setIsExportingData(false);
         return;
       }
 
       if (rows.length === 0) {
         alert('لا توجد بيانات للتصدير');
+        setIsExportingData(false);
         return;
       }
 
-      setLoading(true);
       const blob = await botExportData(token);
       
       // Create download link
@@ -263,7 +300,7 @@ export default function BotContentPage() {
       console.error('Error exporting data:', error);
       alert('فشل في تصدير البيانات');
     } finally {
-      setLoading(false);
+      setIsExportingData(false);
     }
   };
 
@@ -283,11 +320,37 @@ export default function BotContentPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentRows = rows.slice(startIndex, endIndex);
 
+  // Show fullscreen loader during operations
+  if (isAddingField || isAddingRow || isUpdatingRow || isDeletingRow || isClearingData || isUploadingExcel || isExportingData) {
+    let loaderText = "جاري المعالجة...";
+    if (isAddingField) loaderText = "جاري إضافة العمود...";
+    else if (isAddingRow) loaderText = "جاري إضافة الصف...";
+    else if (isUpdatingRow) loaderText = "جاري تحديث الصف...";
+    else if (isDeletingRow) loaderText = "جاري حذف الصف...";
+    else if (isClearingData) loaderText = "جاري حذف جميع البيانات...";
+    else if (isUploadingExcel) loaderText = "جاري رفع ملف Excel...";
+    else if (isExportingData) loaderText = "جاري تصدير البيانات...";
+    
+    return (
+      <Loader 
+        text={loaderText} 
+        size="lg" 
+        variant="success"
+        showDots
+        fullScreen
+      />
+    );
+  }
+
   if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-      </div>
+      <Loader 
+        text="جاري تحميل البيانات..." 
+        size="lg" 
+        variant="warning"
+        showDots
+        fullScreen
+      />
     );
   }
 
@@ -347,7 +410,7 @@ export default function BotContentPage() {
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-3 rounded">
           {successMessage}
         </div>
       )}
@@ -471,30 +534,30 @@ export default function BotContentPage() {
         </div>
       ) : (
         <div className="bg-transparent rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-[#011910] inner-shadow  mb-2">
+          <div className="px-6 py-4 bg-[#01191040] inner-shadow  mb-2">
             <h3 className="text-lg font-medium text-white">
               البيانات ({rows.length} صف، {fields.length} عمود)
             </h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-bg-light-custom">
-              <thead className="bg-semidark-custom">
-                <tr>
+            <Table >
+              <TableHeader >
+                <TableRow>
                   {fields.map(field => (
-                    <th key={field.id} className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider min-w-[200px]">
+                    <TableHead key={field.id} >
                       {field.fieldName}
-                    </th>
+                    </TableHead>
                   ))}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                  <TableHead>
                     الإجراءات
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-[#011910] divide-y divide-bg-white">
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {currentRows.map(row => (
-                  <tr key={row.id}>
+                  <TableRow key={row.id}>
                     {fields.map(field => (
-                      <td key={field.id} className="px-6 py-4 text-sm text-gray-900 min-w-[200px]">
+                      <TableCell key={field.id} className="px-6 py-4 text-sm text-gray-900 min-w-[200px]">
                         {editingRow === row.id ? (
                           <EditableCell
                             value={editingData[field.fieldName] || ''}
@@ -503,16 +566,16 @@ export default function BotContentPage() {
                           />
                         ) : (
                           <div className="w-full">
-                            <div className="break-words whitespace-pre-wrap text-sm max-h-32 overflow-y-auto text-white rounded p-2 bg-[#011910] min-h-[40px] max-w-[300px]">
+                            <div className="break-words whitespace-pre-wrap text-sm max-h-32 overflow-y-auto text-white rounded p-2 bg-[#01191040] min-h-[40px] max-w-[300px]">
                               {row.data[field.fieldName] !== undefined && row.data[field.fieldName] !== null && row.data[field.fieldName] !== '' 
                                 ? String(row.data[field.fieldName]) 
                                 : <span className="text-gray-400 italic">فارغ</span>}
                             </div>
                           </div>
                         )}
-                      </td>
+                      </TableCell>
                     ))}
-                    <td className="px-6 py-4 whitespace-nowrap  text-sm font-medium flex justify-end items-center" >
+                    <TableCell className="px-6 py-4 whitespace-nowrap  text-sm font-medium flex justify-end items-center" >
                       {editingRow === row.id ? (
                         <div className="flex gap-2">
                           <button
@@ -544,35 +607,35 @@ export default function BotContentPage() {
                           </button>
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div className="bg-secondry px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-3 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
                   السابق
                 </button>
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-3 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
                   التالي
                 </button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-gray-300">
                     عرض <span className="font-medium">{startIndex + 1}</span> إلى <span className="font-medium">{Math.min(endIndex, rows.length)}</span> من <span className="font-medium">{rows.length}</span> نتيجة
                   </p>
                 </div>

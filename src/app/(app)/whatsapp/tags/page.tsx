@@ -90,8 +90,8 @@ export default function TagsPage() {
 
       <div className="gradient-border rounded-lg p-4 mb-6">
         <div className="flex gap-2">
-          <input className="w-3/4 bg-[#011910] inner-shadow rounded-lg-lg px-3 py-4 text-white placeholder-white outline-none" placeholder="ادخل اسم التصنيف" value={newName} onChange={e => setNewName(e.target.value)} />
-          {/* <input className="w-40 bg-[#011910] inner-shadow rounded-lg-lg px-3 py-4 text-white placeholder-white outline-none" placeholder="#اللون" value={newColor} onChange={e => setNewColor(e.target.value)} /> */}
+          <input className="w-3/4 bg-[#01191040] border-1 border-blue-300 rounded-lg px-3 py-4 text-white placeholder-white outline-none" placeholder="ادخل اسم التصنيف" value={newName} onChange={e => setNewName(e.target.value)} />
+          {/* <input className="w-40 bg-[#01191040] border-1 border-blue-300 rounded-lg-lg px-3 py-4 text-white placeholder-white outline-none" placeholder="#اللون" value={newColor} onChange={e => setNewColor(e.target.value)} /> */}
           <button onClick={onCreate} className="primary-button text-white rounded-lg-lg px-4 w-1/4">إنشاء</button>
         </div>
       </div>

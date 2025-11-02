@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useAuth } from "@/lib/auth";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Types
 interface Appointment {
@@ -257,36 +258,36 @@ export default function AppointmentsPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-[#011910] p-6 rounded-lg">
+          <card className="gradient-border flex flex-col items-center justify-center p-4">
             <h3 className="text-lg font-semibold text-white mb-2">إجمالي المواعيد</h3>
             <p className="text-3xl font-bold text-blue-500">{stats.total}</p>
-          </div>
-          <div className="bg-[#011910] p-6 rounded-lg">
+          </card>
+          <card className="gradient-border flex flex-col items-center justify-center p-4">
             <h3 className="text-lg font-semibold text-white mb-2">مواعيد اليوم</h3>
             <p className="text-3xl font-bold text-green-500">{stats.today}</p>
-          </div>
-          <div className="bg-[#011910] p-6 rounded-lg">
+          </card>
+          <card className="gradient-border flex flex-col items-center justify-center p-4">
             <h3 className="text-lg font-semibold text-white mb-2">مواعيد قادمة</h3>
             <p className="text-3xl font-bold text-yellow-500">{stats.upcoming}</p>
-          </div>
-          <div className="bg-[#011910] p-6 rounded-lg">
+          </card>
+          <card className="gradient-border flex flex-col items-center justify-center p-4">
             <h3 className="text-lg font-semibold text-white mb-2">في الانتظار</h3>
             <p className="text-3xl font-bold text-orange-500">{stats.pending}</p>
-          </div>
+          </card>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-[#011910] p-6 rounded-lg mb-6">
+      <div className="bg-[#01191040] p-6 rounded-lg mb-6">
         <h3 className="text-lg font-semibold text-white mb-4">فلترة المواعيد</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 gradient-border p-4">
           <div>
             <label className="block text-sm font-medium text-white mb-2">البحث</label>
             <input
               type="text"
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-transparent"
+              className="w-full border-[0.5px] rounded-lg bg-[#01191040] border-blue-300 outline-none rounded px-3 py-2 text-white "
               placeholder="اسم العميل، رقم الهاتف، نوع الخدمة..."
             />
           </div>
@@ -295,7 +296,7 @@ export default function AppointmentsPage() {
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-transparent"
+              className="w-full border-[0.5px] rounded-lg bg-[#01191040] border-blue-300 outline-none rounded px-3 py-2 text-white "
             >
               <option value="">جميع الحالات</option>
               <option value="pending">في الانتظار</option>
@@ -310,7 +311,7 @@ export default function AppointmentsPage() {
             <select
               value={filters.priority}
               onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-              className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-transparent"
+              className="w-full border-[0.5px] rounded-lg bg-[#01191040] border-blue-300 outline-none rounded px-3 py-2 text-white "
             >
               <option value="">جميع الأولويات</option>
               <option value="low">منخفضة</option>
@@ -325,7 +326,7 @@ export default function AppointmentsPage() {
               type="date"
               value={filters.dateFrom}
               onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-              className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-transparent"
+              className="w-full border-[0.5px] rounded-lg bg-[#01191040] border-blue-300 outline-none rounded px-3 py-2 text-white "
             />
           </div>
           <div>
@@ -334,7 +335,7 @@ export default function AppointmentsPage() {
               type="date"
               value={filters.dateTo}
               onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-              className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-transparent"
+              className="w-full border-[0.5px] rounded-lg bg-[#01191040] border-blue-300 outline-none rounded px-3 py-2 text-white "
             />
           </div>
           <div>
@@ -343,7 +344,7 @@ export default function AppointmentsPage() {
               type="text"
               value={filters.serviceType}
               onChange={(e) => setFilters(prev => ({ ...prev, serviceType: e.target.value }))}
-              className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-transparent"
+              className="w-full border-[0.5px] rounded-lg bg-[#01191040] border-blue-300 outline-none rounded px-3 py-2 text-white "
               placeholder="نوع الخدمة..."
             />
           </div>
@@ -351,35 +352,35 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Appointments Table */}
-      <div className="bg-transparent rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 bg-[#011910] inner-shadow mb-2">
+      <div className="gradient-border rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4   mb-2">
           <h3 className="text-lg font-medium text-white">
             المواعيد ({appointments.length} موعد)
           </h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-bg-light-custom">
-            <thead className="bg-semidark-custom">
-              <tr>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">العميل</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">الخدمة</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">التاريخ</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">الوقت</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">الحالة</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">الأولوية</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">الإجراءات</th>
-              </tr>
-            </thead>
-            <tbody className="bg-[#011910] divide-y divide-bg-white">
+          <Table >
+            <TableHeader >
+              <TableRow>
+                <TableHead >العميل</TableHead>
+                <TableHead >الخدمة</TableHead>
+                <TableHead >التاريخ</TableHead>
+                <TableHead >الوقت</TableHead>
+                <TableHead >الحالة</TableHead>
+                <TableHead >الأولوية</TableHead>
+                <TableHead >الإجراءات</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody >
               {appointments.map((appointment) => (
-                <tr key={appointment.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <TableRow key={appointment.id}>
+                  <TableCell className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-white">
                       <div className="font-medium">{appointment.customerName}</div>
                       <div className="text-gray-400">{appointment.customerPhone}</div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-white">
                       <div className="font-medium">{appointment.serviceType}</div>
                       {appointment.serviceDescription && (
@@ -388,14 +389,14 @@ export default function AppointmentsPage() {
                         </div>
                       )}
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-white">
                     {new Date(appointment.appointmentDate).toLocaleDateString('ar-SA')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-white">
                     {appointment.appointmentTime}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
                       {appointment.status === 'pending' && 'في الانتظار'}
                       {appointment.status === 'confirmed' && 'مؤكد'}
@@ -403,16 +404,16 @@ export default function AppointmentsPage() {
                       {appointment.status === 'cancelled' && 'ملغي'}
                       {appointment.status === 'no_show' && 'لم يحضر'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(appointment.priority)}`}>
                       {appointment.priority === 'low' && 'منخفضة'}
                       {appointment.priority === 'medium' && 'متوسطة'}
                       {appointment.priority === 'high' && 'عالية'}
                       {appointment.priority === 'urgent' && 'عاجلة'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  </TableCell>
+                  <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex gap-2">
                       <select
                         value={appointment.status}
@@ -441,11 +442,11 @@ export default function AppointmentsPage() {
                         حذف
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Pagination */}

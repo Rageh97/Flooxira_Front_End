@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Loader from "@/components/Loader";
 
 export default function SallaEventsPage() {
   const { user, loading } = useAuth();
@@ -35,10 +36,7 @@ export default function SallaEventsPage() {
   if (permissionsLoading) {
     return (
       <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">تكامل سلة</h1>
-        <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
-        </div>
+        <Loader text="جاري التحقق من الصلاحيات..." size="lg" variant="warning" showDots fullScreen={false} className="py-16" />
       </div>
     );
   }

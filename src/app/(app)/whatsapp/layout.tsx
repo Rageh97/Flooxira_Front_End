@@ -64,10 +64,12 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
         } else {
           setMessagesRemaining(remaining);
         }
+        setCheckingMessages(false);
       } else {
         console.error('[WhatsApp Layout] Response not OK:', response.status);
         // Set default values if API fails
         setMessagesRemaining(30); // Default limit instead of 0
+        setCheckingMessages(false);
       }
     } catch (error) {
       console.error('Error checking messages:', error);

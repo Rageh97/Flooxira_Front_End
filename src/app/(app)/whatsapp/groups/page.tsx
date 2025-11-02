@@ -9,11 +9,17 @@ import {
   exportGroupMembers,
   postWhatsAppStatus,
 } from "@/lib/api";
+import Loader from "@/components/Loader";
 
 export default function WhatsAppGroupsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
+  
+  // Loading states for operations
+  const [isSendingToGroup, setIsSendingToGroup] = useState(false);
+  const [isExportingMembers, setIsExportingMembers] = useState(false);
+  const [isPostingStatus, setIsPostingStatus] = useState(false);
   
   // Groups/Status state
   const [groups, setGroups] = useState<Array<{ id: string; name: string; participantsCount: number }>>([]);
@@ -52,7 +58,7 @@ export default function WhatsAppGroupsPage() {
     }
 
     try {
-      setLoading(true);
+      setIsSendingToGroup(true);
       setError("");
       
       const formData = new FormData();
@@ -78,7 +84,7 @@ export default function WhatsAppGroupsPage() {
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setIsSendingToGroup(false);
     }
   }
 
@@ -89,7 +95,7 @@ export default function WhatsAppGroupsPage() {
     }
 
     try {
-      setLoading(true);
+      setIsExportingMembers(true);
       setError("");
       const result = await exportGroupMembers(token, selectedGroupNames);
       
@@ -101,7 +107,7 @@ export default function WhatsAppGroupsPage() {
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setIsExportingMembers(false);
     }
   }
 
@@ -112,7 +118,7 @@ export default function WhatsAppGroupsPage() {
     }
 
     try {
-      setLoading(true);
+      setIsPostingStatus(true);
       setError("");
       
       const formData = new FormData();
@@ -131,8 +137,26 @@ export default function WhatsAppGroupsPage() {
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setIsPostingStatus(false);
     }
+  }
+
+  // Show fullscreen loader during operations
+  if (isSendingToGroup || isExportingMembers || isPostingStatus) {
+    let loaderText = "جاري المعالجة...";
+    if (isSendingToGroup) loaderText = "جاري إرسال الرسالة للمجموعات...";
+    else if (isExportingMembers) loaderText = "جاري تصدير أعضاء المجموعة...";
+    else if (isPostingStatus) loaderText = "جاري نشر الحالة...";
+    
+    return (
+      <Loader 
+        text={loaderText} 
+        size="lg" 
+        variant="success"
+        showDots
+        fullScreen
+      />
+    );
   }
 
   return (
@@ -166,7 +190,7 @@ export default function WhatsAppGroupsPage() {
            <div>
               <label className="block text-sm font-medium mb-2 text-white">اختر المجموعة</label>
               <select
-                className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none appearance-none"
+                className="w-full px-3 py-4 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none appearance-none"
                 value={selectedGroupNames[0] || ""}
                 onChange={(e) => setSelectedGroupNames(e.target.value ? [e.target.value] : [])}
               >
@@ -194,7 +218,7 @@ export default function WhatsAppGroupsPage() {
 
     <label
       htmlFor="file-upload"
-      className="cursor-pointer flex items-center justify-center bg-[#011910] rounded-md  inner-shadow px-4 py-2 text-sm font-medium  hover:text-white transition"
+      className="cursor-pointer flex items-center justify-center bg-[#01191040] rounded-md  border-1 border-blue-300 px-4 py-2 text-sm font-medium  hover:text-white transition"
     >
       <img className="w-10 h-10" src="/img.gif" alt="" />
     </label>
@@ -208,7 +232,7 @@ export default function WhatsAppGroupsPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">الرسالة</label>
-                <textarea className="w-full h-15 px-3 py-2 bg-[#011910] rounded-md text-white inner-shadow outline-none" rows={3} placeholder="اكتب رسالتك التسويقية" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
+                <textarea className="w-full h-15 px-3 py-2 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none" rows={3} placeholder="اكتب رسالتك التسويقية" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
               </div>
 
 
@@ -216,7 +240,7 @@ export default function WhatsAppGroupsPage() {
                 <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
                 <input 
                   type="datetime-local" 
-                  className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none" 
+                  className="w-full px-3 py-4 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none" 
                   value={groupScheduleAt} 
                   onChange={(e) => {
                     const value = e.target.value;
@@ -236,8 +260,8 @@ export default function WhatsAppGroupsPage() {
 
 
           <div className="flex gap-2">
-            <button className="w-50 h-18 primary-button text-white text-2xl font-bold" onClick={handleSendToGroup} disabled={loading || selectedGroupNames.length === 0 || (!groupMessage && !groupMedia)}>إرسال</button>
-            <button className="w-50 primary-button text-white text-xl font-bold after:bg-red-800 before:bg-[#01191080]" onClick={handleExportGroupMembers} disabled={loading || selectedGroupNames.length === 0} variant="secondary">تصدير الأعضاء</button>
+            <button className="w-50 h-18 primary-button text-white text-2xl font-bold" onClick={handleSendToGroup} disabled={isSendingToGroup || selectedGroupNames.length === 0 || (!groupMessage && !groupMedia)}>إرسال</button>
+            <button className="w-50 primary-button text-white text-xl font-bold after:bg-red-800 before:bg-[#01191080]" onClick={handleExportGroupMembers} disabled={isExportingMembers || selectedGroupNames.length === 0} variant="secondary">تصدير الأعضاء</button>
           </div>
 
 

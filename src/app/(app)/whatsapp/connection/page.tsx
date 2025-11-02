@@ -30,19 +30,51 @@ export default function WhatsAppConnectionPage() {
   }, [token]);
 
   // Auto-refresh status only (NOT QR code) - with proper cleanup
+  // ✅ REDUCED polling frequency to 30 seconds to avoid spam detection
   useEffect(() => {
     if (!token) return;
     
     let isMounted = true;
-    const interval = setInterval(() => {
-      if (isMounted) {
-        checkStatus();
+    let intervalId: NodeJS.Timeout | null = null;
+    
+    // Only poll when page is visible
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden - stop polling
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      } else {
+        // Page is visible - start polling if not already started
+        if (!intervalId && isMounted) {
+          intervalId = setInterval(() => {
+            if (isMounted && !document.hidden) {
+              checkStatus();
+            }
+          }, 30000); // ✅ 30 seconds instead of 5 seconds
+        }
       }
-    }, 5000); // Increased to 5 seconds to reduce server load
+    };
+    
+    // Start initial interval
+    if (!document.hidden) {
+      intervalId = setInterval(() => {
+        if (isMounted && !document.hidden) {
+          checkStatus();
+        }
+      }, 30000); // ✅ 30 seconds instead of 5 seconds
+    }
+    
+    // Listen to visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [token]); // Removed status?.status from dependencies to prevent loop
 
@@ -53,7 +85,7 @@ export default function WhatsAppConnectionPage() {
     console.log('[WhatsApp] Starting QR code polling...');
     let isMounted = true;
     let attempts = 0;
-    const maxAttempts = 20; // Try for 20 seconds (increased from 10)
+    const maxAttempts = 30; // Try for 30 seconds (increased to give more time for QR generation)
     
     const interval = setInterval(async () => {
       if (!isMounted || attempts >= maxAttempts) {
@@ -62,7 +94,7 @@ export default function WhatsAppConnectionPage() {
           console.log('[WhatsApp] QR polling timeout after', attempts, 'attempts');
           setIsWaitingForQR(false);
           if (!qrCode) {
-            setError("انتهت مهلة انتظار رمز QR. يرجى المحاولة مرة أخرى.");
+            setError("انتهت مهلة انتظار رمز QR. يرجى المحاولة مرة أخرى. تأكد من أن الاتصال بالإنترنت مستقر.");
           }
         }
         return;
@@ -71,22 +103,26 @@ export default function WhatsAppConnectionPage() {
       attempts++;
       console.log(`[WhatsApp] QR polling attempt ${attempts}/${maxAttempts}, status:`, status?.status, 'hasQR:', !!qrCode);
       
-      // Only fetch QR if not connected yet
+      // Always try to fetch QR if not connected yet and no QR received
       if (status?.status !== 'CONNECTED' && !qrCode) {
         console.log('[WhatsApp] Fetching QR code...');
         await refreshQRCode();
-      } else if (status?.status === 'CONNECTED' || qrCode) {
-        console.log('[WhatsApp] QR polling stopped - Connected or QR received');
+      } else if (status?.status === 'CONNECTED') {
+        console.log('[WhatsApp] Connected - stopping QR polling');
+        setIsWaitingForQR(false);
+        clearInterval(interval);
+      } else if (qrCode) {
+        console.log('[WhatsApp] QR code received - stopping polling');
         setIsWaitingForQR(false);
         clearInterval(interval);
       }
-    }, 1000); // Check every second
+    }, 2000); // Check every 2 seconds (reduced frequency to avoid too many requests)
     
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [isWaitingForQR, token]); // Removed status and qrCode to prevent re-triggering
+  }, [isWaitingForQR, token, status?.status]); // Added status?.status to dependencies
 
   async function checkStatus() {
     try {
@@ -119,13 +155,18 @@ export default function WhatsAppConnectionPage() {
         console.log('[WhatsApp] ✅ QR code received! Length:', data.qrCode.length);
         console.log('[WhatsApp] Setting QR code in state NOW');
         setQrCode(data.qrCode);
-        setIsWaitingForQR(false); // Stop polling when QR is received
         setError(""); // Clear any errors
+        // Don't stop polling here - let the useEffect handle it
       } else {
-        console.log('[WhatsApp] No QR code in response');
+        console.log('[WhatsApp] No QR code in response yet, will retry...');
+        // Don't set error here - QR might still be generating
       }
     } catch (e: any) {
       console.error('[WhatsApp] QR refresh error:', e.message);
+      // Only set error if it's not a "no QR yet" case
+      if (!e.message.includes('No QR Code available')) {
+        setError(`خطأ في جلب QR Code: ${e.message}`);
+      }
     }
   }
 
@@ -135,27 +176,39 @@ export default function WhatsAppConnectionPage() {
       setError("");
       setSuccess("");
       setQrCode(""); // Clear old QR code
-      setIsWaitingForQR(true); // Start polling for QR
       
+      console.log('[WhatsApp] Starting session...');
       const result = await startWhatsAppSession(token);
+      console.log('[WhatsApp] Session start response:', {
+        success: result.success,
+        hasQR: !!result.qrCode,
+        status: result.status,
+        message: result.message
+      });
+      
       if (result.success) {
-        setSuccess("جاري تشغيل الجلسة... يرجى انتظار رمز QR");
-        
-        // Set QR code if returned immediately
+        // Set QR code if returned immediately in response
         if (result.qrCode) {
+          console.log('[WhatsApp] ✅ QR code received immediately from startSession');
           setQrCode(result.qrCode);
+          setSuccess("✅ تم توليد رمز QR بنجاح. امسحه الآن!");
           setIsWaitingForQR(false);
+        } else {
+          // If no QR yet, start polling
+          console.log('[WhatsApp] No QR in initial response, starting polling...');
+          setSuccess("جاري تشغيل الجلسة... يرجى انتظار رمز QR");
+          setIsWaitingForQR(true); // Start polling for QR
         }
-        // If no QR yet, the useEffect will poll for it
         
         // Check status after starting
         await checkStatus();
       } else {
-        setError(result.message || "Failed to start session");
+        setError(result.message || "فشل في بدء الجلسة");
         setIsWaitingForQR(false);
       }
     } catch (e: any) {
-      setError(e.message);
+      console.error('[WhatsApp] Start session error:', e);
+      setError(e.message || "حدث خطأ أثناء بدء الجلسة");
       setIsWaitingForQR(false);
     } finally {
       setLoading(false);
@@ -240,11 +293,31 @@ export default function WhatsAppConnectionPage() {
               </Button>
               {status?.status === 'disconnected' || !status ? (
                 <Button onClick={startSession} disabled={loading}>
-                  {loading ? 'Starting...' : 'Start Session'}
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Starting...
+                    </span>
+                  ) : (
+                    'Start Session'
+                  )}
                 </Button>
               ) : (
                 <Button onClick={stopSession} disabled={loading} variant="destructive">
-                  {loading ? 'Stopping...' : 'Stop Session'}
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Stopping...
+                    </span>
+                  ) : (
+                    'Stop Session'
+                  )}
                 </Button>
               )}
             </div>
@@ -252,18 +325,38 @@ export default function WhatsAppConnectionPage() {
           
           {/* QR Code Display */}
           {qrCode && status?.status !== 'CONNECTED' && (
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-4">
-                Scan this QR code with your WhatsApp mobile app to connect:
+            <div className="text-center space-y-4">
+              <p className="text-sm text-primary mb-4">
+                امسح رمز QR هذا بتطبيق الواتساب على هاتفك للاتصال:
               </p>
               <div className="flex justify-center">
                 <img 
                   src={qrCode} 
                   alt="WhatsApp QR Code" 
-                  className="border border-gray-300 rounded-lg"
-                  style={{ maxWidth: '300px', height: 'auto' }}
+                  className="border-2 border-gray-300 rounded-lg shadow-lg"
+                  style={{ maxWidth: '350px', height: 'auto' }}
+                  onError={(e) => {
+                    console.error('[WhatsApp] QR image failed to load');
+                    setError("فشل تحميل QR Code. يرجى المحاولة مرة أخرى.");
+                  }}
                 />
               </div>
+              <p className="text-xs text-gray-500">
+                ⚠️ رمز QR صالح لمدة 60 ثانية فقط. إذا انتهت صلاحيته، اضغط "Start Session" مرة أخرى.
+              </p>
+            </div>
+          )}
+          
+          {/* Show loading message while waiting for QR */}
+          {isWaitingForQR && !qrCode && status?.status !== 'CONNECTED' && (
+            <div className="text-center space-y-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="text-sm text-primary">
+                جاري توليد رمز QR... يرجى الانتظار
+              </p>
+              <p className="text-xs text-gray-500">
+                قد يستغرق هذا من 5 إلى 15 ثانية
+              </p>
             </div>
           )}
         </CardContent>

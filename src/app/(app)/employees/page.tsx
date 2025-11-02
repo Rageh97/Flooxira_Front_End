@@ -362,9 +362,9 @@ export default function EmployeesPage() {
           <DialogTrigger asChild>
             <Button 
               disabled={!canCreateMore}
-              className="bg-light-custom hover:bg-light-custom/90"
+              className="primary-button "
             >
-              <Plus className="w-4 h-4 mr-2" />
+              {/* <Plus className="w-4 h-4 mr-2" /> */}
               إضافة موظف جديد
             </Button>
           </DialogTrigger>
@@ -573,7 +573,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* Employees Table */}
-      <Card className="bg-semidark-custom border-gray-700">
+      <Card className="gradient-border">
         <CardHeader>
           <CardTitle className="text-lg text-white font-medium">قائمة الموظفين</CardTitle>
         </CardHeader>
@@ -599,7 +599,7 @@ export default function EmployeesPage() {
               </TableHeader>
               <TableBody>
                 {employees.map((employee) => (
-                  <TableRow key={employee.id}>
+                  <TableRow className="" key={employee.id}>
                     <TableCell className="font-medium text-white">{employee.name}</TableCell>
                     <TableCell className="text-text-primary font-medium">{employee.email}</TableCell>
                     <TableCell className="text-white">{employee.phone || '-'}</TableCell>

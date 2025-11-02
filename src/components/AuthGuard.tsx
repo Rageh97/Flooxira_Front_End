@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { RefreshCw } from 'lucide-react';
+import Loader from '@/components/Loader';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -24,23 +24,25 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
 
   if (loading) {
     return fallback || (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center space-x-2">
-          <RefreshCw className="h-6 w-6 animate-spin" />
-          <span>Checking authentication...</span>
-        </div>
-      </div>
+      <Loader 
+        text="جاري التحقق من المصادقة..." 
+        size="lg" 
+        variant="warning"
+        showDots
+        fullScreen
+      />
     );
   }
 
   if (!user) {
     return fallback || (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center space-x-2">
-          <RefreshCw className="h-6 w-6 animate-spin" />
-          <span>Redirecting to sign in...</span>
-        </div>
-      </div>
+      <Loader 
+        text="جاري إعادة التوجيه لتسجيل الدخول..." 
+        size="lg" 
+        variant="warning"
+        showDots
+        fullScreen
+      />
     );
   }
 

@@ -28,6 +28,7 @@ import { exchangeTwitterCode } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
 import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
+import Loader from "@/components/Loader";
 
 const PLATFORMS = {
   facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
@@ -363,10 +364,14 @@ function SettingsContent() {
   if (permissionsLoading) {
     return (
       <div className="space-y-8">
-        <h1 className="text-2xl font-semibold text-white">إعدادات الحساب</h1>
-        <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
-        </div>
+        <Loader 
+          text="جاري التحقق من الصلاحيات..." 
+          size="lg" 
+          variant="warning"
+          showDots
+          fullScreen={false}
+          className="py-16"
+        />
       </div>
     );
   }

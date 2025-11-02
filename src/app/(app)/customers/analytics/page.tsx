@@ -318,7 +318,7 @@ export default function CustomerAnalyticsPage() {
       )}
 
       <Tabs defaultValue="overview" className="space-y-4 ">
-        <TabsList className='bg-[#011910] text-white inner-shadow'>
+        <TabsList className='bg-secondry text-white inner-shadow'>
           <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
           <TabsTrigger value="types">أنواع الاشتراكات</TabsTrigger>
           <TabsTrigger value="status">حالات الاشتراكات</TabsTrigger>
@@ -342,8 +342,8 @@ export default function CustomerAnalyticsPage() {
                   {stats.customersByType.map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getTypeColor(item.subscriptionType).replace('text-', 'bg-')}`}></div>
-                        <span className="text-sm font-medium text-gray-200">{getTypeLabel(item.subscriptionType)}</span>
+                        <div className={`w-3 h-3 rounded-full bg-light-custom`}></div>
+                        <span className="text-sm font-medium text-white">{getTypeLabel(item.subscriptionType)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-white" >
                         <span className="text-sm font-bold">{item.count}</span>
@@ -373,7 +373,7 @@ export default function CustomerAnalyticsPage() {
                   {stats.customersByStatus.map((item, index) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-white" >
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(item.subscriptionStatus).replace('text-', 'bg-')}`}></div>
+                        <div className={`w-3 h-3 rounded-full bg-light-custom ${getStatusColor(item.subscriptionStatus).replace('text-', '')}`}></div>
                         <span className="text-sm font-medium">{getStatusLabel(item.subscriptionStatus)}</span>
                       </div>
                       <div className="flex items-center gap-2 text-white" >

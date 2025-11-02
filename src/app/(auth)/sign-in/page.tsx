@@ -6,10 +6,12 @@ import { useMutation } from "@tanstack/react-query";
 import { signInRequest, employeeLogin } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Loader from "@/components/Loader";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const mutation = useMutation({
     mutationFn: async () => {
@@ -29,11 +31,27 @@ export default function SignInPage() {
     },
     onSuccess: (data) => {
       localStorage.setItem("auth_token", data.token);
+      setIsLoading(false);
       
       // كلاهما يذهب لنفس الصفحة - النظام سيخفي العناصر حسب الصلاحيات
       router.push("/dashboard");
     },
+    onError: () => {
+      setIsLoading(false);
+    },
   });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    // تأخير 3 ثواني قبل البدء في تسجيل الدخول
+    setTimeout(() => {
+      mutation.mutate();
+    }, 3000);
+  };
+
+  const isSubmitting = isLoading || mutation.isPending;
 
   return (
     <div className="space-y-14 ">
@@ -41,7 +59,7 @@ export default function SignInPage() {
         <h1 className="text-xl font-semibold text-white">تسجيل الدخول</h1>
         <p className="text-sm text-white">مرحباً بعودتك. يرجى إدخال بياناتك.</p>
       </div>
-      <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
           <label className="block text-sm font-medium mb-1 text-white">البريد الإلكتروني</label>
           <Input className="placeholder-white/60 text-white" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />
@@ -53,7 +71,19 @@ export default function SignInPage() {
         <div className="flex items-center justify-between text-sm">
           <Link href="/forgot-password" className="text-gray-300 hover:underline">نسيت كلمة المرور؟</Link>
         </div>
-        <Button className="w-full primary-button" disabled={mutation.isPending}>{mutation.isPending ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}</Button>
+        <Button className="w-full primary-button" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <Loader 
+              size="sm" 
+              variant="warning" 
+              
+              fullScreen={false} 
+             
+            />
+          ) : (
+            "تسجيل الدخول"
+          )}
+        </Button>
         {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
         <Link href="/sign-up" className="w-full primary-button after:bg-[#131240]">إنشاء حساب</Link>
 

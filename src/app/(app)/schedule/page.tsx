@@ -15,6 +15,7 @@ import {
   telegramUpdateSchedule,
   telegramDeleteSchedule
 } from "@/lib/api";
+import Loader from "@/components/Loader";
 
 export default function SchedulePage() {
   const { showError } = useToast();
@@ -304,11 +305,8 @@ export default function SchedulePage() {
   // Check permissions after all hooks
   if (permissionsLoading) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold text-white">الجدولة</h1>
-        <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحقق من الصلاحيات...</p>
-        </div>
+        <div className="space-y-8">
+          <Loader text="جاري التحقق من الصلاحيات..." size="lg" variant="warning" showDots fullScreen={false} className="py-16" />
       </div>
     );
   }
@@ -334,10 +332,10 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className=" mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white">الجدولة</h1>
-        <p className="text-gray-300">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p>
+        <h1 className="text-3xl font-bold text-white">ادارة وجدولة المحتوى</h1>
+        {/* <p className="text-gray-300">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p> */}
       </div>
 
       <Card className="gradient-border">
@@ -347,10 +345,10 @@ export default function SchedulePage() {
               {monthNames[currentMonth - 1]} {currentYear}
             </h2>
             <div className="flex items-center gap-2">
-              <Button className="text-white bg-light-custom inner-shadow" variant="secondary" onClick={() => navigateMonth('prev')}>
+              <Button className="text-white  inner-shadow" variant="default" onClick={() => navigateMonth('prev')}>
                 ← السابق
               </Button>
-              <Button className="text-white bg-light-custom inner-shadow" variant="secondary" onClick={() => navigateMonth('next')}>
+              <Button className="text-white  inner-shadow" variant="default" onClick={() => navigateMonth('next')}>
                 التالي →
               </Button>
             </div>
@@ -394,10 +392,10 @@ export default function SchedulePage() {
                   المنشورات: {monthlySchedules.posts.map((p: any) => new Date(p.scheduledAt).getDate()).join(', ')}
                 </div>
               )}
-              <div className="text-xs text-white">
+              {/* <div className="text-xs text-white">
                 التقويم: {daysInMonth} يوم، يبدأ في اليوم {firstDay}
-                    </div>
-              <div className="grid grid-cols-7 gap-2  rounded-lg p-4 bg-secondry inner-shadow">
+                    </div> */}
+              <div className="grid grid-cols-7 gap-2  rounded-lg p-4 ">
                 {/* Day headers */}
                 {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
                   <div key={day} className="p-3 text-center font-semibold text-primary bg-dark-custom rounded ">

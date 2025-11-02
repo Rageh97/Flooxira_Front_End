@@ -40,6 +40,7 @@ import {
   type AIStats,
 } from "@/lib/api";
 import ReactMarkdown from 'react-markdown';
+import Loader from "@/components/Loader";
 
 export default function AskAIPage() {
   const [token, setToken] = useState("");
@@ -205,7 +206,7 @@ export default function AskAIPage() {
   if (permissionsLoading || loading) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <Loader text="جاري التحقق من الصلاحيات..." size="lg" variant="warning" showDots fullScreen={false} className="py-16" />
       </div>
     );
   }

@@ -4,11 +4,16 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { startWhatsAppCampaign } from "@/lib/api";
 import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
+import Loader from "@/components/Loader";
 
 export default function WhatsAppCampaignsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
+  
+  // Loading states for operations
+  const [isStartingCampaign, setIsStartingCampaign] = useState(false);
+  const [isSendingToTag, setIsSendingToTag] = useState(false);
   
   // Campaigns state
   const [campaignFile, setCampaignFile] = useState<File | null>(null);
@@ -58,7 +63,7 @@ export default function WhatsAppCampaignsPage() {
     }
 
     try {
-      setLoading(true);
+      setIsStartingCampaign(true);
       setError("");
       
       const formData = new FormData();
@@ -96,7 +101,7 @@ export default function WhatsAppCampaignsPage() {
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setIsStartingCampaign(false);
     }
   }
 
@@ -112,7 +117,7 @@ export default function WhatsAppCampaignsPage() {
       return;
     }
     try {
-      setLoading(true);
+      setIsSendingToTag(true);
       setError("");
       const res = await sendCampaignToTag({ tagId: Number(selectedTagId), messageTemplate: tagCampaignTemplate, throttleMs: campaignThrottle * 60 * 1000 });
       if (res.success) {
@@ -123,8 +128,25 @@ export default function WhatsAppCampaignsPage() {
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setLoading(false);
+      setIsSendingToTag(false);
     }
+  }
+
+  // Show fullscreen loader during operations
+  if (isStartingCampaign || isSendingToTag) {
+    let loaderText = "جاري المعالجة...";
+    if (isStartingCampaign) loaderText = "جاري بدء الحملة...";
+    else if (isSendingToTag) loaderText = "جاري إرسال الحملة للتصنيف...";
+    
+    return (
+      <Loader 
+        text={loaderText} 
+        size="lg" 
+        variant="success"
+        showDots
+        fullScreen
+      />
+    );
   }
 
   return (
@@ -165,7 +187,7 @@ export default function WhatsAppCampaignsPage() {
   {/* label بديل بنفس شكل الانبوت */}
   <label
     htmlFor="excelUpload"
-    className="bg-[#011910] rounded-md p-2 pl-12 text-white inner-shadow h-28 w-full flex items-center justify-center cursor-pointer relative"
+    className="bg-[#01191040] rounded-md p-2 pl-12 text-white border-1 border-blue-300 h-28 w-full flex items-center justify-center cursor-pointer relative"
   >
     <img
       className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 pointer-events-none"
@@ -191,7 +213,7 @@ export default function WhatsAppCampaignsPage() {
   {/* زر مخصص لفتح نافذة الاختيار */}
   <label
     htmlFor="fileInput"
-    className="bg-[#011910] rounded-md p-2 pl-12 text-white inner-shadow h-28 w-full flex items-center justify-center cursor-pointer relative"
+    className="bg-[#01191040] rounded-md p-2 pl-12 text-white border-1 border-blue-300 h-28 w-full flex items-center justify-center cursor-pointer relative"
   >
     <img
       className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 pointer-events-none"
@@ -209,7 +231,7 @@ export default function WhatsAppCampaignsPage() {
 
 <div className="w-full ">
   <label className="block text-sm font-medium mb-2 text-white">نص المحتوى التسويقي</label>
-  <textarea placeholder="اكتب نص المحتوى التسويقي" className="h-[268px] bg-[#011910] rounded-md p-2 text-white inner-shadow w-full px-3 py-4  outline-none  text-white rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
+  <textarea placeholder="اكتب نص المحتوى التسويقي" className="h-[268px] bg-[#01191040] rounded-md p-2 text-white border-1 border-blue-300 w-full px-3 py-4  outline-none  text-white rounded-md" rows={4} value={campaignTemplate} onChange={(e) => setCampaignTemplate(e.target.value)} />
   {/* <p className="text-xs text-gray-300 mt-1">استخدم placeholder {'{{name}}'}.</p> */}
 </div>
        </div>
@@ -217,7 +239,7 @@ export default function WhatsAppCampaignsPage() {
     <div className="flex w-full gap-4">
           <div className=" w-full">
             <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (دقائق بين الرسائل)</label>
-            <input min="5" max="100" type="number" className="bg-[#011910] rounded-md p-2 text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
+            <input min="5" max="100" type="number" className="bg-[#01191040] rounded-md p-2 text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
             <p className="text-xs text-gray-300 mt-1">الحد الأدنى: 5 دقائق</p>
           </div>
 
@@ -226,20 +248,20 @@ export default function WhatsAppCampaignsPage() {
            
             <div>
               <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
-              <input type="datetime-local" className="bg-[#011910] rounded-md p-2 text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignScheduleAt} onChange={(e) => setCampaignScheduleAt(e.target.value)} />
+              <input type="datetime-local" className="bg-[#01191040] rounded-md p-2 text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignScheduleAt} onChange={(e) => setCampaignScheduleAt(e.target.value)} />
             </div>
           </div>
 
           
             <div className=" w-full">
               <label className="block text-sm font-medium mb-2 text-white">الحد اليومي (أرقام/يوم، اختياري)</label>
-              <input placeholder="أقصى عدد 500" min="1" max="500" type="number" className=" bg-[#011910] rounded-md  text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : 1)} />
+              <input placeholder="أقصى عدد 500" min="1" max="500" type="number" className=" bg-[#01191040] rounded-md  text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : 1)} />
               <p className="text-xs text-gray-300 mt-1">الحد الأقصى: 500 رقم</p>
             </div>
             
             <div className="w-full">
               <label className="block text-sm font-medium mb-2 text-white">تأخير لكل رقم (بالدقيقة  اختياري)</label>
-              <input placeholder="1" min="1" max="100" type="number" className=" bg-[#011910] rounded-md  text-white inner-shadow w-full px-3 py-4  outline-none text-white rounded-md" value={campaignPerNumberDelay} onChange={(e) => setCampaignPerNumberDelay(e.target.value ? Number(e.target.value) : 1)} />
+              <input placeholder="1" min="1" max="100" type="number" className=" bg-[#01191040] rounded-md  text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignPerNumberDelay} onChange={(e) => setCampaignPerNumberDelay(e.target.value ? Number(e.target.value) : 1)} />
             </div>
          
 
@@ -249,7 +271,7 @@ export default function WhatsAppCampaignsPage() {
 
           <div className="flex items-center gap-4 w-full">
           <div className="w-50">
-            <button className=" w-full h-18 primary-button text-white text-2xl font-bold" onClick={handleStartCampaign} disabled={loading || !campaignFile || !campaignTemplate}>بدء الحملة</button>
+            <button className=" w-full h-18 primary-button text-white text-2xl font-bold" onClick={handleStartCampaign} disabled={isStartingCampaign || !campaignFile || !campaignTemplate}>بدء الحملة</button>
 
             </div>
          
@@ -283,7 +305,7 @@ export default function WhatsAppCampaignsPage() {
                   type="number" 
                   min="1" 
                   max="168" 
-                  className="bg-[#011910] rounded-md  text-white inner-shadow w-full px-3 py-2  outline-none text-white rounded-md" 
+                  className="bg-[#01191040] rounded-md  text-white border-1 border-blue-300 w-full px-3 py-2  outline-none text-white rounded-md" 
                   value={recurringInterval} 
                    onChange={(e) => setRecurringInterval(parseInt(e.target.value || '1'))}
                 />
@@ -308,7 +330,7 @@ export default function WhatsAppCampaignsPage() {
             <div>
               <label className="block text-sm font-medium mb-2 text-white">اختر التصنيف</label>
               <select
-                  className="w-full appearance-none px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none"
+                  className="w-full appearance-none px-3 py-4 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none"
                 value={selectedTagId}
                 onChange={(e) => setSelectedTagId(e.target.value ? Number(e.target.value) : '')}
               >
@@ -321,7 +343,7 @@ export default function WhatsAppCampaignsPage() {
            
             <div>
             <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (دقائق بين الرسائل)</label>
-             <input placeholder="5" min="5" max="100" type="number" className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
+             <input placeholder="5" min="5" max="100" type="number" className="w-full px-3 py-4 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
              <p className="text-xs text-gray-300 mt-1">الحد الأدنى: 5 دقائق</p>
           </div>
 
@@ -330,7 +352,7 @@ export default function WhatsAppCampaignsPage() {
 
             <div className="w-full">
               <label className="block text-sm font-medium mb-2 text-white">نص المحتوى التسويقي</label>
-               <textarea placeholder="اكتب نص المحتوى التسويقي" className="w-full px-3 py-4 bg-[#011910] rounded-md text-white inner-shadow outline-none" rows={4} value={tagCampaignTemplate} onChange={(e) => setTagCampaignTemplate(e.target.value)} />
+               <textarea placeholder="اكتب نص المحتوى التسويقي" className="w-full px-3 py-4 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none" rows={4} value={tagCampaignTemplate} onChange={(e) => setTagCampaignTemplate(e.target.value)} />
             </div>
 
 
@@ -340,7 +362,7 @@ export default function WhatsAppCampaignsPage() {
         
 
 
-          <button className="w-50 h-18 primary-button text-white text-2xl font-bold" onClick={handleSendToTag} disabled={loading || !selectedTagId || !tagCampaignTemplate.trim()}>بدء الحملة </button>
+          <button className="w-50 h-18 primary-button text-white text-2xl font-bold" onClick={handleSendToTag} disabled={isSendingToTag || !selectedTagId || !tagCampaignTemplate.trim()}>بدء الحملة </button>
         </CardContent>
       </Card>
     </div>

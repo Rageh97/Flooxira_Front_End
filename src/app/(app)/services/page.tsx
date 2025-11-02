@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
+import Loader from "@/components/Loader";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ServiceWithApproval extends Service {
   approvalStatus?: 'pending' | 'approved' | 'rejected';
@@ -224,13 +226,8 @@ export default function ServicesPage() {
   if (permissionsLoading || loading) {
     return (
       <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">إدارة الخدمات</h1>
-          <p className="text-sm text-green-600">سوّق خدماتك للعملاء</p>
-        </div>
-        <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحميل...</p>
-        </div>
+        
+        <Loader text="جاري التحقق من الصلاحيات..." size="lg" variant="warning" showDots fullScreen={false} className="py-16" />
       </div>
     );
   }
@@ -239,8 +236,8 @@ export default function ServicesPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-white">إدارة الخدمات</h1>
-          <p className="text-sm text-green-600">سوّق خدماتك للعملاء</p>
+          <h1 className="text-4xl font-semibold text-white">إدارة الخدمات</h1>
+          <p className="text-sm text-primary">سوّق خدماتك للعملاء</p>
         </div>
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="pt-6">
@@ -283,8 +280,8 @@ export default function ServicesPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">إدارة الخدمات</h1>
-          <p className="text-sm text-green-600">سوّق خدماتك للعملاء</p>
+          <h1 className="text-4xl font-semibold text-white">إدارة الخدمات</h1>
+          <p className="text-sm text-primary mt-2">سوّق خدماتك للعملاء</p>
         </div>
         <Button
           onClick={() => {
@@ -380,33 +377,33 @@ export default function ServicesPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-[#011910] text-white border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase">
+              <Table className="w-full">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead >
                       الخدمة
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase">
+                    </TableHead>
+                    <TableHead >
                       السعر
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase">
+                    </TableHead>
+                    <TableHead >
                       الحالة
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase">
+                    </TableHead>
+                    <TableHead >
                       المشاهدات
-                    </th>
+                    </TableHead>
                     {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                       النقرات
                     </th> */}
-                    <th className="px-6 py-3 text-right text-xs font-medium text-white uppercase">
+                    <TableHead >
                       الإجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-secondry divide-y divide-gray-200">
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody >
                   {services.map((service) => (
-                    <tr key={service.id} className="">
-                      <td className="px-6 py-4">
+                    <TableRow key={service.id} className="">
+                      <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {service.image && (
                             <img
@@ -431,17 +428,17 @@ export default function ServicesPage() {
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-green-600">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-primary">
                           {parseFloat(service.price.toString()).toFixed(2)} {service.currency}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1">
                           {/* Show approval status first */}
                           {service.approvalStatus === 'pending' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                            <span className="px-2 py-1 text-xs w-fit font-medium rounded-full bg-yellow-100 text-yellow-800">
                               قيد الانتظار
                             </span>
                           )}
@@ -464,21 +461,21 @@ export default function ServicesPage() {
                             </span>
                           )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1 text-sm text-white">
                           <Eye className="h-4 w-4" />
                           {/* {service.viewsCount || 0} */}
                           {service.clicksCount || 0}
                         </div>
-                      </td>
+                      </TableCell>
                       {/* <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1 text-sm text-gray-600">
                           <MousePointerClick className="h-4 w-4" />
                           {service.clicksCount || 0}
                         </div>
                       </td> */}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <TableCell className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
                           {service.approvalStatus !== 'approved' && (
                             <Button
@@ -498,11 +495,11 @@ export default function ServicesPage() {
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>

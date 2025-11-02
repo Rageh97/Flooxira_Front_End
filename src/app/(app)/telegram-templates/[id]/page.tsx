@@ -40,12 +40,18 @@ export default function ManageTemplateButtonsPage() {
       setLoading(true);
       setError("");
       const res = await getTemplate(templateId);
+      console.log('Template loaded:', res);
       if (res?.success) {
-        setTemplate(res.data as TelegramTemplate);
+        const templateData = res.data as TelegramTemplate;
+        console.log('Template data:', templateData);
+        console.log('Buttons array:', templateData.buttons);
+        console.log('Buttons count:', Array.isArray(templateData.buttons) ? templateData.buttons.length : 0);
+        setTemplate(templateData);
       } else {
         setError(res?.message || "Failed to load template");
       }
     } catch (e: any) {
+      console.error('Error loading template:', e);
       setError(e?.message || "Failed to load template");
     } finally {
       setLoading(false);
@@ -129,40 +135,75 @@ export default function ManageTemplateButtonsPage() {
     }
   }
 
-  function ButtonTree({ nodes, parentId, level = 0 }: { nodes: TelegramTemplateButton[]; parentId?: number; level?: number }) {
-    const roots = useMemo(() => nodes.filter((b) => (parentId ? b.parentButtonId === parentId : !b.parentButtonId)).sort((a,b)=> (a.displayOrder||0)-(b.displayOrder||0)), [nodes, parentId]);
+  function ButtonTree({ allButtons, parentId, level = 0 }: { allButtons: TelegramTemplateButton[]; parentId?: number; level?: number }) {
+    // Ensure allButtons is an array
+    const buttonsArray = Array.isArray(allButtons) ? allButtons : [];
+
+    // Filter buttons by parentId - work with flat array structure
+    const roots = useMemo(() => {
+      if (!Array.isArray(allButtons) || allButtons.length === 0) {
+        return [];
+      }
+      
+      const filtered = allButtons.filter((b) => {
+        if (parentId) {
+          // For child buttons, check if parentButtonId matches
+          return b.parentButtonId === parentId;
+        } else {
+          // For root buttons, check if parentButtonId is null or undefined
+          return !b.parentButtonId || b.parentButtonId === null || b.parentButtonId === undefined;
+        }
+      }).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      
+      return filtered;
+    }, [allButtons, parentId]);
+
+    // Get child buttons for current button
+    const getChildButtons = (buttonId: number) => {
+      return buttonsArray.filter(b => b.parentButtonId === buttonId);
+    };
+
+    if (roots.length === 0) {
+      return null;
+    }
+
     return (
       <ul className="space-y-3">
-        {roots.map((b) => (
-          <li key={b.id} className={`bg-gray-800/50 border border-emerald-500/20 rounded-xl p-4 hover:border-emerald-500/40 transition-all duration-300 ${level > 0 ? 'mr-4' : ''}`}>
-            <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 text-xs rounded-lg bg-emerald-500/20 text-emerald-300 font-bold">#{b.id}</span>
-                <span className="font-bold text-white text-lg">{b.text}</span>
-                <span className="text-xs text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full">{b.buttonType}</span>
-                {level > 0 && (
-                  <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">مستوى {level + 1}</span>
-                )}
-              {b.mediaUrl && (
-                  <a href={b.mediaUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline truncate max-w-[200px] bg-blue-500/10 px-2 py-1 rounded">📎 media</a>
-                )}
+        {roots.map((b) => {
+          const childButtons = getChildButtons(b.id);
+          return (
+            <li key={b.id} className={`bg-card rounded-xl p-4 hover:border-emerald-500/40 transition-all duration-300 ${level > 0 ? 'mr-4' : ''}`}>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 text-xs rounded-lg bg-light-custom text-black font-bold">{b.id}</span>
+                  <span className="font-bold text-white text-lg">{b.text || '(بدون نص)'}</span>
+                  <span className="text-xs text-primary bg-secondry px-3 py-1 rounded-full">{b.buttonType || 'N/A'}</span>
+                  {level > 0 && (
+                    <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">مستوى {level + 1}</span>
+                  )}
+                  {b.mediaUrl && (
+                    <a href={b.mediaUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 underline truncate max-w-[200px] bg-blue-500/10 px-2 py-1 rounded">📎 media</a>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => handleEditButton(b)} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105"> تعديل</button>
+                  <button onClick={() => {
+                    // Pass the button object directly instead of just the ID
+                    setModalParent(b);
+                    setModalEditButton(null);
+                    setModalOpen(true);
+                  }} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">  اضافة زر فرعي</button>
+                  <button onClick={() => handleDeleteButton(b)} className="primary-button after:bg-red-500 transition-all duration-300 font-bold text-center shadow-lg hover:scale-105 mr-auto"> حذف</button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => handleEditButton(b)} className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">✏️ تعديل</button>
-                <button onClick={() => handleAddButton(b.id)} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">➕ زر فرعي</button>
-                <button onClick={() => handleUploadMedia(b)} className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">📤 رفع</button>
-                <button onClick={() => handleSetButtonType(b, "url")} className="px-3 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">🔗 URL</button>
-                <button onClick={() => handleSetButtonType(b, "callback")} className="px-3 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105">⚡ Callback</button>
-                <button onClick={() => handleDeleteButton(b)} className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition-all duration-300 hover:scale-105 mr-auto">🗑️ حذف</button>
-              </div>
-            </div>
-            {Array.isArray(b.ChildButtons) && b.ChildButtons.length > 0 && (
-              <div className="pr-4 mt-4 border-r-2 border-emerald-500/30">
-                <ButtonTree nodes={b.ChildButtons} parentId={b.id} level={level + 1} />
-              </div>
-            )}
-          </li>
-        ))}
+              {childButtons.length > 0 && (
+                <div className="pr-4 mt-4 border-r-2 border-emerald-500/30">
+                  <ButtonTree allButtons={buttonsArray} parentId={b.id} level={level + 1} />
+                </div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     );
   }
@@ -185,10 +226,10 @@ export default function ManageTemplateButtonsPage() {
 
   if (error || !template) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
+      <div className="min-h-screen p-6">
         <div className="max-w-5xl mx-auto">
           <div className="mb-4">
-            <Link href="/telegram-templates" className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-2">
+            <Link href="/telegram-templates" className="text-primary hover:text-emerald-300 font-semibold flex items-center gap-2">
               <span>←</span> الرجوع إلى القوالب
             </Link>
           </div>
@@ -202,11 +243,11 @@ export default function ManageTemplateButtonsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen  p-6">
+      <div className="w-full mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-            <Link href="/telegram-templates" className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-2 mb-3">
+            <Link href="/telegram-templates" className="text-primary hover:text-emerald-300 font-semibold flex items-center gap-2 mb-3">
               <span>←</span> الرجوع إلى القوالب
             </Link>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent flex items-center gap-3">
@@ -215,19 +256,26 @@ export default function ManageTemplateButtonsPage() {
             </h1>
             </div>
           <div className="flex gap-3">
-            <button onClick={() => handleAddButton(undefined)} className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold disabled:opacity-50 hover:from-emerald-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:scale-105 flex items-center gap-2" disabled={saving}>
-              <span>➕</span> إضافة زر رئيسي
+            <button onClick={() => handleAddButton(undefined)} className="primary-button  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105 flex items-center gap-2" disabled={saving}>
+              إضافة زر رئيسي
             </button>
-            <button onClick={() => router.refresh()} className="px-6 py-3 rounded-xl border border-emerald-500/30 text-emerald-300 font-bold hover:bg-emerald-500/10 transition-all duration-300 disabled:opacity-50 flex items-center gap-2" disabled={saving}>
-              <span>🔄</span> تحديث
+            <button onClick={() => router.refresh()} className="primary-button after:bg-emerald-500/30  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105 flex items-center gap-2" disabled={saving}>
+             تحديث
             </button>
           </div>
         </div>
 
-        <div className="card-gradient-green-dark border-emerald-500/20 rounded-2xl border p-6 shadow-xl">
-          {Array.isArray(template.buttons) && template.buttons.length > 0 ? (
-            <ButtonTree nodes={template.buttons} />
-          ) : (
+        <div className="gradient-border rounded-2xl border p-6 shadow-xl">
+          {!Array.isArray(template.buttons) ? (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-full mb-4">
+                <span className="text-5xl">⚠️</span>
+              </div>
+              <p className="text-gray-300 text-lg font-semibold">خطأ في تحميل الأزرار</p>
+              <p className="text-gray-400 mt-2">الأزرار ليست في الصيغة المتوقعة</p>
+              <pre className="text-xs text-gray-500 mt-4 text-left overflow-auto">{JSON.stringify(template.buttons, null, 2)}</pre>
+            </div>
+          ) : template.buttons.length === 0 ? (
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-full mb-4">
                 <span className="text-5xl">🔘</span>
@@ -235,6 +283,8 @@ export default function ManageTemplateButtonsPage() {
               <p className="text-gray-300 text-lg font-semibold">لا توجد أزرار بعد</p>
               <p className="text-gray-400 mt-2">ابدأ بإضافة زر رئيسي للقالب</p>
             </div>
+          ) : (
+            <ButtonTree allButtons={template.buttons} />
           )}
         </div>
 
@@ -249,13 +299,29 @@ export default function ManageTemplateButtonsPage() {
                 if (modalEditButton) {
                   await updateButton(modalEditButton.id, data);
                 } else if (template) {
-                  await createButton({ templateId: template.id, parentButtonId: modalParent?.id, text: data.text || '', buttonType: (data as any).buttonType || 'callback', url: (data as any).url, callbackData: (data as any).callbackData, webAppUrl: (data as any).webAppUrl, switchInlineQuery: (data as any).switchInlineQuery, isActive: (data as any).isActive ?? true, displayOrder: (data as any).displayOrder ?? 0 });
+                  const buttonData = {
+                    templateId: template.id,
+                    parentButtonId: modalParent?.id || undefined,
+                    text: data.text || '',
+                    buttonType: (data as any).buttonType || 'callback',
+                    url: (data as any).url || undefined,
+                    callbackData: (data as any).callbackData || undefined,
+                    webAppUrl: (data as any).webAppUrl || undefined,
+                    switchInlineQuery: (data as any).switchInlineQuery || undefined,
+                    isActive: (data as any).isActive ?? true,
+                    displayOrder: (data as any).displayOrder ?? 0,
+                    mediaUrl: (data as any).mediaUrl || undefined,
+                    mediaType: (data as any).mediaType || undefined
+                  };
+                  console.log('Creating button with data:', buttonData);
+                  await createButton(buttonData);
                 }
                 setModalOpen(false);
                 setModalEditButton(null);
                 setModalParent(null);
                 await loadTemplate();
               } catch (e: any) {
+                console.error('Error saving button:', e);
                 setError(e?.message || 'Failed to save');
               } finally {
                 setSaving(false);
@@ -365,7 +431,7 @@ function ButtonCard({
       {/* Child Buttons */}
       {button.ChildButtons && button.ChildButtons.length > 0 && (
         <div className="ml-6 mb-4">
-          <h5 className="text-sm font-medium text-gray-700 mb-2">الأزرار الفرعية:</h5>
+          <h5 className="text-sm font-medium text-gray-300 mb-2">الأزرار الفرعية:</h5>
           <div className="space-y-2">
             {button.ChildButtons.map((childButton) => (
               <div key={childButton.id} className="bg-gray-50 rounded p-3">
@@ -455,16 +521,16 @@ function ButtonModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="gradient-border rounded-lg max-w-md w-full">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">
+            <h3 className="text-lg font-medium text-primary">
               {button ? 'تعديل الزر' : parentButton ? 'إضافة زر فرعي' : 'إضافة زر جديد'}
             </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="bg-red-500 text-white w-8 h-8 rounded-full "
             >
               ✕
             </button>
@@ -472,22 +538,22 @@ function ButtonModal({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">نص الزر *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">نص الزر *</label>
               <input
                 type="text"
                 required
                 maxLength={64}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300  text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.text}
                 onChange={(e) => setFormData({ ...formData, text: e.target.value })}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">نوع الزر *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">نوع الزر *</label>
               <select
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300  text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.buttonType}
                 onChange={(e) => setFormData({ ...formData, buttonType: e.target.value as any })}
               >
@@ -501,11 +567,11 @@ function ButtonModal({
 
             {formData.buttonType === 'url' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">الرابط *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">الرابط *</label>
                 <input
                   type="url"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.url}
                   onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                 />
@@ -514,12 +580,12 @@ function ButtonModal({
 
             {formData.buttonType === 'callback' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">بيانات الاستجابة *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">بيانات الاستجابة *</label>
                 <input
                   type="text"
                   required
                   maxLength={64}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.callbackData}
                   onChange={(e) => setFormData({ ...formData, callbackData: e.target.value })}
                 />
@@ -528,11 +594,11 @@ function ButtonModal({
 
             {formData.buttonType === 'web_app' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">رابط التطبيق *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">رابط التطبيق *</label>
                 <input
                   type="url"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.webAppUrl}
                   onChange={(e) => setFormData({ ...formData, webAppUrl: e.target.value })}
                 />
@@ -541,10 +607,10 @@ function ButtonModal({
 
             {(formData.buttonType === 'switch_inline' || formData.buttonType === 'switch_inline_current') && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">استعلام التبديل</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">استعلام التبديل</label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.switchInlineQuery}
                   onChange={(e) => setFormData({ ...formData, switchInlineQuery: e.target.value })}
                 />
@@ -553,11 +619,11 @@ function ButtonModal({
 
             {/* Media URL or Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">وسائط (اختياري)</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">وسائط (اختياري)</label>
               <input
                 type="url"
                 placeholder="رابط وسائط (صورة/فيديو/مستند/صوت)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.mediaUrl}
                 onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
               />
@@ -594,10 +660,10 @@ function ButtonModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">ترتيب العرض</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">ترتيب العرض</label>
                 <input
                   type="number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.displayOrder}
                   onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
                 />
@@ -610,7 +676,7 @@ function ButtonModal({
                     checked={formData.isActive}
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   />
-                  <span className="text-sm font-medium text-gray-700">نشط</span>
+                  <span className="text-sm font-medium text-gray-300">نشط</span>
                 </label>
               </div>
             </div>
@@ -619,13 +685,13 @@ function ButtonModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+                className="primary-button after:bg-red-500 transition-colors"
               >
                 إلغاء
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="primary-button transition-colors"
               >
                 {button ? 'تحديث' : 'إضافة'}
               </button>
@@ -639,14 +705,14 @@ function ButtonModal({
 
 function ConfirmModal({ title, message, onConfirm, onCancel }: { title: string; message: string; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-sm w-full">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="gradient-border rounded-lg max-w-sm w-full">
         <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
-          <p className="text-sm text-gray-700 mb-4">{message}</p>
+          <h3 className="text-lg font-medium text-primary mb-2">{title}</h3>
+          <p className="text-sm text-gray-300 mb-4">{message}</p>
           <div className="flex justify-end gap-3">
-            <button onClick={onCancel} className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">إلغاء</button>
-            <button onClick={onConfirm} className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">حذف</button>
+            <button onClick={onCancel} className="primary-button  transition-colors">إلغاء</button>
+            <button onClick={onConfirm} className="primary-button after:bg-red-500 transition-colors">حذف</button>
           </div>
         </div>
       </div>
