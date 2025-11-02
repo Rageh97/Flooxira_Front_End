@@ -55,7 +55,7 @@ export default function MyReviewPage() {
   const loadExistingReview = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/reviews/admin', {
+      const response = await fetch(`${API_URL}/api/reviews/admin`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -94,7 +94,7 @@ export default function MyReviewPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch('/api/reviews', {
+      const response = await fetch(`${API_URL}/api/reviews`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

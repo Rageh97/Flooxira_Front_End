@@ -12,6 +12,7 @@ import {
   Award,
   Users
 } from "lucide-react";
+import { API_URL } from "@/lib/api";
 
 type Review = {
   id: number;
@@ -61,7 +62,10 @@ export default function ReviewsPage() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch(`/api/reviews?page=${currentPage}&limit=${reviewsPerPage}`);
+      const response = await fetch(`${API_URL}/api/reviews?page=${currentPage}&limit=${reviewsPerPage}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       if (data.success) {
         setReviews(data.reviews);
@@ -71,7 +75,8 @@ export default function ReviewsPage() {
         setError(data.message || 'Failed to load reviews');
       }
     } catch (e: any) {
-      setError(e.message);
+      console.error('Error loading reviews:', e);
+      setError(e.message || 'Failed to load reviews');
     } finally {
       setLoading(false);
     }
@@ -79,12 +84,15 @@ export default function ReviewsPage() {
 
   const loadStats = async () => {
     try {
-      const response = await fetch('/api/reviews/stats');
+      const response = await fetch(`${API_URL}/api/reviews/stats`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       if (data.success) {
         setStats(data.stats);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error loading stats:', e);
     }
   };

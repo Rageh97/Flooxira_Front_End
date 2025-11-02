@@ -22,10 +22,13 @@ const nextConfig: NextConfig = {
 
   // إضافة proxy للـ API requests
   async rewrites() {
+    // Use environment variable for API URL, fallback to localhost in development
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:4000/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
       },
     ];
   },

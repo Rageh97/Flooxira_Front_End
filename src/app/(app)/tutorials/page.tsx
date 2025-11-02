@@ -45,7 +45,11 @@ export default function TutorialsPage() {
   const loadTutorials = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/tutorials');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await fetch(`${apiUrl}/api/tutorials`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       if (data.success) {
         setTutorials(data.tutorials);
@@ -53,7 +57,8 @@ export default function TutorialsPage() {
         setError(data.message || 'Failed to load tutorials');
       }
     } catch (e: any) {
-      setError(e.message);
+      console.error('Error loading tutorials:', e);
+      setError(e.message || 'Failed to load tutorials');
     } finally {
       setLoading(false);
     }
@@ -61,7 +66,8 @@ export default function TutorialsPage() {
 
   const incrementViews = async (tutorialId: number) => {
     try {
-      await fetch(`/api/tutorials/${tutorialId}/view`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      await fetch(`${apiUrl}/api/tutorials/${tutorialId}/view`, {
         method: 'POST'
       });
     } catch (e) {
