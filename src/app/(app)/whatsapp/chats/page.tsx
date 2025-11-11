@@ -6,6 +6,10 @@ import {
   sendWhatsAppMessage,
   getChatHistory,
   getChatContacts,
+  getChatNote,
+  getOpenChatNotes,
+  createChatNote,
+  resolveChatNote,
 } from "@/lib/api";
 import { listTags, addContactToTag, createTag, listContactsByTag } from "@/lib/tagsApi";
 import { sendWhatsAppMedia } from "@/lib/mediaApi";
@@ -78,7 +82,7 @@ export default function WhatsAppChatsPage() {
     knowledgeBaseMatch: string | null; 
     timestamp: string 
   }>>([]);
-  const [contacts, setContacts] = useState<Array<{ contactNumber: string; messageCount: number; lastMessageTime: string }>>([]);
+  const [contacts, setContacts] = useState<Array<{ contactNumber: string; messageCount: number; lastMessageTime: string; profilePicture?: string | null; contactName?: string | null }>>([]);
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   
   // Bot control state
@@ -96,6 +100,12 @@ export default function WhatsAppChatsPage() {
 
   // Tags state
   const [contactTags, setContactTags] = useState<{[key: string]: string[]}>({});
+  // Notes state
+  const [openNoteContacts, setOpenNoteContacts] = useState<Set<string>>(new Set());
+  const [activeNote, setActiveNote] = useState<{ id: number; contactNumber: string; note: string; status: 'open' | 'resolved' } | null>(null);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
@@ -103,6 +113,15 @@ export default function WhatsAppChatsPage() {
     if (token) {
       loadChatContacts();
       loadBotStatus();
+      // Load open notes for highlighting
+      (async () => {
+        try {
+          const data = await getOpenChatNotes(token);
+          if (data.success) {
+            setOpenNoteContacts(new Set(data.contacts || []));
+          }
+        } catch (_) {}
+      })();
     }
   }, [token]);
 
@@ -110,6 +129,15 @@ export default function WhatsAppChatsPage() {
   useEffect(() => {
     if (selectedContact && token) {
       loadChatHistory(selectedContact);
+      // Load latest note for selected contact
+      (async () => {
+        try {
+          const res = await getChatNote(token, selectedContact);
+          setActiveNote(res?.note || null);
+        } catch (_) {
+          setActiveNote(null);
+        }
+      })();
     }
   }, [selectedContact, token]);
 
@@ -499,7 +527,76 @@ export default function WhatsAppChatsPage() {
            <div className="flex items-center gap-2">
                   <img className="w-10 h-10" src="/user.gif" alt="" />
            <span className="text-white font-medium  p-1 rounded-md ">
-                    {selectedContact ? `  ${selectedContact.replace('@c.us', '')}` : 'اختر جهة اتصال لعرض الرسائل'}
+                    {selectedContact ? (() => {
+                      // Prefer real contact name if available
+                      const found = contacts.find(c => c.contactNumber === selectedContact);
+                      if (found && found.contactName) return found.contactName;
+
+                      // Fallback: format number as before
+                      let num = selectedContact.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '');
+                      let cleanNum = num.replace(/\D/g, '');
+                      
+                      // Egypt numbers
+                      if (cleanNum.startsWith('20') && cleanNum.length === 12) {
+                        const localNum = '0' + cleanNum.substring(2);
+                        if (localNum.length === 11 && localNum.startsWith('01')) {
+                          return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                        }
+                        return localNum;
+                      } else if (cleanNum.startsWith('0') && cleanNum.length === 11) {
+                        if (cleanNum.startsWith('01') || cleanNum.startsWith('02') || cleanNum.startsWith('03')) {
+                          return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                        }
+                        return cleanNum;
+                      }
+                      
+                      // Saudi numbers
+                      if (cleanNum.startsWith('966') && cleanNum.length === 12) {
+                        const localNum = '0' + cleanNum.substring(3);
+                        if (localNum.length === 10 && localNum.startsWith('05')) {
+                          return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                        }
+                        return localNum;
+                      } else if (cleanNum.startsWith('05') && cleanNum.length === 10) {
+                        return cleanNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                      }
+                      
+                      // LID numbers - try to extract real phone
+                      if (cleanNum.length >= 15) {
+                        const egyptMatch = cleanNum.match(/20\d{10}/);
+                        if (egyptMatch) {
+                          const egyptNum = egyptMatch[0];
+                          const localNum = '0' + egyptNum.substring(2);
+                          if (localNum.length === 11) {
+                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                          }
+                        }
+                        
+                        const saudiMatch = cleanNum.match(/966\d{9}/);
+                        if (saudiMatch) {
+                          const saudiNum = saudiMatch[0];
+                          const localNum = '0' + saudiNum.substring(3);
+                          if (localNum.length === 10) {
+                            return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                          }
+                        }
+                        
+                        // Try last digits
+                        if (cleanNum.length >= 12) {
+                          const last12 = cleanNum.slice(-12);
+                          if (last12.startsWith('20') && /^20\d{10}$/.test(last12)) {
+                            const localNum = '0' + last12.substring(2);
+                            if (localNum.length === 11) {
+                              return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                            }
+                          }
+                        }
+                        
+                        return cleanNum.length > 15 ? cleanNum.slice(-12) : cleanNum;
+                      }
+                      
+                      return cleanNum || selectedContact;
+                    })() : 'اختر جهة اتصال لعرض الرسائل'}
                   </span>
            </div>
            
@@ -571,6 +668,13 @@ export default function WhatsAppChatsPage() {
                     >
                       + إضافة إلى تصنيف
                     </Button>
+                    <Button 
+                      size="sm"
+                      onClick={() => { setNoteText(""); setShowNoteModal(true); }}
+                      className="text-xs bg-transparent text-white border border-text-primary/50 inner-shadow"
+                    >
+                      أضف ملاحظة على الشات
+                    </Button>
                   </div>
                 )}
               </div>
@@ -578,65 +682,162 @@ export default function WhatsAppChatsPage() {
           </CardHeader>
           <CardContent className=" overflow-y-auto  h-full w-full flex ">
             <div className="space-y-2 w-1/3 border-l border-text-primary/50">
-              {contacts.map((contact) => (
+              {contacts.map((contact, index) => (
                 <div
-                  key={contact.contactNumber}
+                  key={contact.contactNumber || `contact-${index}`}
                   onClick={() => {
-                    setSelectedContact(contact.contactNumber);
-                    loadChatHistory(contact.contactNumber);
+                    if (contact.contactNumber) {
+                      setSelectedContact(contact.contactNumber);
+                      loadChatHistory(contact.contactNumber);
+                    }
                   }}
                   className={`p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
                     selectedContact === contact.contactNumber
                       ? ' inner-shadow'
-                      : 'bg-secondry'
+                      : openNoteContacts.has(contact.contactNumber) ? 'bg-yellow-600/30' : 'bg-secondry'
                   }`}
                 >
                    <div className="flex items-center gap-2">
-                   {contact.messageCount > 0 && (
-                    <img className="w-10 h-10" src="/belll.gif" alt="" />
+                   {contact.profilePicture ? (
+                    <img className="w-10 h-10 rounded-full object-cover " src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
+                  ) : contact.messageCount > 0 ? (
+                    <img className="w-10 h-10 rounded-full" src="/belll.gif" alt="" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
+                      {/* {contact.contactName 
+                        ? contact.contactName.charAt(0).toUpperCase() 
+                        : (contact.contactNumber && contact.contactNumber.length > 0)
+                          ? contact.contactNumber.charAt(0).toUpperCase()
+                          : '?'} */}
+                          <img className="w-10 h-10 rounded-full" src="/user.gif" alt="" />
+                    </div>
                   )}
                    <div className="flex flex-col">
-                   <div className="font-medium text-md text-white">عميل جديد</div>
-                    <div className="font-medium text-sm text-white">
+                   <div className="font-medium text-md text-white">{contact.contactName || 'عميل جديد'}</div>
+                    {/* <div className="font-medium text-sm text-white">
                       {(() => {
+                        // Check if contactNumber exists
+                        if (!contact.contactNumber) {
+                          return 'رقم غير متاح';
+                        }
+                        
                         // Remove WhatsApp suffixes
                         let num = contact.contactNumber.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '');
-                        // Remove all non-digits
-                        num = num.replace(/\D/g, '');
+                        // Remove all non-digits to get clean number
+                        let cleanNum = num.replace(/\D/g, '');
                         
-                        // ✅ Egypt numbers: 20XXXXXXXXXX -> 01XXXXXXXXX or 01234567890
-                        if (num.startsWith('20') && num.length === 12) {
-                          num = '0' + num.substring(2);
-                          // Format: 01XX XXX XXXX
-                          if (num.length === 11 && num.startsWith('01')) {
-                            return num.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                        // ✅ Egypt numbers - International format: 201234567890
+                        if (cleanNum.startsWith('20') && cleanNum.length === 12) {
+                          const localNum = '0' + cleanNum.substring(2);
+                          // Format: 01XX XXX XXXX (Egypt mobile format)
+                          if (localNum.length === 11 && localNum.startsWith('01')) {
+                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
                           }
-                        }
-                        // ✅ Egypt local: 01234567890
-                        else if (num.startsWith('01') && num.length === 11) {
-                          return num.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                        }
-                        // ✅ Saudi: 966501234567 -> 0501234567
-                        else if (num.startsWith('966') && num.length === 12) {
-                          num = '0' + num.substring(3);
-                          if (num.length === 10 && num.startsWith('05')) {
-                            return num.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                          // Format: 02XX XXX XXXX (Egypt landline format)
+                          else if (localNum.length === 11 && localNum.startsWith('02')) {
+                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
                           }
+                          // Format: 03XX XXX XXXX (Egypt mobile format)
+                          else if (localNum.length === 11 && localNum.startsWith('03')) {
+                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                          }
+                          // Return formatted local number
+                          return localNum;
                         }
-                        // ✅ Saudi local: 0501234567
-                        else if (num.startsWith('05') && num.length === 10) {
-                          return num.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                        // ✅ Egypt local format: 01234567890 or 02XXXXXXXXX
+                        else if (cleanNum.startsWith('0') && cleanNum.length === 11) {
+                          // Format: 01XX XXX XXXX (mobile)
+                          if (cleanNum.startsWith('01')) {
+                            return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                          }
+                          // Format: 02XX XXX XXXX (landline)
+                          else if (cleanNum.startsWith('02')) {
+                            return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                          }
+                          // Format: 03XX XXX XXXX (mobile)
+                          else if (cleanNum.startsWith('03')) {
+                            return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                          }
+                          // Other Egypt formats
+                          return cleanNum;
                         }
-                        // ✅ Other international formats
-                        else if (num.length >= 11) {
-                          // Format with spaces
-                          return num.replace(/(\d{2,3})(\d{3})(\d{3})(\d+)/, '$1 $2 $3 $4');
+                        // ✅ Saudi - International format: 966501234567
+                        else if (cleanNum.startsWith('966') && cleanNum.length === 12) {
+                          const localNum = '0' + cleanNum.substring(3);
+                          // Format: 05X XXX XXXX (Saudi mobile format)
+                          if (localNum.length === 10 && localNum.startsWith('05')) {
+                            return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                          }
+                          return localNum;
                         }
-                        
-                        // Return as is if not in expected format
-                        return num || contact.contactNumber;
+                        // ✅ Saudi local format: 0501234567
+                        else if (cleanNum.startsWith('05') && cleanNum.length === 10) {
+                          return cleanNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                        }
+                        // ✅ Check if it's a LID number (15+ digits) - try to extract real phone
+                        else if (cleanNum.length >= 15) {
+                          // This is likely a LID - try to extract real phone from it
+                          // Sometimes LID contains the real phone number embedded
+                          // Try to find a valid phone pattern within the LID
+                          
+                          // Try Egypt format: 20XXXXXXXXXX (12 digits)
+                          const egyptMatch = cleanNum.match(/20\d{10}/);
+                          if (egyptMatch) {
+                            const egyptNum = egyptMatch[0];
+                            const localNum = '0' + egyptNum.substring(2);
+                            if (localNum.length === 11 && localNum.startsWith('01')) {
+                              return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                            }
+                            return localNum;
+                          }
+                          
+                          // Try Saudi format: 966XXXXXXXXXX (12 digits)
+                          const saudiMatch = cleanNum.match(/966\d{9}/);
+                          if (saudiMatch) {
+                            const saudiNum = saudiMatch[0];
+                            const localNum = '0' + saudiNum.substring(3);
+                            if (localNum.length === 10 && localNum.startsWith('05')) {
+                              return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                            }
+                            return localNum;
+                          }
+                          
+                          // Try to find any 10-12 digit sequence that looks like a phone number
+                          // Check if LID ends with a valid phone number pattern
+                          if (cleanNum.length >= 12) {
+                            // Try last 12 digits (Egypt international)
+                            const last12 = cleanNum.slice(-12);
+                            if (last12.startsWith('20') && /^20\d{10}$/.test(last12)) {
+                              const localNum = '0' + last12.substring(2);
+                              if (localNum.length === 11) {
+                                return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                              }
+                            }
+                            
+                            // Try last 11 digits (Egypt local)
+                            const last11 = cleanNum.slice(-11);
+                            if (last11.startsWith('0') && /^0\d{10}$/.test(last11)) {
+                              if (last11.startsWith('01') || last11.startsWith('02') || last11.startsWith('03')) {
+                                return last11.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                              }
+                            }
+                            
+                            // Try last 10 digits (Saudi local)
+                            const last10 = cleanNum.slice(-10);
+                            if (last10.startsWith('05') && /^05\d{8}$/.test(last10)) {
+                              return last10.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                            }
+                          }
+                          
+                          // If we can't extract a real phone, show a shortened version
+                          return cleanNum.length > 15 ? cleanNum.slice(-12) : cleanNum;
+                        }
+                        // ✅ Other numbers: Return as stored (preserve original format)
+                        else {
+                          return cleanNum || contact.contactNumber;
+                        }
                       })()}
-                    </div>
+                    </div> */}
                     
                    </div>
                   {/* <div className="text-xs text-orange-300">
@@ -644,7 +845,7 @@ export default function WhatsAppChatsPage() {
                   </div> */}
                   </div>
                  
-                  {contactTags[contact.contactNumber] && contactTags[contact.contactNumber].length > 0 && (
+                  {contact.contactNumber && contactTags[contact.contactNumber] && contactTags[contact.contactNumber].length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {contactTags[contact.contactNumber].map((tag, index) => (
                           <span key={index} className="text-xs bg-secondry border-1 border-blue-300 text-white px-2 py-1 rounded-full">
@@ -664,6 +865,32 @@ export default function WhatsAppChatsPage() {
             <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
               {selectedContact ? (
                 <div className="space-y-3">
+                    {activeNote && activeNote.status === 'open' && (
+                      <div className="mb-2 p-3 rounded-md bg-yellow-600/20 border border-yellow-500 text-yellow-200 flex items-start justify-between gap-3">
+                        <div className="text-sm whitespace-pre-wrap flex-1">{activeNote.note}</div>
+                        <Button 
+                          size="sm" 
+                          onClick={async () => {
+                            if (!activeNote) return;
+                            try {
+                              await resolveChatNote(token, activeNote.id);
+                              setActiveNote(null);
+                              setOpenNoteContacts(prev => {
+                                const s = new Set(prev);
+                                s.delete(selectedContact);
+                                return s;
+                              });
+                              showToast('تم تعليم الملاحظة كمحلولة', 'success');
+                            } catch (e: any) {
+                              showToast(e.message || 'فشل في تحديث الملاحظة', 'error');
+                            }
+                          }}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                         تعيين تم الحل ✓
+                        </Button>
+                      </div>
+                    )}
                     {chats.length === 0 ? (
                       <div className="text-center py-4 text-gray-500">
                         لم يتم العثور على رسائل. جرب التحديث أو تحقق من إرسال جهة الاتصال لأي رسائل.
@@ -847,6 +1074,7 @@ export default function WhatsAppChatsPage() {
                   >
                     {loading ? 'جاري الإرسال...' : <img className="w-10 h-10" src="/telegram.gif" alt="" />}
                   </button>
+                 
                   <input
                     type="text"
                     placeholder="اكتب رسالتك..."
@@ -871,6 +1099,55 @@ export default function WhatsAppChatsPage() {
           </div>
 
 
+          {/* Note Modal */}
+          {showNoteModal && (
+            <div className="fixed inset-0 z-50 backdrop-blur-sm flex items-center justify-center bg-black/80">
+              <div className="w-full max-w-lg gradient-border rounded-lg p-4 border border-text-primary/50">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-white text-lg font-semibold">إضافة ملاحظة على الشات</h3>
+                  <button onClick={() => setShowNoteModal(false)} className="text-red-400 cursor-pointer">✕</button>
+                </div>
+                <textarea 
+                  className="w-full h-32 p-3 rounded-md bg-[#01191040] text-white border-1 border-blue-300 outline-none"
+                  placeholder="اكتب ملاحظتك هنا..."
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                />
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <Button 
+                    variant="secondary"
+                    onClick={() => setShowNoteModal(false)}
+                  >
+                    إلغاء
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      if (!selectedContact || !noteText.trim()) return;
+                      try {
+                        setSavingNote(true);
+                        const res = await createChatNote(token, { contactNumber: selectedContact, note: noteText.trim() });
+                        if (res.success) {
+                          setActiveNote(res.note as any);
+                          setOpenNoteContacts(prev => new Set(prev).add(selectedContact));
+                          showToast('تم حفظ الملاحظة بنجاح', 'success');
+                          setShowNoteModal(false);
+                          setNoteText("");
+                        }
+                      } catch (e: any) {
+                        showToast(e.message || 'فشل في حفظ الملاحظة', 'error');
+                      } finally {
+                        setSavingNote(false);
+                      }
+                    }}
+                    disabled={savingNote || !noteText.trim()}
+                    className="bg-green-600 hover:bg-green-700 cursor-pointer"
+                  >
+                    {savingNote ? 'جاري الحفظ...' : 'حفظ الملاحظة'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           
         </Card>
         </div>
@@ -921,6 +1198,56 @@ export default function WhatsAppChatsPage() {
                         // ✅ Saudi local: 0501234567
                         else if (num.startsWith('05') && num.length === 10) {
                           return num.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                        }
+                        
+                        // ✅ Check if it's a LID number (15+ digits) - try to extract real phone
+                        if (num.length >= 15) {
+                          // Try to extract real phone from LID
+                          const egyptMatch = num.match(/20\d{10}/);
+                          if (egyptMatch) {
+                            const egyptNum = egyptMatch[0];
+                            const localNum = '0' + egyptNum.substring(2);
+                            if (localNum.length === 11 && localNum.startsWith('01')) {
+                              return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                            }
+                            return localNum;
+                          }
+                          
+                          const saudiMatch = num.match(/966\d{9}/);
+                          if (saudiMatch) {
+                            const saudiNum = saudiMatch[0];
+                            const localNum = '0' + saudiNum.substring(3);
+                            if (localNum.length === 10 && localNum.startsWith('05')) {
+                              return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                            }
+                            return localNum;
+                          }
+                          
+                          // Try last digits
+                          if (num.length >= 12) {
+                            const last12 = num.slice(-12);
+                            if (last12.startsWith('20') && /^20\d{10}$/.test(last12)) {
+                              const localNum = '0' + last12.substring(2);
+                              if (localNum.length === 11) {
+                                return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                              }
+                            }
+                            
+                            const last11 = num.slice(-11);
+                            if (last11.startsWith('0') && /^0\d{10}$/.test(last11)) {
+                              if (last11.startsWith('01') || last11.startsWith('02') || last11.startsWith('03')) {
+                                return last11.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
+                              }
+                            }
+                            
+                            const last10 = num.slice(-10);
+                            if (last10.startsWith('05') && /^05\d{8}$/.test(last10)) {
+                              return last10.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
+                            }
+                          }
+                          
+                          // If we can't extract, show shortened version
+                          return num.length > 15 ? num.slice(-12) : num;
                         }
                         
                         // Return as is if not in expected format

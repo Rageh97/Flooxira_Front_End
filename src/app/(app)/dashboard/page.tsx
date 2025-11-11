@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { apiFetch, getCustomerStats } from "@/lib/api";
+import { apiFetch, getCustomerStats, getUsageStats } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ interface PostStats {
   tiktokPosts?: number;
   telegramPosts?: number;
   whatsappPosts?: number;
+  totalSuccessfulPublications?: number;
 }
 
 interface UserStats {
@@ -58,6 +59,8 @@ export default function DashboardPage() {
   const [whatsappStats, setWhatsappStats] = useState<WhatsAppStats | null>(null);
   const [customerStats, setCustomerStats] = useState<CustomerStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [waUsage, setWaUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const [tgUsage, setTgUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
 
   // Animated banners data
   const banners = [
@@ -132,6 +135,30 @@ export default function DashboardPage() {
       setUserStats(userResponse);
       if (customerResponse.success) {
         setCustomerStats(customerResponse.data);
+      }
+
+      // Usage stats for WhatsApp and Telegram (successful sends)
+      try {
+        const [wa, tg] = await Promise.all([
+          getUsageStats(token, 'whatsapp'),
+          getUsageStats(token, 'telegram').catch(() => null)
+        ]);
+        if (wa?.success) {
+          setWaUsage({
+            used: wa.data.usage?.used ?? wa.data.usage?.count ?? 0,
+            limit: wa.data.limits?.whatsappMessagesPerMonth ?? 0,
+            remaining: wa.data.usage?.remaining ?? 0,
+          });
+        }
+        if (tg && tg.success) {
+          setTgUsage({
+            used: tg.data.usage?.used ?? tg.data.usage?.count ?? 0,
+            limit: tg.data.limits?.telegramMessagesPerMonth ?? 0,
+            remaining: tg.data.usage?.remaining ?? 0,
+          });
+        }
+      } catch (e) {
+        // ignore usage errors
       }
       
       // Fetch WhatsApp message stats from billing API
@@ -221,7 +248,7 @@ export default function DashboardPage() {
       </div> */}
 
       {/* Main Stats Grid */}
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card className="gradient-border card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between  pb-2">
             <div className="flex items-center  gap-2">
@@ -246,10 +273,8 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-primary">{stats?.published || 0}</div>
-            {/* <div className=" text-xs text-green-300">
-              +12% معدل النمو
-            </div> */}
+           <div className="text-[55px]  font-bold text-primary">{stats?.totalSuccessfulPublications ?? stats?.published ?? 0}</div>
+           
            </div>
 
         
@@ -462,7 +487,7 @@ export default function DashboardPage() {
 
 
       {/* Platform Analytics */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card className="gradient-border h-fit card-hover-effect">
           <CardHeader className="border-b border-teal-500/20">
             <div className="flex items-center justify-between">
@@ -472,7 +497,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
             {/* الصف الأول - 3 منصات */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
               <div className="flex items-center justify-between p-3 bg-blue-600/20 rounded-lg border border-blue-500/30">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10  ">
@@ -511,7 +536,7 @@ export default function DashboardPage() {
             </div>
 
             {/* الصف الثاني - 3 منصات */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
               <div className="flex items-center justify-between p-3 bg-black/50 rounded-lg border border-sky-500/30">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10  ">
@@ -544,7 +569,7 @@ export default function DashboardPage() {
                 <span className="text-xl font-medium text-white">تليجرام</span>
               </div>
                 <div className="text-right">
-                  <span className="text-lg font-bold text-blue-400">{stats?.telegramPosts || 0}</span>
+                  <span className="text-lg font-bold text-blue-400">{tgUsage?.used ?? 0}</span>
                 </div>
               </div>
 
@@ -559,7 +584,7 @@ export default function DashboardPage() {
                 <span className="text-xl font-medium text-white">واتساب</span>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-bold text-green-400">{stats?.whatsappPosts || 0}</span>
+                <span className="text-2xl font-bold text-green-400">{waUsage?.used ?? 0}</span>
                 {/* <div className="text-xs text-gray-400">منشورات</div> */}
               </div>
             </div>

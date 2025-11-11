@@ -42,7 +42,7 @@ export default function TelegramLayout({ children }: PropsWithChildren) {
                   "px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2",
                   isActive
                     ? "gradient-border text-white"
-                    : "text-gray-300 hover:text-white hover:bg-gray-700 hover:transform hover:scale-105"
+                    : "text-gray-300 hover:text-white hover:bg-blue-500 hover:transform hover:scale-105"
                 )}
               >
                 {tab.label}

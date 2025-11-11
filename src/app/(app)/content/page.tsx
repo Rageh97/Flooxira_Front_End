@@ -800,7 +800,7 @@ export default function ContentHomePage() {
         {loading ? (
               <div className="p-6 text-center text-gray-400">جاري التحميل...</div>
         ) : categories.length === 0 ? (
-              <div className="p-6 text-center text-gray-400">لا توجد تصنيفات بعد</div>
+              <div className="p-6 text-center text-yellow-500">لا توجد تصنيفات بعد</div>
             ) : (
               <div className="flex flex-wrap gap-2 p-4">
                 {categories.map((category) => (

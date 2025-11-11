@@ -13,6 +13,7 @@ const whatsappTabs = [
   { href: "/whatsapp/ai-settings", label: "إعدادات الذكاء الاصطناعي" },
   { href: "/whatsapp/bot-content", label: "محتوى البوت" },
   { href: "/whatsapp/appointments", label: "إدارة المواعيد" },
+  { href: "/whatsapp/appointments/settings", label: "إعدادات المواعيد" },
   { href: "/whatsapp/settings", label: " أوقات عمل البوت" },
   { href: "/whatsapp/chats", label: "المحادثات" },
   { href: "/whatsapp/groups", label: "المجموعات" },

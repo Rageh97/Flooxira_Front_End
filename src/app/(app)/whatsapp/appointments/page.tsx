@@ -2,6 +2,7 @@
 import React from "react";
 import { useAuth } from "@/lib/auth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Edit, Trash2 } from "lucide-react";
 
 // Types
 interface Appointment {
@@ -64,6 +65,8 @@ export default function AppointmentsPage() {
   const [showEditModal, setShowEditModal] = React.useState(false);
   const [editingAppointment, setEditingAppointment] = React.useState<Appointment | null>(null);
   const [successMessage, setSuccessMessage] = React.useState('');
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [deleteTargetId, setDeleteTargetId] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -148,8 +151,6 @@ export default function AppointmentsPage() {
   };
 
   const handleDelete = async (appointmentId: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الموعد؟')) return;
-
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
@@ -167,7 +168,20 @@ export default function AppointmentsPage() {
       }
     } catch (error) {
       console.error('Error deleting appointment:', error);
+    } finally {
+      setShowDeleteModal(false);
+      setDeleteTargetId(null);
     }
+  };
+
+  const openDeleteModal = (id: number) => {
+    setDeleteTargetId(id);
+    setShowDeleteModal(true);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteTargetId(null);
   };
 
   const handleExport = async () => {
@@ -217,6 +231,32 @@ export default function AppointmentsPage() {
       case 'high': return 'text-orange-600 bg-orange-100';
       case 'urgent': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getBookingType = (a: Appointment): 'appointment' | 'order' => {
+    // Heuristics: if tags include 'order' or source equals 'order' or serviceType mentions 'طلب'
+    const tags = a.tags || [];
+    if (tags.map(t => t.toLowerCase()).includes('order')) return 'order';
+    if ((a.source || '').toLowerCase() === 'order') return 'order';
+    if ((a.serviceType || '').toLowerCase().includes('طلب')) return 'order';
+    return 'appointment';
+  };
+
+  const getBookingBadgeStyle = (type: 'appointment' | 'order') => {
+    return type === 'order'
+      ? 'text-indigo-600 bg-indigo-100'
+      : 'text-teal-600 bg-teal-100';
+  };
+
+  const formatDateAr = (value: any): string => {
+    if (!value) return '-';
+    const d = new Date(value);
+    if (isNaN(d.getTime()) || d.getTime() === 0) return '-';
+    try {
+      return new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+    } catch {
+      return d.toLocaleDateString('ar-SA');
     }
   };
 
@@ -364,6 +404,7 @@ export default function AppointmentsPage() {
               <TableRow>
                 <TableHead >العميل</TableHead>
                 <TableHead >الخدمة</TableHead>
+                <TableHead >التفاصيل</TableHead>
                 <TableHead >التاريخ</TableHead>
                 <TableHead >الوقت</TableHead>
                 <TableHead >الحالة</TableHead>
@@ -382,7 +423,13 @@ export default function AppointmentsPage() {
                   </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-white">
-                      <div className="font-medium">{appointment.serviceType}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {appointment.serviceType}
+                        <span className={`inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full ${getBookingBadgeStyle(getBookingType(appointment))}`}
+                          title={getBookingType(appointment) === 'order' ? 'طلب' : 'موعد'}>
+                          {getBookingType(appointment) === 'order' ? 'طلب' : 'موعد'}
+                        </span>
+                      </div>
                       {appointment.serviceDescription && (
                         <div className="text-gray-400 text-xs truncate max-w-xs">
                           {appointment.serviceDescription}
@@ -390,8 +437,25 @@ export default function AppointmentsPage() {
                       )}
                     </div>
                   </TableCell>
+                  <TableCell className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-white max-w-xs">
+                      {appointment.serviceDescription && (
+                        <div className="truncate" title={appointment.serviceDescription}>{appointment.serviceDescription}</div>
+                      )}
+                      {appointment.notes && appointment.notes !== 'null' && (
+                        <div className="text-xs text-gray-400 truncate" title={appointment.notes}>ملاحظات: {appointment.notes}</div>
+                      )}
+                      {(appointment.price || appointment.location) && (
+                        <div className="text-xs text-gray-400">
+                          {appointment.price ? `السعر: ${appointment.price}` : ''}
+                          {appointment.price && appointment.location ? ' • ' : ''}
+                          {appointment.location ? `الموقع: ${appointment.location}` : ''}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                    {new Date(appointment.appointmentDate).toLocaleDateString('ar-SA')}
+                    {formatDateAr(appointment.appointmentDate)}
                   </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-white">
                     {appointment.appointmentTime}
@@ -433,13 +497,13 @@ export default function AppointmentsPage() {
                         }}
                         className="text-blue-400 hover:text-blue-300"
                       >
-                        تعديل
+                        <Edit/>
                       </button>
                       <button
-                        onClick={() => handleDelete(appointment.id)}
+                        onClick={() => openDeleteModal(appointment.id)}
                         className="text-red-400 hover:text-red-300"
                       >
-                        حذف
+                        <Trash2/>
                       </button>
                     </div>
                   </TableCell>
@@ -509,6 +573,28 @@ export default function AppointmentsPage() {
           </div>
         )}
       </div>
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 backdrop-blur-lg flex items-center justify-center bg-black/80">
+          <div className="gradient-border rounded-lg shadow-lg w-full max-w-md p-6">
+            <h3 className="text-xl font-semibold text-white mb-4">تأكيد الحذف</h3>
+            <p className="text-white/80 mb-6">هل أنت متأكد أنك تريد حذف هذا الموعد؟ هذا الإجراء لا يمكن التراجع عنه.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 rounded border primary-button"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={() => deleteTargetId && handleDelete(deleteTargetId)}
+                className="px-4 py-2 rounded primary-button after:bg-red-600 text-white "
+              >
+                حذف نهائي
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

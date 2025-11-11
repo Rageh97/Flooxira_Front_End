@@ -392,7 +392,7 @@ export default function TelegramChatsPage() {
               }
             }}
             placeholder="اكتب رسالة..."
-              className="flex-1 bg-[#011910] py-4 border border-gray-300 rounded-2xl text-white placeholder-white/50 px-1"
+              className="flex-1 bg-fixed-40 border-primary rounded-2xl text-white placeholder-white/50 px-1"
           />
        
           </div>

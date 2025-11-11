@@ -11,7 +11,7 @@ import { clsx } from "clsx";
 import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import RippleGrid from '@/components/RippleGrid';
-import { X, Megaphone } from "lucide-react";
+import { X, Megaphone, Menu } from "lucide-react";
 
 
 const navItems = [
@@ -23,7 +23,7 @@ const navItems = [
   { href: "/content", label: "ادارة المحتوى", img: "/folder.png" },
   { href: "/salla", label: "  الربط مع سلة", img: "/salla.png" },
   { href: "/schedule", label: "المحتوى المجدول", img: "/hour-2.png" },
-  { href: "/customers", label: " ادارة العملاء والمحاسبة", img: "/customers.png" },
+  { href: "/customers", label: "  العملاء والمحاسبة", img: "/customers.png" },
   { href: "/settings", label: "إدارة الحسابات", img: "/share.png" },
   { href: "/services", label: " سوق لخدمتك", img: "/rocket.png" },
   { href: "/employees", label: "إدارة الموظفين", img: "/user.gif" },
@@ -127,13 +127,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
-        <aside className="relative z-50 h-full w-72 bg-gradient-custom border-r border-[#08c47d50] text-white  shadow-xl flex flex-col">
+        <aside className="relative bg-secondry z-50 h-full w-72  border-r border-[#08c47d50] text-white  shadow-xl flex flex-col">
           <div className="px-4 py-4 flex items-center justify-between border-b border-gray-600">
             <div className="w-full ">
-              <Image src="/Flooxira Logoo.png.gif" alt="logo" width={100} height={100} />
+              <Image src="/Logo.png" alt="logo" width={150} height={100} />
             </div>
             <button
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-semidark-custom "
+              className="inline-flex h-9 w-9  cursor-pointer items-center justify-center rounded-md  "
               aria-label="Close sidebar"
               onClick={() => setSidebarOpen(false)}
             >
@@ -141,14 +141,14 @@ export default function AppLayout({ children }: PropsWithChildren) {
               ✕
             </button>
           </div>
-          <nav className="px-2 py-2 space-y-1 overflow-y-auto flex-1">
+          <nav className="px-2 py-2 space-y-1 overflow-y-auto scrollbar-hide flex-1">
             {visibleNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={clsx(
                   "block rounded-md px-3 py-2 text-sm ",
-                  pathname === item.href ? "bg-light-custom text-white" : "hover:bg-semidark-custom"
+                  pathname === item.href ? "gradient-border" : ""
                 )}
               >
                 {item.label}
@@ -156,7 +156,6 @@ export default function AppLayout({ children }: PropsWithChildren) {
             ))}
             {user?.role === 'admin' && (
               <div className="pt-3">
-                <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">ادارة المنصة</div>
                 <Link
                   href="/admin"
                   className={clsx(
@@ -164,11 +163,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     pathname.startsWith('/admin') ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
                   )}
                 >
-                  الصفحة الرئيسية للإدارة
+                  إدارة المنصة
                 </Link>
               </div>
             )}
-            <div className="pt-3">
+            {/* <div className="pt-3">
               <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">القانونية</div>
               <Link
                 href="/privacy-policy"
@@ -188,7 +187,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               >
                 شروط الخدمة
               </Link>
-            </div>
+            </div> */}
           </nav>
           {/* User info at bottom */}
           <div className="border-t border-gray-600 p-4">
@@ -196,7 +195,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
               <div className="text-sm flex flex-col">
                 {!loading && user && <span className="font-medium">{user.name || user.email}</span>}
                 {planName && (
-                  <span className="text-xs text-gray-400 mt-1">📦 {planName}</span>
+                  <span className="text-xs text-primary mt-1"> {planName}</span>
                 )}
               </div>
               {!loading && user && (
@@ -204,7 +203,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   size="sm" 
                  
                   onClick={() => { signOut(); router.push('/sign-in'); }}
-                  className="bg-red-200 text-white"
+                  className="primary-button after:bg-red-500 text-white"
                 >
                   تسجيل الخروج
                 </Button>
@@ -315,14 +314,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
       {/* Content area - independent scrolling */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile menu button */}
-        <div className="md:hidden fixed top-4 left-4 z-30">
+        <div className="md:hidden fixed top-10 left-4 z-30">
           <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-dark-custom hover:bg-semidark-custom border border-gray-600"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md "
             aria-label="Open sidebar"
             onClick={() => setSidebarOpen(true)}
           >
-            <span className="sr-only">فتح الشريط الجانبي</span>
-            ☰
+            <Menu className="text-primary" size={24}/>
           </button>
         </div>
         

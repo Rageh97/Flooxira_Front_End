@@ -95,8 +95,8 @@ export default function PlansPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">الباقات</h1>
-          <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p>
+          <h1 className="text-4xl font-semibold text-white">الباقات</h1>
+          {/* <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p> */}
         </div>
         <div className="grid gap-6 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
@@ -124,8 +124,8 @@ export default function PlansPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">الباقات</h1>
-          <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p>
+          <h1 className="text-4xl font-semibold text-white">الباقات</h1>
+              {/* <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p> */}
         </div>
         <div className="text-center py-8">
           <p className="text-red-600">خطأ في تحميل الباقات: {error}</p>
@@ -137,8 +137,8 @@ export default function PlansPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">الباقات</h1>
-        <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p>
+        <h1 className="text-4xl font-semibold text-white">الباقات</h1>
+        {/* <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p> */}
       </div>
       
       {plans.length === 0 ? (
@@ -153,19 +153,19 @@ export default function PlansPage() {
             const isHighlighted = index === 1; // Highlight the middle plan
             
             return (
-              <Card key={plan.id} className={isHighlighted ? "border-gray-900" : undefined}>
+              <Card key={plan.id} className={isHighlighted ? "border-gray-900 gradient-border" : "gradient-border"}>
                 <CardHeader>
                   <div className="flex items-baseline justify-between">
-                    <div className="text-lg font-semibold">{plan.name}</div>
-                    <div className="text-2xl font-bold">
-                      {price} <span className="text-sm font-normal text-gray-500">{period}</span>
+                    <div className="text-lg font-semibold text-white">{plan.name}</div>
+                    <div className="text-2xl font-bold text-primary">
+                      {price} <span className="text-sm font-normal text-white">{period}</span>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Platforms */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">المنصات الاجتماعية</h4>
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">المنصات الاجتماعية</h4>
                     <div className="space-y-2">
                       {/* Selected Platforms */}
                       <div className="flex flex-wrap gap-1">
@@ -210,26 +210,26 @@ export default function PlansPage() {
 
                   {/* Permissions */}
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700">الصلاحيات والحدود</h4>
+                    <h4 className="text-sm font-medium text-gray-300">الصلاحيات والحدود</h4>
                     
                     {/* Monthly Posts */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">المنشورات الشهرية:</span>
-                      <span className="text-xs font-bold text-blue-600">
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">المنشورات الشهرية:</span>
+                      <span className="text-xs font-bold text-primary">
                         {(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts || 0}
                       </span>
                     </div>
 
                     {/* WhatsApp Management */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">إدارة الواتساب:</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageWhatsApp ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                             {(permissions as any).whatsappMessagesPerMonth > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-primary">
                                 ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth}/شهر)
                               </span>
                             )}
@@ -244,13 +244,13 @@ export default function PlansPage() {
                     </div>
 
                     {/* Telegram Management */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">إدارة التليجرام:</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">إدارة التليجرام:</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageTelegram ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                           </>
                         ) : (
                           <>
@@ -262,13 +262,13 @@ export default function PlansPage() {
                     </div>
 
                     {/* Salla Integration */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">تكامل سلة:</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">تكامل سلة:</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canSallaIntegration ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                           </>
                         ) : (
                           <>
@@ -280,13 +280,13 @@ export default function PlansPage() {
                     </div>
 
                     {/* Content Management */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">إدارة المحتوى:</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">إدارة المحتوى:</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageContent ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                           </>
                         ) : (
                           <>
@@ -298,13 +298,13 @@ export default function PlansPage() {
                     </div>
 
                     {/* Customer Management */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">إدارة العملاء:</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">إدارة العملاء:</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageCustomers ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                           </>
                         ) : (
                           <>
@@ -316,20 +316,20 @@ export default function PlansPage() {
                     </div>
 
                     {/* Service Marketing */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">تسويق الخدمات:</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">تسويق الخدمات:</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canMarketServices ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                             {(permissions as any).maxServices > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-primary">
                                 ({(permissions as any).maxServices} خدمة)
                               </span>
                             )}
                             {(permissions as any).maxServices === 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-primary">
                                 (غير محدود)
                               </span>
                             )}
@@ -344,20 +344,20 @@ export default function PlansPage() {
                     </div>
 
                     {/* Employee Management */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">إدارة الموظفين:</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">إدارة الموظفين:</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageEmployees ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                             {(permissions as any).maxEmployees > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-primary">
                                 ({(permissions as any).maxEmployees} موظف)
                               </span>
                             )}
                             {(permissions as any).maxEmployees === 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-primary">
                                 (غير محدود)
                               </span>
                             )}
@@ -372,20 +372,20 @@ export default function PlansPage() {
                     </div>
 
                     {/* AI Features */}
-                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">الذكاء الاصطناعي (AI):</span>
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">الذكاء الاصطناعي (AI):</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canUseAI ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-600" />
-                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
                             {(permissions as any).aiCredits > 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-primary">
                                 ({(permissions as any).aiCredits} كريديت/شهر)
                               </span>
                             )}
                             {(permissions as any).aiCredits === 0 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-primary">
                                 (غير محدود)
                               </span>
                             )}
@@ -401,7 +401,7 @@ export default function PlansPage() {
                   </div>
 
                   <Button 
-                    className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                    className="w-full primary-button " 
                     variant={isHighlighted ? "default" : "secondary"}
                     onClick={() => openSubscriptionModal(plan)}
                   >
@@ -425,7 +425,7 @@ export default function PlansPage() {
         />
       )}
       
-      <p className="text-xs text-gray-500">الدفع عبر USDT أو القسائم. يمكنك الإلغاء في أي وقت.</p>
+      {/* <p className="text-xs text-primary">الدفع عبر USDT أو القسائم. يمكنك الإلغاء في أي وقت.</p> */}
     </div>
   );
 }

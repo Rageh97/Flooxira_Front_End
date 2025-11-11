@@ -9,6 +9,7 @@ import {
   getWhatsAppQRCode,
   stopWhatsAppSession,
 } from "@/lib/api";
+import { getSocket } from "@/lib/socket";
 
 export default function WhatsAppConnectionPage() {
   const [status, setStatus] = useState<any>(null);
@@ -27,6 +28,82 @@ export default function WhatsAppConnectionPage() {
     if (token) {
       checkStatus();
     }
+  }, [token]);
+
+  // ✅ Socket.IO: Listen for QR code events
+  useEffect(() => {
+    if (!token) return;
+
+    console.log('[WhatsApp Connection] 🔌 Initializing Socket.IO connection...');
+    
+    const socket = getSocket(token);
+    if (!socket) {
+      console.error('[WhatsApp Connection] ❌ Failed to get socket instance');
+      return;
+    }
+
+    console.log('[WhatsApp Connection] Socket instance obtained, connection status:', socket.connected);
+
+    // Wait for connection before setting up listeners
+    const setupListener = () => {
+      console.log('[WhatsApp Connection] ✅ Socket connected, setting up QR code listener...');
+      
+      // Remove existing listener to avoid duplicates
+      socket.off('whatsapp:qr');
+      
+      // Listen for QR code event from backend
+      socket.on('whatsapp:qr', (data: any) => {
+        console.log('[WhatsApp Connection] 📥 QR Code received via Socket.IO:', {
+          success: data.success,
+          hasQR: !!data.qrCode,
+          qrLength: data.qrCode?.length || 0
+        });
+
+        if (data.success && data.qrCode && data.qrCode.length > 100) {
+          // Validate QR code format
+          if (data.qrCode.startsWith('data:image')) {
+            console.log('[WhatsApp Connection] ✅ Setting QR code from Socket.IO');
+            setQrCode(data.qrCode);
+            setIsWaitingForQR(false); // Stop polling
+            setSuccess("✅ تم توليد رمز QR بنجاح. امسحه الآن!");
+            setError(""); // Clear any errors
+          } else {
+            console.error('[WhatsApp Connection] ❌ Invalid QR code format from Socket.IO');
+          }
+        }
+      });
+
+      console.log('[WhatsApp Connection] ✅ QR code listener set up successfully');
+    };
+
+    // If already connected, set up listener immediately
+    if (socket.connected) {
+      setupListener();
+    } else {
+      // Wait for connection
+      socket.on('connect', () => {
+        console.log('[WhatsApp Connection] ✅ Socket.IO connected, setting up listener');
+        setupListener();
+      });
+
+      // Also set up listener in case it's called before connection
+      setupListener();
+    }
+
+    // Handle connection errors
+    socket.on('connect_error', (error: any) => {
+      console.error('[WhatsApp Connection] ❌ Socket.IO connection error:', error.message);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (socket) {
+        socket.off('whatsapp:qr');
+        socket.off('connect');
+        socket.off('connect_error');
+        console.log('[WhatsApp Connection] Cleaned up Socket.IO listeners');
+      }
+    };
   }, [token]);
 
   // Auto-refresh status only (NOT QR code) - with proper cleanup

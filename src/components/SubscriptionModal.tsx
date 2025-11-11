@@ -187,40 +187,40 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-green-600">
+          <DialogTitle className="flex items-center gap-2 text-primary">
             <CreditCard className="h-5 w-5" />
             اشتراك في {plan.name}
           </DialogTitle>
-          <DialogDescription>
+          {/* <DialogDescription className="text-white text-right">
             اختر طريقة الدفع المناسبة لك
-          </DialogDescription>
+          </DialogDescription> */}
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Plan Summary */}
-          <Card className="bg-green-50 border-green-200">
+          <Card className="bg-secondry border-none">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg text-green-800">{plan.name}</CardTitle>
+              <CardTitle className="text-lg text-white">{plan.name}</CardTitle>
             </CardHeader>
             <CardContent>
               {discountInfo ? (
                 <div className="space-y-2">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg text-gray-500 line-through">{price}</span>
-                    <span className="text-xs text-gray-500">{period}</span>
+                    <span className="text-lg text-primary line-through">{price}</span>
+                    <span className="text-xs text-gray-300">{period}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-green-600">{getFinalPrice()}</span>
+                    <span className="text-2xl font-bold text-primary">{getFinalPrice()}</span>
                     <span className="text-sm text-green-600">{period}</span>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-primary text-white px-2 py-1 rounded-full">
                       خصم {discountInfo.type === 'percentage' ? `${discountInfo.value}%` : `$${discountInfo.value}`}
                     </span>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-green-600">{price}</span>
-                  <span className="text-sm text-green-600">{period}</span>
+                  <span className="text-2xl font-bold text-primary">{price}</span>
+                  <span className="text-sm text-white">{period}</span>
                 </div>
               )}
             </CardContent>
@@ -229,12 +229,12 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
           {/* Step 1: Payment Method Selection */}
           {step === 'method' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800">اختر طريقة الدفع</h3>
+              <h3 className="text-lg font-semibold text-white">اختر طريقة الدفع</h3>
               
               <div className="grid gap-3">
                 <Button
                   variant="secondary"
-                  className="w-full h-auto p-4 justify-start hover:bg-green-50 hover:border-green-300"
+                  className="w-full bg-secondry border-none h-auto p-4 justify-start "
                   onClick={() => handleMethodSelect('usdt')}
                 >
                   <div className="flex items-center gap-3 w-full">
@@ -242,15 +242,15 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
                       <Wallet className="h-5 w-5 text-green-600" />
                     </div>
                     <div className="text-left">
-                      <h4 className="font-semibold text-gray-800">الدفع بـ USDT</h4>
-                      <p className="text-sm text-gray-600">ادفع باستخدام محفظة USDT</p>
+                      <h4 className="font-semibold text-white">الدفع بـ USDT</h4>
+                      <p className="text-sm text-gray-300">ادفع باستخدام محفظة USDT</p>
                     </div>
                   </div>
                 </Button>
 
                 <Button
                   variant="secondary"
-                  className="w-full h-auto p-4 justify-start hover:bg-blue-50 hover:border-blue-300"
+                  className="w-full bg-secondry border-none h-auto p-4 justify-start "
                   onClick={() => handleMethodSelect('coupon')}
                 >
                   <div className="flex items-center gap-3 w-full">
@@ -258,8 +258,8 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
                       <Gift className="h-5 w-5 text-blue-600" />
                     </div>
                     <div className="text-left">
-                      <h4 className="font-semibold text-gray-800">استخدام قسيمة</h4>
-                      <p className="text-sm text-gray-600">ادخل كود القسيمة للتفعيل</p>
+                      <h4 className="font-semibold text-white">استخدام قسيمة</h4>
+                      <p className="text-sm text-gray-300">ادخل كود القسيمة للتفعيل</p>
                     </div>
                   </div>
                 </Button>
@@ -273,11 +273,11 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setStep('method')}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className="text-sm text-primary hover:text-gray-700"
                 >
                   ← العودة
                 </button>
-                <h3 className="text-lg font-semibold text-gray-800">الدفع بـ USDT</h3>
+                <h3 className="text-lg font-semibold text-white">الدفع بـ USDT</h3>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -331,7 +331,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               <Button 
                 onClick={handleUSDTSubmit}
                 disabled={loading || !usdtData.walletAddress.trim() || !usdtData.receiptFile}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full primary-button "
               >
                 {loading ? 'جاري الإرسال...' : 'إرسال طلب الاشتراك مع الإيصال'}
               </Button>
@@ -344,11 +344,11 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setStep('method')}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  className="text-sm text-primary hover:text-gray-700"
                 >
                   ← العودة
                 </button>
-                <h3 className="text-lg font-semibold text-gray-800">استخدام قسيمة</h3>
+                <h3 className="text-lg font-semibold text-white">استخدام قسيمة</h3>
               </div>
 
               <div className="space-y-2">
@@ -376,7 +376,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
                   value={couponData.discountKeyword}
                   onChange={(e) => setCouponData({ ...couponData, discountKeyword: e.target.value })}
                 />
-                <p className="text-xs text-gray-500">أدخل كود الخصم الكامل مع كلمة الخصم في النهاية</p>
+                {/* <p className="text-xs text-gray-500">أدخل كود الخصم الكامل مع كلمة الخصم في النهاية</p> */}
               </div>
 
               {discountInfo && couponData.discountKeyword ? (
@@ -405,11 +405,11 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
                   </div>
                 </div>
               ) : (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="bg-secondry border-none rounded-lg p-3">
                   <div className="flex items-start gap-2">
-                    <Gift className="h-4 w-4 text-blue-600 mt-0.5" />
-                    <div className="text-sm text-blue-800">
-                      <p className="font-medium mb-1">💡 يمكنك استخدام:</p>
+                    <Gift className="h-4 w-4 text-primary mt-0.5" />
+                    <div className="text-sm text-white">
+                      <p className="font-medium mb-1"> يمكنك استخدام:</p>
                       <ul className="list-disc list-inside space-y-1 text-xs">
                         <li><strong>قسيمة اشتراك:</strong> تفعل الباقة مباشرة بدون دفع</li>
                         <li><strong>كود خصم:</strong> يفعل الباقة بسعر مخفض مباشرة</li>
@@ -422,7 +422,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               <Button 
                 onClick={handleCouponSubmit}
                 disabled={loading || !couponData.code.trim()}
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full primary-button "
               >
                 {loading ? 'جاري التحقق...' : 'تفعيل الاشتراك'}
               </Button>

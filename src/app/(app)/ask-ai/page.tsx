@@ -32,6 +32,7 @@ import {
   createAIConversation,
   getAIConversation,
   sendAIMessage,
+  sendAIMessageStream,
   deleteAIConversation,
   updateAIConversationTitle,
   getAIStats,
@@ -57,6 +58,8 @@ export default function AskAIPage() {
   const [editedTitle, setEditedTitle] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingMsgRef = useRef<AIMessage | null>(null);
+  const streamRef = useRef<{ cancel: () => void } | null>(null);
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
 
@@ -130,26 +133,67 @@ export default function AskAIPage() {
     setSending(true);
 
     try {
-      const response = await sendAIMessage(token, selectedConversation.id, userMessageContent);
-      
-      setMessages([...messages, response.userMessage, response.assistantMessage]);
-      
-      // Update stats
-      if (stats) {
-        setStats({
-          ...stats,
-          usedCredits: stats.totalCredits - response.remainingCredits,
-          remainingCredits: response.remainingCredits,
-        });
-      }
-
-      // Update conversation in list
-      await loadConversations();
+      streamRef.current = sendAIMessageStream(
+        token,
+        selectedConversation.id,
+        userMessageContent,
+        {
+          onStart: ({ userMessage }) => {
+            setMessages((prev) => [...prev, userMessage]);
+            streamingMsgRef.current = null;
+          },
+          onDelta: (delta) => {
+            if (!delta) return;
+            if (!streamingMsgRef.current) {
+              const tempMsg: AIMessage = {
+                id: -Date.now(),
+                conversationId: selectedConversation.id,
+                role: 'assistant',
+                content: delta,
+                creditsUsed: 0,
+                createdAt: new Date().toISOString(),
+              };
+              streamingMsgRef.current = tempMsg;
+              setMessages((prev) => [...prev, tempMsg]);
+            } else {
+              const id = streamingMsgRef.current.id;
+              streamingMsgRef.current.content += delta;
+              setMessages((prev) => prev.map(m => m.id === id ? { ...m, content: streamingMsgRef.current!.content } : m));
+            }
+          },
+          onDone: ({ assistantMessage, remainingCredits }) => {
+            const temp = streamingMsgRef.current;
+            if (temp) {
+              setMessages((prev) => prev.map(m => m.id === temp.id ? assistantMessage : m));
+            } else {
+              setMessages((prev) => [...prev, assistantMessage]);
+            }
+            streamingMsgRef.current = null;
+            streamRef.current = null;
+            if (stats) {
+              setStats({
+                ...stats,
+                usedCredits: stats.totalCredits - remainingCredits,
+                remainingCredits,
+              });
+            }
+            // Refresh conversations list preview
+            loadConversations();
+            setSending(false);
+          },
+          onError: (message) => {
+            showError('خطأ', message);
+            streamRef.current = null;
+            setSending(false);
+          }
+        }
+      );
     } catch (error: any) {
       showError("خطأ", error.message);
       setInputMessage(userMessageContent); // Restore message on error
     } finally {
-      setSending(false);
+      // setSending(false) will be handled in onDone/onError; keep as safety in case of early exceptions
+      // setSending(false);
     }
   };
 
@@ -230,7 +274,7 @@ export default function AskAIPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] bg-[#01191050] rounded-xl">
+    <div className="flex h-[calc(100vh-2rem)] bg-fixed-40 rounded-xl">
    
 
       {/* Main Chat Area */}
@@ -271,6 +315,11 @@ export default function AskAIPage() {
                     <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                       {selectedConversation.title}
                     </h2>
+                    {stats && !stats.isUnlimited && stats.remainingCredits <= 0 && (
+                <p className="text-xs text-red-400 mt-2">
+                  لقد استنفدت كريديت AI الخاص بك. يرجى ترقية باقتك أو انتظار التجديد.
+                </p>
+              )}
                     <Button
                       onClick={() => {
                         setEditedTitle(selectedConversation.title);
@@ -281,6 +330,7 @@ export default function AskAIPage() {
                     >
                       <Edit2 className="h-4 w-4 text-gray-400" />
                     </Button>
+                    
                   </>
                 )}
               </div>
@@ -361,7 +411,7 @@ export default function AskAIPage() {
             {/* Input Area */}
             <div className="border-t border-gray-700 p-4">
               <div className="flex items-center gap-2">
-              <Button
+                <Button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || sending || !!(stats && !stats.isUnlimited && stats.remainingCredits <= 0)}
                   className="min-h-[60px] self-end border"
@@ -369,9 +419,16 @@ export default function AskAIPage() {
                   {sending ? (
                     <Loader2 className="h-10 w-10 animate-spin" />
                   ) : (
-                    // <Send className="h-5 w-5" />
                     <img src="/telegram.gif" alt="" className="w-10 h-10" />
                   )}
+                </Button>
+                <Button
+                  onClick={() => { streamRef.current?.cancel(); }}
+                  disabled={!sending}
+                  variant="destructive"
+                  className="min-h-[60px] self-end"
+                >
+                  إيقاف
                 </Button>
                 <Textarea
                   value={inputMessage}
@@ -397,12 +454,12 @@ export default function AskAIPage() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <MessageSquare className="h-24 w-24 text-gray-600 mx-auto mb-4" />
+            <div className="flex flex-col items-center">
+              <img src="/Bot.gif" alt="" className="w-40 h-40 mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">
                 اختر محادثة أو ابدأ محادثة جديدة
               </h3>
-              <p className="text-gray-400 mb-6">
+              <p className="text-primary mb-6">
                 استخدم AI لإنشاء محتوى رائع لوسائل التواصل الاجتماعي
               </p>
               <Button onClick={handleCreateConversation} className="primary-button">
@@ -429,11 +486,11 @@ export default function AskAIPage() {
         {/* Stats */}
         {stats && (
           <div className="px-3 pb-3">
-            <Card className="bg-[#012817] border-green-600/30">
+            <Card className="bg-gradient-custom border-primary ">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="h-4 w-4 text-green-400" />
-                  <span className="text-xs font-medium text-gray-500">كريديت AI</span>
+                  <span className="text-xs font-medium text-primary">كريديت AI</span>
                 </div>
                 <div className="text-lg font-bold text-green-400">
                   {stats.isUnlimited 
@@ -465,7 +522,7 @@ export default function AskAIPage() {
                   }`}
                   onClick={() => loadConversation(conversation.id)}
                 >
-                  <MessageSquare className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                  <MessageSquare className="h-4 w-4 text-yellow-400 flex-shrink-0" />
                   <span className="text-sm text-white flex-1 truncate">
                     {conversation.title}
                   </span>
@@ -476,7 +533,7 @@ export default function AskAIPage() {
                     }}
                     size="sm"
                     variant="ghost"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto"
+                    className=" transition-opacity p-1 h-auto"
                   >
                     <Trash2 className="h-3 w-3 text-red-400" />
                   </Button>

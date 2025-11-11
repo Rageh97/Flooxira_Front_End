@@ -51,6 +51,8 @@
   --color-bg-light: #74e2ff;
   --color-text-primary: #74e2ff;
   --color-bg-card: #00000060;
+  --color-bg-fixed:#011910
+  --color-bg-fixed-40:#01191040
 }
 /* #131240
 #74e2ff
@@ -145,13 +147,25 @@
 @layer utilities {
   .bg-gradient-custom {
     /* background: #141414; */
-    background: linear-gradient(200deg, var(--color-bg-dark-2) 0%, var(--color-bg-dark) 50%, var(--color-bg-dark-2) 100%);
+    background: linear-gradient(200deg, var(--color-bg-semidark) 0%, var(--color-bg-fixed) 50%, var(--color-bg-semidark) 100%);
   }
   
   .text-primary {
     color: var(--color-text-primary);
   }
-
+  
+  .bg-fixed-custom {
+    background-color: #011910;
+  }
+  
+  .bg-fixed-40 {
+    background-color: #01191040;
+  }
+  
+  
+  .bg-card{
+    background-color: var(--color-bg-card);
+  }
   
   .bg-dark-custom {
     background-color: var(--color-bg-dark);
@@ -190,82 +204,10 @@
     overflow: hidden;
   }
   
-  .content-card {
-    background: linear-gradient(135deg, rgba(8, 196, 125, 0.1) 0%, rgba(19, 74, 43, 0.1) 100%);
-    border: 1px solid rgba(8, 196, 125, 0.2);
-    transition: all 0.3s ease;
-  }
-  
-  .content-card:hover {
-    border-color: rgba(8, 196, 125, 0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(8, 196, 125, 0.15);
-  }
-
-  /* Card Styles */
-
-  .card-default {
-    @apply bg-card border-none;
-  }
-
-  .card-gradient-green {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(21, 128, 61, 0.15) 100%);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    @apply border-none;
-  }
-
-  .card-gradient-green-light {
-    background: linear-gradient(135deg, rgba(74, 222, 128, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%);
-    border: 1px solid rgba(74, 222, 128, 0.4);
-    @apply border-none;
-  }
-
-  .card-gradient-green-dark {
-    background: linear-gradient(135deg, rgba(21, 128, 61, 0.15) 0%, rgba(15, 85, 40, 0.15) 100%);
-    border: 1px solid rgba(21, 128, 61, 0.4);
-    @apply border-none;
-  }
-
-  .card-gradient-green-emerald {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
-    /* border: 1px solid rgba(16, 185, 129, 0.4); */
-    @apply border-none;
-  }
-
-  .card-gradient-green-teal {
-    background: linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(15, 118, 110, 0.15) 100%);
-    border: 1px solid rgba(20, 184, 166, 0.4);
-    @apply border-none;
-  }
-
-  .card-gradient-green-lime {
-    background: linear-gradient(135deg, rgba(132, 204, 22, 0.15) 0%, rgba(101, 163, 13, 0.15) 100%);
-    border: 1px solid rgba(132, 204, 22, 0.4);
-    @apply border-none;
-  }
-
-  .card-gradient-green-forest {
-    background: linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(15, 85, 40, 0.15) 100%);
-    border: 1px solid rgba(22, 163, 74, 0.4);
-    @apply border-none;
-  }
-
-  .card-gradient-green-mint {
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(16, 185, 129, 0.15) 100%);
-    border: 1px solid rgba(52, 211, 153, 0.4);
-    @apply border-none;
-  }
-
-  /* Hover Effects for Cards */
-  .card-hover-effect {
-    transition: all 0.3s ease;
-  }
-
-  .card-hover-effect:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  }
-
+ 
+.border-primary{
+  @apply border-1 border-blue-300
+}
   /* Status Indicators */
 
   .status-online {

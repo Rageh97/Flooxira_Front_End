@@ -64,25 +64,12 @@ export default function WhatsAppStatsPage() {
         </div>
       )}
 
-      {botStats && (
+      {/* {botStats && (
         <Card className="gradient-border border-none">
           <CardHeader className="border-text-primary/50 text-primary">مصادر الردود</CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* <div className="flex  w-full ">
-                <div className="w-1/4">
-                <span className="text-sm font-medium text-white ">قاعدة المعرفة</span>
-                </div>
-                <div className="flex items-center gap-2 w-full">
-                  <div className="w-full bg-gray-900 rounded-full h-2 ">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full" 
-                      style={{ width: `${(botStats.knowledgeBaseResponses / botStats.outgoingMessages) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm text-white">{botStats.knowledgeBaseResponses}</span>
-                </div>
-              </div> */}
+             
               <div className="flex  w-full ">
                 <div className="w-1/4">
                 <span className="text-sm font-medium text-white ">الذكاء الاصطناعي</span>
@@ -114,7 +101,7 @@ export default function WhatsAppStatsPage() {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
     </div>
   );
 }

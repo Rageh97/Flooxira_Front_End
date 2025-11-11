@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { startWhatsAppCampaign } from "@/lib/api";
 import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
-import Loader from "@/components/Loader";
+import { useToast } from "@/components/ui/toast-provider";
 
 export default function WhatsAppCampaignsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
+  const { showSuccess, showError } = useToast();
   
   // Loading states for operations
   const [isStartingCampaign, setIsStartingCampaign] = useState(false);
@@ -45,26 +45,33 @@ export default function WhatsAppCampaignsPage() {
     })();
   }, []);
 
-  async function handleStartCampaign() {
+  function handleStartCampaign() {
     if (!campaignFile || !campaignTemplate) {
       setError("يرجى رفع ملف Excel وتوفير نص المحتوى التسويقي");
+      showError("خطأ", "يرجى رفع ملف Excel وتوفير نص المحتوى التسويقي");
       return;
     }
 
     // التحقق من القيود
     if (campaignThrottle < 5) {
       setError("الحد الأدنى للدقائق بين الرسائل هو 5 دقائق");
+      showError("خطأ", "الحد الأدنى للدقائق بين الرسائل هو 5 دقائق");
       return;
     }
 
     if (campaignDailyCap && campaignDailyCap > 500) {
       setError("الحد الأقصى للأرقام في اليوم هو 500 رقم");
+      showError("خطأ", "الحد الأقصى للأرقام في اليوم هو 500 رقم");
       return;
     }
 
-    try {
-      setIsStartingCampaign(true);
-      setError("");
+    // ✅ Run in background - don't block UI
+    setIsStartingCampaign(true);
+    setError("");
+    
+    // Run async operation in background
+    (async () => {
+      try {
       
       const formData = new FormData();
       formData.append('file', campaignFile);
@@ -80,12 +87,22 @@ export default function WhatsAppCampaignsPage() {
         formData.append('recurringInterval', recurringInterval.toString());
       }
       if (campaignDailyCap) formData.append('dailyCap', campaignDailyCap.toString());
-      if (campaignPerNumberDelay) formData.append('perNumberDelayMs', campaignPerNumberDelay.toString());
+      if (campaignPerNumberDelay) {
+        // تحويل من دقائق إلى milliseconds
+        const perNumberDelayMs = Number(campaignPerNumberDelay) * 60 * 1000;
+        formData.append('perNumberDelayMs', perNumberDelayMs.toString());
+      }
 
       const result = await startWhatsAppCampaign(token, formData);
       
       if (result.success) {
-        setSuccess("تم بدء الحملة بنجاح!");
+        const isScheduled = !!campaignScheduleAt && new Date(campaignScheduleAt) > new Date();
+        const warningMsg = (result as any).warning;
+        if (isScheduled) {
+          showSuccess("تم الجدولة بنجاح!", warningMsg || "سيتم بدء الحملة في الوقت المحدد.");
+        } else {
+          showSuccess("تم بدء الحملة بنجاح!", warningMsg || "جاري إرسال الرسائل...");
+        }
         setCampaignFile(null);
         setCampaignTemplate("مرحبا {{name}} …");
         setCampaignThrottle(5);
@@ -97,57 +114,60 @@ export default function WhatsAppCampaignsPage() {
         setRecurringInterval(8);
       } else {
         setError(result.message || "فشل في بدء الحملة");
+        showError("فشل في بدء الحملة", result.message);
       }
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setIsStartingCampaign(false);
-    }
+      } catch (e: any) {
+        setError(e.message);
+        showError("خطأ", e.message);
+      } finally {
+        setIsStartingCampaign(false);
+      }
+    })();
   }
 
-  async function handleSendToTag() {
+  function handleSendToTag() {
     if (!selectedTagId || !tagCampaignTemplate.trim()) {
       setError("يرجى اختيار تصنيف وإدخال نص المحتوى التسويقي");
+      showError("خطأ", "يرجى اختيار تصنيف وإدخال نص المحتوى التسويقي");
       return;
     }
 
     // التحقق من القيود
     if (campaignThrottle < 5) {
       setError("الحد الأدنى للدقائق بين الرسائل هو 5 دقائق");
+      showError("خطأ", "الحد الأدنى للدقائق بين الرسائل هو 5 دقائق");
       return;
     }
-    try {
-      setIsSendingToTag(true);
-      setError("");
-      const res = await sendCampaignToTag({ tagId: Number(selectedTagId), messageTemplate: tagCampaignTemplate, throttleMs: campaignThrottle * 60 * 1000 });
-      if (res.success) {
-        setSuccess("تم بدء الحملة للتصنيف بنجاح!");
-      } else {
-        setError(res.message || "فشل في بدء حملة التصنيف");
+    
+    // ✅ Run in background - don't block UI
+    setIsSendingToTag(true);
+    setError("");
+    
+    // Run async operation in background
+    (async () => {
+      try {
+        const res = await sendCampaignToTag({ tagId: Number(selectedTagId), messageTemplate: tagCampaignTemplate, throttleMs: campaignThrottle * 60 * 1000 });
+        if (res.success) {
+          const warningMsg = (res as any).warning;
+          showSuccess("تم بدء الحملة للتصنيف بنجاح!", warningMsg || "جاري إرسال الرسائل...");
+          // Reset form
+          setSelectedTagId('');
+          setTagCampaignTemplate('');
+        } else {
+          setError(res.message || "فشل في بدء حملة التصنيف");
+          showError("فشل في بدء حملة التصنيف", res.message);
+        }
+      } catch (e: any) {
+        setError(e.message);
+        showError("خطأ", e.message);
+      } finally {
+        setIsSendingToTag(false);
       }
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setIsSendingToTag(false);
-    }
+    })();
   }
 
-  // Show fullscreen loader during operations
-  if (isStartingCampaign || isSendingToTag) {
-    let loaderText = "جاري المعالجة...";
-    if (isStartingCampaign) loaderText = "جاري بدء الحملة...";
-    else if (isSendingToTag) loaderText = "جاري إرسال الحملة للتصنيف...";
-    
-    return (
-      <Loader 
-        text={loaderText} 
-        size="lg" 
-        variant="success"
-        showDots
-        fullScreen
-      />
-    );
-  }
+  // ✅ Removed fullscreen loader - operations run in background
+  // Users can continue using the interface while operations are in progress
 
   return (
     <div className="space-y-6">
@@ -158,11 +178,6 @@ export default function WhatsAppCampaignsPage() {
         </div>
       )}
 
-      {success && (
-        <div className="rounded-md p-4 bg-green-50 text-green-700">
-          {success}
-        </div>
-      )}
 
       <Card className="gradient-border border-none">
         <CardHeader className="border-text-primary/50 text-white font-bold text-xl"> أدخل معلومات الحملة الاعلانية</CardHeader>
@@ -175,28 +190,53 @@ export default function WhatsAppCampaignsPage() {
 <div>
   <label className="block text-sm font-medium mb-2 text-white">رفع ملف Excel للأرقام</label>
   <div className="relative">
-  {/* input الحقيقي مخفي */}
-  <input
-    id="excelUpload"
-    type="file"
-    accept=".xlsx"
-    className="hidden"
-    onChange={(e) => setCampaignFile(e.target.files?.[0] || null)}
-  />
-
-  {/* label بديل بنفس شكل الانبوت */}
-  <label
-    htmlFor="excelUpload"
-    className="bg-[#01191040] rounded-md p-2 pl-12 text-white border-1 border-blue-300 h-28 w-full flex items-center justify-center cursor-pointer relative"
-  >
-    <img
-      className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 pointer-events-none"
-      src="/folder.png"
-      alt=""
+    {/* input الحقيقي مخفي */}
+    <input
+      id="excelUpload"
+      type="file"
+      accept=".xlsx,.xls"
+      className="hidden"
+      onChange={(e) => {
+        const file = e.target.files?.[0] || null;
+        setCampaignFile(file);
+        if (file) {
+          console.log('[Campaign] Excel file selected:', file.name, file.size, 'bytes');
+        }
+      }}
     />
-  </label>
-</div>
 
+    {/* label بديل بنفس شكل الانبوت */}
+    <label
+      htmlFor="excelUpload"
+      className="bg-[#01191040] rounded-md p-2 pl-12 text-white border-1 border-blue-300 h-28 w-full flex items-center justify-center cursor-pointer relative"
+    >
+      {campaignFile ? (
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-white text-sm font-medium">{campaignFile.name}</span>
+          <span className="text-white/60 text-xs">({Math.round(campaignFile.size / 1024)} KB)</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setCampaignFile(null);
+              const fileInput = document.getElementById('excelUpload') as HTMLInputElement;
+              if (fileInput) fileInput.value = '';
+            }}
+            className="text-red-400 hover:text-red-600 text-xs mt-1"
+          >
+            ✕ إزالة
+          </button>
+        </div>
+      ) : (
+        <img
+          className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 pointer-events-none"
+          src="/folder.png"
+          alt="رفع ملف"
+        />
+      )}
+    </label>
+  </div>
 </div>
 <div>
   <label className="block text-sm font-medium mb-2 text-white">ارفع صورة او فيديو</label>
@@ -240,7 +280,7 @@ export default function WhatsAppCampaignsPage() {
           <div className=" w-full">
             <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (دقائق بين الرسائل)</label>
             <input min="5" max="100" type="number" className="bg-[#01191040] rounded-md p-2 text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
-            <p className="text-xs text-gray-300 mt-1">الحد الأدنى: 5 دقائق</p>
+            <p className="text-xs text-gray-300 mt-1">الحد الأدنى: 5 دقائق {campaignPerNumberDelay ? '(سيتم استخدام "تأخير لكل رقم" بدلاً منها)' : ''}</p>
           </div>
 
 
@@ -260,8 +300,9 @@ export default function WhatsAppCampaignsPage() {
             </div>
             
             <div className="w-full">
-              <label className="block text-sm font-medium mb-2 text-white">تأخير لكل رقم (بالدقيقة  اختياري)</label>
-              <input placeholder="1" min="1" max="100" type="number" className=" bg-[#01191040] rounded-md  text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignPerNumberDelay} onChange={(e) => setCampaignPerNumberDelay(e.target.value ? Number(e.target.value) : 1)} />
+              <label className="block text-sm font-medium mb-2 text-white">تأخير لكل رقم (بالدقيقة - القيمة الفعلية المستخدمة)</label>
+              <input placeholder="اتركه فارغاً لاستخدام القيمة الافتراضية" min="1" max="100" type="number" className=" bg-[#01191040] rounded-md  text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignPerNumberDelay} onChange={(e) => setCampaignPerNumberDelay(e.target.value ? Number(e.target.value) : '')} />
+              <p className="text-xs text-gray-300 mt-1">{campaignPerNumberDelay ? `سيتم استخدام ${campaignPerNumberDelay} دقيقة بين كل رسالة` : 'سيتم استخدام قيمة "التحكم في السرعة" كقيمة افتراضية'}</p>
             </div>
          
 
@@ -271,7 +312,15 @@ export default function WhatsAppCampaignsPage() {
 
           <div className="flex items-center gap-4 w-full">
           <div className="w-50">
-            <button className=" w-full h-18 primary-button text-white text-2xl font-bold" onClick={handleStartCampaign} disabled={isStartingCampaign || !campaignFile || !campaignTemplate}>بدء الحملة</button>
+            <button 
+              className=" w-full h-18 primary-button text-white text-2xl font-bold" 
+              onClick={handleStartCampaign} 
+              disabled={isStartingCampaign || !campaignFile || !campaignTemplate}
+            >
+              {campaignScheduleAt && new Date(campaignScheduleAt) > new Date() 
+                ? "بدء جدولة الحملة" 
+                : "بدء الحملة"}
+            </button>
 
             </div>
          

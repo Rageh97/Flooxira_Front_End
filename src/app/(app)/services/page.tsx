@@ -362,8 +362,8 @@ export default function ServicesPage() {
           {services.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">لا توجد خدمات بعد</p>
-              <p className="text-gray-400 text-sm mb-4">ابدأ بإضافة خدمتك الأولى!</p>
+              <p className="text-yellow-500 text-lg mb-2">لا توجد خدمات بعد</p>
+              <p className="text-primary text-sm mb-4">ابدأ بإضافة خدمتك الأولى!</p>
               <Button
                 onClick={() => {
                   resetForm();
@@ -520,7 +520,7 @@ export default function ServicesPage() {
             <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-yellow-800">
               <p className="font-medium">ملاحظة هامة:</p>
-              <p>الخدمة ستكون قيد الانتظار حتى يتم الموافقة عليها من الإدارة. لن تظهر في السوق إلا بعد القبول.</p>
+              <p>الخدمة ستكون قيد الانتظار حتى يتم الموافقة عليها .</p>
             </div>
           </div>
 

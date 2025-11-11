@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast-provider";
 import { 
   checkPlatformConnections, 
   exchangeLinkedInCode, 
@@ -42,7 +43,7 @@ const PLATFORMS = {
 
 function SettingsContent() {
   const { hasActiveSubscription, hasPlatformAccess, loading: permissionsLoading } = usePermissions();
-  
+   const { showSuccess, showError } = useToast();
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [token, setToken] = useState<string>("");
@@ -93,7 +94,7 @@ function SettingsContent() {
 
     if (error) {
       console.error('OAuth error:', error, message);
-      alert(`OAuth Error: ${message || error}`);
+      showError(`OAuth Error: ${message || error}`);
       return;
     }
 
@@ -160,7 +161,7 @@ function SettingsContent() {
         }
       } catch (error) {
         console.error(`Error connecting ${platform}:`, error);
-        alert(`Error connecting ${platform}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        showError(`Error connecting ${platform}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setProcessing(null);
         // Clean up URL parameters
@@ -233,7 +234,7 @@ function SettingsContent() {
         setAvailableFacebookPages(pagesData.pages);
         
         if (pagesData.pages.length === 0) {
-          alert('⚠️ لم يتم العثور على صفحات Facebook.\n\nتأكد من:\n1. أنك تملك صفحة (وليس حساب شخصي فقط)\n2. أن التطبيق لديه صلاحيات pages_read_engagement');
+          showError('⚠️ لم يتم العثور على صفحات Facebook.\n\nتأكد من:\n1. أنك تملك صفحة (وليس حساب شخصي فقط)\n2. أن التطبيق لديه صلاحيات pages_read_engagement');
         }
       } else {
         console.log('❌ No pages data or not successful');
@@ -241,7 +242,7 @@ function SettingsContent() {
         setAvailableFacebookPages([]);
         
         if (pagesData.message) {
-          alert(`⚠️ ${pagesData.message}`);
+          showError(`⚠️ ${pagesData.message}`);
         }
       }
       
@@ -264,7 +265,7 @@ function SettingsContent() {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined
       });
-      alert(`خطأ في تحميل الصفحات:\n\n${error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}\n\nتحقق من Console للمزيد من التفاصيل`);
+      showError(`خطأ في تحميل الصفحات:\n\n${error instanceof Error ? error.message : 'حدث خطأ غير متوقع'}\n\nتحقق من Console للمزيد من التفاصيل`);
     }
   };
 
@@ -285,7 +286,7 @@ function SettingsContent() {
       }
     } catch (error) {
       console.error('Error switching Facebook page:', error);
-      alert('فشل في تغيير صفحة Facebook');
+      showError('فشل في تغيير صفحة Facebook');
     }
   };
 
@@ -402,7 +403,7 @@ function SettingsContent() {
 
   const handleConnect = (platformKey: string) => {
     if (!userId) {
-      alert('يجب تسجيل الدخول أولاً');
+      showError('يجب تسجيل الدخول أولاً');
       return;
     }
     
@@ -438,7 +439,7 @@ function SettingsContent() {
       }
     } catch (error) {
       console.error(`Error disconnecting ${platformKey}:`, error);
-      alert(`Error disconnecting ${platformKey}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError(`Error disconnecting ${platformKey}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setProcessing(null);
     }
@@ -562,10 +563,10 @@ function SettingsContent() {
                     await upsertPlatformCredential(token, edit.platform, { clientId: edit.clientId, clientSecret: edit.clientSecret, redirectUri: edit.redirectUri }); 
                     setEdit(null); 
                     await loadCredentials();
-                    alert('تم حفظ الإعدادات بنجاح');
+                    showSuccess('تم حفظ الإعدادات بنجاح');
                   } catch (error: any) {
                     console.error('Error saving credentials:', error);
-                    alert(`خطأ في حفظ الإعدادات: ${error.message || 'حدث خطأ غير متوقع'}`);
+                    showError(`خطأ في حفظ الإعدادات: ${error.message || 'حدث خطأ غير متوقع'}`);
                   }
                 }}>حفظ</Button>
                 <Button size="sm" className="primary-button after:bg-red-500" onClick={() => setEdit(null)}>إلغاء</Button>
@@ -594,7 +595,7 @@ function SettingsContent() {
               
               return (
                 <Card key={key} className={`border-none inner-shadow ${
-                  isConnected ? 'card-gradient-green' : 'bg-dark-custom'
+                  isConnected ? 'bg-fixed-40' : 'bg-dark-custom'
                 }`}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-center mb-4">
@@ -657,20 +658,20 @@ function SettingsContent() {
       </Card>
       {/* Facebook Page Management */}
       {connectedPlatforms.includes('facebook') && (
-        <Card className="bg-card border-none">
+        <Card className="gradient-border border-none">
           <CardHeader className="border-text-primary/50 text-primary">
-            <h2 className="text-lg font-semibold">إدارة صفحة Facebook</h2>
-            <p className="text-sm text-gray-400">اختر صفحة Facebook للنشر عليها</p>
+            <h2 className="text-lg font-semibold ">إدارة صفحة Facebook</h2>
+            <p className="text-sm text-gray-200">اختر صفحة Facebook للنشر عليها</p>
           </CardHeader>
           <CardContent>
             {currentFacebookPage ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-secondry rounded-lg">
                   <div className="flex items-center space-x-3">
                     <img className="w-10 h-10" src="/facebook.gif" alt="" />
                     <div>
-                      <div className="font-semibold text-blue-900">{currentFacebookPage.pageName}</div>
-                      <div className="text-sm text-blue-700">
+                      <div className="font-semibold text-primary">{currentFacebookPage.pageName}</div>
+                      <div className="text-sm text-white">
                         {currentFacebookPage.fanCount} معجب • الصفحة النشطة للنشر
                       </div>
                     </div>
@@ -679,12 +680,13 @@ function SettingsContent() {
                 </div>
                 
                 <Button 
+                
                   onClick={() => {
                     setShowFacebookPageManager(true);
                     loadFacebookPages(); // Load pages when opening modal
                   }}
                   variant="secondary"
-                  className="w-full"
+                  className="w-full primary-button"
                 >
                   تغيير صفحة Facebook
                 </Button>
@@ -694,7 +696,7 @@ function SettingsContent() {
                                    <img className="w-10 h-10" src="/facebook.gif" alt="" />
 
                 <h3 className="text-lg font-semibold text-gray-600 mb-2">لا توجد صفحة محددة</h3>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-gray-200 mb-4">
                   اختر صفحة Facebook للنشر عليها
                 </p>
                 <Button 
@@ -718,76 +720,76 @@ function SettingsContent() {
         <Card className="bg-card border-none">
           <CardHeader className="border-text-primary/50 text-primary">
             <h2 className="text-lg font-semibold">تفاصيل المنصات المحددة</h2>
-            <p className="text-sm text-gray-400">معلومات مفصلة عن المنصات المتصلة</p>
+            <p className="text-sm text-gray-300">معلومات مفصلة عن المنصات المتصلة</p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Facebook Page */}
               {isPlatformConnected('facebook') && (
-                <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg">
+                <div className="p-6 gradient-border rounded-lg">
                   <div className="flex items-center space-x-3 mb-4">
                   <img className="w-10 h-10" src="/facebook.gif" alt="" />
 
                     <div>
-                      <h3 className="font-bold text-blue-900">صفحة Facebook</h3>
-                      <p className="text-sm text-blue-700">الصفحة المحددة للنشر</p>
+                      <h3 className="font-bold text-primary">صفحة Facebook</h3>
+                      <p className="text-sm text-white">الصفحة المحددة للنشر</p>
                     </div>
                   </div>
                   {loadingDetails.facebook ? (
-                    <div className="text-sm text-blue-600">جاري تحميل التفاصيل...</div>
+                    <div className="text-sm text-gray-300">جاري تحميل التفاصيل...</div>
                   ) : platformDetails.facebook ? (
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <span className="font-semibold text-blue-900">اسم الصفحة:</span>
-                        <span className="text-blue-700 ml-2">{platformDetails.facebook.pageName || 'غير محدد'}</span>
+                        <span className="font-semibold text-primary">اسم الصفحة:</span>
+                        <span className="text-white ml-2">{platformDetails.facebook.pageName || 'غير محدد'}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-blue-900">عدد المعجبين:</span>
-                        <span className="text-blue-700 ml-2">{platformDetails.facebook.fanCount ? platformDetails.facebook.fanCount.toLocaleString() : '0'}</span>
+                        <span className="font-semibold text-primary">عدد المعجبين:</span>
+                        <span className="text-white ml-2">{platformDetails.facebook.fanCount ? platformDetails.facebook.fanCount.toLocaleString() : '0'}</span>
                       </div>
-                      <div className="text-sm">
-                        <span className="font-semibold text-blue-900">معرف الصفحة:</span>
-                        <span className="text-blue-700 ml-2 font-mono text-xs">{platformDetails.facebook.pageId || 'غير محدد'}</span>
-                      </div>
+                      {/* <div className="text-sm">
+                        <span className="font-semibold text-primary">معرف الصفحة:</span>
+                        <span className="text-white ml-2 font-mono text-xs">{platformDetails.facebook.pageId || 'غير محدد'}</span>
+                      </div> */}
                     </div>
                   ) : (
-                    <div className="text-sm text-blue-600">فشل في تحميل التفاصيل</div>
+                    <div className="text-sm text-gray-300">فشل في تحميل التفاصيل</div>
                   )}
                 </div>
               )}
 
               {/* Instagram Account */}
               {isPlatformConnected('facebook') && currentFacebookPage?.instagramId && (
-                <div className="p-6 bg-gradient-to-br from-pink-50 to-pink-100 border border-pink-200 rounded-lg">
+                <div className="p-6 gradient-border rounded-lg">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="text-3xl">📷</div>
+                    <img className="w-10 h-10" src="/insta.gif" alt="" />
                     <div>
-                      <h3 className="font-bold text-pink-900">حساب Instagram</h3>
-                      <p className="text-sm text-pink-700">مرتبط بصفحة Facebook</p>
+                      <h3 className="font-bold text-primary">حساب Instagram</h3>
+                      <p className="text-sm text-white">مرتبط بصفحة Facebook</p>
                     </div>
                   </div>
                   {loadingDetails.instagram ? (
-                    <div className="text-sm text-pink-600">جاري تحميل التفاصيل...</div>
+                    <div className="text-sm text-gray-300">جاري تحميل التفاصيل...</div>
                   ) : platformDetails.instagram ? (
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <span className="font-semibold text-pink-900">اسم المستخدم:</span>
-                        <span className="text-pink-700 ml-2">@{platformDetails.instagram.username || currentFacebookPage.instagramUsername || 'غير محدد'}</span>
+                        <span className="font-semibold text-primary">اسم المستخدم:</span>
+                        <span className="text-white ml-2">@{platformDetails.instagram.username || currentFacebookPage.instagramUsername || 'غير محدد'}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-pink-900">المتابعون:</span>
-                        <span className="text-pink-700 ml-2">{platformDetails.instagram.followersCount ? platformDetails.instagram.followersCount.toLocaleString() : '0'}</span>
+                        <span className="font-semibold text-primary">المتابعون:</span>
+                        <span className="text-white ml-2">{platformDetails.instagram.followersCount ? platformDetails.instagram.followersCount.toLocaleString() : '0'}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-pink-900">المنشورات:</span>
-                        <span className="text-pink-700 ml-2">{platformDetails.instagram.mediaCount ? platformDetails.instagram.mediaCount.toLocaleString() : '0'}</span>
+                        <span className="font-semibold text-primary">المنشورات:</span>
+                        <span className="text-white ml-2">{platformDetails.instagram.mediaCount ? platformDetails.instagram.mediaCount.toLocaleString() : '0'}</span>
                       </div>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <span className="font-semibold text-pink-900">اسم المستخدم:</span>
-                        <span className="text-pink-700 ml-2">@{currentFacebookPage.instagramUsername || 'غير محدد'}</span>
+                        <span className="font-semibold text-primary">اسم المستخدم:</span>
+                        <span className="text-white ml-2">@{currentFacebookPage.instagramUsername || 'غير محدد'}</span>
                       </div>
                       {/* <div className="text-sm text-pink-600">جاري تحميل التفاصيل الإضافية...</div> */}
                     </div>
@@ -797,44 +799,44 @@ function SettingsContent() {
 
               {/* LinkedIn Profile */}
               {isPlatformConnected('linkedin') && (
-                <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-100 border border-blue-200 rounded-lg">
+                <div className="p-6 gradient-border rounded-lg">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="text-3xl">💼</div>
+                    <img className="w-10 h-10" src="/linkedin.gif" alt="" />
                     <div>
-                      <h3 className="font-bold text-blue-900">ملف LinkedIn</h3>
-                      <p className="text-sm text-blue-700">الملف الشخصي المتصل</p>
+                      <h3 className="font-bold text-primary">ملف LinkedIn</h3>
+                      <p className="text-sm text-white">الملف الشخصي المتصل</p>
                     </div>
                   </div>
                   {loadingDetails.linkedin ? (
-                    <div className="text-sm text-blue-600">جاري تحميل التفاصيل...</div>
+                    <div className="text-sm text-gray-300">جاري تحميل التفاصيل...</div>
                   ) : platformDetails.linkedin ? (
                     <div className="space-y-2">
-                      <div className="text-sm">
-                        <span className="font-semibold text-blue-900">الاسم:</span>
-                        <span className="text-blue-700 ml-2">
+                      {/* <div className="text-sm">
+                        <span className="font-semibold text-primary">الاسم:</span>
+                        <span className="text-white ml-2">
                           {platformDetails.linkedin.profile?.firstName || platformDetails.linkedin.profile?.firstName?.localized?.en_US || 'غير محدد'} {' '}
                           {platformDetails.linkedin.profile?.lastName || platformDetails.linkedin.profile?.lastName?.localized?.en_US || 'غير محدد'}
                         </span>
-                      </div>
+                      </div> */}
                       <div className="text-sm">
-                        <span className="font-semibold text-blue-900">اسم الحساب:</span>
-                        <span className="text-blue-700 ml-2">{platformDetails.linkedin.name || 'غير محدد'}</span>
+                        <span className="font-semibold text-primary">اسم الحساب:</span>
+                        <span className="text-white ml-2">{platformDetails.linkedin.name || 'غير محدد'}</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-blue-600">فشل في تحميل التفاصيل</div>
+                    <div className="text-sm text-gray-300">فشل في تحميل التفاصيل</div>
                   )}
                 </div>
               )}
 
               {/* Twitter Account */}
               {isPlatformConnected('twitter') && (
-                <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-lg">
+                <div className="p-6 gradient-border rounded-lg">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="text-3xl">𝕏</div>
+                    <img className="w-10 h-10" src="/x.gif" alt="" />
                     <div>
-                      <h3 className="font-bold text-gray-900">حساب Twitter</h3>
-                      <p className="text-sm text-gray-700">الحساب المتصل</p>
+                      <h3 className="font-bold text-primary">حساب Twitter</h3>
+                      <p className="text-sm text-white">الحساب المتصل</p>
                     </div>
                   </div>
                   {loadingDetails.twitter ? (
@@ -842,53 +844,53 @@ function SettingsContent() {
                   ) : platformDetails.twitter ? (
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <span className="font-semibold text-gray-900">اسم المستخدم:</span>
-                        <span className="text-gray-700 ml-2">@{platformDetails.twitter.username || 'غير محدد'}</span>
+                        <span className="font-semibold text-primary">اسم المستخدم:</span>
+                        <span className="text-white ml-2">@{platformDetails.twitter.username || 'غير محدد'}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-gray-900">المتابعون:</span>
-                        <span className="text-gray-700 ml-2">{platformDetails.twitter.metrics?.followers_count ? platformDetails.twitter.metrics.followers_count.toLocaleString() : '0'}</span>
+                        <span className="font-semibold text-primary">المتابعون:</span>
+                        <span className="text-white ml-2">{platformDetails.twitter.metrics?.followers_count ? platformDetails.twitter.metrics.followers_count.toLocaleString() : '0'}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-gray-900">التغريدات:</span>
-                        <span className="text-gray-700 ml-2">{platformDetails.twitter.metrics?.tweet_count ? platformDetails.twitter.metrics.tweet_count.toLocaleString() : '0'}</span>
+                        <span className="font-semibold text-primary">التغريدات:</span>
+                        <span className="text-white ml-2">{platformDetails.twitter.metrics?.tweet_count ? platformDetails.twitter.metrics.tweet_count.toLocaleString() : '0'}</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-gray-600">فشل في تحميل التفاصيل</div>
+                    <div className="text-sm text-gray-300">فشل في تحميل التفاصيل</div>
                   )}
                 </div>
               )}
 
               {/* YouTube Channel */}
               {isPlatformConnected('youtube') && (
-                <div className="p-6 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-lg">
+                <div className="p-6 gradient-border rounded-lg">
                   <div className="flex items-center space-x-3 mb-4">
-                    <div className="text-3xl">▶️</div>
+                    <img className="w-10 h-10" src="/youtube.gif" alt="" />
                     <div>
-                      <h3 className="font-bold text-red-900">قناة YouTube</h3>
-                      <p className="text-sm text-red-700">القناة المتصلة</p>
+                      <h3 className="font-bold text-primary">قناة YouTube</h3>
+                      <p className="text-sm text-white">القناة المتصلة</p>
                     </div>
                   </div>
                   {loadingDetails.youtube ? (
-                    <div className="text-sm text-red-600">جاري تحميل التفاصيل...</div>
+                    <div className="text-sm text-gray-300">جاري تحميل التفاصيل...</div>
                   ) : platformDetails.youtube ? (
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <span className="font-semibold text-red-900">اسم القناة:</span>
-                        <span className="text-red-700 ml-2">{platformDetails.youtube.title || 'غير محدد'}</span>
+                        <span className="font-semibold text-primary">اسم القناة:</span>
+                        <span className="text-white ml-2">{platformDetails.youtube.title || 'غير محدد'}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-red-900">المشتركون:</span>
-                        <span className="text-red-700 ml-2">{platformDetails.youtube.statistics?.subscriberCount ? platformDetails.youtube.statistics.subscriberCount.toLocaleString() : '0'}</span>
+                        <span className="font-semibold text-primary">المشتركون:</span>
+                        <span className="text-white ml-2">{platformDetails.youtube.statistics?.subscriberCount ? platformDetails.youtube.statistics.subscriberCount.toLocaleString() : '0'}</span>
                       </div>
                       <div className="text-sm">
-                        <span className="font-semibold text-red-900">الفيديوهات:</span>
-                        <span className="text-red-700 ml-2">{platformDetails.youtube.statistics?.videoCount ? platformDetails.youtube.statistics.videoCount.toLocaleString() : '0'}</span>
+                        <span className="font-semibold text-primary">الفيديوهات:</span>
+                        <span className="text-white ml-2">{platformDetails.youtube.statistics?.videoCount ? platformDetails.youtube.statistics.videoCount.toLocaleString() : '0'}</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-red-600">فشل في تحميل التفاصيل</div>
+                    <div className="text-sm text-red-300">فشل في تحميل التفاصيل</div>
                   )}
                 </div>
               )}
@@ -950,11 +952,11 @@ function SettingsContent() {
 
       {/* Facebook Page Manager Modal */}
       {showFacebookPageManager && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-96 max-h-96 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-96 gradient-border max-h-96 overflow-y-auto">
             <CardHeader>
-              <CardTitle>اختيار صفحة Facebook</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <CardTitle className="text-white">اختيار صفحة Facebook</CardTitle>
+              <p className="text-sm text-primary">
                 اختر صفحة Facebook للنشر عليها
               </p>
             </CardHeader>
@@ -975,14 +977,14 @@ function SettingsContent() {
                   {availableFacebookPages.map((page) => (
                     <div
                       key={page.id}
-                      className={`flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-gray-50 ${
-                        currentFacebookPage?.pageId === page.id ? 'border-blue-500 bg-blue-50' : ''
+                      className={`flex items-center justify-between p-3 border rounded cursor-pointer  ${
+                        currentFacebookPage?.pageId === page.id ? 'bg-secondry border-text-primary' : ''
                       }`}
                       onClick={() => handleSwitchFacebookPage(page.id, page.name)}
                     >
                       <div>
-                        <p className="font-medium">{page.name}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-medium text-white">{page.name}</p>
+                        <p className="text-sm text-gray-200">
                           {page.fan_count ? `${page.fan_count} معجب` : '0 معجب'}
                         </p>
                       </div>
@@ -997,7 +999,7 @@ function SettingsContent() {
                 <Button
                   onClick={() => setShowFacebookPageManager(false)}
                   variant="secondary"
-                  className="flex-1"
+                  className="flex-1 primary-button after:bg-red-500"
                 >
                   إلغاء
                 </Button>

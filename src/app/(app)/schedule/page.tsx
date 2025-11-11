@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast-provider";
+import { toast } from "sonner";
 import { usePermissions } from "@/lib/permissions";
 import { 
   getMonthlySchedules, 
@@ -156,6 +157,7 @@ export default function SchedulePage() {
     if (!token) return;
     try {
       await updateWhatsAppSchedule(token, id, newDate, newContent, newMedia);
+      toast.success('تم تحديث جدولة واتساب بنجاح');
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -167,6 +169,7 @@ export default function SchedulePage() {
     if (!token) return;
     try {
       await deleteWhatsAppSchedule(token, id);
+      toast.success('تم حذف جدولة واتساب بنجاح');
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -182,6 +185,7 @@ export default function SchedulePage() {
         ...(newContent && { content: newContent }),
         ...(newMedia && { media: newMedia })
       });
+      toast.success('تم تحديث المنشور المجدول بنجاح');
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -193,6 +197,7 @@ export default function SchedulePage() {
     if (!token) return;
     try {
       await deletePlatformPostSchedule(token, id);
+      toast.success('تم حذف المنشور المجدول بنجاح');
       handleLoadMonthlySchedules();
       setIsEditModalOpen(false);
     } catch (error) {
@@ -281,6 +286,17 @@ export default function SchedulePage() {
       
       if (postYear === currentYear && postMonth === currentMonth && postDay === day) {
         daySchedules.push({ type: 'post', item: post });
+      }
+    });
+
+    // Include Telegram schedules for markers too
+    monthlySchedules.telegram?.forEach((tg: any) => {
+      const d = new Date(tg.scheduledAt);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      const dd = d.getDate();
+      if (y === currentYear && m === currentMonth && dd === day) {
+        daySchedules.push({ type: 'telegram', item: tg });
       }
     });
     
@@ -498,10 +514,10 @@ export default function SchedulePage() {
                   <div key={`${type}_${item.id}`} className="border rounded p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="text-sm font-medium">
-                          {type === 'whatsapp' ? 'واتساب' : type === 'telegram' ? 'تليجرام' : 'منشور'} #{item.id}
+                        <div className="text-sm font-medium text-primary">
+                          {type === 'whatsapp' ? 'واتساب' : type === 'telegram' ? 'تليجرام' : 'منشور'} 
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-200">
                           {new Date(item.scheduledAt).toLocaleString()}
                         </div>
                       </div>
@@ -509,9 +525,9 @@ export default function SchedulePage() {
                     
                     {/* Content editing */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">محتوى الرسالة</label>
+                      <label className="block text-sm font-medium mb-1 text-white">محتوى الرسالة</label>
                       <textarea
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        className="w-full px-3 py-2 border-primary bg-fixed-40 text-white rounded-md text-sm"
                         rows={3}
                         defaultValue={type === 'whatsapp' ? (item.payload?.message || '') : (item.content || '')}
                         onChange={(e) => (item.__newContent = e.target.value)}
@@ -521,20 +537,20 @@ export default function SchedulePage() {
                     
                     {/* Media editing */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">ملف الوسائط</label>
+                      <label className="block text-sm font-medium mb-1 text-white">ملف الوسائط</label>
                       <div className="space-y-2">
                         {item.mediaPath && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-200">
                             الوسائط الحالية: {item.mediaPath.split('/').pop()}
                           </div>
                         )}
                         <input
                           type="file"
                           accept="image/*,video/*"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          className="w-full px-3 py-2 border-primary bg-fixed-40 rounded-md text-sm text-white"
                           onChange={(e) => (item.__newMedia = e.target.files?.[0] || null)}
                         />
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-200">
                           اتركه فارغاً للاحتفاظ بالوسائط الحالية، أو اختر ملفاً جديداً للاستبدال
                         </div>
                       </div>
@@ -542,10 +558,10 @@ export default function SchedulePage() {
                     
                     {/* Time editing */}
                     <div>
-                      <label className="block text-sm font-medium mb-1">وقت الجدولة</label>
+                      <label className="block text-sm font-medium mb-1 text-white">وقت الجدولة</label>
                       <input 
                         type="datetime-local" 
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" 
+                        className="w-full px-3 py-2 border-primary bg-fixed-40 rounded-md text-sm text-white" 
                         defaultValue={(() => {
                           const date = new Date(item.scheduledAt);
                           // Get local time components (this handles timezone correctly)
@@ -563,6 +579,7 @@ export default function SchedulePage() {
                     {/* Action buttons */}
                     <div className="flex gap-2">
                       <Button 
+                      className="primary-button"
                         size="sm" 
                         onClick={() => {
                           if (type === 'whatsapp') {
@@ -574,7 +591,8 @@ export default function SchedulePage() {
                               // Telegram schedule update
                               const newDate = item.__newDate || item.scheduledAt;
                               telegramUpdateSchedule(token as string, item.id, newDate, item.__newContent ? { message: item.__newContent } : undefined)
-                                .then(()=> handleLoadMonthlySchedules());
+                                .then(()=> { toast.success('تم تحديث جدولة تليجرام بنجاح'); handleLoadMonthlySchedules(); setIsEditModalOpen(false); })
+                                .catch((e)=> console.error('Failed to update telegram schedule:', e));
                             }
                           }
                         }}
@@ -583,6 +601,7 @@ export default function SchedulePage() {
                       </Button>
                       <Button 
                         size="sm" 
+                        className="primary-button after:bg-red-500"
                         variant="destructive" 
                         onClick={() => {
                           if (type === 'whatsapp') {
@@ -592,7 +611,8 @@ export default function SchedulePage() {
                               handleDeletePost(item.id);
                             } else {
                               telegramDeleteSchedule(token as string, item.id)
-                                .then(()=> handleLoadMonthlySchedules());
+                                .then(()=> { toast.success('تم حذف جدولة تليجرام بنجاح'); handleLoadMonthlySchedules(); setIsEditModalOpen(false); })
+                                .catch((e)=> console.error('Failed to delete telegram schedule:', e));
                             }
                           }
                         }}

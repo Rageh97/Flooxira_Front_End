@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getFacebookPages, selectFacebookPage, getInstagramAccounts, selectInstagramAccount } from "@/lib/api";
+import { BookOpenCheckIcon } from "lucide-react";
 
 interface FacebookPage {
   id: string;
@@ -142,16 +143,16 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="gradient-border rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-center flex-1">
+            <h2 className="text-xl font-semibold text-center flex-1 text-white">
               {step === 'pages' ? 'اختر صفحة Facebook' : 'اختر حساب Instagram'}
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              className="text-red-500 hover:text-red-700 text-4xl font-bold"
             >
               ×
             </button>
@@ -159,19 +160,19 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
 
         {step === 'pages' && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 text-center">
+            <p className="text-sm text-primary text-center">
               اختر الصفحة التي تريد النشر عليها
             </p>
             
             {/* Debug info */}
-            <div className="text-xs text-gray-500 text-center">
-              صفحات متاحة: {pages.length} | تحميل: {loading ? 'نعم' : 'لا'}
+            <div className="text-xs text-gray-300 text-center">
+              صفحات متاحة: {pages.length} 
             </div>
             
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-sm text-gray-600 mt-2">جاري تحميل صفحات Facebook...</p>
+                <p className="text-sm text-gray-300 mt-2">جاري تحميل صفحات Facebook...</p>
               </div>
             ) : pages.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -180,21 +181,21 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
                     key={page.id} 
                     className={`cursor-pointer transition-all border rounded-lg p-4 ${
                       selectedPage === page.id 
-                        ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-200' 
-                        : 'hover:shadow-md border-gray-200'
+                        ? 'bg-fixed-40 border-primary' 
+                        : 'hover:shadow-md bg-fixed-40 border-primary'
                     }`}
                     onClick={() => {
                       console.log('Card clicked for page:', page.id);
                       handlePageSelection(page.id);
                     }}
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className="text-2xl">👥</div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl text-yellow-500 "><BookOpenCheckIcon /></div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-primary">{page.name}</h3>
-                        <p className="text-sm text-gray-600">صفحة Facebook</p>
+                        <p className="text-sm text-gray-200">صفحة Facebook</p>
                         {page.hasInstagram && (
-                          <p className="text-xs text-green-600">✓ مرتبط بحساب Instagram</p>
+                          <p className="text-xs text-green-500">✓ مرتبط بحساب Instagram</p>
                         )}
                       </div>
                       {selectedPage === page.id && (
@@ -209,8 +210,8 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
             ) : (
               <div className="text-center py-8">
                 <div className="text-4xl mb-4">👥</div>
-                <p className="text-gray-600 mb-4">لا توجد صفحات Facebook متاحة</p>
-                <p className="text-sm text-gray-500">تأكد من أن لديك صفحات Facebook مرتبطة بحسابك</p>
+                <p className="text-gray-300 mb-4">لا توجد صفحات Facebook متاحة</p>
+                <p className="text-sm text-gray-200">تأكد من أن لديك صفحات Facebook مرتبطة بحسابك</p>
               </div>
             )}
           </div>
@@ -218,14 +219,14 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
 
         {step === 'instagram' && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600 text-center">
+            <p className="text-sm text-primary text-center">
               اختر حساب Instagram المرتبط بصفحة Facebook
             </p>
             
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="text-sm text-gray-600 mt-2">جاري تحميل حسابات Instagram...</p>
+                <p className="text-sm text-gray-300 mt-2">جاري تحميل حسابات Instagram...</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -236,21 +237,21 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
                         key={instagram.instagramId} 
                         className={`cursor-pointer transition-all border rounded-lg p-4 ${
                           selectedInstagram === instagram.instagramId 
-                            ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-200' 
-                            : 'hover:shadow-md border-gray-200'
+                            ? 'bg-fixed-40 border-primary' 
+                            : 'hover:shadow-md bg-fixed-40 border-primary'
                         }`}
                         onClick={() => {
                           console.log('Instagram card clicked:', instagram.instagramId);
                           handleInstagramSelection(instagram.instagramId);
                         }}
                       >
-                        <div className="flex items-center space-x-3">
-                          <div className="text-2xl">📷</div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-2xl text-yellow-500"><BookOpenCheckIcon /></div>
                           <div className="flex-1">
                             <h3 className="font-semibold text-primary">@{instagram.username}</h3>
-                            <p className="text-sm text-gray-600">حساب Instagram</p>
-                            <p className="text-xs text-gray-500">مرتبط بصفحة: {instagram.pageName}</p>
-                            <p className="text-xs text-gray-500">{instagram.mediaCount} منشور</p>
+                            <p className="text-sm text-gray-200">حساب Instagram</p>
+                            <p className="text-xs text-gray-200">مرتبط بصفحة: {instagram.pageName}</p>
+                            <p className="text-xs text-gray-200">{instagram.mediaCount} منشور</p>
                           </div>
                           {selectedInstagram === instagram.instagramId && (
                             <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
@@ -263,9 +264,9 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <div className="text-4xl mb-4">📷</div>
-                    <p className="text-gray-600 mb-4">لا توجد حسابات Instagram مرتبطة</p>
-                    <Button onClick={handleSkipInstagram} variant="outline">
+                    <div className="text-4xl mb-4"><BookOpenCheckIcon /></div>
+                    <p className="text-gray-300 mb-4">لا توجد حسابات Instagram مرتبطة</p>
+                    <Button onClick={handleSkipInstagram} className="primary-button after:bg-red-500">
                       تخطي Instagram
                     </Button>
                   </div>
@@ -277,13 +278,13 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
 
           <div className="flex justify-between pt-4">
             {step === 'instagram' && (
-              <Button variant="outline" onClick={() => setStep('pages')}>
+              <Button className="text-white" onClick={() => setStep('pages')}>
                 ← العودة لاختيار الصفحة
               </Button>
             )}
             
             <div className="flex space-x-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button className="primary-button after:bg-red-500" variant="outline" onClick={onClose}>
                 إلغاء
               </Button>
               {step === 'instagram' && instagramAccounts.length === 0 && (

@@ -76,6 +76,7 @@ export default function CreatePostPage() {
   const { hasActiveSubscription, hasPlatformAccess, loading: permissionsLoading } = usePermissions();
   const { showSuccess, showError } = useToast();
   
+  const [error, setError] = useState<string>("");
   const [text, setText] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [when, setWhen] = useState<string>("");
@@ -312,74 +313,130 @@ export default function CreatePostPage() {
   const mutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("auth_token") || "";
-      const scheduledAt = when ? new Date(when).toISOString() : undefined;
-      let mediaUrl: string | undefined = undefined;
       
-      // Validation: Reels require a video file
+      // ✅ Enhanced validation: Check platforms first
+      if (platforms.length === 0) {
+        throw new Error('يرجى اختيار منصة واحدة على الأقل للنشر');
+      }
+      
+      // ✅ Enhanced validation: Check text content for text-only posts
+      if (contentType === 'articles' && type === 'text' && !text.trim()) {
+        throw new Error('يرجى إدخال نص للمنشور');
+      }
+      
+      // ✅ Enhanced validation: Check file size before upload
+      if (image) {
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (image.size > maxSize) {
+          throw new Error(`حجم الملف كبير جداً. الحد الأقصى هو 100 ميجابايت. حجم الملف الحالي: ${Math.round(image.size / 1024 / 1024)} ميجابايت`);
+        }
+        
+        // Validate file type
+        const isVideo = image.type?.startsWith('video');
+        const isImage = image.type?.startsWith('image');
+        
+        if (!isVideo && !isImage) {
+          throw new Error('نوع الملف غير مدعوم. يرجى رفع صورة أو فيديو');
+        }
+      }
+      
+      // ✅ Validation: Reels require a video file
       if (contentType === 'reels') {
         if (!image || !image.type?.startsWith('video')) {
           throw new Error('الريلز تتطلب ملف فيديو. يرجى رفع فيديو.');
         }
-        // Force type to video for reels
-        setType('video');
-        setFormat('reel');
       }
       
-      // Validation: Stories require a media file
+      // ✅ Validation: Stories require a media file
       if (contentType === 'stories') {
         if (!image) {
           throw new Error('الستوري يتطلب صورة أو فيديو. يرجى رفع ملف وسائط.');
         }
-        // Force type based on file type
-        if (image.type?.startsWith('video')) {
-          setType('video');
-        } else {
-          setType('photo');
-        }
-        setFormat('story');
       }
       
-      // Validation: photo/video types require a file (only for articles, not reels)
+      // ✅ Validation: photo/video types require a file (only for articles)
       if (contentType === 'articles' && (type === 'photo' || type === 'video') && !image) {
         throw new Error('يرجى رفع ملف وسائط للمنشورات التي تحتوي على صور أو فيديو.');
       }
       
-      // Upload file if present
+      // ✅ Enhanced scheduling validation
+      let scheduledAt: string | undefined = undefined;
+      if (when) {
+        const scheduleDate = new Date(when);
+        const now = new Date();
+        
+        // Validate date is in the future
+        if (scheduleDate <= now) {
+          throw new Error('يرجى اختيار تاريخ ووقت في المستقبل للجدولة');
+        }
+        
+        // Validate date is not too far in the future (e.g., 1 year)
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        if (scheduleDate > oneYearFromNow) {
+          throw new Error('لا يمكن الجدولة لأكثر من سنة من الآن');
+        }
+        
+        scheduledAt = scheduleDate.toISOString();
+      }
+      
+      let mediaUrl: string | undefined = undefined;
+      
+      // ✅ Upload file if present with enhanced error handling
       if (image) {
         console.log('Starting file upload for:', image.name, 'Type:', image.type, 'Size:', image.size);
         
-        const form = new FormData();
-        form.append("file", image);
-        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/uploads`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: form,
-        });
-        
-        console.log('Upload response status:', uploadRes.status);
-        console.log('Upload response headers:', Object.fromEntries(uploadRes.headers.entries()));
-        
-        const uploadText = await uploadRes.text();
-        console.log('Upload response text:', uploadText);
-        
-        let uploaded: any = null;
-        try { 
-          uploaded = uploadText ? JSON.parse(uploadText) : null; 
-          console.log('Parsed upload response:', uploaded);
-        } catch (e) {
-          console.error('Failed to parse upload response:', e);
-          throw new Error(`Upload failed (${uploadRes.status}): ${uploadText?.slice(0, 120)}`);
+        try {
+          const form = new FormData();
+          form.append("file", image);
+          
+          const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/uploads`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+          });
+          
+          console.log('Upload response status:', uploadRes.status);
+          
+          if (!uploadRes.ok) {
+            const errorText = await uploadRes.text();
+            let errorMsg = `فشل رفع الملف (${uploadRes.status})`;
+            
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorMsg = errorJson.message || errorJson.details || errorMsg;
+            } catch {
+              errorMsg = errorText?.slice(0, 200) || errorMsg;
+            }
+            
+            throw new Error(errorMsg);
+          }
+          
+          const uploadText = await uploadRes.text();
+          console.log('Upload response text:', uploadText);
+          
+          let uploaded: any = null;
+          try { 
+            uploaded = uploadText ? JSON.parse(uploadText) : null; 
+            console.log('Parsed upload response:', uploaded);
+          } catch (e) {
+            console.error('Failed to parse upload response:', e);
+            throw new Error(`فشل في معالجة استجابة الرفع: ${uploadText?.slice(0, 120)}`);
+          }
+          
+          if (!uploaded || !uploaded.url) {
+            throw new Error('لم يتم الحصول على رابط الملف من الخادم');
+          }
+          
+          mediaUrl = uploaded.url;
+          console.log('Extracted mediaUrl:', mediaUrl);
+          
+        } catch (uploadError: any) {
+          console.error('File upload error:', uploadError);
+          throw new Error(`فشل رفع الملف: ${uploadError.message || 'خطأ غير معروف'}`);
         }
         
-        if (!uploadRes.ok) {
-          const errorMsg = uploaded?.details || uploaded?.message || `Upload failed (${uploadRes.status})`;
-          throw new Error(errorMsg);
-        }
-        
-        mediaUrl = uploaded.url;
-        console.log('Extracted mediaUrl:', mediaUrl);
-        
-        // Harmonize type with uploaded file if needed
+        // ✅ Enhanced type validation after upload
         const isVideo = image.type?.startsWith('video');
         const isImage = image.type?.startsWith('image');
         
@@ -397,7 +454,7 @@ export default function CreatePostPage() {
         }
       }
       
-      // Ensure type and format based on content type
+      // ✅ Ensure type and format based on content type
       let finalType = type;
       let finalFormat = 'feed';
       
@@ -409,37 +466,48 @@ export default function CreatePostPage() {
         finalFormat = 'story';
       }
       
-      // Debug logging
+      // ✅ Debug logging with more details
       console.log('Creating post with payload:', {
         type: finalType,
-        content: text,
+        content: text?.substring(0, 100) + (text?.length > 100 ? '...' : ''),
         linkUrl: linkUrl || undefined,
-        mediaUrl,
+        mediaUrl: mediaUrl ? 'Present' : undefined,
         hashtags,
         format: finalFormat,
         scheduledAt,
         platforms,
+        platformsCount: platforms.length,
         pinterestBoardId: platforms.includes('pinterest') ? (pinterestBoardId || undefined) : undefined
       });
       
-      const res = await apiFetch<{ post: any }>("/api/posts", {
-        method: "POST",
-        body: JSON.stringify({ 
-          type: finalType, 
-          content: text, 
-          linkUrl: linkUrl || undefined, 
-          mediaUrl, 
-          hashtags, 
-          format: finalFormat, 
-          scheduledAt,
-          timezoneOffset: scheduledAt ? new Date().getTimezoneOffset() : undefined,
-          platforms,
-          pinterestBoardId: platforms.includes('pinterest') ? (pinterestBoardId || undefined) : undefined
-        }),
-        authToken: token,
-      });
-      
-      return res.post;
+      // ✅ Enhanced API call with better error handling
+      try {
+        const res = await apiFetch<{ post: any }>("/api/posts", {
+          method: "POST",
+          body: JSON.stringify({ 
+            type: finalType, 
+            content: text || '', 
+            linkUrl: linkUrl || undefined, 
+            mediaUrl, 
+            hashtags: hashtags || undefined, 
+            format: finalFormat, 
+            scheduledAt,
+            timezoneOffset: scheduledAt ? new Date().getTimezoneOffset() : undefined,
+            platforms,
+            pinterestBoardId: platforms.includes('pinterest') ? (pinterestBoardId || undefined) : undefined
+          }),
+          authToken: token,
+        });
+        
+        if (!res || !res.post) {
+          throw new Error('فشل في إنشاء المنشور - لم يتم استلام استجابة صحيحة');
+        }
+        
+        return res.post;
+      } catch (apiError: any) {
+        console.error('API call error:', apiError);
+        throw new Error(apiError.message || 'فشل في إنشاء المنشور. يرجى المحاولة مرة أخرى');
+      }
     },
     onSuccess: (post) => {
       // Show success toast
@@ -477,11 +545,28 @@ export default function CreatePostPage() {
       setPinterestBoardId("");
     },
     onError: (error: any) => {
+      console.error('[Create Post] Error:', error);
+      
+      // Enhanced error messages
+      let errorTitle = "حدث خطأ! ❌";
+      let errorMessage = error?.message || "فشل في نشر المحتوى. يرجى المحاولة مرة أخرى";
+      
+      // Provide more specific error messages
+      if (errorMessage.includes('رفع')) {
+        errorTitle = "خطأ في رفع الملف";
+      } else if (errorMessage.includes('جدولة') || errorMessage.includes('جدولة')) {
+        errorTitle = "خطأ في الجدولة";
+      } else if (errorMessage.includes('منصة') || errorMessage.includes('platform')) {
+        errorTitle = "خطأ في اختيار المنصات";
+      } else if (errorMessage.includes('limit') || errorMessage.includes('حد')) {
+        errorTitle = "تم الوصول للحد الأقصى";
+      }
+      
       // Show error toast
-      showError("حدث خطأ! ❌", error?.message || "فشل في نشر المحتوى. يرجى المحاولة مرة أخرى");
+      showError(errorTitle, errorMessage);
       
       // Check if error is related to post limits
-      if (error?.message?.includes('limit') || error?.message?.includes('حد')) {
+      if (errorMessage.includes('limit') || errorMessage.includes('حد')) {
         // Refresh stats to show updated limits
         const refreshStats = async () => {
           try {
@@ -499,6 +584,9 @@ export default function CreatePostPage() {
         
         refreshStats();
       }
+      
+      // Set error state for UI display
+      setError(errorMessage);
     },
   });
 
@@ -721,6 +809,24 @@ export default function CreatePostPage() {
 
   return (
     <div className="w-full mx-auto space-y-8 pb-12">
+      {/* Error Message Display */}
+      {error && (
+        <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-300 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between">
+            <p className="text-base text-red-800 font-semibold flex items-center gap-2">
+              <span className="text-2xl">❌</span>
+              <span>{error}</span>
+            </p>
+            <button
+              onClick={() => setError("")}
+              className="text-red-600 hover:text-red-800 text-xl font-bold px-2"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -919,7 +1025,7 @@ export default function CreatePostPage() {
               <h2 className="text-2xl font-bold text-white">
                 {contentType === 'stories' ? 'اختر منصة الستوري' : 'اختر المنصات للنشر'}
               </h2>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-200">
                 {contentType === 'stories' 
                   ? 'Telegram فقط - يتم النشر على قنوات ومجموعات Telegram' 
                   : 'يمكنك اختيار منصة أو أكثر للنشر عليها'}
@@ -1100,7 +1206,7 @@ export default function CreatePostPage() {
                       disabled={!isConnected}
                           className={`relative p-6 rounded-xl transition-all duration-300 ${
                         isSelected
-                              ? 'bg-light-custom shadow-2xl ring-4 ring-green-400/50' 
+                              ? 'bg-secondry shadow-2xl ring-4 ring-green-400/50' 
                           : isConnected
                               ? 'bg-card inner-shadow shadow-lg'
                               : 'bg-gray-800 opacity-70 cursor-not-allowed'
@@ -1136,18 +1242,18 @@ export default function CreatePostPage() {
           
           {/* Platform Details */}
           {platforms.length > 0 && (
-                    <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-2xl shadow-lg">
-                      <h3 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
-                        <span className="text-2xl">✓</span>
+                    <div className="p-6 bg-secondry rounded-2xl shadow-lg">
+                      <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <span className="text-2xl text-primary">✓</span>
                         المنصات المحددة للنشر
                       </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {platforms.includes('facebook') && isPlatformConnected('facebook') && (
-                            <div className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm">
-                              <div className="text-3xl">👥</div>
+                            <div className="flex items-center gap-3 p-4 bg-blue-500/20 rounded-xl shadow-sm">
+                              {/* <div className="text-3xl">👥</div> */}
                               <div className="flex-1">
-                                <div className="text-sm font-bold text-gray-900">صفحة Facebook</div>
-                                <div className="text-xs text-gray-600">
+                                <div className="text-sm font-bold text-primary">صفحة Facebook</div>
+                                <div className="text-xs text-gray-200">
                           {currentFacebookPage ? 
                                     `${currentFacebookPage.pageName} (${currentFacebookPage.fanCount} معجب)` : 
                                     'محددة تلقائياً'}
@@ -1158,11 +1264,11 @@ export default function CreatePostPage() {
                 )}
                 
                 {platforms.includes('instagram') && isPlatformConnected('instagram') && currentFacebookPage?.instagramId && (
-                            <div className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm">
-                              <div className="text-3xl">📷</div>
+                            <div className="flex items-center gap-3 p-4 bg-blue-500/20 rounded-xl shadow-sm">
+                              {/* <div className="text-3xl">📷</div> */}
                               <div className="flex-1">
-                                <div className="text-sm font-bold text-gray-900">حساب Instagram</div>
-                                <div className="text-xs text-gray-600">
+                                <div className="text-sm font-bold text-primary">حساب Instagram</div>
+                                <div className="text-xs text-gray-200">
                           {instagramAccount ? 
                                     `@${instagramAccount.username} (${instagramAccount.followersCount} متابع)` : 
                                     currentFacebookPage?.instagramUsername ? 
@@ -1186,11 +1292,11 @@ export default function CreatePostPage() {
                 )} */}
                 
                 {platforms.includes('youtube') && isPlatformConnected('youtube') && (
-                          <div className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm">
-                            <div className="text-3xl">▶️</div>
+                          <div className="flex items-center gap-3 p-4 bg-blue-500/20 rounded-xl shadow-sm">
+                            {/* <div className="text-3xl">▶️</div> */}
                             <div className="flex-1">
-                              <div className="text-sm font-bold text-gray-900">قناة YouTube</div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-sm font-bold text-primary">قناة YouTube</div>
+                              <div className="text-xs text-gray-200">
                                 {youtubeChannel ? 
                                   `${youtubeChannel.title} (${parseInt(youtubeChannel.subscriberCount).toLocaleString()} مشترك)` : 
                                   'جاري التحميل...'}
@@ -1201,11 +1307,11 @@ export default function CreatePostPage() {
                 )}
                 
                 {platforms.includes('twitter') && isPlatformConnected('twitter') && (
-                          <div className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm">
-                            <div className="text-3xl">𝕏</div>
+                          <div className="flex items-center gap-3 p-4 bg-blue-500/20 rounded-xl shadow-sm">
+                            {/* <div className="text-3xl">𝕏</div> */}
                             <div className="flex-1">
-                              <div className="text-sm font-bold text-gray-900">حساب Twitter</div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-sm font-bold text-primary">حساب Twitter</div>
+                              <div className="text-xs text-gray-200">
                                 {twitterAccount ? 
                                   `@${twitterAccount.username}` : 
                                   'جاري التحميل...'}
@@ -1216,11 +1322,11 @@ export default function CreatePostPage() {
                 )}
                 
                 {platforms.includes('linkedin') && isPlatformConnected('linkedin') && (
-                          <div className="flex items-center gap-3 p-4 bg-white rounded-xl shadow-sm">
-                            <div className="text-3xl">💼</div>
+                          <div className="flex items-center gap-3 p-4 bg-blue-500/20 rounded-xl shadow-sm">
+                            {/* <div className="text-3xl">💼</div> */}
                             <div className="flex-1">
-                              <div className="text-sm font-bold text-gray-900">حساب LinkedIn</div>
-                              <div className="text-xs text-gray-600">
+                              <div className="text-sm font-bold text-primary">حساب LinkedIn</div>
+                              <div className="text-xs text-gray-200">
                                 {linkedinProfile ? 
                                   linkedinProfile.name : 
                                   'جاري التحميل...'}
@@ -1403,10 +1509,15 @@ export default function CreatePostPage() {
                 className="h-12 w-full px-3 rounded-xl bg-[#011910] border appearance-none text-white"
               />
               {image && (
-                <p className="mt-2 text-sm text-green-400 font-semibold flex items-center gap-2">
-                  <span>✓</span>
-                  تم اختيار: {image.name}
-                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm text-green-400 font-semibold flex items-center gap-2">
+                    <span>✓</span>
+                    تم اختيار: {image.name}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    الحجم: {Math.round(image.size / 1024)} KB | النوع: {image.type || 'غير معروف'}
+                  </p>
+                </div>
               )}
               {contentType === 'reels' && (
                 <p className="mt-2 text-xs text-gray-400">الريلز تتطلب ملف فيديو</p>
@@ -1440,30 +1551,31 @@ export default function CreatePostPage() {
           <div className="flex gap-4 pt-4">
             <Button 
               onClick={() => {
-                setActionType(when ? 'schedule' : 'publish');
+                setError(""); // Clear any previous errors
+                if (!when) {
+                  setError('يرجى اختيار تاريخ ووقت للجدولة');
+                  return;
+                }
+                setActionType('schedule');
                 mutation.mutate();
               }} 
               disabled={
                 mutation.isPending || 
                 platforms.length === 0 || 
+                !when ||
                 (contentType === 'stories' && platforms.includes('telegram') && telegramGroups.length === 0) ||
                 (postUsageStats?.isAtLimit || false)
               }
               className=" h-14 primary-button after:bg-yellow-600 text-white text-lg font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {when ? (
-                <span className="flex items-center gap-2">
-                  حفظ وجدولة
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  حفظ وجدولة
-                </span>
-              )}
+              <span className="flex items-center gap-2">
+                {mutation.isPending && actionType === 'schedule' ? 'جاري الجدولة...' : 'حفظ وجدولة'}
+              </span>
             </Button>
             
             <Button  
               onClick={() => { 
+                setError(""); // Clear any previous errors
                 setWhen(""); 
                 setActionType('publish');
                 mutation.mutate(); 
@@ -1477,7 +1589,7 @@ export default function CreatePostPage() {
               className=" h-14 primary-button text-white text-lg font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center gap-2">
-                نشر الآن
+                {mutation.isPending && actionType === 'publish' ? 'جاري النشر...' : 'نشر الآن'}
               </span>
             </Button>
           </div>

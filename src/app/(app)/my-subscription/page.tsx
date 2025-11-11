@@ -136,7 +136,7 @@ export default function MySubscriptionPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ar-SA', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -216,8 +216,8 @@ export default function MySubscriptionPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-white">اشتراكي</h1>
-        <p className="text-sm text-gray-300">معلومات اشتراكك وصلاحياتك</p>
+        {/* <h1 className="text-2xl font-semibold text-white">اشتراكي</h1> */}
+        <p className="text-2xl font-bold text-white">معلومات اشتراكك وصلاحياتك</p>
       </div>
 
       {/* Subscription Overview */}
@@ -290,7 +290,7 @@ export default function MySubscriptionPage() {
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#011910] text-white border-b border-gray-200">
+              <thead className="bg-[#01191040] text-white border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-right text-md font-medium text-white uppercase tracking-wider">
                     الفئة

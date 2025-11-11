@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/toast-provider";
+
 import { 
   uploadKnowledgeBase, 
   getKnowledgeBase, 
@@ -32,7 +33,8 @@ import { usePathname } from "next/navigation";
 
 export default function TelegramBotPage() {
   const { canManageTelegram, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
-  
+     const { showSuccess, showError } = useToast();
+
   const [loading, setLoading] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [knowledgeEntries, setKnowledgeEntries] = useState<Array<{ id: number; keyword: string; answer: string; isActive: boolean }>>([]);
@@ -67,6 +69,9 @@ export default function TelegramBotPage() {
   const [buttonColorDefault, setButtonColorDefault] = useState<string>("");
   const [activeTemplates, setActiveTemplates] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [loadingCreate, setLoadingCreate] = useState(false);
+  const [loadingSend, setLoadingSend] = useState(false);
   const [permissions, setPermissions] = useState<any>({
     can_manage_chat: false,
     can_delete_messages: false,
@@ -118,6 +123,8 @@ export default function TelegramBotPage() {
   useEffect(() => {
     if (activeTab === 'campaigns' && token) {
       loadCampaigns();
+      // Also load bot chats so the picker is prefilled
+      loadBotChats();
     }
   }, [activeTab, token]);
 
@@ -184,7 +191,7 @@ export default function TelegramBotPage() {
         setKnowledgeEntries(data.entries);
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     }
   }
 
@@ -244,9 +251,9 @@ export default function TelegramBotPage() {
           buttonColorDefault: buttonColorDefault || null,
         })
       });
-      toast.success("تم حفظ الإعدادات");
+      showSuccess("تم حفظ الإعدادات");
     } catch (e:any) {
-      toast.error(e?.message || "فشل في حفظ الإعدادات");
+      showError(e?.message || "فشل في حفظ الإعدادات");
     }
   }
 
@@ -258,7 +265,7 @@ export default function TelegramBotPage() {
         setContacts(res.contacts || []);
       }
     } catch (e:any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally { setLoading(false); }
   }
 
@@ -270,17 +277,17 @@ export default function TelegramBotPage() {
       if (res.success) setCampaigns(res.jobs || []);
     } catch (e:any) {
       console.error('Error loading campaigns:', e); // Debug log
-      toast.error(e.message);
+      showError(e.message);
     } finally { setLoading(false); }
   }
 
   async function createCampaign() {
     if (selectedTargets.length === 0 || !campaignMessage.trim()) {
-      toast.error('اختر هدف واحد على الأقل وأدخل رسالة');
+      showError('اختر هدف واحد على الأقل وأدخل رسالة');
       return;
     }
     try {
-      setLoading(true);
+      setLoadingCreate(true);
       const payload: any = { targets: selectedTargets, message: campaignMessage.trim(), throttleMs: campaignThrottle };
       if (campaignMediaUrl.trim()) {
         payload.mediaUrl = campaignMediaUrl.trim();
@@ -291,35 +298,35 @@ export default function TelegramBotPage() {
       }
       const res = await telegramBotCreateCampaign(token, payload);
       if (res.success) {
-        toast.success('تم جدولة الحملة بنجاح');
+        showSuccess('تم جدولة الحملة بنجاح');
         setCampaignMessage('');
         setCampaignWhen('');
         setSelectedTargets([]);
         await loadCampaigns();
       }
     } catch (e:any) {
-      toast.error(e.message);
-    } finally { setLoading(false); }
+      showError(e.message);
+    } finally { setLoadingCreate(false); }
   }
 
   async function sendCampaignNow() {
     if (selectedTargets.length === 0 || !campaignMessage.trim()) {
-      toast.error('اختر هدف واحد على الأقل وأدخل رسالة');
+      showError('اختر محادثة على الأقل وأدخل رسالة');
       return;
     }
     try {
-      setLoading(true);
+      setLoadingSend(true);
       const payload: any = { targets: selectedTargets, message: campaignMessage.trim(), throttleMs: campaignThrottle };
       if (campaignMediaUrl.trim()) payload.mediaUrl = campaignMediaUrl.trim();
       await telegramBotCreateCampaign(token, payload);
-      toast.success('تم إرسال الحملة الآن');
+      showSuccess('تم إرسال الحملة بنجاح');
       setCampaignMessage('');
       setCampaignMediaUrl('');
       setSelectedTargets([]);
       await loadCampaigns();
     } catch (e:any) {
-      toast.error(e.message);
-    } finally { setLoading(false); }
+      showError(e.message);
+    } finally { setLoadingSend(false); }
   }
 
   async function loadChatInfo() {
@@ -329,10 +336,10 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetChat(token, chatId);
       if (res.success) {
         setChatInfo(res.chat);
-        toast.success("تم تحميل معلومات المحادثة!");
+        showSuccess("تم تحميل معلومات المحادثة!");
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -345,10 +352,10 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetChatAdmins(token, chatId);
       if (res.success) {
         setChatAdmins(res.administrators || []);
-        toast.success("تم تحميل الأدمن!");
+        showSuccess("تم تحميل الأدمن!");
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -360,12 +367,12 @@ export default function TelegramBotPage() {
       setLoading(true);
       const res = await telegramBotPromoteMember(token, chatId, promoteMemberId, permissions);
       if (res.success) {
-        toast.success("تم ترقية العضو بنجاح!");
+        showSuccess("تم ترقية العضو بنجاح!");
         setPromoteMemberId("");
         await loadChatAdmins();
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -377,10 +384,10 @@ export default function TelegramBotPage() {
       const res = await telegramBotGetUpdates(token);
       if (res.success) {
         setUpdates(res.updates || []);
-        toast.success("تم تحميل التحديثات!");
+        showSuccess("تم تحميل التحديثات!");
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -397,10 +404,10 @@ export default function TelegramBotPage() {
           members: res.members || [],
           note: res.note || ''
         });
-        toast.success("تم تحميل الأعضاء!");
+        showSuccess("تم تحميل الأعضاء!");
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -412,10 +419,10 @@ export default function TelegramBotPage() {
       setLoading(true);
       const res = await telegramBotExportMembers(token, chatId);
       if (res.success) {
-        toast.success(`تم تحميل ملف Excel: ${res.filename}`);
+        showSuccess(`تم تحميل ملف Excel: ${res.filename}`);
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -423,17 +430,15 @@ export default function TelegramBotPage() {
 
   async function loadBotChats() {
     try {
-      setLoading(true);
+      setLoadingChats(true);
       const res = await telegramBotGetBotChats(token);
       if (res.success) {
         setBotChats(res.chats || []);
-        toast.success(`تم العثور على ${res.total || 0} محادثة حيث بوتك نشط!`);
+        showSuccess(`تم العثور على ${res.total || 0} محادثة حيث بوتك نشط!`);
       }
     } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
+      showError(e.message);
+    } finally { setLoadingChats(false); }
   }
 
   async function handleFileUpload() {
@@ -443,14 +448,14 @@ export default function TelegramBotPage() {
       setLoading(true);
       const result = await uploadKnowledgeBase(token, file);
       if (result.success) {
-        toast.success("تم رفع قاعدة المعرفة بنجاح!");
+        showSuccess("تم رفع قاعدة المعرفة بنجاح!");
         setFile(null);
         await loadKnowledgeBase();
       } else {
-        toast.error(result.message || "فشل الرفع");
+        showError(result.message || "فشل الرفع");
       }
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -461,7 +466,7 @@ export default function TelegramBotPage() {
       await deleteKnowledgeEntry(token, id);
       await loadKnowledgeBase();
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     }
   }
 
@@ -471,9 +476,9 @@ export default function TelegramBotPage() {
       // Save OpenAI key and auto-response settings
       localStorage.setItem('telegram_openai_key', openaiKey);
       localStorage.setItem('telegram_auto_response', autoResponse.toString());
-      toast.success("تم حفظ الإعدادات بنجاح!");
+      showSuccess("تم حفظ الإعدادات بنجاح!");
     } catch (e: any) {
-      toast.error(e.message);
+      showError(e.message);
     } finally {
       setLoading(false);
     }
@@ -582,13 +587,13 @@ export default function TelegramBotPage() {
                         setLoading(true);
                       const res = await telegramBotDisconnect(token);
                         if (res.success) {
-                        toast.success("تم قطع اتصال البوت بنجاح");
+                        showSuccess("تم قطع اتصال البوت بنجاح");
                         setBotInfo(null);
                         } else {
-                        toast.error(res.message || "فشل في قطع اتصال البوت");
+                        showError(res.message || "فشل في قطع اتصال البوت");
                         }
                       } catch (e: any) {
-                      toast.error(e.message || "فشل في قطع اتصال البوت");
+                      showError(e.message || "فشل في قطع اتصال البوت");
                       } finally {
                         setLoading(false);
                       }
@@ -670,14 +675,18 @@ export default function TelegramBotPage() {
                       setLoading(true);
                       const res = await telegramBotConnect(token, botToken);
                       if (res.success) {
-                        toast.success("تم ربط البوت بنجاح");
+                        showSuccess("تم ربط البوت بنجاح");
                         setBotToken("");
                         await loadBotInfo();
+                        // Prefetch chats/groups after successful connection
+                        try { await loadBotChats(); } catch {}
+                        // Navigate to campaigns to allow selecting groups quickly
+                        setActiveTab('campaigns');
                       } else {
-                        toast.error(res.message || "فشل في ربط البوت");
+                        showError(res.message || "فشل في ربط البوت");
                       }
                     } catch (e: any) {
-                      toast.error(e.message || "فشل في ربط البوت");
+                      showError(e.message || "فشل في ربط البوت");
                     } finally {
                       setLoading(false);
                     }
@@ -797,7 +806,7 @@ export default function TelegramBotPage() {
                 onClick={() => {
                   const all = contacts.map((c:any)=> c.chatId);
                   setSelectedTargets(Array.from(new Set([...(selectedTargets as string[]), ...all])));
-                  toast.success(`تم إضافة ${all.length} جهة اتصال إلى الأهداف`);
+                  showSuccess(`تم إضافة ${all.length} جهة اتصال إلى الأهداف`);
                 }}
                 className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
@@ -899,10 +908,10 @@ export default function TelegramBotPage() {
                   <Button 
                     size="sm" 
                     onClick={loadBotChats} 
-                    disabled={loading} 
+                    disabled={loadingChats} 
                     className="primary-button"
                   >
-                    {loading ? (
+                    {loadingChats ? (
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>جاري التحميل...</span>
@@ -910,7 +919,7 @@ export default function TelegramBotPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                        
-                        <span>تحميل المجموعات</span>
+                        <span>تحميل المجموعات والقنوات والجهات</span>
                       </div>
                     )}
                   </Button>
@@ -920,7 +929,7 @@ export default function TelegramBotPage() {
                       onClick={() => {
                       const all = botChats.map((c:any)=> c.id);
                       setSelectedTargets(prev => Array.from(new Set([...(prev||[]), ...all])));
-                      toast.success(`✅ تم إضافة ${all.length} مجموعة/قناة إلى الأهداف`);
+                      showSuccess(`✅ تم إضافة ${all.length} مجموعة/قناة إلى الأهداف`);
                       }} 
                       className="primary-button after:bg-red-600"
                     >
@@ -970,7 +979,7 @@ export default function TelegramBotPage() {
               
               </div>
               {botChats.length > 0 ? (
-                <div className="max-h-64 overflow-y-auto space-y-3 p-4 bg-[#011910] rounded-lg border border-gray-700 custom-scrollbar">
+                <div className="max-h-64 overflow-y-auto space-y-3 p-4 bg-secondry rounded-lg border border-gray-700 custom-scrollbar">
                   {botChats.map((c:any, i:number) => (
                     <div key={i} className="p-4 bg-gray-800/50 rounded-lg flex items-center justify-between hover:bg-gray-800/70 transition-colors border border-gray-700">
                       <div className="flex items-center gap-3 flex-1">
@@ -1050,7 +1059,7 @@ export default function TelegramBotPage() {
                   className="bg-[#011910] border-gray-700 text-white"
                 />
               </div>
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium mb-2 text-white">فترة التأخير (ملي ثانية)</label>
                 <Input 
                   type="number" 
@@ -1058,7 +1067,7 @@ export default function TelegramBotPage() {
                   onChange={(e)=>setCampaignThrottle(Number(e.target.value||1500))}
                   className="bg-[#011910] border-gray-700 text-white"
                 />
-              </div>
+              </div> */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">رفع الوسائط (اختياري)</label>
                 <div className="mt-2">
@@ -1081,12 +1090,12 @@ export default function TelegramBotPage() {
                       const data = await res.json();
                       if (data?.url) {
                         setCampaignMediaUrl(data.url);
-                          toast.success('تم رفع الوسائط بنجاح');
+                          showSuccess('تم رفع الوسائط بنجاح');
                       } else {
-                          toast.error('فشل في رفع الوسائط');
+                          showError('فشل في رفع الوسائط');
                         }
                       } catch (e:any) { 
-                        toast.error(e.message); 
+                        showError(e.message); 
                       } finally { 
                         setUploadingMedia(false); 
                       }
@@ -1121,10 +1130,10 @@ export default function TelegramBotPage() {
             <div className="flex gap-3 pt-4">
               <Button 
                 onClick={createCampaign} 
-                disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
+                disabled={loadingCreate || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
                 className="primary-button after:bg-yellow-500"
               >
-                {loading ? (
+                {loadingCreate ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>جاري الجدولة...</span>
@@ -1138,10 +1147,10 @@ export default function TelegramBotPage() {
           </Button>
             <Button 
                 onClick={sendCampaignNow} 
-                disabled={loading || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
+                disabled={loadingSend || (!campaignMessage.trim()) || (selectedTargets.length===0 && selectedTagIds.length===0)} 
                 className="primary-button "
               >
-                {loading ? (
+                {loadingSend ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>جاري الإرسال...</span>
@@ -1152,22 +1161,7 @@ export default function TelegramBotPage() {
               </div>
             )}
               </Button>
-              <Button 
-                onClick={loadCampaigns} 
-                disabled={loading} 
-                className="primary-button after:bg-green-500"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>جاري التحميل...</span>
-            </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span>تحديث الحملات</span>
-              </div>
-            )}
-              </Button>
+           
             </div>
         </CardContent>
       </Card>
@@ -1458,7 +1452,7 @@ export default function TelegramBotPage() {
                 onClick={() => {
                   const all = botChats.map((c:any)=> c.id);
                   setSelectedTargets(Array.from(new Set([...selectedTargets, ...all])));
-                  toast.success(`تم إضافة ${all.length} محادثة إلى الأهداف`);
+                  showSuccess(`تم إضافة ${all.length} محادثة إلى الأهداف`);
                 }}
                 disabled={loading || botChats.length===0}
                 className="bg-yellow-600 text-white"
@@ -1507,7 +1501,7 @@ export default function TelegramBotPage() {
                           <button
                             onClick={() => {
                               navigator.clipboard.writeText(chat.id);
-                              toast.success(`تم نسخ معرف المحادثة: ${chat.id}`);
+                              showSuccess(`تم نسخ معرف المحادثة: ${chat.id}`);
                             }}
                             className="text-xs text-blue-400 ml-2 hover:text-blue-300"
                           >
@@ -1544,7 +1538,7 @@ export default function TelegramBotPage() {
                           onClick={() => {
                             setChatId(chat.id);
                             setActiveTab('chat-management');
-                            toast.success(`تم التبديل إلى إدارة المحادثة: ${chat.title}`);
+                            showSuccess(`تم التبديل إلى إدارة المحادثة: ${chat.title}`);
                           }}
                           className="bg-green-500 text-white text-xs"
                         >
@@ -1554,7 +1548,7 @@ export default function TelegramBotPage() {
                           size="sm"
                           onClick={() => {
                             if (!selectedTargets.includes(chat.id)) setSelectedTargets((prev: string[]) => ([...prev, chat.id] as string[]));
-                            toast.success(`تم إضافة ${chat.id} إلى الأهداف`);
+                            showSuccess(`تم إضافة ${chat.id} إلى الأهداف`);
                           }}
                           className="bg-emerald-600 text-white text-xs"
                         >
@@ -1569,10 +1563,10 @@ export default function TelegramBotPage() {
                                 setLoading(true);
                                 const res = await telegramBotExportMembers(token, chat.id);
                                 if (res.success) {
-                                  toast.success(`تم تحميل ملف Excel: ${res.filename}`);
+                                  showSuccess(`تم تحميل ملف Excel: ${res.filename}`);
                                 }
                               } catch (e: any) {
-                                toast.error(e.message);
+                                showError(e.message);
                               } finally {
                                 setLoading(false);
                               }

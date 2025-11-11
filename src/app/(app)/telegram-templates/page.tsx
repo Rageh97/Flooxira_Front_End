@@ -10,9 +10,13 @@ import {
   testTemplateMatching,
   type TelegramTemplate 
 } from '@/lib/telegramTemplateApi';
+import { useToast } from "@/components/ui/toast-provider";
+import Link from 'next/link';
+import Loader from '@/components/Loader';
 
 export default function TelegramTemplatesPage() {
   const { user, loading: authLoading } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [templates, setTemplates] = useState<TelegramTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -31,7 +35,7 @@ export default function TelegramTemplatesPage() {
     
     // Check if user is authenticated
     if (!user) {
-      alert('يجب تسجيل الدخول أولاً');
+      showError('يجب تسجيل الدخول أولاً');
       window.location.href = '/sign-in';
       return;
     }
@@ -60,13 +64,13 @@ export default function TelegramTemplatesPage() {
       if (response.success) {
         await loadTemplates();
         setShowCreateModal(false);
-        alert('تم إنشاء القالب بنجاح!');
+        showSuccess('تم إنشاء القالب بنجاح!');
       } else {
-        alert('فشل في إنشاء القالب: ' + (response.message || 'خطأ غير معروف'));
+        showError('فشل في إنشاء القالب: ' + (response.message || 'خطأ غير معروف'));
       }
     } catch (error: any) {
       console.error('Failed to create template:', error?.message || error);
-      alert('فشل في إنشاء القالب: ' + (error?.message || 'خطأ غير معروف'));
+      showError('فشل في إنشاء القالب: ' + (error?.message || 'خطأ غير معروف'));
     }
   };
 
@@ -97,7 +101,7 @@ export default function TelegramTemplatesPage() {
 
   const handleTestTemplate = async () => {
     if (!testMessage.trim()) {
-      alert('يرجى إدخال رسالة للاختبار');
+      showError('يرجى إدخال رسالة للاختبار');
       return;
     }
 
@@ -106,7 +110,7 @@ export default function TelegramTemplatesPage() {
       setTestResult(response.data);
     } catch (error: any) {
       console.error('Failed to test template:', error?.message || error);
-      alert('فشل في اختبار القالب: ' + (error?.message || 'خطأ غير معروف'));
+      showError('فشل في اختبار القالب: ' + (error?.message || 'خطأ غير معروف'));
     }
   };
 
@@ -122,14 +126,7 @@ export default function TelegramTemplatesPage() {
     <div className="min-h-screen  p-6">
       <div className="w-full mx-auto">
         {/* Page Header */}
-        <div className="mb-8 text-center">
-         
-          <h1 className="text-4xl font-bold text-primary mb-2">
-            ادارة القوالب
-          </h1>
-          <p className="text-gray-400 text-lg">إدارة القوالب التفاعلية للتيليجرام بسهولة واحترافية</p>
-        </div>
-
+      
         {/* Action Header */}
         <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -154,9 +151,9 @@ export default function TelegramTemplatesPage() {
         <AutoReplyPanel templates={templates} />
 
         {/* Test Templates */}
-        <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
+        {/* <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
           <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <span className="text-2xl">🧪</span>
+           
             اختبار القوالب
           </h3>
           <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -165,7 +162,7 @@ export default function TelegramTemplatesPage() {
               <input
                 type="text"
                 placeholder="اكتب رسالة لاختبار القوالب..."
-                className="w-full px-4 py-3 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-gray-500"
+                className="w-full px-4 py-3 bg-fixed-40 border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-gray-500"
                 value={testMessage}
                 onChange={(e) => setTestMessage(e.target.value)}
               />
@@ -200,29 +197,29 @@ export default function TelegramTemplatesPage() {
               )}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Filters */}
-        <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
+        {/* <div className="gradient-border rounded-2xl shadow-xl p-6 mb-6 ">
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-            <span className="text-xl">🔍</span>
-            تصفية وبحث
+           
+           البحث
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-emerald-200 mb-2">البحث</label>
+              <label className="block text-sm font-semibold text-white mb-2">البحث</label>
               <input
                 type="text"
                 placeholder="ابحث في القوالب..."
-                className="w-full px-4 py-2.5 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-gray-500"
+                className="w-full px-4 py-2.5 bg-fixed-40 border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white placeholder-gray-500"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-emerald-200 mb-2">الحالة</label>
+              <label className="block text-sm font-semibold text-white mb-2">الحالة</label>
               <select
-                className="w-full px-4 py-2.5 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
+                className="w-full px-4 py-2.5 bg-fixed-40 border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
                 value={filters.isActive === undefined ? '' : filters.isActive.toString()}
                 onChange={(e) => setFilters({ 
                   ...filters, 
@@ -235,9 +232,9 @@ export default function TelegramTemplatesPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-emerald-200 mb-2">نوع القالب</label>
+              <label className="block text-sm font-semibold text-white mb-2">نوع القالب</label>
               <select
-                className="w-full px-4 py-2.5 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
+                className="w-full px-4 py-2.5 bg-fixed-40 border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white"
                 value={filters.templateType}
                 onChange={(e) => setFilters({ ...filters, templateType: e.target.value })}
               >
@@ -253,11 +250,11 @@ export default function TelegramTemplatesPage() {
                 onClick={() => setFilters({ isActive: undefined, templateType: '', search: '' })}
                 className="w-full primary-button after:bg-red-500"
               >
-                🔄 مسح الفلاتر
+                مسح الفلاتر
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Templates Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -273,11 +270,9 @@ export default function TelegramTemplatesPage() {
 
         {templates.length === 0 && !loading && (
           <div className="text-center py-16 gradient-border rounded-2xl ">
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-full mb-6">
-              <span className="text-6xl">📱</span>
-            </div>
+            
             <h3 className="text-2xl font-bold text-white mb-3">لا توجد قوالب بعد</h3>
-            <p className="text-emerald-200 mb-6 text-lg">ابدأ بإنشاء قالب تفاعلي جديد للتيليجرام</p>
+            <p className="text-primary mb-6 text-lg">ابدأ بإنشاء قالب تفاعلي جديد للتيليجرام</p>
             <button
               onClick={() => setShowCreateModal(true)}
               className="primary-button"
@@ -307,8 +302,7 @@ export default function TelegramTemplatesPage() {
 }
 
 // Template Card Component
-import Link from 'next/link';
-import Loader from '@/components/Loader';
+ 
 
 function TemplateCard({ 
   template, 
@@ -374,7 +368,7 @@ function TemplateCard({
         {template.mediaUrl && (
           <div className="mb-4 bg-gray-800/50 p-3 rounded-lg border border-emerald-500/10">
             <div className="text-xs text-emerald-400 mb-1 font-semibold">📎 وسائط القالب</div>
-            <a href={template.mediaUrl} target="_blank" rel="noreferrer" className="text-emerald-300 hover:text-emerald-200 underline truncate inline-block max-w-full text-sm">
+            <a href={template.mediaUrl} target="_blank" rel="noreferrer" className="text-emerald-300 hover:text-white underline truncate inline-block max-w-full text-sm">
               {template.mediaUrl}
             </a>
           </div>
@@ -383,7 +377,7 @@ function TemplateCard({
         <div className="flex items-center justify-between text-sm mb-4">
           <div className="flex gap-4">
             <span className="text-primary font-semibold bg-secondry px-3 py-1 rounded-lg">
-              🔘 {template.buttons?.length || 0} أزرار
+              {template.buttons?.length || 0} أزرار
             </span>
             {/* <span className="text-green-300 font-semibold bg-green-500/10 px-3 py-1 rounded-lg">
               📊 {template.variables?.length || 0} متغيرات
@@ -396,19 +390,19 @@ function TemplateCard({
             href={`/telegram-templates/${template.id}`}
             className="flex-1 primary-button  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
           >
-            🔘 إدارة الأزرار
+           إدارة الأزرار
           </Link>
           <button
             onClick={() => onEdit(template)}
             className="flex-1 primary-button  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
           >
-            ✏️ تعديل
+            تعديل
           </button>
           <button
             onClick={() => onDelete(template.id)}
             className="flex-1 primary-button after:bg-red-500  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105"
           >
-            🗑️ حذف
+             حذف
           </button>
         </div>
       </div>
@@ -418,6 +412,7 @@ function TemplateCard({
 
 // Auto Reply Panel Component
 function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
+  const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [autoReplyEnabled, setAutoReplyEnabled] = useState(false);
   const [autoReplyTemplateId, setAutoReplyTemplateId] = useState<string>('');
@@ -454,9 +449,9 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
         const err = await resp.json().catch(()=>({ message: 'Failed to save' }));
         throw new Error(err?.message || 'Failed to save');
       }
-      alert('تم حفظ إعدادات الرد التلقائي بنجاح');
+      showSuccess('تم حفظ إعدادات الرد التلقائي بنجاح');
     } catch (e:any) {
-      alert(e?.message || 'فشل حفظ الإعدادات');
+      showError(e?.message || 'فشل حفظ الإعدادات');
     } finally { setLoading(false); }
   };
 
@@ -480,7 +475,7 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-primary mb-2">القالب الافتراضي</label>
-            <select className="w-full px-4 py-3 bg-gray-800/50 border border-emerald-500/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white" value={autoReplyTemplateId} onChange={(e)=>setAutoReplyTemplateId(e.target.value)}>
+            <select className="w-full px-4 py-3 bg-fixed-40 border-primary rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white" value={autoReplyTemplateId} onChange={(e)=>setAutoReplyTemplateId(e.target.value)}>
               <option value="">بدون</option>
               {templates.filter(t=>t.isActive).map(t => (
                 <option key={t.id} value={t.id}>{t.name}</option>
@@ -490,7 +485,7 @@ function AutoReplyPanel({ templates }: { templates: TelegramTemplate[] }) {
         </div>
         <div className="flex justify-end">
           <button onClick={save} disabled={loading} className="primary-button">
-            {loading ? '⏳ جارِ الحفظ...' : '💾 حفظ الإعدادات'}
+            {loading ? ' جارِ الحفظ...' : ' حفظ الإعدادات'}
           </button>
         </div>
       </div>
@@ -562,8 +557,8 @@ function TemplateModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="gradient-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center  justify-center p-4 z-50">
+      <div className="gradient-border rounded-lg max-w-4xl w-full max-h-[90vh] !overflow-y-auto overflow-x-hidden scrollbar-hide">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-gray-100">

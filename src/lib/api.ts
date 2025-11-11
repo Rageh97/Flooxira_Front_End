@@ -237,11 +237,36 @@ export async function getChatHistory(token: string, contactNumber?: string, limi
 }
 
 export async function getChatContacts(token: string) {
-  return apiFetch<{ success: boolean; contacts: Array<{ contactNumber: string; messageCount: number; lastMessageTime: string }> }>("/api/whatsapp/contacts", { authToken: token });
+  return apiFetch<{ success: boolean; contacts: Array<{ contactNumber: string; messageCount: number; lastMessageTime: string; profilePicture?: string | null; contactName?: string | null }> }>("/api/whatsapp/contacts", { authToken: token });
 }
 
 export async function getBotStats(token: string) {
   return apiFetch<{ success: boolean; stats: { totalMessages: number; incomingMessages: number; outgoingMessages: number; totalContacts: number; knowledgeBaseResponses: number; openaiResponses: number; fallbackResponses: number } }>("/api/whatsapp/stats", { authToken: token });
+}
+
+// ===== Chat Notes (WhatsApp) =====
+export async function getChatNote(token: string, contactNumber: string) {
+  const qs = new URLSearchParams({ contactNumber });
+  return apiFetch<{ success: boolean; note?: { id: number; contactNumber: string; note: string; status: 'open' | 'resolved'; createdAt: string; resolvedAt?: string } | null }>(`/api/whatsapp/chats/note?${qs.toString()}`, { authToken: token });
+}
+
+export async function getOpenChatNotes(token: string) {
+  return apiFetch<{ success: boolean; contacts: string[]; notes: Array<{ id: number; contactNumber: string; note: string; status: 'open' | 'resolved'; createdAt: string }> }>(`/api/whatsapp/chats/notes/open`, { authToken: token });
+}
+
+export async function createChatNote(token: string, payload: { contactNumber: string; note: string }) {
+  return apiFetch<{ success: boolean; note: { id: number; contactNumber: string; note: string; status: 'open' | 'resolved'; createdAt: string } }>(`/api/whatsapp/chats/note`, {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function resolveChatNote(token: string, id: number) {
+  return apiFetch<{ success: boolean; note: any }>(`/api/whatsapp/chats/note/${id}/resolve`, {
+    method: 'POST',
+    authToken: token
+  });
 }
 
 // Groups & Status
@@ -258,8 +283,50 @@ export async function sendToWhatsAppGroup(token: string, groupName: string, mess
 }
 
 export async function exportGroupMembers(token: string, groupName: string) {
-  const url = `/api/whatsapp/groups/export?groupName=${encodeURIComponent(groupName)}`;
-  return apiFetch<{ success: boolean; file?: string; message?: string }>(url, { authToken: token });
+  const url = `${API_URL}/api/whatsapp/groups/export?groupName=${encodeURIComponent(groupName)}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Export failed with status ${response.status}`);
+  }
+  
+  // Check if response is JSON (error) or file (blob)
+  const contentType = response.headers.get('content-type');
+  if (contentType?.includes('application/json')) {
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Export failed');
+    }
+    return data;
+  }
+  
+  // Create blob and download
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  
+  // Get filename from header or use default
+  const contentDisposition = response.headers.get('content-disposition');
+  const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
+  const sanitizedGroupName = groupName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+  const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+  const filename = filenameMatch?.[1] || `whatsapp_${sanitizedGroupName}_${timestamp}.xlsx`;
+  
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(blobUrl);
+  document.body.removeChild(a);
+  
+  return { success: true, filename };
 }
 
 export async function sendToWhatsAppGroupsBulk(
@@ -2278,6 +2345,80 @@ export async function getAIStats(token: string) {
   return apiFetch<{ success: boolean; stats: AIStats }>('/api/ai/stats', {
     authToken: token,
   });
+}
+
+// Streaming AI message (SSE over POST)
+export type AIStreamHandlers = {
+  onStart?: (payload: { userMessage: AIMessage }) => void;
+  onDelta?: (delta: string) => void;
+  onDone?: (payload: { assistantMessage: AIMessage; remainingCredits: number }) => void;
+  onError?: (message: string) => void;
+};
+
+export function sendAIMessageStream(
+  token: string,
+  conversationId: number,
+  content: string,
+  handlers: AIStreamHandlers
+): { cancel: () => void } {
+  const url = `${API_URL}/api/ai/conversations/${conversationId}/messages/stream`;
+  const controller = new AbortController();
+  (async () => {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content }),
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.body) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Streaming request failed (${res.status})`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let sepIndex;
+        while ((sepIndex = buffer.indexOf('\n\n')) !== -1) {
+          const raw = buffer.slice(0, sepIndex).trim();
+          buffer = buffer.slice(sepIndex + 2);
+          if (!raw) continue;
+          // Expect lines like: data: {json}
+          const line = raw.startsWith('data:') ? raw.slice(5).trim() : raw;
+          if (!line) continue;
+          try {
+            const evt = JSON.parse(line);
+            if (evt.event === 'start' && handlers.onStart) handlers.onStart(evt);
+            else if (evt.event === 'delta' && handlers.onDelta) handlers.onDelta(evt.delta || '');
+            else if (evt.event === 'done' && handlers.onDone) handlers.onDone({ assistantMessage: evt.assistantMessage, remainingCredits: evt.remainingCredits });
+            else if (evt.event === 'error' && handlers.onError) handlers.onError(evt.message || 'حدث خطأ');
+          } catch (_) {
+            // ignore malformed chunks
+          }
+        }
+      }
+    } catch (e: any) {
+      if (e?.name === 'AbortError') {
+        handlers.onError?.('تم إيقاف التوليد');
+      } else {
+        handlers.onError?.(e?.message || 'تعذر بدء البث');
+      }
+    }
+  })();
+
+  return {
+    cancel: () => controller.abort()
+  };
 }
 
 // ===== APPOINTMENTS API =====
