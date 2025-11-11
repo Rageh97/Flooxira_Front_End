@@ -1210,7 +1210,7 @@ export default function CreatePostPage() {
                           : isConnected
                               ? 'bg-card inner-shadow shadow-lg'
                               : 'bg-gray-800 opacity-70 cursor-not-allowed'
-                      }`}
+                      }`} 
                     >
                       {/* Connection Status Indicator */}
                       {isConnected && (
