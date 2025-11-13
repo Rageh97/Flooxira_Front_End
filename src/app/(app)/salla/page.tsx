@@ -6,6 +6,7 @@ import { usePermissions } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/Loader";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 export default function SallaEventsPage() {
   const { user, loading } = useAuth();
@@ -17,6 +18,7 @@ export default function SallaEventsPage() {
   const [secret, setSecret] = useState("");
 
   const [selectedType, setSelectedType] = useState<string>("");
+  const [showAllFields, setShowAllFields] = useState<boolean>(false);
 
   const groupedByType = useMemo(() => {
     const map: Record<string, number> = {};
@@ -36,60 +38,6 @@ export default function SallaEventsPage() {
     }
   }, [sortedTypes, selectedType]);
 
-  function getColumnsFor(eventType: string): Array<{ key: string; label: string; path: string }>{
-    const family = eventType.includes(".") ? eventType.split(".")[0] : eventType;
-    switch (family) {
-      case "product":
-        return [
-          { key: "name", label: "Name", path: "data.name" },
-          { key: "id", label: "Product ID", path: "data.id" },
-          { key: "sku", label: "SKU", path: "data.sku" },
-          { key: "price", label: "Price", path: "data.price.amount" },
-          { key: "currency", label: "Currency", path: "data.price.currency" },
-          { key: "quantity", label: "Quantity", path: "data.quantity" },
-          { key: "status", label: "Status", path: "data.status" },
-          { key: "available", label: "Available", path: "data.is_available" }
-        ];
-      case "order":
-        return [
-          { key: "id", label: "Order ID", path: "data.id" },
-          { key: "number", label: "Number", path: "data.number" },
-          { key: "status", label: "Status", path: "data.status" },
-          { key: "total", label: "Total", path: "data.total.amount" },
-          { key: "currency", label: "Currency", path: "data.total.currency" },
-          { key: "customer", label: "Customer", path: "data.customer.name" }
-        ];
-      case "shipment":
-        return [
-          { key: "id", label: "Shipment ID", path: "data.id" },
-          { key: "order_id", label: "Order ID", path: "data.order_id" },
-          { key: "status", label: "Status", path: "data.status" },
-          { key: "courier", label: "Courier", path: "data.courier" },
-          { key: "tracking", label: "Tracking", path: "data.tracking_number" }
-        ];
-      case "coupon":
-        return [
-          { key: "code", label: "Code", path: "data.code" },
-          { key: "discount", label: "Discount", path: "data.discount" },
-          { key: "type", label: "Type", path: "data.type" },
-          { key: "status", label: "Status", path: "data.status" }
-        ];
-      case "customer":
-        return [
-          { key: "id", label: "Customer ID", path: "data.id" },
-          { key: "name", label: "Name", path: "data.name" },
-          { key: "email", label: "Email", path: "data.email" },
-          { key: "phone", label: "Phone", path: "data.phone" }
-        ];
-      default:
-        return [
-          { key: "event", label: "Event", path: "event" },
-          { key: "merchant", label: "Merchant", path: "merchant" },
-          { key: "created_at", label: "Created At", path: "created_at" }
-        ];
-    }
-  }
-
   function getByPath(obj: any, path: string) {
     try {
       return path.split('.').reduce((o, k) => (o && o[k] !== undefined ? o[k] : undefined), obj);
@@ -97,6 +45,116 @@ export default function SallaEventsPage() {
       return undefined;
     }
   }
+
+  function flatten(obj: any, prefix = "", out: Record<string, any> = {}, depth = 0, maxDepth = 6) {
+    if (obj === null || obj === undefined) return out;
+    if (depth > maxDepth) return out;
+    if (typeof obj !== "object") {
+      out[prefix] = obj;
+      return out;
+    }
+    if (Array.isArray(obj)) {
+      // Represent arrays as JSON strings to keep a single cell value
+      out[prefix] = obj;
+      return out;
+    }
+    for (const [k, v] of Object.entries(obj)) {
+      const key = prefix ? `${prefix}.${k}` : k;
+      if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+        flatten(v as any, key, out, depth + 1, maxDepth);
+      } else {
+        out[key] = v;
+      }
+    }
+    return out;
+  }
+
+  const selectedTypeColumns = useMemo(() => {
+    if (!selectedType) return [] as string[];
+    const keys = new Set<string>();
+    for (const e of events) {
+      const p = (e as any)?.payload || {};
+      const t = (e as any)?.eventType || p.event || "unknown";
+      if (t !== selectedType) continue;
+      const flat = flatten(p?.data || {});
+      Object.keys(flat).forEach((k) => keys.add(k));
+    }
+    return Array.from(keys).sort();
+  }, [events, selectedType]);
+
+  function importantKeysFor(eventType: string): string[] {
+    const family = eventType.includes('.') ? eventType.split('.')[0] : eventType;
+    switch (family) {
+      case 'product':
+        return [
+          'id',
+          'name',
+          'sku',
+          'status',
+          'is_available',
+          'quantity',
+          'price.amount',
+          'price.currency',
+          'regular_price.amount',
+          'sale_price.amount',
+          'urls.customer',
+          'urls.admin',
+          'updated_at'
+        ];
+      case 'order':
+        return [
+          'id',
+          'number',
+          'status',
+          'total.amount',
+          'total.currency',
+          'customer.name',
+          'created_at'
+        ];
+      case 'shipment':
+        return [
+          'id',
+          'order_id',
+          'status',
+          'courier',
+          'tracking_number',
+          'updated_at'
+        ];
+      case 'coupon':
+        return [
+          'code',
+          'type',
+          'status',
+          'discount',
+          'start_at',
+          'end_at'
+        ];
+      case 'customer':
+        return [
+          'id',
+          'name',
+          'email',
+          'phone',
+          'created_at'
+        ];
+      default:
+        return [
+          'id',
+          'name',
+          'status',
+          'created_at',
+          'updated_at'
+        ];
+    }
+  }
+
+  const columnsToRender = useMemo(() => {
+    const all = selectedTypeColumns;
+    if (!selectedType) return all;
+    const important = importantKeysFor(selectedType).filter((k) => all.includes(k));
+    if (!showAllFields && important.length > 0) return important;
+    return all;
+  }, [selectedTypeColumns, selectedType, showAllFields]);
 
   async function load() {
     const token = localStorage.getItem("auth_token");
@@ -125,19 +183,11 @@ export default function SallaEventsPage() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">تكامل سلة</h1>
-        <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
-          <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى تكامل سلة</p>
-          <Button 
-            onClick={() => window.location.href = '/plans'}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            تصفح الباقات
-          </Button>
-        </div>
-      </div>
+      <NoActiveSubscription 
+        heading="تكامل سلة"
+        featureName="تكامل سلة"
+        className="space-y-8"
+      />
     );
   }
 
@@ -184,12 +234,17 @@ export default function SallaEventsPage() {
           {selectedType && (
             <div className="overflow-x-auto">
               <h3 className="font-medium mt-2 mb-2">{selectedType}</h3>
+              <div className="mb-2">
+                <Button variant={showAllFields ? 'secondary' : 'default'} onClick={() => setShowAllFields((v) => !v)}>
+                  {showAllFields ? 'Show important only' : 'Show all fields'}
+                </Button>
+              </div>
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="text-left">
                     <th className="px-2 py-1">#</th>
-                    {getColumnsFor(selectedType).map((c) => (
-                      <th key={c.key} className="px-2 py-1">{c.label}</th>
+                    {columnsToRender.map((key) => (
+                      <th key={key} className="px-2 py-1 whitespace-nowrap">{key}</th>
                     ))}
                     <th className="px-2 py-1">Store</th>
                     <th className="px-2 py-1">Signature</th>
@@ -205,15 +260,16 @@ export default function SallaEventsPage() {
                     })
                     .map((e, idx) => {
                       const p: any = (e as any)?.payload || {};
-                      const columns = getColumnsFor(selectedType);
                       return (
                         <tr key={(e as any).id} className="border-b border-gray-800 hover:bg-gray-900/40">
                           <td className="px-2 py-1">{idx + 1}</td>
-                          {columns.map((c) => {
-                            const v = getByPath(p, c.path);
-                            const display = v === undefined || v === null || v === "" ? "-" : String(v);
+                          {columnsToRender.map((key) => {
+                            const v = getByPath(p?.data || {}, key);
+                            let display: any = v;
+                            if (v === undefined || v === null || v === "") display = "-";
+                            else if (typeof v === "object") display = JSON.stringify(v);
                             return (
-                              <td key={c.key} className="px-2 py-1 whitespace-nowrap">{display}</td>
+                              <td key={key} className="px-2 py-1 whitespace-nowrap">{display}</td>
                             );
                           })}
                           <td className="px-2 py-1">{(e as any).storeId || "-"}</td>

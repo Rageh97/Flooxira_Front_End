@@ -11,6 +11,7 @@ import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 import AnimatedEmoji, { EmojiPickerModal } from "@/components/AnimatedEmoji";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 // Platform configuration with icons and supported content types
 const PLATFORMS = {
@@ -601,22 +602,11 @@ export default function CreatePostPage() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-3xl font-bold text-white">إنشاء منشور جديد</h1>
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-300 shadow-xl">
-          <CardContent className="text-center py-16">
-            <div className="text-6xl mb-6">🔒</div>
-            <h3 className="text-2xl font-bold text-red-900 mb-3">لا يوجد اشتراك نشط</h3>
-            <p className="text-red-700 mb-6 text-lg">تحتاج إلى اشتراك نشط للوصول إلى ميزة إنشاء المنشورات</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              استعراض الباقات المتاحة
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="إنشاء منشور جديد"
+        featureName="إنشاء المنشورات"
+        className="space-y-8"
+      />
     );
   }
 

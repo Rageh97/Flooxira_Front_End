@@ -215,15 +215,15 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
       {/* Desktop sidebar - fixed position */}
       <aside className="hidden  md:flex w-[240px] h-screen bg- border-l  border-gray-600 text-white flex-col overflow-hidden flex-shrink-0">
-        <div className="px-4 py-1 w-full flex-shrink-0">
-          <Image src="/Logo.png" alt="logo" width={200} height={130} />
+        <div className="px-4 py-1 w-full flex justify-center">
+          <Image src="/Logo.png" alt="logo" width={180} height={110} />
         </div>
         <div className="border-t border-gray-600 p-2 flex-shrink-0 w-full">
           <div className="flex items-center justify-between">
             <div className="text-sm flex items-center gap-2">
               <img src="/user.gif" alt="" className="w-10 h-10 rounded-full" />
-              <div className="flex items-start  flex-col">
-                {!loading && user && <span className="font-medium text-lg">{user.name }</span>}
+              <div className="flex items-center gap-2  ">
+                {!loading && user && <span className="font-medium text-md">{user.name }</span>}
                 {planName && (
                   <span className="text-xs text-primary gradient-border  p-1"> {planName}</span>
                 )}
@@ -251,7 +251,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 size="sm" 
                 
                 onClick={() => { signOut(); router.push('/sign-in'); }}
-                className="w-full text-white bg-red-900/50 inner-shadow "
+                className="w-full primary-button after:bg-red-500 text-white "
               >
                 تسجيل خروج
               </Button>
@@ -326,7 +326,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         
         {/* News Bar - Fixed at top */}
         {!newsBarClosed && (
-          <div className="w-full bg-card text-white px-4 py-3 shadow-lg z-20 flex items-center justify-between gap-4 overflow-hidden">
+          <div className="w-full bg-card text-white px-4 py-2 shadow-lg z-20 flex items-center justify-between gap-4 overflow-hidden">
             <div className="flex items-center gap-3 flex-shrink-0">
               <Megaphone className="w-5 h-5 flex-shrink-0 animate-pulse text-yellow-200" />
             </div>
@@ -370,7 +370,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
           </div>
         )}
         
-        <main className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-3">
           {children}
         </main>
       </div>

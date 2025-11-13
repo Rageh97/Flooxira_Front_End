@@ -42,6 +42,7 @@ import {
 } from "@/lib/api";
 import ReactMarkdown from 'react-markdown';
 import Loader from "@/components/Loader";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 export default function AskAIPage() {
   const [token, setToken] = useState("");
@@ -257,19 +258,11 @@ export default function AskAIPage() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <Card className="border-orange-200 bg-orange-50 max-w-md">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center gap-3 text-orange-800 mb-4">
-              <AlertCircle className="h-6 w-6" />
-              <p className="text-lg font-medium">ليس لديك اشتراك نشط</p>
-            </div>
-            <p className="text-center text-orange-600">
-              للوصول إلى ميزة AI، يرجى الاشتراك في إحدى باقاتنا.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+       
+        featureName="ميزة الذكاء الاصطناعي"
+        className="h-screen flex items-center justify-center"
+      />
     );
   }
 

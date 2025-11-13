@@ -49,6 +49,7 @@ import { usePermissions } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 interface Employee {
   id: number;
@@ -340,7 +341,17 @@ export default function EmployeesPage() {
   }, [hasActiveSubscription, canManageEmployees]);
 
   // Show loading or redirect if no permissions
-  if (!hasActiveSubscription || !canManageEmployees) {
+  if (!hasActiveSubscription) {
+    return (
+      <NoActiveSubscription 
+        heading="إدارة الموظفين"
+        featureName="إدارة الموظفين"
+        className="container mx-auto p-6"
+      />
+    );
+  }
+
+  if (!canManageEmployees) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-8">

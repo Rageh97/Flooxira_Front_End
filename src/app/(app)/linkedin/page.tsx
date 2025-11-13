@@ -7,6 +7,7 @@ import { usePermissions } from "@/lib/permissions";
 import LinkedInPosts from "./components/LinkedInPosts";
 import LinkedInAnalytics from "./components/LinkedInAnalytics";
 import LinkedInCompanies from "./components/LinkedInCompanies";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 export default function LinkedInPage() {
   const { hasPlatformAccess, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -34,21 +35,11 @@ export default function LinkedInPage() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">LinkedIn</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
-            <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى LinkedIn</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              تصفح الباقات
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="LinkedIn"
+        featureName="LinkedIn"
+        className="space-y-8"
+      />
     );
   }
 

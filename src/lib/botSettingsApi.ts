@@ -42,6 +42,9 @@ export interface BotSettings {
   farewellPrompt?: string;
   salesPrompt?: string;
   objectionHandlingPrompt?: string;
+  // WhatsApp welcome auto message settings
+  welcomeAutoMessageEnabled?: boolean;
+  welcomeAutoMessageTemplate?: string;
   enableContextMemory: boolean;
   contextWindow: number;
   enableFallback: boolean;

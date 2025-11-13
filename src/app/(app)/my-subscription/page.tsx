@@ -14,6 +14,7 @@ import {
   Crown,
   Zap
 } from "lucide-react";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 interface UserPermissions {
   // المنصات الاجتماعية المسموحة
@@ -188,25 +189,11 @@ export default function MySubscriptionPage() {
 
   if (!subscription) {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">اشتراكي</h1>
-          <p className="text-sm text-gray-300">معلومات اشتراكك وصلاحياتك</p>
-        </div>
-        <Card>
-          <CardContent className="text-center py-12">
-            <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
-            <p className="text-gray-600 mb-4">ليس لديك اشتراك نشط حالياً</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              تصفح الباقات
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="اشتراكي"
+        description="ليس لديك اشتراك نشط حالياً"
+        className="space-y-8"
+      />
     );
   }
 

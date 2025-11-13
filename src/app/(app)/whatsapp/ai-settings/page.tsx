@@ -534,6 +534,31 @@ export default function AISettingsPage() {
             <CardTitle>الرسائل المخصصة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* WhatsApp Auto Welcome Message */}
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={!!settings.welcomeAutoMessageEnabled}
+                  onChange={(e) => setSettings({ ...settings, welcomeAutoMessageEnabled: e.target.checked })}
+                  className="mx-2"
+                />
+                 تفعيل رسالة الترحيب التلقائية في واتساب لعملاء سلة
+              </label>
+              <div>
+                <label className="block text-sm font-medium mb-2"> رسالة الترحيب</label>
+                <textarea
+                  value={settings.welcomeAutoMessageTemplate || ''}
+                  onChange={(e) => setSettings({ ...settings, welcomeAutoMessageTemplate: e.target.value })}
+                  className="w-full p-2 border-1 border-blue-300 rounded-md h-28 bg-[#01191040]"
+                  placeholder={"مثال:\nمرحباً {name}! 👋\nسعدنا بانضمامك{store}.\nإذا احتجت أي مساعدة، راسلنا هنا في أي وقت."}
+                />
+                <div className="text-xs text-gray-400 mt-1">
+                  المتغيرات المتاحة: {'{name}'} اسم العميل، {'{store}'} اسم المتجر مسبوقًا بمسافة إذا توفر
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">رسالة النظام</label>
               <textarea

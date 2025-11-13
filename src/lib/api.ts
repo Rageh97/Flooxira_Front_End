@@ -11,7 +11,6 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
   if (options.authToken) {
     (headers as Record<string, string>)["Authorization"] = `Bearer ${options.authToken}`;
   }
-  
 
   const url = `${API_URL}${path}`;
   const res = await fetch(url, { ...options, headers });
@@ -2152,6 +2151,52 @@ export async function createCategory(token: string, categoryData: any) {
   }>('/api/customers/categories', {
     method: 'POST',
     body: JSON.stringify(categoryData),
+    authToken: token
+  });
+}
+
+// Stores API
+export async function getStores(token: string) {
+  return apiFetch<{
+    success: boolean;
+    data: any[];
+  }>('/api/customers/stores', {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function createStore(token: string, payload: { name: string }) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>('/api/customers/stores', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    authToken: token
+  });
+}
+
+// Platforms API
+export async function getPlatforms(token: string) {
+  return apiFetch<{
+    success: boolean;
+    data: any[];
+  }>('/api/customers/platforms', {
+    method: 'GET',
+    authToken: token
+  });
+}
+
+export async function createPlatform(token: string, payload: { name: string }) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>('/api/customers/platforms', {
+    method: 'POST',
+    body: JSON.stringify(payload),
     authToken: token
   });
 }

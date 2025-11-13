@@ -7,6 +7,7 @@ import { AlertCircle, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/lib/permissions";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 const whatsappTabs = [
   { href: "/whatsapp", label: "الاتصال", exact: true },
@@ -93,21 +94,11 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
   // Check if user has active subscription
   if (!hasActiveSubscription) {
     return (
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-4">إدارة الواتساب</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
-            <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى إدارة الواتساب</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              تصفح الباقات
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="إدارة الواتساب"
+        featureName="إدارة الواتساب"
+        className="container mx-auto p-6"
+      />
     );
   }
 

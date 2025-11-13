@@ -30,6 +30,7 @@ import { usePermissions } from "@/lib/permissions";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 export default function TelegramBotPage() {
   const { canManageTelegram, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -146,21 +147,11 @@ export default function TelegramBotPage() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
-            <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى إدارة التليجرام</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              تصفح الباقات
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="إدارة التليجرام"
+        featureName="إدارة التليجرام"
+        className="space-y-8"
+      />
     );
   }
 

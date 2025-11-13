@@ -17,6 +17,7 @@ import {
   telegramDeleteSchedule
 } from "@/lib/api";
 import Loader from "@/components/Loader";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 export default function SchedulePage() {
   const { showError } = useToast();
@@ -113,7 +114,7 @@ export default function SchedulePage() {
       
       // Show error to user
       setMonthlySchedules({ whatsapp: [], posts: [], telegram: [] });
-      showError('خطأ في تحميل الجدولة', (error as Error).message);
+      // showError('خطأ في تحميل الجدولة', (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -329,21 +330,11 @@ export default function SchedulePage() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold text-white">الجدولة</h1>
-        <Card className="bg-card border-none">
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-white mb-2">لا يوجد اشتراك نشط</h3>
-            <p className="text-gray-400 mb-4">تحتاج إلى اشتراك نشط للوصول إلى الجدولة</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              تصفح الباقات
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="الجدولة"
+        featureName="الجدولة"
+        className="space-y-8"
+      />
     );
   }
 

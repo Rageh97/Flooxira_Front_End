@@ -61,6 +61,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [waUsage, setWaUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [tgUsage, setTgUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  const currentMonthName = new Date().toLocaleString('ar-EG', { month: 'long' });
 
   // Animated banners data
   const banners = [
@@ -226,7 +227,7 @@ export default function DashboardPage() {
         banners={banners}
         autoPlay={true}
         showControls={true}
-        className="mb-6"
+        className="mb-3"
       />
 
       {/* Header Section */}
@@ -309,7 +310,7 @@ export default function DashboardPage() {
           <div className="flex flex-col items-center justify-center ">
            <div className="text-[55px]  font-bold text-primary">{stats?.scheduled || 0}</div>
             <div className=" text-xs text-primary">
-              شهر (أكتوبر)
+              شهر ({currentMonthName})
             </div>
            </div>
 

@@ -34,6 +34,7 @@ import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
 import Loader from "@/components/Loader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 interface ServiceWithApproval extends Service {
   approvalStatus?: 'pending' | 'approved' | 'rejected';
@@ -99,7 +100,7 @@ export default function ServicesPage() {
       setStats(res.stats);
     } catch (e: any) {
       setError(e.message);
-      showError("خطأ", e.message);
+      // showError("خطأ", e.message);
     } finally {
       setLoading(false);
     }
@@ -234,23 +235,11 @@ export default function ServicesPage() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-4xl font-semibold text-white">إدارة الخدمات</h1>
-          <p className="text-sm text-primary">سوّق خدماتك للعملاء</p>
-        </div>
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center gap-3 text-orange-800">
-              <AlertCircle className="h-6 w-6" />
-              <p className="text-lg font-medium">ليس لديك اشتراك نشط</p>
-            </div>
-            <p className="text-center text-orange-600 mt-2">
-              للوصول إلى هذه الميزة، يرجى الاشتراك في إحدى باقاتنا.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="إدارة الخدمات"
+        featureName="إدارة الخدمات"
+        className="space-y-8"
+      />
     );
   }
 

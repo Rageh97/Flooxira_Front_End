@@ -30,6 +30,7 @@ import { usePermissions } from "@/lib/permissions";
 import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 import Loader from "@/components/Loader";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 const PLATFORMS = {
   facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
@@ -379,21 +380,11 @@ function SettingsContent() {
 
   if (!hasActiveSubscription) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold text-white">إعدادات الحساب</h1>
-        <Card className="bg-card border-none">
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-white mb-2">لا يوجد اشتراك نشط</h3>
-            <p className="text-gray-400 mb-4">تحتاج إلى اشتراك نشط للوصول إلى إعدادات الحساب</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              تصفح الباقات
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="إعدادات الحساب"
+        featureName="إعدادات الحساب"
+        className="space-y-8"
+      />
     );
   }
 

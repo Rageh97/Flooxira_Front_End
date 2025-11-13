@@ -39,11 +39,12 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCustomers, createCustomer, updateCustomer, deleteCustomer, getCustomerStats, getCategories, getCustomFields, createCustomField, updateCustomField, deleteCustomField } from '@/lib/api';
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer, getCustomerStats, getCategories, createCategory, getCustomFields, createCustomField, updateCustomField, deleteCustomField, getStores, createStore, getPlatforms, createPlatform } from '@/lib/api';
 import { usePermissions } from '@/lib/permissions';
 import * as XLSX from 'xlsx';
 import Loader from '@/components/Loader';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import NoActiveSubscription from '@/components/NoActiveSubscription';
 
 interface CustomField {
   id: number;
@@ -108,6 +109,8 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stats, setStats] = useState<CustomerStats | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [stores, setStores] = useState<{ id: number; name: string }[]>([]);
+  const [platforms, setPlatforms] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(true);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
@@ -126,7 +129,8 @@ export default function CustomersPage() {
     category: '',
     product: '',
     subscriptionStatus: 'all', // all, active, expired, inactive
-    storeName: ''
+    storeName: '',
+    platformName: ''
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -141,6 +145,10 @@ export default function CustomersPage() {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [fieldToDelete, setFieldToDelete] = useState<CustomField | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isAddEntityDialogOpen, setIsAddEntityDialogOpen] = useState(false);
+  const [entityType, setEntityType] = useState<'category' | 'store' | 'platform'>('category');
+  const [entityName, setEntityName] = useState('');
+  const [isSavingEntity, setIsSavingEntity] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -156,7 +164,8 @@ export default function CustomersPage() {
     purchasePrice: '',
     salePrice: '',
     socialMedia: {} as Record<string, string>,
-    storeName: ''
+    storeName: '',
+    platformName: ''
   });
   
   // Invoice image state
@@ -177,6 +186,8 @@ export default function CustomersPage() {
     fetchCustomers();
     fetchStats();
     fetchCategories();
+    fetchStores();
+    fetchPlatforms();
     loadCustomFields();
   }, [pagination.page, filters, searchTerm]);
 
@@ -407,7 +418,8 @@ export default function CustomersPage() {
         category: filters.category,
         product: filters.product,
         subscriptionStatus: filters.subscriptionStatus,
-        storeName: filters.storeName
+        storeName: filters.storeName,
+        platformName: filters.platformName
       });
 
       if (response.success) {
@@ -456,6 +468,63 @@ export default function CustomersPage() {
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchStores = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      const response = await getStores(token);
+      if (response.success) {
+        setStores(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching stores:', error);
+    }
+  };
+
+  const fetchPlatforms = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      const response = await getPlatforms(token);
+      if (response.success) {
+        setPlatforms(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching platforms:', error);
+    }
+  };
+
+  const handleSaveEntity = async () => {
+    if (!entityName.trim()) {
+      toast.error('يرجى إدخال الاسم');
+      return;
+    }
+    try {
+      setIsSavingEntity(true);
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      if (entityType === 'category') {
+        const resp = await createCategory(token, { name: entityName.trim(), description: `تصنيف ${entityName.trim()}` });
+        if (resp.success) { toast.success('تم إضافة التصنيف'); await fetchCategories(); }
+        else { toast.error(resp.message || 'فشل في إضافة التصنيف'); }
+      } else if (entityType === 'store') {
+        const resp = await createStore(token, { name: entityName.trim() });
+        if (resp.success) { toast.success('تم إضافة المتجر'); await fetchStores(); }
+        else { toast.error(resp.message || 'فشل في إضافة المتجر'); }
+      } else if (entityType === 'platform') {
+        const resp = await createPlatform(token, { name: entityName.trim() });
+        if (resp.success) { toast.success('تم إضافة المنصة'); await fetchPlatforms(); }
+        else { toast.error(resp.message || 'فشل في إضافة المنصة'); }
+      }
+      setIsAddEntityDialogOpen(false);
+      setEntityName('');
+    } catch (e) {
+      toast.error('حدث خطأ أثناء الحفظ');
+    } finally {
+      setIsSavingEntity(false);
     }
   };
 
@@ -660,7 +729,8 @@ export default function CustomersPage() {
       purchasePrice: '',
       salePrice: '',
       socialMedia: {},
-      storeName: ''
+      storeName: '',
+      platformName: ''
     });
     setInvoiceImage(null);
     setInvoiceImagePreview(null);
@@ -683,7 +753,8 @@ export default function CustomersPage() {
       purchasePrice: (customer as any).purchasePrice || '',
       salePrice: (customer as any).salePrice || '',
       socialMedia: customer.socialMedia,
-      storeName: customer.storeName || ''
+      storeName: customer.storeName || '',
+      platformName: (customer as any).platformName || ''
     });
     
     // Load existing invoice image if available
@@ -807,21 +878,11 @@ export default function CustomersPage() {
   // Check if user has active subscription
   if (!hasActiveSubscription) {
     return (
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-4">إدارة العملاء</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">لا يوجد اشتراك نشط</h3>
-            <p className="text-gray-600 mb-4">تحتاج إلى اشتراك نشط للوصول إلى إدارة العملاء</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              تصفح الباقات
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <NoActiveSubscription 
+        heading="إدارة العملاء"
+        featureName="إدارة العملاء"
+        className="container mx-auto p-6"
+      />
     );
   }
 
@@ -890,6 +951,15 @@ export default function CustomersPage() {
           <p className="text-gray-300">إدارة قاعدة بيانات العملاء واشتراكاتهم</p>
         </div>
         <div className="flex gap-2">
+          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+            أضف تصنيف
+          </Button>
+          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => { setEntityType('store'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+            أضف متجر
+          </Button>
+          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => { setEntityType('platform'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+            أضف منصة
+          </Button>
           <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => window.location.href = '/customers/analytics'}>
               
             الإحصائيات
@@ -934,7 +1004,32 @@ export default function CustomersPage() {
                 submitText="إنشاء العميل"
                 customFields={customFields}
                 categories={categories}
+                stores={stores}
+                platforms={platforms}
               />
+            </DialogContent>
+          </Dialog>
+          {/* Add Entity Dialog */}
+          <Dialog open={isAddEntityDialogOpen} onOpenChange={setIsAddEntityDialogOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {entityType === 'category' ? 'إضافة تصنيف' : entityType === 'store' ? 'إضافة متجر' : 'إضافة منصة'}
+                </DialogTitle>
+             
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="entityName">الاسم</Label>
+                  <Input id="entityName" value={entityName} onChange={(e) => setEntityName(e.target.value)} placeholder={entityType === 'category' ? 'اسم التصنيف' : entityType === 'store' ? 'اسم المتجر' : 'اسم المنصة'} />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="secondary" onClick={() => setIsAddEntityDialogOpen(false)}>إلغاء</Button>
+                  <Button className='primary-button' onClick={handleSaveEntity} disabled={isSavingEntity}>
+                    {isSavingEntity ? 'جاري الحفظ...' : 'حفظ'}
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
@@ -1082,9 +1177,35 @@ export default function CustomersPage() {
 
             {/* Filters Row */}
             <div className="flex flex-col md:flex-row gap-4">
-           
+              {/* Store Filter */}
+              <div className="flex-1">
+                <Label className="text-white">المتجر</Label>
+                <select
+                  className="w-full p-2 mt-2 rounded-md border border-blue-300 bg-[#01191040]"
+                  value={filters.storeName}
+                  onChange={(e) => setFilters(prev => ({ ...prev, storeName: e.target.value }))}
+                >
+                  <option value="">كل المتاجر</option>
+                  {stores.map((s: { id: number; name: string }) => (
+                    <option key={s.id} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
 
-           
+              {/* Platform Filter */}
+              <div className="flex-1">
+                <Label className="text-white">المنصة</Label>
+                <select
+                  className="w-full p-2 mt-2 rounded-md border border-blue-300 bg-[#01191040]"
+                  value={filters.platformName}
+                  onChange={(e) => setFilters(prev => ({ ...prev, platformName: e.target.value }))}
+                >
+                  <option value="">كل المنصات</option>
+                  {platforms.map((p: { id: number; name: string }) => (
+                    <option key={p.id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
 
               {/* Subscription Status Filter */}
               <div className="flex-1">
@@ -1170,7 +1291,7 @@ export default function CustomersPage() {
                   >
                     الكل
                   </Button>
-                  {Array.from(new Set(customers.map(c => c.storeName).filter(Boolean))).map((storeName) => (
+                  {stores.map((s: { id: number; name: string }) => s.name).map((storeName) => (
                     <Button
                       key={storeName}
                       // variant={filters.storeName === storeName ? 'default' : 'secondary'}
@@ -1277,6 +1398,7 @@ export default function CustomersPage() {
                     <TableHead className='border-r '>الاسم</TableHead>
                     <TableHead className='border-r '>معلومات الاتصال</TableHead>
                     <TableHead className='border-r '>اسم المتجر</TableHead>
+                    <TableHead className='border-r '>اسم المنصة</TableHead>
                     <TableHead className='border-r '>التصنيف</TableHead>
                     <TableHead className='border-r '>المنتج</TableHead>
                     <TableHead className='border-r '>سعر الشراء</TableHead>
@@ -1329,6 +1451,15 @@ export default function CustomersPage() {
                         {customer.storeName ? (
                           <div className="flex items-center gap-1">
                             <span className="text-white">{customer.storeName}</span>
+                          </div>
+                        ) : (
+                          <span className="text-white">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="p-4 border-r border-green-100">
+                        {(customer as any).platformName ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-white">{(customer as any).platformName}</span>
                           </div>
                         ) : (
                           <span className="text-white">-</span>
@@ -1551,6 +1682,8 @@ export default function CustomersPage() {
             submitText="حفظ التغييرات"
             customFields={customFields}
             categories={categories}
+            stores={stores}
+            platforms={platforms}
           />
         </DialogContent>
       </Dialog>
@@ -1636,7 +1769,7 @@ export default function CustomersPage() {
 }
 
 // Customer Form Component
-function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, customFields = [], categories = [], invoiceImage, invoiceImagePreview, handleInvoiceImageChange, clearInvoiceImage }: {
+function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, customFields = [], categories = [], stores = [], platforms = [], invoiceImage, invoiceImagePreview, handleInvoiceImageChange, clearInvoiceImage }: {
   formData: any;
   setFormData: (data: any) => void;
   onSubmit: () => void;
@@ -1644,6 +1777,8 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
   submitText: string;
   customFields?: CustomField[];
   categories?: Category[];
+  stores?: { id: number; name: string }[];
+  platforms?: { id: number; name: string }[];
   invoiceImage?: File | null;
   invoiceImagePreview?: string | null;
   handleInvoiceImageChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -1743,18 +1878,17 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
         </div>
         <div>
           <Label htmlFor="categoryName">التصنيف</Label>
-          <Input
+          <select
             id="categoryName"
+            className="w-full p-2 rounded-md border border-blue-300 bg-[#01191040]"
             value={formData.categoryName}
             onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
-            placeholder="اختر من القائمة أو أدخل تصنيف جديد"
-            list="categories-list"
-          />
-          <datalist id="categories-list">
+          >
+            <option value="">اختر التصنيف</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.name} />
+              <option key={cat.id} value={cat.name}>{cat.name}</option>
             ))}
-          </datalist>
+          </select>
         </div>
         <div>
           <Label htmlFor="productName">اسم المنتج</Label>
@@ -1767,12 +1901,32 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
         </div>
         <div>
           <Label htmlFor="storeName">اسم المتجر</Label>
-          <Input
+          <select
             id="storeName"
+            className="w-full p-2 rounded-md border border-blue-300 bg-[#01191040]"
             value={formData.storeName}
             onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-            placeholder="اسم المتجر أو المحل"
-          />
+          >
+            <option value="">اختر المتجر</option>
+            {stores.map((s: { id: number; name: string }) => (
+              <option key={s.id} value={s.name}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <Label htmlFor="platformName">اسم المنصة</Label>
+          <select
+            id="platformName"
+            className="w-full p-2 rounded-md border border-blue-300 bg-[#01191040]"
+            value={formData.platformName}
+            onChange={(e) => setFormData({ ...formData, platformName: e.target.value })}
+          >
+            <option value="">اختر المنصة</option>
+            {platforms.map((p: { id: number; name: string }) => (
+              <option key={p.id} value={p.name}>{p.name}</option>
+            ))}
+          </select>
         </div>
         <div>
           <Label htmlFor="subscriptionType">نوع الاشتراك</Label>
