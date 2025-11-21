@@ -271,8 +271,7 @@ export default function CouponsAdminPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">إدارة القسائم</h1>
-          <p className="text-sm text-gray-600">إدارة قسائم الاشتراك</p>
+          <h1 className="text-2xl font-semibold text-white">إدارة القسائم</h1>
         </div>
         <div className="text-center py-8">
           <p className="text-gray-600">جاري التحميل...</p>
@@ -285,8 +284,7 @@ export default function CouponsAdminPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">إدارة القسائم</h1>
-          <p className="text-sm text-gray-600">إدارة قسائم الاشتراك</p>
+          <h1 className="text-2xl font-semibold text-white">إدارة القسائم</h1>
         </div>
         <div className="flex gap-2">
           <Button
@@ -352,7 +350,7 @@ export default function CouponsAdminPage() {
       {/* Coupons List */}
       {coupons.length === 0 ? (
         <Card>
-          <CardContent className="text-center py-12">
+          <CardContent className="text-center py-12 mx-10">
             <Gift className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-800 mb-2">لا توجد قسائم</h3>
             <p className="text-gray-600 mb-4">لم يتم إنشاء أي قسائم بعد</p>
@@ -501,16 +499,14 @@ export default function CouponsAdminPage() {
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 mx-10">
               <Gift className="h-5 w-5 text-green-600" />
               إضافة قسيمة جديدة
             </DialogTitle>
-            <DialogDescription>
-              إنشاء قسيمة جديدة للاشتراك في إحدى الباقات
-            </DialogDescription>
+           
           </DialogHeader>
 
-          <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto scrollbar-thin scrollbar-hide px-1">
             <div>
               <Label htmlFor="coupon-code">كود القسيمة *</Label>
               <Input
@@ -529,7 +525,7 @@ export default function CouponsAdminPage() {
                 value={newCoupon.customSuffix}
                 onChange={(e) => setNewCoupon({ ...newCoupon, customSuffix: e.target.value })}
               />
-              <p className="text-xs text-gray-500 mt-1">سيتم إضافتها في آخر الكود: {newCoupon.code}{newCoupon.customSuffix ? `-${newCoupon.customSuffix}` : ''}</p>
+              <p className="text-xs text-yellow-500 mt-1">سيتم إضافتها في آخر الكود: {newCoupon.code}{newCoupon.customSuffix ? `-${newCoupon.customSuffix}` : ''}</p>
             </div>
 
             <div>
@@ -538,7 +534,7 @@ export default function CouponsAdminPage() {
                 id="coupon-plan"
                 value={newCoupon.planId}
                 onChange={(e) => setNewCoupon({ ...newCoupon, planId: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full mt-1 px-3 py-2 bg-fixed-40 border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="">اختر الباقة</option>
                 {plans.map(plan => (
@@ -556,11 +552,12 @@ export default function CouponsAdminPage() {
                   id="discount-type"
                   value={newCoupon.discountType}
                   onChange={(e) => setNewCoupon({ ...newCoupon, discountType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 bg-fixed-40 border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="percentage">نسبة مئوية (%)</option>
                   <option value="fixed">قيمة ثابتة (ريال)</option>
                   <option value="bonus_days">أيام إضافية</option>
+                  <option value="free_days">أيام مجانية (Free Days)</option>
                 </select>
               </div>
 
@@ -591,6 +588,20 @@ export default function CouponsAdminPage() {
                     onChange={(e) => setNewCoupon({ ...newCoupon, bonusDays: e.target.value })}
                   />
                   <p className="text-xs text-gray-500 mt-1">سيتم إضافة هذه الأيام على مدة الاشتراك</p>
+                </div>
+              )}
+
+              {newCoupon.discountType === 'free_days' && (
+                <div className="mt-3">
+                  <Label htmlFor="free-days">عدد الأيام المجانية</Label>
+                  <Input
+                    id="free-days"
+                    type="number"
+                    placeholder="مثال: 3"
+                    value={newCoupon.bonusDays}
+                    onChange={(e) => setNewCoupon({ ...newCoupon, bonusDays: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">سيتم منح هذه الأيام مجاناً</p>
                 </div>
               )}
             </div>
@@ -628,7 +639,7 @@ export default function CouponsAdminPage() {
                     value={newCoupon.discountKeyword}
                     onChange={(e) => setNewCoupon({ ...newCoupon, discountKeyword: e.target.value })}
                   />
-                  <p className="text-xs text-gray-500 mt-1">كلمة يمكن إضافتها للكوبون للحصول على خصم إضافي</p>
+                  <p className="text-xs text-yellow-500 mt-1">كلمة يمكن إضافتها للكوبون للحصول على خصم إضافي</p>
                 </div>
                 <div>
                   <Label htmlFor="discount-keyword-value">قيمة الخصم الإضافي</Label>
@@ -640,12 +651,12 @@ export default function CouponsAdminPage() {
                     value={newCoupon.discountKeywordValue}
                     onChange={(e) => setNewCoupon({ ...newCoupon, discountKeywordValue: e.target.value })}
                   />
-                  <p className="text-xs text-gray-500 mt-1">قيمة الخصم الإضافي عند إضافة كلمة الخصم</p>
+                  <p className="text-xs text-yellow-500 mt-1">قيمة الخصم الإضافي عند إضافة كلمة الخصم</p>
                 </div>
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <Label htmlFor="coupon-notes">ملاحظات (اختياري)</Label>
               <Textarea
                 id="coupon-notes"
@@ -654,7 +665,7 @@ export default function CouponsAdminPage() {
                 onChange={(e) => setNewCoupon({ ...newCoupon, notes: e.target.value })}
                 rows={3}
               />
-            </div>
+            </div> */}
 
             <div className="flex justify-end gap-2">
               <Button
@@ -716,6 +727,7 @@ export default function CouponsAdminPage() {
                   <option value="percentage">نسبة مئوية (%)</option>
                   <option value="fixed">قيمة ثابتة (ريال)</option>
                   <option value="bonus_days">أيام إضافية</option>
+                  <option value="free_days">أيام مجانية (Free Days)</option>
                 </select>
               </div>
 
@@ -742,6 +754,19 @@ export default function CouponsAdminPage() {
                     id="edit-bonus-days"
                     type="number"
                     placeholder="مثال: 7"
+                    value={editCoupon.bonusDays}
+                    onChange={(e) => setEditCoupon({ ...editCoupon, bonusDays: e.target.value })}
+                  />
+                </div>
+              )}
+
+              {editCoupon.discountType === 'free_days' && (
+                <div className="mt-3">
+                  <Label htmlFor="edit-free-days">عدد الأيام المجانية</Label>
+                  <Input
+                    id="edit-free-days"
+                    type="number"
+                    placeholder="مثال: 3"
                     value={editCoupon.bonusDays}
                     onChange={(e) => setEditCoupon({ ...editCoupon, bonusDays: e.target.value })}
                   />
@@ -803,23 +828,21 @@ export default function CouponsAdminPage() {
       <Dialog open={generateModalOpen} onOpenChange={setGenerateModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 mx-10">
               <Sparkles className="h-5 w-5 text-blue-600" />
               إنشاء قسائم متعددة
             </DialogTitle>
-            <DialogDescription>
-              إنشاء عدة قسائم بنفس الإعدادات
-            </DialogDescription>
+           
           </DialogHeader>
 
-          <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto scrollbar-hide px-1">
             <div>
               <Label htmlFor="generate-plan">الباقة *</Label>
               <select
                 id="generate-plan"
                 value={generateData.planId}
                 onChange={(e) => setGenerateData({ ...generateData, planId: e.target.value })}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full mt-1 px-3 py-2 bg-fixed-40 border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="">اختر الباقة</option>
                 {plans.map(plan => (
@@ -848,7 +871,7 @@ export default function CouponsAdminPage() {
                 value={generateData.prefix}
                 onChange={(e) => setGenerateData({ ...generateData, prefix: e.target.value })}
               />
-              <p className="text-xs text-gray-500 mt-1">سيتم إضافة رقم عشوائي لكل قسيمة</p>
+              {/* <p className="text-xs text-yellow-500 mt-1">سيتم إضافة رقم عشوائي لكل قسيمة</p> */}
             </div>
 
             <div>
@@ -859,7 +882,7 @@ export default function CouponsAdminPage() {
                 value={generateData.customSuffix}
                 onChange={(e) => setGenerateData({ ...generateData, customSuffix: e.target.value })}
               />
-              <p className="text-xs text-gray-500 mt-1">ستُضاف في آخر جميع القسائم</p>
+              <p className="text-xs text-yellow-500 mt-1">ستُضاف في آخر جميع القسائم</p>
             </div>
 
             <div className="border-t pt-4">
@@ -871,11 +894,12 @@ export default function CouponsAdminPage() {
                   id="generate-discount-type"
                   value={generateData.discountType}
                   onChange={(e) => setGenerateData({ ...generateData, discountType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 bg-fixed-40 border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="percentage">نسبة مئوية (%)</option>
                   <option value="fixed">قيمة ثابتة (ريال)</option>
                   <option value="bonus_days">أيام إضافية</option>
+                  <option value="free_days">أيام مجانية (Free Days)</option>
                 </select>
               </div>
 
@@ -908,6 +932,20 @@ export default function CouponsAdminPage() {
                   <p className="text-xs text-gray-500 mt-1">سيتم إضافة هذه الأيام على مدة الاشتراك لجميع القسائم</p>
                 </div>
               )}
+
+              {generateData.discountType === 'free_days' && (
+                <div className="mt-3">
+                  <Label htmlFor="generate-free-days">عدد الأيام المجانية</Label>
+                  <Input
+                    id="generate-free-days"
+                    type="number"
+                    placeholder="مثال: 3"
+                    value={generateData.bonusDays}
+                    onChange={(e) => setGenerateData({ ...generateData, bonusDays: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">سيتم منح هذه الأيام مجاناً لجميع القسائم</p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -919,7 +957,7 @@ export default function CouponsAdminPage() {
                 value={generateData.maxUses}
                 onChange={(e) => setGenerateData({ ...generateData, maxUses: e.target.value })}
               />
-              <p className="text-xs text-gray-500 mt-1">عدد المرات التي يمكن استخدام كل قسيمة فيها</p>
+              <p className="text-xs text-yellow-500 mt-1">عدد المرات التي يمكن استخدام كل قسيمة فيها</p>
             </div>
 
             <div>
@@ -943,7 +981,7 @@ export default function CouponsAdminPage() {
                     value={generateData.discountKeyword}
                     onChange={(e) => setGenerateData({ ...generateData, discountKeyword: e.target.value })}
                   />
-                  <p className="text-xs text-gray-500 mt-1">كلمة يمكن إضافتها للكوبون للحصول على خصم إضافي</p>
+                  <p className="text-xs text-yellow-500 mt-1">كلمة يمكن إضافتها للكوبون للحصول على خصم إضافي</p>
                 </div>
                 <div>
                   <Label htmlFor="generate-discount-keyword-value">قيمة الخصم الإضافي</Label>
@@ -955,7 +993,7 @@ export default function CouponsAdminPage() {
                     value={generateData.discountKeywordValue}
                     onChange={(e) => setGenerateData({ ...generateData, discountKeywordValue: e.target.value })}
                   />
-                  <p className="text-xs text-gray-500 mt-1">قيمة الخصم الإضافي عند إضافة كلمة الخصم</p>
+                  <p className="text-xs text-yellow-500 mt-1">قيمة الخصم الإضافي عند إضافة كلمة الخصم</p>
                 </div>
               </div>
             </div>

@@ -398,6 +398,33 @@ export default function PlansPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Live Chat & Tickets */}
+                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                      <span className="text-xs font-medium text-gray-200">Live Chat & Tickets:</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canUseLiveChat ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                          {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
+                            <span className="text-xs text-primary">
+                              ({(permissions as any).liveChatAiResponses} رد/شهر)
+                            </span>
+                          ) : (
+                            <span className="text-xs text-primary">
+                              (غير محدود)
+                            </span>
+                          )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <Button 

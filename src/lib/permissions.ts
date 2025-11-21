@@ -17,6 +17,8 @@ interface UserPermissions {
   maxEmployees: number;
   canUseAI: boolean;
   aiCredits: number;
+  canUseLiveChat: boolean;
+  liveChatAiResponses?: number;
 }
 
 interface Subscription {
@@ -226,6 +228,10 @@ export function usePermissions() {
     return permissions?.aiCredits || 0;
   };
 
+  const canUseLiveChat = (): boolean => {
+    return Boolean(permissions?.canUseLiveChat);
+  };
+
   const hasActiveSubscription = useMemo((): boolean => {
     // إذا كان موظف، يعتبر لديه اشتراك نشط (لأن المالك لديه اشتراك)
     if (permissions && !permissions.canManageEmployees) {
@@ -261,6 +267,7 @@ export function usePermissions() {
     getMaxEmployees,
     canUseAI,
     getAICredits,
+    canUseLiveChat,
     hasActiveSubscription,
     reloadPermissions: loadPermissions
   };

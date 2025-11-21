@@ -1,9 +1,10 @@
 "use client";
 import React from "react";
-import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, botExportData, type BotField, type BotDataRow } from "@/lib/api";
+import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, botExportData, botUpdateField, type BotField, type BotDataRow } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import Loader from "@/components/Loader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type EditableCellProps = {
   value: any;
@@ -37,6 +38,15 @@ export default function BotContentPage() {
   const [itemsPerPage] = React.useState(10);
   const [successMessage, setSuccessMessage] = React.useState('');
   const [showClearConfirm, setShowClearConfirm] = React.useState(false);
+  const [showEditFieldModal, setShowEditFieldModal] = React.useState(false);
+  const [showFieldsModal, setShowFieldsModal] = React.useState(false);
+  const [fieldToEdit, setFieldToEdit] = React.useState<BotField | null>(null);
+  const [editFieldName, setEditFieldName] = React.useState('');
+  const [editFieldType, setEditFieldType] = React.useState<'string' | 'number' | 'boolean' | 'date' | 'text'>('string');
+  const [fieldPendingDelete, setFieldPendingDelete] = React.useState<BotField | null>(null);
+  const [rowPendingDelete, setRowPendingDelete] = React.useState<BotDataRow | null>(null);
+  const [showDeleteFieldModal, setShowDeleteFieldModal] = React.useState(false);
+  const [showDeleteRowModal, setShowDeleteRowModal] = React.useState(false);
   
   // Loading states for operations
   const [isAddingField, setIsAddingField] = React.useState(false);
@@ -46,6 +56,8 @@ export default function BotContentPage() {
   const [isClearingData, setIsClearingData] = React.useState(false);
   const [isUploadingExcel, setIsUploadingExcel] = React.useState(false);
   const [isExportingData, setIsExportingData] = React.useState(false);
+  const [isUpdatingField, setIsUpdatingField] = React.useState(false);
+  const [isDeletingField, setIsDeletingField] = React.useState(false);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -117,6 +129,87 @@ export default function BotContentPage() {
     }
   };
 
+  const openEditFieldModal = (field: BotField) => {
+    setFieldToEdit(field);
+    setEditFieldName(field.fieldName);
+    setEditFieldType(field.fieldType);
+    setShowEditFieldModal(true);
+  };
+
+  const handleUpdateFieldDetails = async () => {
+    if (!fieldToEdit) return;
+    if (!editFieldName.trim()) {
+      alert('يرجى إدخال اسم العمود');
+      return;
+    }
+
+    try {
+      setIsUpdatingField(true);
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        setIsUpdatingField(false);
+        return;
+      }
+
+      const res = await botUpdateField(token, fieldToEdit.id, {
+        fieldName: editFieldName.trim(),
+        fieldType: editFieldType
+      });
+
+      if (res.field) {
+        setShowEditFieldModal(false);
+        setFieldToEdit(null);
+        setSuccessMessage('تم تحديث العمود بنجاح');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        loadData();
+      } else {
+        alert('فشل في تحديث العمود');
+      }
+    } catch (error) {
+      console.error('Error updating field:', error);
+      alert('فشل في تحديث العمود');
+    } finally {
+      setIsUpdatingField(false);
+    }
+  };
+
+  const requestDeleteField = (field: BotField) => {
+    setFieldPendingDelete(field);
+    setShowDeleteFieldModal(true);
+    setShowFieldsModal(false);
+  };
+
+  const confirmDeleteField = async () => {
+    if (!fieldPendingDelete) return;
+
+    try {
+      setIsDeletingField(true);
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        setIsDeletingField(false);
+        return;
+      }
+
+      const res = await botDeleteField(token, fieldPendingDelete.id);
+      if (res.ok) {
+        setSuccessMessage('تم حذف العمود بنجاح');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        setShowDeleteFieldModal(false);
+        setFieldPendingDelete(null);
+        loadData();
+      } else {
+        alert('فشل في حذف العمود');
+      }
+    } catch (error) {
+      console.error('Error deleting field:', error);
+      alert('فشل في حذف العمود');
+    } finally {
+      setIsDeletingField(false);
+    }
+  };
+
   const handleAddRow = async () => {
     try {
       setIsAddingRow(true);
@@ -175,8 +268,13 @@ export default function BotContentPage() {
     }
   };
 
-  const handleDeleteRow = async (rowId: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الصف؟')) return;
+  const requestDeleteRow = (row: BotDataRow) => {
+    setRowPendingDelete(row);
+    setShowDeleteRowModal(true);
+  };
+
+  const confirmDeleteRow = async () => {
+    if (!rowPendingDelete) return;
     
     try {
       setIsDeletingRow(true);
@@ -187,11 +285,13 @@ export default function BotContentPage() {
         return;
       }
 
-      const res = await botDeleteRow(token, rowId);
+      const res = await botDeleteRow(token, rowPendingDelete.id);
       
       if (res.ok) {
         setSuccessMessage('تم حذف الصف بنجاح');
         setTimeout(() => setSuccessMessage(''), 3000);
+        setShowDeleteRowModal(false);
+        setRowPendingDelete(null);
         loadData();
       } else {
         alert('فشل في حذف الصف');
@@ -321,9 +421,11 @@ export default function BotContentPage() {
   const currentRows = rows.slice(startIndex, endIndex);
 
   // Show fullscreen loader during operations
-  if (isAddingField || isAddingRow || isUpdatingRow || isDeletingRow || isClearingData || isUploadingExcel || isExportingData) {
+  if (isAddingField || isUpdatingField || isDeletingField || isAddingRow || isUpdatingRow || isDeletingRow || isClearingData || isUploadingExcel || isExportingData) {
     let loaderText = "جاري المعالجة...";
     if (isAddingField) loaderText = "جاري إضافة العمود...";
+    else if (isUpdatingField) loaderText = "جاري تحديث العمود...";
+    else if (isDeletingField) loaderText = "جاري حذف العمود...";
     else if (isAddingRow) loaderText = "جاري إضافة الصف...";
     else if (isUpdatingRow) loaderText = "جاري تحديث الصف...";
     else if (isDeletingRow) loaderText = "جاري حذف الصف...";
@@ -356,7 +458,7 @@ export default function BotContentPage() {
 
   return (
     <div className="w-full mx-auto ">
-         <div className="flex items-center justify-between">
+         <div className="flex flex-col lg:flex-row items-center justify-between">
          <h1 className="text-3xl font-bold mb-6 text-white">إدارة محتوى البوت</h1>
 
                 {/* Controls */}
@@ -367,6 +469,12 @@ export default function BotContentPage() {
             className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded"
           >
             إضافة عمود جديد
+          </button>
+          <button
+            onClick={() => setShowFieldsModal(true)}
+            className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded"
+          >
+            تعديل أو حذف عمود
           </button>
           
           <button
@@ -415,7 +523,6 @@ export default function BotContentPage() {
         </div>
       )}
 
-
       {/* Add Field Modal */}
       {showAddField && (
         <div className="fixed inset-0 backdrop-blur-lg  flex items-center justify-center z-50">
@@ -442,6 +549,8 @@ export default function BotContentPage() {
                   <option value="string">نص</option>
                   <option value="number">رقم</option>
                   <option value="boolean">نعم/لا</option>
+                  <option value="date">تاريخ</option>
+                  <option value="text">نص متعدد</option>
                 </select>
               </div>
               <div className="flex gap-2">
@@ -462,6 +571,112 @@ export default function BotContentPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Field Modal */}
+      {showEditFieldModal && fieldToEdit && (
+        <div className="fixed inset-0 backdrop-blur-lg flex items-center justify-center z-50">
+          <div className="gradient-border p-6 rounded-lg w-full max-w-3xl" style={{ backgroundColor: 'black' }}>
+            <h3 className="text-lg font-semibold mb-4 text-white">تعديل العمود</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">اسم العمود</label>
+                <input
+                  type="text"
+                  value={editFieldName}
+                  onChange={(e) => setEditFieldName(e.target.value)}
+                  className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white"
+                  placeholder="مثال: اسم_المنتج"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">نوع العمود</label>
+                <select
+                  value={editFieldType}
+                  onChange={(e) => setEditFieldType(e.target.value as 'string' | 'number' | 'boolean' | 'date' | 'text')}
+                  className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white appearance-none"
+                >
+                  <option value="string">نص</option>
+                  <option value="number">رقم</option>
+                  <option value="boolean">نعم/لا</option>
+                  <option value="date">تاريخ</option>
+                  <option value="text">نص متعدد</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleUpdateFieldDetails}
+                  className="primary-button text-white px-4 py-2 rounded"
+                >
+                  حفظ التعديلات
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditFieldModal(false);
+                    setFieldToEdit(null);
+                  }}
+                  className="primary-button after:bg-red-500 before:bg-red-500 text-white px-4 py-2 rounded"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Fields Modal */}
+      <Dialog open={showFieldsModal} onOpenChange={(open) => setShowFieldsModal(open)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>إدارة الأعمدة</DialogTitle>
+            <DialogDescription className="text-white">
+              قم بتعديل أو حذف الأعمدة الحالية للحفاظ على بيانات منظمة.
+            </DialogDescription>
+          </DialogHeader>
+          {fields.length === 0 ? (
+            <div className="text-center text-gray-300 py-8">
+              لم يتم إنشاء أعمدة بعد، ابدأ بإضافة عمود جديد.
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              {fields.map((field) => (
+                <div key={field.id} className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between border border-white/10 rounded-lg p-4">
+                  <div>
+                    <p className="text-white font-semibold">{field.fieldName}</p>
+                    <p className="text-sm text-gray-400">
+                      النوع:{" "}
+                      {{
+                        string: "نص",
+                        number: "رقم",
+                        boolean: "نعم/لا",
+                        date: "تاريخ",
+                        text: "نص متعدد"
+                      }[field.fieldType]}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => {
+                        openEditFieldModal(field);
+                        setShowFieldsModal(false);
+                      }}
+                      className="primary-button text-white px-4 py-2 rounded"
+                    >
+                      تعديل العمود
+                    </button>
+                    <button
+                      onClick={() => requestDeleteField(field)}
+                      className="primary-button after:bg-red-500 before:bg-red-500 text-white px-4 py-2 rounded"
+                    >
+                      حذف العمود
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Add Row Modal */}
       {showAddRow && (
@@ -498,6 +713,76 @@ export default function BotContentPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Field Confirmation */}
+      <Dialog
+        open={showDeleteFieldModal}
+        onOpenChange={(open) => {
+          setShowDeleteFieldModal(open);
+          if (!open) setFieldPendingDelete(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تأكيد حذف العمود</DialogTitle>
+            <DialogDescription className="text-white">
+              هل أنت متأكد من حذف العمود "{fieldPendingDelete?.fieldName}"؟ هذا الإجراء لا يمكن التراجع عنه وسيؤثر على جميع الصفوف.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setShowDeleteFieldModal(false);
+                setFieldPendingDelete(null);
+              }}
+              className="primary-button text-white px-4 py-2 rounded"
+            >
+              إلغاء
+            </button>
+            <button
+              onClick={confirmDeleteField}
+              className="primary-button after:bg-red-500 before:bg-red-500 text-white px-4 py-2 rounded"
+            >
+              حذف
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Row Confirmation */}
+      <Dialog
+        open={showDeleteRowModal}
+        onOpenChange={(open) => {
+          setShowDeleteRowModal(open);
+          if (!open) setRowPendingDelete(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تأكيد حذف الصف</DialogTitle>
+            <DialogDescription className="text-white">
+              هل أنت متأكد من حذف هذا الصف؟ هذا الإجراء لا يمكن التراجع عنه.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => {
+                setShowDeleteRowModal(false);
+                setRowPendingDelete(null);
+              }}
+              className="primary-button text-white px-4 py-2 rounded"
+            >
+              إلغاء
+            </button>
+            <button
+              onClick={confirmDeleteRow}
+              className="primary-button after:bg-red-500 before:bg-red-500 text-white px-4 py-2 rounded"
+            >
+              حذف
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Clear All Data Confirmation Modal */}
       {showClearConfirm && (
@@ -600,7 +885,7 @@ export default function BotContentPage() {
                             تعديل
                           </button>
                           <button
-                            onClick={() => handleDeleteRow(row.id)}
+                            onClick={() => requestDeleteRow(row)}
                             className="primary-button after:bg-red-500 before:bg-red-500 text-white  rounded"
                           >
                             حذف

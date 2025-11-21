@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { startWhatsAppCampaign } from "@/lib/api";
+import { startWhatsAppCampaign, listWhatsAppSchedules, cancelWhatsAppSchedule } from "@/lib/api";
 import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
 import { useToast } from "@/components/ui/toast-provider";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function WhatsAppCampaignsPage() {
   const [loading, setLoading] = useState(false);
@@ -33,17 +34,69 @@ export default function WhatsAppCampaignsPage() {
   const [selectedTagId, setSelectedTagId] = useState<number | ''>('');
   const [tagCampaignTemplate, setTagCampaignTemplate] = useState<string>("");
 
+  // Scheduled campaigns (Excel + tag-based WhatsApp campaigns)
+  const [campaignSchedules, setCampaignSchedules] = useState<Array<{
+    id: number;
+    type: 'groups' | 'campaign';
+    payload: any;
+    scheduledAt: string;
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  }>>([]);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  const [cancellingScheduleId, setCancellingScheduleId] = useState<number | null>(null);
+  const [campaignSchedulePage, setCampaignSchedulePage] = useState(1);
+  const schedulesPerPage = 5;
+
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
-    // Load tags on mount
+    // Load tags and schedules on mount
     (async () => {
       try {
         const res = await listTags();
         if (res.success) setTags(res.data || []);
       } catch {}
     })();
-  }, []);
+
+    if (token) {
+      handleLoadCampaignSchedules();
+    }
+  }, [token]);
+
+  async function handleLoadCampaignSchedules() {
+    try {
+      setIsLoadingSchedules(true);
+      const res = await listWhatsAppSchedules(token);
+      if (res.success && Array.isArray(res.schedules)) {
+        const filtered = res.schedules
+          .filter(s => s.type === 'campaign')
+          .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+        setCampaignSchedules(filtered);
+        setCampaignSchedulePage(1);
+      }
+    } catch (e: any) {
+      console.error('[Campaigns] Failed to load schedules:', e.message);
+    } finally {
+      setIsLoadingSchedules(false);
+    }
+  }
+
+  async function handleCancelCampaignSchedule(id: number) {
+    try {
+      setCancellingScheduleId(id);
+      const res = await cancelWhatsAppSchedule(token, id);
+      if (res.success) {
+        showSuccess("تم إيقاف الحملة المجدولة بنجاح");
+        await handleLoadCampaignSchedules();
+      } else {
+        showError("تعذر إيقاف الحملة", res.message || "يمكن إيقاف الحملات قيد الانتظار فقط");
+      }
+    } catch (e: any) {
+      showError("تعذر إيقاف الحملة", e.message);
+    } finally {
+      setCancellingScheduleId(null);
+    }
+  }
 
   function handleStartCampaign() {
     if (!campaignFile || !campaignTemplate) {
@@ -364,6 +417,110 @@ export default function WhatsAppCampaignsPage() {
             </div>
           </div>
          
+        </CardContent>
+      </Card>
+
+      {/* Scheduled WhatsApp campaigns */}
+      <Card className="gradient-border border-none">
+        <CardHeader className="border-text-primary/50 text-white font-bold text-xl">
+          الحملات المجدولة في واتساب
+          <p className="text-yellow-400 text-sm">بامكانك تعديل معلومات الحملة من صفحة المحتوى المجدول</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoadingSchedules ? (
+            <div className="text-white text-sm">جاري تحميل الحملات المجدولة...</div>
+          ) : campaignSchedules.length === 0 ? (
+            <div className="text-white/60 text-sm">
+              لا توجد حملات مجدولة حالياً.
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-lg border border-white/10">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-white">#</TableHead>
+                      <TableHead className="text-white">وقت البدء</TableHead>
+                      <TableHead className="text-white">عدد الأرقام</TableHead>
+                      {/* <TableHead className="text-white">نوع</TableHead> */}
+                      <TableHead className="text-white">الحالة</TableHead>
+                      <TableHead className="text-white">إجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {campaignSchedules
+                      .slice((campaignSchedulePage - 1) * schedulesPerPage, campaignSchedulePage * schedulesPerPage)
+                      .map((s) => {
+                        const date = new Date(s.scheduledAt);
+                        const isPending = s.status === 'pending';
+                        const rowsCount = Array.isArray(s.payload?.rows) ? s.payload.rows.length : 0;
+                        const isRecurringSchedule = !!s.payload?.isRecurring;
+                        return (
+                          <TableRow key={s.id}>
+                            <TableCell className="text-white">{s.id}</TableCell>
+                            <TableCell className="text-white">{date.toLocaleString()}</TableCell>
+                            <TableCell className="text-white">{rowsCount}</TableCell>
+                            {/* <TableCell className="text-white">
+                              {isRecurringSchedule ? (
+                                <span className="text-primary">متكررة</span>
+                              ) : (
+                                'عادية'
+                              )}
+                            </TableCell> */}
+                            <TableCell className="text-white">
+                              {s.status === 'pending'
+                                ? <span className="text-yellow-400">قيد الانتظار</span>
+                                : s.status === 'running'
+                                ? <span className="text-primary">قيد التنفيذ</span>
+                                : s.status === 'completed'
+                                ? <span className="text-green-400">مكتملة</span>
+                                : s.status === 'cancelled'
+                                ? <span className="text-red-500">ملغاة</span>
+                                : <span className="text-red-500">فشل</span>}
+                            </TableCell>
+                            <TableCell>
+                              <button
+                                type="button"
+                                disabled={!isPending || cancellingScheduleId === s.id}
+                                onClick={() => handleCancelCampaignSchedule(s.id)}
+                                className="primary-button after:bg-red-700 before:bg-[#01191080] text-white px-4 py-2 rounded disabled:opacity-60"
+                              >
+                                {cancellingScheduleId === s.id ? 'جاري الإيقاف...' : 'إيقاف الحملة'}
+                              </button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </div>
+              {Math.ceil(campaignSchedules.length / schedulesPerPage) > 1 && (
+                <div className="flex items-center justify-between text-white text-sm">
+                  <button
+                    onClick={() => setCampaignSchedulePage((prev) => Math.max(prev - 1, 1))}
+                    disabled={campaignSchedulePage === 1}
+                    className="primary-button px-3 py-1 text-xs disabled:opacity-50"
+                  >
+                    السابق
+                  </button>
+                  <span>
+                    صفحة {campaignSchedulePage} من {Math.ceil(campaignSchedules.length / schedulesPerPage)}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setCampaignSchedulePage((prev) =>
+                        Math.min(prev + 1, Math.ceil(campaignSchedules.length / schedulesPerPage))
+                      )
+                    }
+                    disabled={campaignSchedulePage === Math.ceil(campaignSchedules.length / schedulesPerPage)}
+                    className="primary-button px-3 py-1 text-xs disabled:opacity-50"
+                  >
+                    التالي
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 

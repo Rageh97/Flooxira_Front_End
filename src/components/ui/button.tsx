@@ -13,7 +13,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const variants: Record<string, string> = {
       default: "bg-black text-white hover:bg-black/90",
       secondary: "bg-gray-200  text-gray-900",
-      ghost: "bg-transparent hover:bg-gray-100",
+      ghost: "bg-blue-500 text-white",
       destructive: "bg-red-600 text-white hover:bg-red-700",
     };
     const sizes: Record<string, string> = {

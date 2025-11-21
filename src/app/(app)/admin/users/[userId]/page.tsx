@@ -290,15 +290,15 @@ export default function UserDetailsPage() {
                     </Badge>
                   </td>
                 </tr>
-                <tr className="border-b border-gray-600">
+                {/* <tr className="border-b border-gray-600">
                   <td className="py-3 px-4 font-medium text-gray-300">حالة البريد الإلكتروني</td>
                   <td className="py-3 px-4">
                     <Badge className={user.emailVerifiedAt ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
                       {user.emailVerifiedAt ? 'مؤكد' : 'غير مؤكد'}
                     </Badge>
                   </td>
-                </tr>
-                <tr className="border-b border-gray-600">
+                </tr> */}
+                {/* <tr className="border-b border-gray-600">
                   <td className="py-3 px-4 font-medium text-gray-300">حالة البوت</td>
                   <td className="py-3 px-4">
                     <Badge className={user.botPaused ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}>
@@ -306,7 +306,7 @@ export default function UserDetailsPage() {
                       {user.botPaused ? 'متوقف' : 'نشط'}
                     </Badge>
                   </td>
-                </tr>
+                </tr> */}
                 <tr>
                   <td className="py-3 px-4 font-medium text-gray-300">تاريخ الإنشاء</td>
                   <td className="py-3 px-4 text-white flex items-center space-x-2 rtl:space-x-reverse">
@@ -372,11 +372,54 @@ export default function UserDetailsPage() {
                           {subscription.plan.permissions?.canManageWhatsApp && (
                             <Badge variant="outline" className="text-xs">واتساب</Badge>
                           )}
+                          {subscription.plan.permissions?.whatsappMessagesPerMonth > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {subscription.plan.permissions.whatsappMessagesPerMonth} رسالة واتساب
+                            </Badge>
+                          )}
                           {subscription.plan.permissions?.canManageTelegram && (
                             <Badge variant="outline" className="text-xs">تليجرام</Badge>
                           )}
                           {subscription.plan.permissions?.canSallaIntegration && (
                             <Badge variant="outline" className="text-xs">سلة</Badge>
+                          )}
+                          {subscription.plan.permissions?.canManageContent && (
+                            <Badge variant="outline" className="text-xs">إدارة المحتوى</Badge>
+                          )}
+                          {subscription.plan.permissions?.canManageCustomers && (
+                            <Badge variant="outline" className="text-xs">إدارة العملاء</Badge>
+                          )}
+                          {subscription.plan.permissions?.canMarketServices && (
+                            <Badge variant="outline" className="text-xs">تسويق الخدمات</Badge>
+                          )}
+                          {subscription.plan.permissions?.maxServices > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {subscription.plan.permissions.maxServices} خدمة
+                            </Badge>
+                          )}
+                          {subscription.plan.permissions?.canManageEmployees && (
+                            <Badge variant="outline" className="text-xs">إدارة الموظفين</Badge>
+                          )}
+                          {subscription.plan.permissions?.maxEmployees > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {subscription.plan.permissions.maxEmployees} موظف
+                            </Badge>
+                          )}
+                          {subscription.plan.permissions?.canUseAI && (
+                            <Badge variant="outline" className="text-xs">AI</Badge>
+                          )}
+                          {subscription.plan.permissions?.aiCredits > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {subscription.plan.permissions.aiCredits} نقطة AI
+                            </Badge>
+                          )}
+                          {subscription.plan.permissions?.canUseLiveChat && (
+                            <Badge variant="outline" className="text-xs">Live Chat</Badge>
+                          )}
+                          {subscription.plan.permissions?.liveChatAiResponses > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {subscription.plan.permissions.liveChatAiResponses} رد تلقائي
+                            </Badge>
                           )}
                         </div>
                       </td>

@@ -34,7 +34,11 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(false);
 
   const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null;
-  
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
   // Debug localStorage
   if (typeof window !== 'undefined') {
     console.log('LocalStorage keys:', Object.keys(localStorage));
@@ -328,34 +332,34 @@ export default function SchedulePage() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="الجدولة"
-        featureName="الجدولة"
-        className="space-y-8"
-      />
-    );
-  }
+
 
   return (
-    <div className=" mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white">ادارة وجدولة المحتوى</h1>
+    <div className="mx-auto p-3 sm:p-6">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="الجدولة"
+          featureName="الجدولة"
+          className="mb-8"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}>
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">ادارة وجدولة المحتوى</h1>
         {/* <p className="text-gray-300">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p> */}
       </div>
 
       <Card className="gradient-border">
         <CardHeader className="border-text-primary/50">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <h2 className="text-lg sm:text-xl font-semibold text-white">
               {monthNames[currentMonth - 1]} {currentYear}
             </h2>
-            <div className="flex items-center gap-2">
-              <Button className="text-white  inner-shadow" variant="default" onClick={() => navigateMonth('prev')}>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button className="text-white inner-shadow text-xs sm:text-sm flex-1 sm:flex-initial" variant="default" onClick={() => navigateMonth('prev')}>
                 ← السابق
               </Button>
-              <Button className="text-white  inner-shadow" variant="default" onClick={() => navigateMonth('next')}>
+              <Button className="text-white inner-shadow text-xs sm:text-sm flex-1 sm:flex-initial" variant="default" onClick={() => navigateMonth('next')}>
                 التالي →
               </Button>
             </div>
@@ -369,25 +373,27 @@ export default function SchedulePage() {
           ) : (
             <div className="space-y-4">
               {/* Color Legend */}
-              <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-200 border-2 border-green-400 rounded"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-200 border-2 border-green-400 rounded"></div>
                   <span className="text-white">اليوم</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-200 border-2 border-red-300 rounded"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-200 border-2 border-red-300 rounded"></div>
                   <span className="text-white">الأيام الماضية</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-200 border-2 border-yellow-300 rounded"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-200 border-2 border-yellow-300 rounded"></div>
                   <span className="text-white">الأيام القادمة</span>
                 </div>
               </div>
               
-              <div className="text-sm text-primary">
-                إجمالي واتساب: {monthlySchedules.whatsapp?.length || 0} | 
-                إجمالي المنشورات: {monthlySchedules.posts?.length || 0} | 
-                إجمالي تليجرام: {monthlySchedules.telegram?.length || 0}
+              <div className="text-xs sm:text-sm text-primary flex flex-wrap gap-2">
+                <span>إجمالي واتساب: {monthlySchedules.whatsapp?.length || 0}</span>
+                <span className="hidden sm:inline">|</span>
+                <span>إجمالي المنشورات: {monthlySchedules.posts?.length || 0}</span>
+                <span className="hidden sm:inline">|</span>
+                <span>إجمالي تليجرام: {monthlySchedules.telegram?.length || 0}</span>
               </div>
               {monthlySchedules.whatsapp?.length > 0 && (
                 <div className="text-xs text-green-600">
@@ -402,17 +408,17 @@ export default function SchedulePage() {
               {/* <div className="text-xs text-white">
                 التقويم: {daysInMonth} يوم، يبدأ في اليوم {firstDay}
                     </div> */}
-              <div className="grid grid-cols-7 gap-2  rounded-lg p-4 ">
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 rounded-lg p-2 sm:p-4 overflow-x-auto">
                 {/* Day headers */}
                 {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
-                  <div key={day} className="p-3 text-center font-semibold text-primary bg-dark-custom rounded ">
+                  <div key={day} className="p-1 sm:p-2 md:p-3 text-center font-semibold text-primary bg-dark-custom rounded text-xs sm:text-sm">
                     {day}
                   </div>
                 ))}
                 
                 {/* Empty cells for days before month starts */}
                 {Array.from({ length: firstDay }).map((_, index) => (
-                  <div key={`empty-${index}`} className="p-3 h-16 bg-semidark-custom  rounded"></div>
+                  <div key={`empty-${index}`} className="p-1 sm:p-2 md:p-3 h-12 sm:h-16 bg-semidark-custom rounded"></div>
                 ))}
                 
                 {/* Days of the month */}
@@ -448,18 +454,18 @@ export default function SchedulePage() {
                   return (
                     <div
                       key={day}
-                      className={`p-3 h-16 rounded cursor-pointer hover:opacity-80 relative flex flex-col border-2 ${cellColorClass}`}
+                      className={`p-1 sm:p-2 md:p-3 h-12 sm:h-16 rounded cursor-pointer hover:opacity-80 relative flex flex-col border-2 ${cellColorClass}`}
                       onClick={() => handleDayClick(day)}
                     >
-                      <div className={`font-semibold text-sm ${textColorClass}`}>
-                        {day} {isToday ? '(اليوم)' : ''}
+                      <div className={`font-semibold text-xs sm:text-sm ${textColorClass}`}>
+                        {day} {isToday ? <span className="hidden sm:inline">(اليوم)</span> : ''}
                       </div>
                       {daySchedules.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
+                        <div className="flex flex-wrap gap-0.5 sm:gap-1 mt-0.5 sm:mt-1">
                           {daySchedules.slice(0, 2).map((schedule, idx) => (
                             <div
                               key={idx}
-                          className={`text-xs px-1 py-0.5 rounded font-medium ${
+                          className={`text-[10px] sm:text-xs px-0.5 sm:px-1 py-0.5 rounded font-medium ${
                                 schedule.type === 'whatsapp' 
                                   ? 'bg-green-600 text-white' 
                                   : schedule.type === 'telegram'
@@ -471,7 +477,7 @@ export default function SchedulePage() {
                             </div>
                           ))}
                           {daySchedules.length > 2 && (
-                            <div className={`text-xs px-1 py-0.5 rounded bg-gray-600 text-white font-medium`}>
+                            <div className={`text-[10px] sm:text-xs px-0.5 sm:px-1 py-0.5 rounded bg-gray-600 text-white font-medium`}>
                               +{daySchedules.length - 2}
                             </div>
                           )}
@@ -488,11 +494,11 @@ export default function SchedulePage() {
 
       {/* Edit Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-lg flex items-center justify-center z-50">
-          <div className="gradient-border rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-white">العناصر المجدولة</h3>
-              <Button variant="secondary" onClick={handleCancelSchedule}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+          <div className="gradient-border rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+              <h3 className="text-base sm:text-lg font-semibold text-white">العناصر المجدولة</h3>
+              <Button variant="secondary" onClick={handleCancelSchedule} className="text-xs sm:text-sm">
                 إغلاق
               </Button>
             </div>
@@ -502,10 +508,10 @@ export default function SchedulePage() {
             ) : (
               <div className="space-y-4">
                 {selectedDaySchedules.map(({ type, item }) => (
-                  <div key={`${type}_${item.id}`} className="border rounded p-4 space-y-3">
+                  <div key={`${type}_${item.id}`} className="border rounded p-3 sm:p-4 space-y-2 sm:space-y-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="text-sm font-medium text-primary">
+                        <div className="text-xs sm:text-sm font-medium text-primary">
                           {type === 'whatsapp' ? 'واتساب' : type === 'telegram' ? 'تليجرام' : 'منشور'} 
                         </div>
                         <div className="text-xs text-gray-200">
@@ -568,9 +574,9 @@ export default function SchedulePage() {
                     </div>
                     
                     {/* Action buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
-                      className="primary-button"
+                      className="primary-button text-xs sm:text-sm"
                         size="sm" 
                         onClick={() => {
                           if (type === 'whatsapp') {
@@ -592,7 +598,7 @@ export default function SchedulePage() {
                       </Button>
                       <Button 
                         size="sm" 
-                        className="primary-button after:bg-red-500"
+                        className="primary-button after:bg-red-500 text-xs sm:text-sm"
                         variant="destructive" 
                         onClick={() => {
                           if (type === 'whatsapp') {
@@ -618,6 +624,7 @@ export default function SchedulePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

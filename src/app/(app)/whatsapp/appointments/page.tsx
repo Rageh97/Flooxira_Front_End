@@ -270,7 +270,7 @@ export default function AppointmentsPage() {
 
   return (
     <div className="w-full mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-6">
         <h1 className="text-3xl font-bold text-white">إدارة المواعيد</h1>
         <div className="flex gap-4">
           <button

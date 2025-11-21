@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/toast-provider";
+
 import { 
   listContentCategories, 
   createContentCategory, 
@@ -44,7 +46,8 @@ type Platform = 'facebook' | 'instagram' | 'linkedin' | 'pinterest' | 'tiktok' |
 export default function ContentHomePage() {
   const router = useRouter();
   const { canManageContent, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
-  
+    const { showSuccess, showError } = useToast();
+
   const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<ContentCategory | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -89,6 +92,12 @@ export default function ContentHomePage() {
   
   const token = typeof window !== 'undefined' ? (localStorage.getItem("auth_token") || "") : "";
 
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
+  
   // Helper function to convert local datetime to ISO string without timezone conversion
   const localDateTimeToISO = (localDateTime: string): string => {
     if (!localDateTime) return '';
@@ -101,6 +110,7 @@ export default function ContentHomePage() {
     // Example: User in GMT+3 picks 03:08 local → stored as 00:08 UTC → displays as 03:08 when shown in GMT+3
     return date.toISOString();
   };
+ 
 
   // Show message modal
   const showMessage = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -189,17 +199,9 @@ export default function ContentHomePage() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إدارة المحتوى"
-        featureName="إدارة المحتوى"
-        className="space-y-8"
-      />
-    );
-  }
 
-  if (!canManageContent()) {
+
+  if (hasActiveSubscription && !canManageContent()) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">إدارة المحتوى</h1>
@@ -717,9 +719,18 @@ export default function ContentHomePage() {
   const daysInMonth = getDaysInMonth(currentMonth, currentYear);
   const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
 
+
+
   return (
     <div className="min-h-screen w-full">
-      <div className="container mx-auto w-full">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إدارة المحتوى"
+          featureName="إدارة المحتوى"
+          className="container mx-auto w-full mb-8 pt-6"
+        />
+      )} */}
+      <div className={`container mx-auto w-full ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">ادارة وجدولة المحتوى </h1>

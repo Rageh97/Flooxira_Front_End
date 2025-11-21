@@ -48,6 +48,9 @@ interface UserPermissions {
   // ميزات الذكاء الاصطناعي
   canUseAI: boolean;
   aiCredits: number;
+  
+  // Live Chat & Tickets
+  canUseLiveChat: boolean;
 }
 
 interface Subscription {
@@ -560,6 +563,36 @@ export default function MySubscriptionPage() {
                     {permissions.canUseAI ? (
                       permissions.aiCredits === 0 ? 'غير محدود' : `${permissions.aiCredits || 0} كريديت/شهر`
                     ) : '-'}
+                  </td>
+                </tr>
+
+                {/* Live Chat & Tickets */}
+                <tr>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
+                    💬 Live Chat & Tickets
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    نظام الدردشة المباشرة وإدارة التذاكر
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {permissions.canUseLiveChat ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        متاح
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        غير متاح
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    {permissions.canUseLiveChat
+                      ? (permissions.liveChatAiResponses && permissions.liveChatAiResponses > 0
+                          ? `${permissions.liveChatAiResponses} رد/شهر`
+                          : 'غير محدود')
+                      : '-'}
                   </td>
                 </tr>
               </tbody>

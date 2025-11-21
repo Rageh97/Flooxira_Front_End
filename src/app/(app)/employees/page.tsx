@@ -50,6 +50,8 @@ import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { useToast } from "@/components/ui/toast-provider";
+
 
 interface Employee {
   id: number;
@@ -93,7 +95,7 @@ const PLATFORMS = [
 ];
 
 export default function EmployeesPage() {
-  const { permissions, hasActiveSubscription } = usePermissions();
+  const { permissions, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   const { getToken } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stats, setStats] = useState<EmployeeStats | null>(null);
@@ -106,7 +108,7 @@ export default function EmployeesPage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
+  const { showSuccess, showError } = useToast();
   // Form states
   const [formData, setFormData] = useState({
     name: "",
@@ -132,7 +134,11 @@ export default function EmployeesPage() {
   const canManageEmployees = permissions?.canManageEmployees || false;
   const maxEmployees = permissions?.maxEmployees || 0;
   const canCreateMore = maxEmployees === 0 || (stats?.totalEmployees || 0) < maxEmployees;
-
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
   const loadEmployees = useCallback(async () => {
     if (!hasActiveSubscription || !canManageEmployees) return;
     
@@ -341,17 +347,9 @@ export default function EmployeesPage() {
   }, [hasActiveSubscription, canManageEmployees]);
 
   // Show loading or redirect if no permissions
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إدارة الموظفين"
-        featureName="إدارة الموظفين"
-        className="container mx-auto p-6"
-      />
-    );
-  }
 
-  if (!canManageEmployees) {
+
+  if (hasActiveSubscription && !canManageEmployees) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-8">
@@ -363,6 +361,14 @@ export default function EmployeesPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إدارة الموظفين"
+          featureName="إدارة الموظفين"
+          className="container mx-auto p-6"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -853,6 +859,7 @@ export default function EmployeesPage() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

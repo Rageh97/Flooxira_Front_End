@@ -95,6 +95,7 @@ export default function TelegramBotPage() {
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 
+
   useEffect(() => {
     if (token) {
       loadKnowledgeBase();
@@ -145,17 +146,9 @@ export default function TelegramBotPage() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إدارة التليجرام"
-        featureName="إدارة التليجرام"
-        className="space-y-8"
-      />
-    );
-  }
 
-  if (!canManageTelegram()) {
+
+  if (hasActiveSubscription && !canManageTelegram()) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
@@ -524,7 +517,7 @@ export default function TelegramBotPage() {
         </div>
         {renderTabContent()}
       </div>
-        </div>
+    </div>
   );
 
   function renderTabContent() {

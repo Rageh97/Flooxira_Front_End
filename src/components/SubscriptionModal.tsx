@@ -187,7 +187,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary">
+          <DialogTitle className="flex items-center gap-2 text-primary mx-10">
             <CreditCard className="h-5 w-5" />
             اشتراك في {plan.name}
           </DialogTitle>
@@ -198,7 +198,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
 
         <div className="space-y-4">
           {/* Plan Summary */}
-          <Card className="bg-secondry border-none">
+          <Card className="gradient-border border-none">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg text-white">{plan.name}</CardTitle>
             </CardHeader>
@@ -234,7 +234,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               <div className="grid gap-3">
                 <Button
                   variant="secondary"
-                  className="w-full bg-secondry border-none h-auto p-4 justify-start "
+                  className="w-full bg-card border-none h-auto p-4 justify-start "
                   onClick={() => handleMethodSelect('usdt')}
                 >
                   <div className="flex items-center gap-3 w-full">
@@ -250,7 +250,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
 
                 <Button
                   variant="secondary"
-                  className="w-full bg-secondry border-none h-auto p-4 justify-start "
+                  className="w-full bg-card border-none h-auto p-4 justify-start "
                   onClick={() => handleMethodSelect('coupon')}
                 >
                   <div className="flex items-center gap-3 w-full">

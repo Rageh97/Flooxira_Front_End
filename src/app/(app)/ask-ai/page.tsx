@@ -24,6 +24,7 @@ import {
   X,
   Copy,
   CheckCheck,
+  ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
@@ -58,11 +59,13 @@ export default function AskAIPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
+  const [isMobileListOpen, setIsMobileListOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const streamingMsgRef = useRef<AIMessage | null>(null);
   const streamRef = useRef<{ cancel: () => void } | null>(null);
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const isOutOfCredits = !!(stats && !stats.isUnlimited && stats.remainingCredits <= 0);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -109,17 +112,23 @@ export default function AskAIPage() {
       const response = await getAIConversation(token, conversationId);
       setSelectedConversation(response.conversation);
       setMessages(response.messages || []);
+      setIsMobileListOpen(false);
     } catch (error: any) {
       showError("خطأ", error.message);
     }
   };
 
   const handleCreateConversation = async () => {
+    if (!hasActiveSubscription) {
+      showError("تنبيه", "لا يمكنك بدء محادثة بدون اشتراك نشط.");
+      return;
+    }
     try {
       const response = await createAIConversation(token);
       await loadConversations();
       setSelectedConversation(response.conversation);
       setMessages([]);
+      setIsMobileListOpen(false);
       showSuccess("تم إنشاء محادثة جديدة!");
     } catch (error: any) {
       showError("خطأ", error.message);
@@ -127,6 +136,10 @@ export default function AskAIPage() {
   };
 
   const handleSendMessage = async () => {
+    if (!hasActiveSubscription) {
+      showError("تنبيه", "لا يمكنك إرسال رسائل بدون اشتراك نشط.");
+      return;
+    }
     if (!inputMessage.trim() || !selectedConversation || sending) return;
 
     const userMessageContent = inputMessage.trim();
@@ -207,6 +220,7 @@ export default function AskAIPage() {
       if (selectedConversation?.id === conversationToDelete.id) {
         setSelectedConversation(null);
         setMessages([]);
+        setIsMobileListOpen(true);
       }
       
       await loadConversations();
@@ -247,6 +261,12 @@ export default function AskAIPage() {
       showError("خطأ", "فشل نسخ الرسالة");
     }
   };
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
+
 
   if (permissionsLoading || loading) {
     return (
@@ -255,28 +275,35 @@ export default function AskAIPage() {
       </div>
     );
   }
+  
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-       
-        featureName="ميزة الذكاء الاصطناعي"
-        className="h-screen flex items-center justify-center"
-      />
-    );
-  }
+  
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] bg-fixed-40 rounded-xl">
-   
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+    <div className="flex flex-col gap-4 h-[calc(100vh-2rem)]">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription
+          heading=" "
+          featureName="ميزة الذكاء الاصطناعي"
+          className="w-full"
+        />
+      )} */}
+      <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden">
+        {/* Main Chat Area */}
+        <div className={`flex-1 flex flex-col ${isMobileListOpen ? 'hidden md:flex' : 'flex'}`}>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
             <div className="border-b border-gray-700 p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden shrink-0"
+                  onClick={() => setIsMobileListOpen(true)}
+                >
+                  <ArrowRight className="h-5 w-5 text-gray-400" />
+                </Button>
                 {editingTitle ? (
                   <div className="flex items-center gap-2 flex-1">
                     <Input
@@ -406,7 +433,12 @@ export default function AskAIPage() {
               <div className="flex items-center gap-2">
                 <Button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sending || !!(stats && !stats.isUnlimited && stats.remainingCredits <= 0)}
+                  disabled={
+                    !hasActiveSubscription ||
+                    !inputMessage.trim() ||
+                    sending ||
+                    isOutOfCredits
+                  }
                   className="min-h-[60px] self-end border"
                 >
                   {sending ? (
@@ -434,19 +466,32 @@ export default function AskAIPage() {
                   }}
                   placeholder="اكتب رسالتك هنا... (Enter للإرسال)"
                   className="flex-1 min-h-[60px] max-h-[200px]  border-gray-700 text-white resize-none"
-                  disabled={sending || !!(stats && !stats.isUnlimited && stats.remainingCredits <= 0)}
+                  disabled={!hasActiveSubscription || sending || isOutOfCredits}
                 />
                
               </div>
-              {stats && !stats.isUnlimited && stats.remainingCredits <= 0 && (
+              {isOutOfCredits && (
                 <p className="text-xs text-red-400 mt-2">
                   لقد استنفدت كريديت AI الخاص بك. يرجى ترقية باقتك أو انتظار التجديد.
+                </p>
+              )}
+              {!hasActiveSubscription && (
+                <p className="text-xs text-yellow-400 mt-2">
+                  تحتاج إلى اشتراك نشط لبدء أو متابعة المحادثات.
                 </p>
               )}
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center relative">
+             <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden absolute top-4 right-4"
+                  onClick={() => setIsMobileListOpen(true)}
+                >
+                  <ArrowRight className="h-5 w-5 text-gray-400" />
+                </Button>
             <div className="flex flex-col items-center">
               <img src="/Bot.gif" alt="" className="w-40 h-40 mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">
@@ -455,22 +500,27 @@ export default function AskAIPage() {
               <p className="text-primary mb-6">
                 استخدم AI لإنشاء محتوى رائع لوسائل التواصل الاجتماعي
               </p>
-              <Button onClick={handleCreateConversation} className="primary-button">
+              <Button
+                onClick={handleCreateConversation}
+                className="primary-button"
+                disabled={!hasActiveSubscription}
+              >
                 {/* <Plus className="h-5 w-5 mr-2" /> */}
                 بدء محادثة جديدة
               </Button>
             </div>
           </div>
         )}
-      </div>
-   {/* Sidebar - Conversations List */}
-   <div className="w-64 border-r border-gray-700 flex flex-col">
+        </div>
+        {/* Sidebar - Conversations List */}
+        <div className={`w-full md:w-64 border-r border-gray-700 flex flex-col ${isMobileListOpen ? 'flex' : 'hidden md:flex'}`}>
         {/* New Chat Button */}
         <div className="p-3">
-          <Button
-            onClick={handleCreateConversation}
-            className="w-full primary-button"
-          >
+            <Button
+              onClick={handleCreateConversation}
+              className="w-full primary-button"
+              disabled={!hasActiveSubscription}
+            >
             {/* <Plus className="h-4 w-4 mr-2" /> */}
             محادثة جديدة
           </Button>
@@ -535,6 +585,7 @@ export default function AskAIPage() {
             </div>
           )}
         </div>
+      </div>
       </div>
       {/* Delete Confirmation Modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>

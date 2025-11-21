@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from "@/components/ui/toast-provider";
+
 import { 
   Plus, 
   Search, 
@@ -107,6 +109,7 @@ interface Category {
 export default function CustomersPage() {
   const { canManageCustomers, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const { showSuccess, showError } = useToast();
   const [stats, setStats] = useState<CustomerStats | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [stores, setStores] = useState<{ id: number; name: string }[]>([]);
@@ -181,7 +184,11 @@ export default function CustomersPage() {
   const [isUpdatingField, setIsUpdatingField] = useState(false);
   const [isDeletingField, setIsDeletingField] = useState(false);
   const [isDeletingCustomer, setIsDeletingCustomer] = useState(false);
-
+useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
   useEffect(() => {
     fetchCustomers();
     fetchStats();
@@ -830,7 +837,8 @@ export default function CustomersPage() {
       category: '',
       product: '',
       subscriptionStatus: 'all',
-      storeName: ''
+      storeName: '',
+      platformName: ''
     });
     setSearchTerm('');
     setPagination(prev => ({ ...prev, page: 1 }));
@@ -876,18 +884,10 @@ export default function CustomersPage() {
   }
 
   // Check if user has active subscription
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إدارة العملاء"
-        featureName="إدارة العملاء"
-        className="container mx-auto p-6"
-      />
-    );
-  }
+
 
   // Check if user has customers management permission
-  if (!canManageCustomers()) {
+  if (hasActiveSubscription && !canManageCustomers()) {
     return (
       <div className="container mx-auto p-6">
         <h1 className="text-2xl font-semibold mb-4">إدارة العملاء</h1>
@@ -907,7 +907,7 @@ export default function CustomersPage() {
     );
   }
 
-  if (!hasAccess) {
+  if (hasActiveSubscription && !hasAccess) {
     return (
       <div className="container mx-auto p-6">
         <Card className="max-w-2xl mx-auto">
@@ -944,13 +944,21 @@ export default function CustomersPage() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إدارة العملاء"
+          featureName="إدارة العملاء"
+          className="container mx-auto p-6"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col lg:flex-row justify-between items-center gap-3">
         <div>
           <h1 className="text-3xl font-bold text-white">إدارة العملاء</h1>
           <p className="text-gray-300">إدارة قاعدة بيانات العملاء واشتراكاتهم</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
             أضف تصنيف
           </Button>
@@ -1181,11 +1189,11 @@ export default function CustomersPage() {
               <div className="flex-1">
                 <Label className="text-white">المتجر</Label>
                 <select
-                  className="w-full p-2 mt-2 rounded-md border border-blue-300 bg-[#01191040]"
+                  className="w-full p-2 mt-2 text-white rounded-md border border-blue-300 bg-[#01191040]"
                   value={filters.storeName}
                   onChange={(e) => setFilters(prev => ({ ...prev, storeName: e.target.value }))}
                 >
-                  <option value="">كل المتاجر</option>
+                  <option className="text-white" value="">كل المتاجر</option>
                   {stores.map((s: { id: number; name: string }) => (
                     <option key={s.id} value={s.name}>{s.name}</option>
                   ))}
@@ -1196,11 +1204,11 @@ export default function CustomersPage() {
               <div className="flex-1">
                 <Label className="text-white">المنصة</Label>
                 <select
-                  className="w-full p-2 mt-2 rounded-md border border-blue-300 bg-[#01191040]"
+                  className="w-full p-2 mt-2 text-white rounded-md border border-blue-300 bg-[#01191040]"
                   value={filters.platformName}
                   onChange={(e) => setFilters(prev => ({ ...prev, platformName: e.target.value }))}
                 >
-                  <option value="">كل المنصات</option>
+                  <option className="text-white" value="">كل المنصات</option>
                   {platforms.map((p: { id: number; name: string }) => (
                     <option key={p.id} value={p.name}>{p.name}</option>
                   ))}
@@ -1764,6 +1772,7 @@ export default function CustomersPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

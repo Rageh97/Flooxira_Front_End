@@ -416,17 +416,9 @@ export default function WhatsAppPage() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إدارة الواتساب"
-        featureName="إدارة الواتساب"
-        className="space-y-8"
-      />
-    );
-  }
 
-  if (!canManageWhatsApp()) {
+
+  if (hasActiveSubscription && !canManageWhatsApp()) {
     return (
       <div className="space-y-8">
         <h1 className="text-2xl font-semibold">إدارة الواتساب</h1>
@@ -693,16 +685,16 @@ export default function WhatsAppPage() {
           {success}
         </div>
       )}
-<div className="flex  w-full gap-3">
+<div className="flex flex-col lg:flex-row  w-full gap-3">
       {/* Usage Statistics */}
-     <div className="w-1/2 ">
+     <div className="w-full ">
      {canManageWhatsApp() && hasActiveSubscription && (
         <UsageStats platform="whatsapp" />
       )}
      </div>
 
       {/* WhatsApp Connection */}
-      <Card className=" gradient-border  w-1/2">
+      <Card className=" gradient-border w-full">
         <CardHeader className="border-text-primary/50 text-white flex items-center justify-between">اتصال الواتساب
         
         <div className="">

@@ -260,11 +260,11 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="text-xl text-gray-300 mt-1">
+            <div className="md:text-xl text-gray-300 mt-1">
               المحتوى المنشور
             </div>
           </div>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-primary">{stats?.totalSuccessfulPublications ?? stats?.published ?? 0}</div>
+           <div className="text-4xl md:text-4xl md:text-[55px]  font-bold text-primary">{stats?.totalSuccessfulPublications ?? stats?.published ?? 0}</div>
            
            </div>
 
@@ -294,11 +294,11 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-5 md:gap-10 h-20">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="text-xl text-gray-300 mt-1">
+            <div className="text-sm text-gray-300 mt-1">
               العدد المجدول
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-primary">{stats?.scheduled || 0}</div>
+           <div className="text-4xl md:text-[55px]  font-bold text-primary">{stats?.scheduled || 0}</div>
             <div className=" text-xs text-primary">
               شهر ({currentMonthName})
             </div>
@@ -349,15 +349,15 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <div className="text-xl text-gray-300 mt-1">
+          <div className="text-md text-gray-300 mt-1">
              الاشتراكات 
           </div>
           <div>
-            <div className="text-xl text-gray-300 mt-1">
+            <div className="text-md text-gray-300 mt-1">
               الفعالة
             </div>
           </div>
@@ -368,7 +368,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-primary">{customerStats?.totalCustomers || 0}</div>
+           <div className="text-4xl md:text-[55px]  font-bold text-primary">{customerStats?.totalCustomers || 0}</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -391,7 +391,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4 flex flex-col">
           
-          <div className="flex items-center justify-center gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
@@ -410,7 +410,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[55px]  font-bold text-primary">{whatsappStats?.messagesRemaining || 0}</div>
+           <div className="text-4xl md:text-[55px]  font-bold text-primary">{whatsappStats?.messagesRemaining || 0}</div>
             
            </div>
 
@@ -454,7 +454,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
@@ -606,7 +606,7 @@ export default function DashboardPage() {
               <Button className="w-full relative h-full gradient-border border border-text-primary text-white p-4 h-auto">
 
 
-                <div className="flex items-center   w-full ">
+                <div className="flex items-center flex-col md:flex-row  w-full ">
                  
                   <img className="w-10 h-10 " src="/plus.gif" alt="" />
                 
@@ -617,7 +617,7 @@ export default function DashboardPage() {
             
             <Link className="w-full h-28" href="/schedule">
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
-                <div className="flex items-center w-full">
+                <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-10 h-10 " src="/hour.gif" alt="" />
                   <div className="font-medium text-xl"> المنشورات المجدولة</div>
                 </div>
@@ -628,7 +628,7 @@ export default function DashboardPage() {
            <div className="flex w-full items-center gap-2">
            <Link className="w-full h-28" href="/settings">
                 <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
-                  <div className="flex items-center w-full">
+                  <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-10 h-10 " src="/setting.gif" alt="" />
                   <div className="font-medium text-xl">إدارة الحسابات</div>
                 </div>
@@ -637,7 +637,7 @@ export default function DashboardPage() {
 
             <Link className="w-full h-28" href="/customers">
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
-                <div className="flex items-center w-full">
+                <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-10 h-10 " src="/clients.gif" alt="" />
                   <div className="font-medium text-xl">ادارة العملاء </div>
                 </div>

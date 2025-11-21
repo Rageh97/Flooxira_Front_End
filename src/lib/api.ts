@@ -133,6 +133,12 @@ export type Plan = {
     canManageCustomers: boolean;
     canMarketServices: boolean;
     maxServices: number;
+    canManageEmployees: boolean;
+    maxEmployees: number;
+    canUseAI: boolean;
+    aiCredits: number;
+    canUseLiveChat: boolean;
+    liveChatAiResponses?: number;
   };
   isActive: boolean 
 };
@@ -363,6 +369,30 @@ export async function postWhatsAppStatus(token: string, image: File, caption?: s
 }
 
 // Schedules API (WhatsApp + Posts)
+export async function listWhatsAppSchedules(token: string) {
+  return apiFetch<{
+    success: boolean;
+    schedules: Array<{
+      id: number;
+      userId: number;
+      type: 'groups' | 'campaign';
+      payload: any;
+      mediaPath: string | null;
+      scheduledAt: string;
+      status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+      createdAt: string;
+      updatedAt: string;
+    }>;
+  }>("/api/whatsapp/schedules", { authToken: token });
+}
+
+export async function cancelWhatsAppSchedule(token: string, id: number) {
+  return apiFetch<{ success: boolean; message?: string }>(`/api/whatsapp/schedules/${id}/cancel`, {
+    method: 'POST',
+    authToken: token,
+  });
+}
+
 export async function getMonthlySchedules(token: string, month: number, year: number) {
   const qs = new URLSearchParams({ month: String(month), year: String(year) });
   return apiFetch<{ success: boolean; month: number; year: number; whatsapp: any[]; posts: any[] }>(`/api/whatsapp/schedules/monthly?${qs.toString()}`, { authToken: token });
@@ -482,6 +512,10 @@ export async function botListFields(token: string) {
 
 export async function botDeleteField(token: string, id: number) {
   return apiFetch<{ ok: boolean }>(`/api/bot/fields/${id}`, { method: 'DELETE', authToken: token });
+}
+
+export async function botUpdateField(token: string, id: number, payload: Partial<{ fieldName: string; fieldType: BotField['fieldType'] }>) {
+  return apiFetch<{ field: BotField }>(`/api/bot/fields/${id}`, { method: 'PUT', authToken: token, body: JSON.stringify(payload) });
 }
 
 export async function botCreateRow(token: string, data: Record<string, any>) {

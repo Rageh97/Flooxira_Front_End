@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { EmojiPickerModal } from "@/components/AnimatedEmoji";
+import { ArrowLeft } from "lucide-react";
 
 type Contact = {
   chatId: string;
@@ -47,6 +48,7 @@ export default function TelegramChatsPage() {
   const [mediaType, setMediaType] = useState<string>("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const listEndRef = useRef<HTMLDivElement | null>(null);
 
   const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : ""), []);
@@ -209,8 +211,8 @@ export default function TelegramChatsPage() {
   if (loading) return null;
 
   return (
-    <div className="flex h-[calc(100vh-140px)] gap-4">
-      <aside className="w-80 gradient-border inner-shadow rounded-md flex flex-col ">
+    <div className="flex h-[calc(100vh-140px)] gap-0 md:gap-4">
+      <aside className={`w-full md:w-80 gradient-border inner-shadow rounded-md flex flex-col ${isMobileChatOpen ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-2 border-b">
           <input
             value={query}
@@ -233,7 +235,10 @@ export default function TelegramChatsPage() {
                   <li
                     key={c.chatId}
                     className={`px-3 py-2 cursor-pointer flex items-center gap-3 ${isActive ? "bg-light-custom inner-shadow" : "bg-secondry"}`}
-                    onClick={() => setActiveChatId(c.chatId.toString())}
+                    onClick={() => {
+                      setActiveChatId(c.chatId.toString());
+                      setIsMobileChatOpen(true);
+                    }}
                     title={String(title)}
                   >
                     <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">
@@ -254,9 +259,15 @@ export default function TelegramChatsPage() {
         </div>
       </aside>
 
-      <section className="flex-1 inner-shadow rounded-md flex flex-col gradient-border">
-        <div className="px-4 py-2 border-b flex items-center justify-between">
-          <div className="font-semibold text-white truncate">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
+      <section className={`w-full md:flex-1 inner-shadow rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'flex' : 'hidden md:flex'}`}>
+        <div className="px-4 py-2 border-b flex items-center gap-2">
+          <button 
+            onClick={() => setIsMobileChatOpen(false)}
+            className="md:hidden p-1 hover:bg-white/10 rounded-full text-white"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div className="font-semibold text-white truncate flex-1">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
         </div>
         <div className="flex-1 overflow-auto px-4 py-3 flex flex-col-reverse">
           <div ref={listEndRef} />

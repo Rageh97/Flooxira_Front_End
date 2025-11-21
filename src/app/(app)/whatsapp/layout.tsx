@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/lib/permissions";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { useToast } from "@/components/ui/toast-provider";
+
 
 const whatsappTabs = [
   { href: "/whatsapp", label: "الاتصال", exact: true },
@@ -29,6 +31,9 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
   const { canManageWhatsApp, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   const [messagesRemaining, setMessagesRemaining] = useState(0);
   const [checkingMessages, setCheckingMessages] = useState(true);
+  const { showError } = useToast();
+
+  
 
   useEffect(() => {
     checkMessagesRemaining();
@@ -81,7 +86,11 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
       setCheckingMessages(false);
     }
   };
-
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
   // Check permissions loading state
   if (permissionsLoading || checkingMessages) {
     return (
@@ -91,19 +100,10 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
     );
   }
 
-  // Check if user has active subscription
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إدارة الواتساب"
-        featureName="إدارة الواتساب"
-        className="container mx-auto p-6"
-      />
-    );
-  }
+
 
   // Check if user has WhatsApp management permission
-  if (!canManageWhatsApp()) {
+  if (hasActiveSubscription && !canManageWhatsApp()) {
     return (
       <div className="container mx-auto p-6">
         <h1 className="text-2xl font-semibold mb-4">إدارة الواتساب</h1>
@@ -124,7 +124,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
   }
 
   // Check if messages have run out
-  if (messagesRemaining === 0) {
+  if (hasActiveSubscription && messagesRemaining === 0) {
     return (
       <div className="container mx-auto p-6">
         <Card className="max-w-2xl mx-auto border-red-200 bg-red-50">
@@ -169,6 +169,14 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
 
   return (
     <div className="space-y-6">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إدارة الواتساب"
+          featureName="إدارة الواتساب"
+          className="container mx-auto p-6"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
       {/* Warning banner if messages are running low */}
       {messagesRemaining > 0 && messagesRemaining <= 10 && (
         <Card className="bg-card border-none">
@@ -184,34 +192,52 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
       )}
 
       {/* WhatsApp Tabs */}
-      <div className="bg-secondry inner-shadow rounded-lg p-4">
-        <div className="flex justify-center items-center flex-wrap gap-2">
-          {whatsappTabs.map((tab) => {
-            const isActive = tab.exact 
-              ? pathname === tab.href 
-              : pathname.startsWith(tab.href);
-            
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={clsx(
-                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                  isActive
-                    ? "gradient-border text-white"
-                    : "text-gray-300 hover:text-white hover:bg-blue-700"
-                )}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
+      <div className="bg-secondry inner-shadow rounded-lg p-1 sm:p-2">
+        <div className="relative">
+          <div className="flex overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
+            <div className="flex space-x-1 sm:space-x-2 px-1 sm:px-2">
+              {whatsappTabs.map((tab) => {
+                const isActive = tab.exact 
+                  ? pathname === tab.href 
+                  : pathname.startsWith(tab.href);
+                
+                return (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    className={clsx(
+                      "whitespace-nowrap px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors",
+                      "flex-shrink-0",
+                      isActive
+                        ? "gradient-border text-white"
+                        : "text-gray-300 hover:text-white hover:bg-blue-700"
+                    )}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+          {/* Scroll indicators */}
+          <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-secondry to-transparent pointer-events-none"></div>
+          <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-secondry to-transparent pointer-events-none"></div>
         </div>
+        <style jsx>{`
+          .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
 
       {/* Page Content */}
       <div>
         {children}
+      </div>
       </div>
     </div>
   );

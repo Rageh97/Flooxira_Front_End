@@ -96,7 +96,7 @@ export default function SubscriptionsAdminPage() {
       case 'active':
         return 'نشط';
       case 'expired':
-        return 'منتهي الصلاحية';
+        return 'منتهي';
       case 'cancelled':
         return 'ملغي';
       default:
@@ -112,15 +112,16 @@ export default function SubscriptionsAdminPage() {
     return diffDays;
   };
 
-  const filteredSubscriptions = subscriptions.filter(sub => {
-    if (filter === 'all') return true;
-    return sub.status === filter;
-  });
+  const filteredSubscriptions = subscriptions;
 
   const stats = {
-    total: subscriptions.length,
-    active: subscriptions.filter(sub => sub.status === 'active').length,
-    expired: subscriptions.filter(sub => sub.status === 'expired').length,
+    total: totalSubscriptions, // Use total from API response if available, otherwise subscriptions.length is wrong for pagination
+    // Note: These stats are currently only accurate for the current page/filter. 
+    // To get accurate global stats, we would need a separate API endpoint.
+    // For now, we'll just use the current list counts which is better than nothing, 
+    // but ideally this should be fixed in the future.
+    active: subscriptions.filter(sub => sub.status === 'active' && getDaysUntilExpiry(sub.expiresAt) > 0).length,
+    expired: subscriptions.filter(sub => sub.status === 'expired' || (sub.status === 'active' && getDaysUntilExpiry(sub.expiresAt) <= 0)).length,
     cancelled: subscriptions.filter(sub => sub.status === 'cancelled').length,
   };
 
@@ -188,7 +189,7 @@ export default function SubscriptionsAdminPage() {
             <div className="flex items-center space-x-2 rtl:space-x-reverse">
               <div className="w-3 h-3 bg-red-400 rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-300">منتهي الصلاحية</p>
+                <p className="text-sm text-gray-300">منتهي </p>
                 <p className="text-2xl font-bold text-white">{stats.expired}</p>
               </div>
             </div>
@@ -215,7 +216,7 @@ export default function SubscriptionsAdminPage() {
             {[
               { key: 'all', label: 'الكل', count: stats.total },
               { key: 'active', label: 'نشط', count: stats.active },
-              { key: 'expired', label: 'منتهي الصلاحية', count: stats.expired },
+              { key: 'expired', label: 'منتهي ', count: stats.expired },
               { key: 'cancelled', label: 'ملغي', count: stats.cancelled },
             ].map(({ key, label, count }) => (
               <button
@@ -261,6 +262,9 @@ export default function SubscriptionsAdminPage() {
                 <tbody className="text-center">
                   {filteredSubscriptions.map((subscription) => {
                     const daysLeft = getDaysUntilExpiry(subscription.expiresAt);
+                    const isExpired = daysLeft <= 0;
+                    const displayStatus = isExpired && subscription.status === 'active' ? 'expired' : subscription.status;
+
                     return (
                       <tr key={subscription.id} className="border-b border-gray-600 hover:bg-gray-700/30">
                         <td className="py-3 px-4">
@@ -292,8 +296,8 @@ export default function SubscriptionsAdminPage() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex justify-center">
-                            <Badge className={getStatusColor(subscription.status)}>
-                              {getStatusText(subscription.status)}
+                            <Badge className={getStatusColor(displayStatus)}>
+                              {getStatusText(displayStatus)}
                             </Badge>
                           </div>
                         </td>

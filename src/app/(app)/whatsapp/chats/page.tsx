@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -107,6 +107,10 @@ export default function WhatsAppChatsPage() {
   const [noteText, setNoteText] = useState("");
   const [savingNote, setSavingNote] = useState(false);
 
+  // Ref for messages container to scroll to bottom
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
@@ -152,6 +156,18 @@ export default function WhatsAppChatsPage() {
 
     return () => clearInterval(interval);
   }, [selectedContact]);
+
+  // Scroll to bottom when chats are loaded or updated
+  useEffect(() => {
+    if (chats.length > 0 && messagesContainerRef.current) {
+      // Use setTimeout to ensure DOM is updated
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      }, 150);
+    }
+  }, [chats, selectedContact]);
 
   async function loadChatHistory(contactNumber: string, isAutoRefresh: boolean = false) {
     try {
@@ -213,7 +229,7 @@ export default function WhatsAppChatsPage() {
           for (const tag of tags) {
             const contactsRes = await listContactsByTag(tag.id);
             if (contactsRes.success) {
-              const hasContact = contactsRes.data.some(c => c.contactNumber === contact.contactNumber);
+              const hasContact = contactsRes.data.some((c: any) => c.contactNumber === contact.contactNumber);
               if (hasContact) {
                 contactTags.push(tag.name);
               }
@@ -334,6 +350,12 @@ export default function WhatsAppChatsPage() {
         showToast("تم إرسال الرسالة بنجاح!", 'success');
         setTestMessage("");
         console.log(`[WhatsApp Frontend] Message sent successfully`);
+        // Scroll to bottom after sending message
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 100);
         // Refresh to get the real message from backend (with correct ID)
         if (selectedContact && phoneNumber) {
           setTimeout(() => {
@@ -394,6 +416,12 @@ export default function WhatsAppChatsPage() {
         setMediaCaption("");
         // Refresh chat history to show the new message
         await loadChatHistory(contactNumber);
+        // Scroll to bottom after sending media
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 100);
       } else {
         showToast(data.message || "فشل في إرسال الوسائط", 'error');
       }
@@ -502,17 +530,17 @@ export default function WhatsAppChatsPage() {
   return (
     <>
       <div className={`space-y-6 ${showTagModal ? 'blur-sm' : ''}`}>
-        <div className="w-full h-[calc(100vh-8rem)] ">
+        <div className="w-full h-[calc(100vh-8rem)] sm:h-[calc(100vh-8rem)]">
           {/* Main Chat Container */}
-          <Card  className=" border-none  flex h-full gradient-border">
+          <Card  className=" border-none  flex flex-col sm:flex-row h-full gradient-border">
           {/* Contacts List */}
-          <div className="flex flex-col w-full h-full">
-          <CardHeader className="border-text-primary/50 text-primary flex items-center justify-between">
+          <div className="flex flex-col w-full sm:w-full h-full">
+          <CardHeader className="border-text-primary/50 text-primary flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
 
-          <div className="flex items-center gap-1">
-          <h3 className="text-sm font-medium text-white  p-1 rounded-md inner-shadow">جهات الاتصال {contacts.length}</h3>
-              <div className={`w-3 h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
-              <span className="text-sm text-white">
+          <div className="flex items-center gap-1 flex-wrap">
+          <h3 className="text-xs sm:text-sm font-medium text-white p-1 rounded-md inner-shadow">جهات الاتصال {contacts.length}</h3>
+              <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
+              <span className="text-xs sm:text-sm text-white">
                 {botStatus?.isPaused ? 'البوت متوقف' : 'البوت نشط'}
               </span>
               {botStatus?.isPaused && botStatus.timeRemaining > 0 && (
@@ -521,12 +549,12 @@ export default function WhatsAppChatsPage() {
                 </span>
               )}  
             </div>
-          <div className="flex items-center gap-3 ml-70">
+          <div className="flex items-center gap-2 sm:gap-3 sm:ml-70 flex-wrap">
            
            
            <div className="flex items-center gap-2">
-                  <img className="w-10 h-10" src="/user.gif" alt="" />
-           <span className="text-white font-medium  p-1 rounded-md ">
+                  <img className="w-8 h-8 sm:w-10 sm:h-10" src="/user.gif" alt="" />
+           <span className="text-white font-medium text-xs sm:text-sm p-1 rounded-md truncate max-w-[150px] sm:max-w-none">
                     {selectedContact ? (() => {
                       // Prefer real contact name if available
                       const found = contacts.find(c => c.contactNumber === selectedContact);
@@ -608,8 +636,8 @@ export default function WhatsAppChatsPage() {
             } */}
           </div>
       
-          <div className="gap-3  flex-shrink-0">
-              <div className="flex items-center justify-between gap-3">
+          <div className="gap-2 sm:gap-3 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
                 <div className="flex items-center gap-2">
                   
                   {/* {isAutoRefreshing && (
@@ -620,7 +648,7 @@ export default function WhatsAppChatsPage() {
                   )} */}
                 </div>
                 {selectedContact && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                     {/* <Button 
                       size="sm" 
                       variant="secondary" 
@@ -630,13 +658,13 @@ export default function WhatsAppChatsPage() {
                     >
                       {isAutoRefreshing ? 'جاري التحديث...' : 'Refresh'}
                     </Button> */}
-                     <div className="flex gap-2">
+                     <div className="flex gap-1 sm:gap-2 flex-wrap">
               {botStatus?.isPaused ? (
                 <Button 
                   size="sm" 
                   onClick={handleResumeBot}
                   disabled={botControlLoading}
-                  className="bg-green-500 hover:bg-green-600"
+                  className="bg-green-500 hover:bg-green-600 text-xs sm:text-sm"
                 >
                   {botControlLoading ? 'جاري الاستئناف...' : 'استئناف البوت'}
                 </Button>
@@ -646,7 +674,7 @@ export default function WhatsAppChatsPage() {
                     size="sm" 
                     onClick={() => handlePauseBot(30)}
                     disabled={botControlLoading}
-                    className="bg-transparent text-white border border-text-primary/50 inner-shadow"
+                    className="bg-transparent text-white border border-text-primary/50 inner-shadow text-xs sm:text-sm"
                   >
                     إيقاف البوت 30 د
                   </Button>
@@ -654,7 +682,7 @@ export default function WhatsAppChatsPage() {
                     size="sm" 
                     onClick={() => handlePauseBot(60)}
                     disabled={botControlLoading}
-                    className="bg-transparent text-white border border-text-primary/50 inner-shadow"
+                    className="bg-transparent text-white border border-text-primary/50 inner-shadow text-xs sm:text-sm"
                   >
                     إيقاف البوت ساعة
                   </Button>
@@ -673,15 +701,15 @@ export default function WhatsAppChatsPage() {
                       onClick={() => { setNoteText(""); setShowNoteModal(true); }}
                       className="text-xs bg-transparent text-white border border-text-primary/50 inner-shadow"
                     >
-                      أضف ملاحظة على الشات
+                      أضف ملاحظة
                     </Button>
                   </div>
                 )}
               </div>
             </div>
           </CardHeader>
-          <CardContent className=" overflow-y-auto  h-full w-full flex ">
-            <div className="space-y-2 w-1/3 border-l border-text-primary/50">
+          <CardContent className=" overflow-y-auto h-full w-full flex flex-col sm:flex-row">
+            <div className="space-y-2 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-l border-text-primary/50 max-h-[300px] sm:max-h-none overflow-y-auto">
               {contacts.map((contact, index) => (
                 <div
                   key={contact.contactNumber || `contact-${index}`}
@@ -691,7 +719,7 @@ export default function WhatsAppChatsPage() {
                       loadChatHistory(contact.contactNumber);
                     }
                   }}
-                  className={`p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
+                  className={`p-2 sm:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
                     selectedContact === contact.contactNumber
                       ? ' inner-shadow'
                       : openNoteContacts.has(contact.contactNumber) ? 'bg-yellow-600/30' : 'bg-secondry'
@@ -699,21 +727,21 @@ export default function WhatsAppChatsPage() {
                 >
                    <div className="flex items-center gap-2">
                    {contact.profilePicture ? (
-                    <img className="w-10 h-10 rounded-full object-cover " src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
+                    <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
                   ) : contact.messageCount > 0 ? (
-                    <img className="w-10 h-10 rounded-full" src="/belll.gif" alt="" />
+                    <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/belll.gif" alt="" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
                       {/* {contact.contactName 
                         ? contact.contactName.charAt(0).toUpperCase() 
                         : (contact.contactNumber && contact.contactNumber.length > 0)
                           ? contact.contactNumber.charAt(0).toUpperCase()
                           : '?'} */}
-                          <img className="w-10 h-10 rounded-full" src="/user.gif" alt="" />
+                          <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
                     </div>
                   )}
                    <div className="flex flex-col">
-                   <div className="font-medium text-md text-white">{contact.contactName || 'عميل جديد'}</div>
+                   <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
                     {/* <div className="font-medium text-sm text-white">
                       {(() => {
                         // Check if contactNumber exists
@@ -858,11 +886,11 @@ export default function WhatsAppChatsPage() {
               ))}
             </div>
             {/* Chat Messages */}
-          <div className="flex flex-col w-full h-full ">
+          <div className="flex flex-col w-full h-full min-h-0">
             {/* Chat Header */}
             
             {/* Messages Display */}
-            <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-2 sm:p-4 scrollbar-hide">
               {selectedContact ? (
                 <div className="space-y-3">
                     {activeNote && activeNote.status === 'open' && (
@@ -906,7 +934,7 @@ export default function WhatsAppChatsPage() {
                             className={`flex ${chat.messageType === 'outgoing' ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-xs p-3 rounded-lg ${
+                              className={`max-w-[85%] sm:max-w-xs p-2 sm:p-3 rounded-lg ${
                                 chat.messageType === 'outgoing'
                                   ? 'bg-card inner-shadow text-white'
                                   : ' inner-shadow text-gray-200'
@@ -916,7 +944,7 @@ export default function WhatsAppChatsPage() {
                               {chat.contentType === 'image' && chat.mediaUrl && (
                                 <div className="mb-2">
                                   <img 
-                                    src={`http://localhost:4000${chat.mediaUrl}`} 
+                                    src={`process.env.NEXT_PUBLIC_API_URL${chat.mediaUrl}`} 
                                     alt="Sent image" 
                                     className="max-w-full h-auto rounded-lg"
                                     onError={(e) => {
@@ -929,7 +957,7 @@ export default function WhatsAppChatsPage() {
                               {chat.contentType === 'video' && chat.mediaUrl && (
                                 <div className="mb-2">
                                   <video 
-                                    src={`http://localhost:4000${chat.mediaUrl}`} 
+                                    src={`process.env.NEXT_PUBLIC_API_URL${chat.mediaUrl}`} 
                                     controls 
                                     className="max-w-full h-auto rounded-lg"
                                     onError={(e) => {
@@ -952,7 +980,7 @@ export default function WhatsAppChatsPage() {
                                         {chat.mediaFilename || `${chat.contentType.toUpperCase()} File`}
                                       </div>
                                       <a 
-                                        href={`http://localhost:4000${chat.mediaUrl}`} 
+                                        href={`process.env.NEXT_PUBLIC_API_URL${chat.mediaUrl}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="text-xs underline"
@@ -981,6 +1009,8 @@ export default function WhatsAppChatsPage() {
                         ))}
                       </>
                     )}
+                    {/* Invisible element to scroll to */}
+                    <div ref={messagesEndRef} />
                 </div>
               ) : (
                 <p className="text-gray-500 text-center py-8">اختر جهة اتصال لعرض سجل المحادثة</p>
@@ -989,7 +1019,7 @@ export default function WhatsAppChatsPage() {
 
             {/* Message Input - Fixed at bottom */}
             {selectedContact && (
-              <div className="border-t border-gray-700 p-4  flex-shrink-0">
+              <div className="border-t border-gray-700 p-2 sm:p-4 flex-shrink-0">
                 {/* Media Upload Section */}
                 {mediaFile && (
                   <div className="mb-4 p-4 bg-dark-custom rounded-lg">
@@ -1052,14 +1082,14 @@ export default function WhatsAppChatsPage() {
                   <button
                     onClick={() => setShowEmojiPicker(true)}
                     
-                    className="px-0"
+                    className="px-0 flex-shrink-0"
                     title="إضافة إيموجي"
                   >
-                    <img className="w-10 h-10" src="/imogi.gif" alt="" />
+                    <img className="w-8 h-8 sm:w-10 sm:h-10" src="/imogi.gif" alt="" />
                     {/* <AnimatedEmoji emoji="😊" size={20} /> */}
                   </button>
-                  <label className="text-white px-0 py-2 rounded cursor-pointer flex items-center">
-                    <img className="w-10 h-10" src="/img.gif" alt="" />
+                  <label className="text-white px-0 py-2 rounded cursor-pointer flex items-center flex-shrink-0">
+                    <img className="w-8 h-8 sm:w-10 sm:h-10" src="/img.gif" alt="" />
                     <input
                       type="file"
                       accept="image/*,video/*"
@@ -1070,9 +1100,9 @@ export default function WhatsAppChatsPage() {
                   <button 
                     onClick={() => handleSendMessage(selectedContact, testMessage)}
                     disabled={!testMessage.trim() || loading}
-                    className=""
+                    className="flex-shrink-0"
                   >
-                    {loading ? 'جاري الإرسال...' : <img className="w-10 h-10" src="/telegram.gif" alt="" />}
+                    {loading ? <span className="text-xs sm:text-sm">جاري الإرسال...</span> : <img className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />}
                   </button>
                  
                   <input
@@ -1080,7 +1110,7 @@ export default function WhatsAppChatsPage() {
                     placeholder="اكتب رسالتك..."
                     value={testMessage}
                     onChange={(e) => setTestMessage(e.target.value)}
-                    className="flex-1 px-3 bg-[#01191040] py-4 border border-blue-300 rounded-2xl   text-white placeholder-white/50 "
+                    className="flex-1 px-2 sm:px-3 bg-[#01191040] py-2 sm:py-4 border border-blue-300 rounded-2xl text-sm sm:text-base text-white placeholder-white/50 min-w-0"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && !loading) {
                         handleSendMessage(selectedContact, testMessage);
@@ -1101,7 +1131,7 @@ export default function WhatsAppChatsPage() {
 
           {/* Note Modal */}
           {showNoteModal && (
-            <div className="fixed inset-0 z-50 backdrop-blur-sm flex items-center justify-center bg-black/80">
+            <div className="fixed inset-0 z-50 backdrop-blur-sm flex items-center justify-center bg-black/80 p-4">
               <div className="w-full max-w-lg gradient-border rounded-lg p-4 border border-text-primary/50">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-white text-lg font-semibold">إضافة ملاحظة على الشات</h3>
@@ -1155,9 +1185,9 @@ export default function WhatsAppChatsPage() {
       
       {/* Tag Modal */}
       {showTagModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center ">
-          <div className="absolute inset-0 bg-black/70 " onClick={() => setShowTagModal(false)} />
-          <div className="relative z-10 w-full max-w-xl gradient-border rounded p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowTagModal(false)} />
+          <div className="relative z-10 w-full max-w-xl gradient-border rounded p-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-white text-lg font-medium mb-3">إضافة إلى تصنيف</h3>
             <div className="space-y-3">
               <div>

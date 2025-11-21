@@ -58,6 +58,12 @@ export default function ServicesPage() {
     loading: permissionsLoading,
   } = usePermissions();
 
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
+
   const [stats, setStats] = useState({
     currentCount: 0,
     maxServices: 0,
@@ -233,17 +239,9 @@ export default function ServicesPage() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إدارة الخدمات"
-        featureName="إدارة الخدمات"
-        className="space-y-8"
-      />
-    );
-  }
 
-  if (!canMarketServices()) {
+
+  if (hasActiveSubscription && !canMarketServices()) {
     return (
       <div className="space-y-8">
         <div>
@@ -267,6 +265,14 @@ export default function ServicesPage() {
 
   return (
     <div className="space-y-8">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إدارة الخدمات"
+          featureName="إدارة الخدمات"
+          className="space-y-8"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-semibold text-white">إدارة الخدمات</h1>
@@ -301,7 +307,7 @@ export default function ServicesPage() {
             <Package className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-blue-600">
+            <div className="text-4xl font-bold text-primary">
               {stats.currentCount}
               {stats.maxServices > 0 && ` / ${stats.maxServices}`}
             </div>
@@ -793,6 +799,7 @@ export default function ServicesPage() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

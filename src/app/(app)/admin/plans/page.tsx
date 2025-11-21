@@ -31,6 +31,42 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 
+const EASTERN_DIGIT_MAP: Record<string, string> = {
+  "٠": "0",
+  "١": "1",
+  "٢": "2",
+  "٣": "3",
+  "٤": "4",
+  "٥": "5",
+  "٦": "6",
+  "٧": "7",
+  "٨": "8",
+  "٩": "9",
+  "۰": "0",
+  "۱": "1",
+  "۲": "2",
+  "۳": "3",
+  "۴": "4",
+  "۵": "5",
+  "۶": "6",
+  "۷": "7",
+  "۸": "8",
+  "۹": "9",
+};
+
+const normalizeLocalizedDigits = (value: string) =>
+  value
+    .split("")
+    .map((char) => EASTERN_DIGIT_MAP[char] ?? char)
+    .join("");
+
+const parseLocalizedNumber = (value: string) => {
+  if (!value) return 0;
+  const normalized = normalizeLocalizedDigits(value);
+  const parsed = parseInt(normalized, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 export default function PlansAdminPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -68,7 +104,9 @@ export default function PlansAdminPage() {
       canManageEmployees: false,
       maxEmployees: 0,
       canUseAI: false,
-      aiCredits: 0
+      aiCredits: 0,
+      canUseLiveChat: false,
+      liveChatAiResponses: 0
     }
   });
 
@@ -97,7 +135,9 @@ export default function PlansAdminPage() {
       canManageEmployees: false,
       maxEmployees: 0,
       canUseAI: false,
-      aiCredits: 0
+      aiCredits: 0,
+      canUseLiveChat: false,
+      liveChatAiResponses: 0
     }
   });
 
@@ -162,7 +202,9 @@ export default function PlansAdminPage() {
           canManageEmployees: false,
           maxEmployees: 0,
           canUseAI: false,
-          aiCredits: 0
+          aiCredits: 0,
+          canUseLiveChat: false,
+          liveChatAiResponses: 0
         }
       });
       loadPlans();
@@ -232,7 +274,9 @@ export default function PlansAdminPage() {
         canManageEmployees: plan.permissions?.canManageEmployees || false,
         maxEmployees: plan.permissions?.maxEmployees || 0,
         canUseAI: (plan.permissions as any)?.canUseAI || false,
-        aiCredits: (plan.permissions as any)?.aiCredits || 0
+        aiCredits: (plan.permissions as any)?.aiCredits || 0,
+        canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false,
+        liveChatAiResponses: (plan.permissions as any)?.liveChatAiResponses ?? 0
       }
     });
     setEditModalOpen(true);
@@ -258,8 +302,7 @@ export default function PlansAdminPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold">إدارة الباقات</h1>
-          <p className="text-sm text-gray-600">إدارة باقات الاشتراك والصلاحيات</p>
+          <h1 className="text-2xl font-semibold text-white">إدارة الباقات</h1>
         </div>
         <div className="text-center py-8">
           <p className="text-gray-600">جاري التحميل...</p>
@@ -272,8 +315,7 @@ export default function PlansAdminPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-800">إدارة الباقات</h1>
-          <p className="text-sm text-gray-600">إدارة باقات الاشتراك والصلاحيات</p>
+          <h1 className="text-2xl font-semibold text-white">إدارة الباقات</h1>
         </div>
         <Button
           onClick={() => setCreateModalOpen(true)}
@@ -323,7 +365,8 @@ export default function PlansAdminPage() {
               canManageEmployees: plan.permissions?.canManageEmployees || false,
               maxEmployees: plan.permissions?.maxEmployees || 0,
               canUseAI: (plan.permissions as any)?.canUseAI || false,
-              aiCredits: (plan.permissions as any)?.aiCredits || 0
+              aiCredits: (plan.permissions as any)?.aiCredits || 0,
+              canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false
             };
             
             return (
@@ -580,6 +623,33 @@ export default function PlansAdminPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Live Chat */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">Live Chat & Tickets:</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canUseLiveChat ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                          {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
+                            <span className="text-xs text-gray-500">
+                              ({(permissions as any).liveChatAiResponses} رد/شهر)
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500">
+                              (غير محدود)
+                            </span>
+                          )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -611,13 +681,11 @@ export default function PlansAdminPage() {
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 mx-10">
               <Crown className="h-5 w-5 text-green-600" />
               إضافة باقة جديدة
             </DialogTitle>
-            <DialogDescription>
-              إنشاء باقة جديدة مع تحديد الصلاحيات المطلوبة
-            </DialogDescription>
+            
           </DialogHeader>
 
           <div className="space-y-6">
@@ -651,7 +719,7 @@ export default function PlansAdminPage() {
                   id="plan-interval"
                   value={newPlan.interval}
                   onChange={(e) => setNewPlan({ ...newPlan, interval: e.target.value as 'monthly' | 'yearly' })}
-                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full mt-1 px-3 py-2 bg-fixed-40 border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <option value="monthly">شهري</option>
                   <option value="yearly">سنوي</option>
@@ -674,8 +742,9 @@ export default function PlansAdminPage() {
               <Label>المنصات المسموحة</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
                 {availablePlatforms.map((platform) => (
-                  <label key={platform.key} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
+                  <label key={platform.key} className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer border-primary">
                     <input
+                    className=""
                       type="checkbox"
                       checked={newPlan.permissions.platforms.includes(platform.key)}
                       onChange={(e) => {
@@ -771,7 +840,7 @@ export default function PlansAdminPage() {
                   />
                   <span>إدارة العملاء</span>
                 </label>
-                <p className="text-xs text-gray-500 mt-1">السماح بإدارة قاعدة بيانات العملاء واشتراكاتهم</p>
+                {/* <p className="text-xs text-gray-500 mt-1">السماح بإدارة قاعدة بيانات العملاء واشتراكاتهم</p> */}
               </div>
             </div>
 
@@ -805,7 +874,7 @@ export default function PlansAdminPage() {
                     <p className="text-xs text-gray-500 mt-1">0 = غير محدود</p>
                   </div>
                 )}
-                <p className="text-xs text-gray-500 mt-1">السماح بإضافة وإدارة الموظفين وصلاحياتهم</p>
+                {/* <p className="text-xs text-gray-500 mt-1">السماح بإضافة وإدارة الموظفين وصلاحياتهم</p> */}
               </div>
             </div>
 
@@ -848,7 +917,7 @@ export default function PlansAdminPage() {
 
             {/* AI Features */}
             <div>
-              <Label>ميزات الذكاء الاصطناعي (AI)</Label>
+              {/* <Label>ميزات الذكاء الاصطناعي (AI)</Label> */}
               <div className="mt-2">
                 <label className="flex items-center gap-2 mb-2">
                   <input
@@ -877,6 +946,50 @@ export default function PlansAdminPage() {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Live Chat & Tickets */}
+            <div>
+              <Label>Live Chat & Tickets</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={newPlan.permissions.canUseLiveChat}
+                    onChange={(e) => setNewPlan({
+                      ...newPlan,
+                      permissions: { ...newPlan.permissions, canUseLiveChat: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل ميزة Live Chat والتذاكر</span>
+                </label>
+                {/* <p className="text-xs text-gray-500 mt-1">
+                  يسمح للمستخدمين بإضافة ويدجت دردشة مباشرة على مواقعهم وإدارة التذاكر
+                </p> */}
+                {newPlan.permissions.canUseLiveChat && (
+                  <div className="space-y-2 mt-4">
+                    <Label>عدد ردود الذكاء الاصطناعي الشهري للـ Live Chat</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0 = غير محدود"
+                      value={newPlan.permissions.liveChatAiResponses ?? 0}
+                      onChange={(e) =>
+                        setNewPlan({
+                          ...newPlan,
+                          permissions: {
+                            ...newPlan.permissions,
+                            liveChatAiResponses: parseLocalizedNumber(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                    <p className="text-xs text-gray-500">
+                      يتحكم هذا العدد في مرات ردود الذكاء الاصطناعي على محادثات العملاء شهرياً. اختر 0 لغير محدود.
                     </p>
                   </div>
                 )}
@@ -1258,6 +1371,50 @@ export default function PlansAdminPage() {
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Live Chat & Tickets */}
+            <div>
+              <Label>Live Chat & Tickets</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={editPlan.permissions.canUseLiveChat}
+                    onChange={(e) => setEditPlan({
+                      ...editPlan,
+                      permissions: { ...editPlan.permissions, canUseLiveChat: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل ميزة Live Chat والتذاكر</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  يسمح للمستخدمين بإضافة ويدجت دردشة مباشرة على مواقعهم وإدارة التذاكر
+                </p>
+                {editPlan.permissions.canUseLiveChat && (
+                  <div className="space-y-2 mt-4">
+                    <Label>عدد ردود الذكاء الاصطناعي الشهري للـ Live Chat</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0 = غير محدود"
+                      value={editPlan.permissions.liveChatAiResponses ?? 0}
+                      onChange={(e) =>
+                        setEditPlan({
+                          ...editPlan,
+                          permissions: {
+                            ...editPlan.permissions,
+                            liveChatAiResponses: parseLocalizedNumber(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                    <p className="text-xs text-gray-500">
+                      يتحكم هذا العدد في مرات ردود الذكاء الاصطناعي على محادثات العملاء شهرياً. اختر 0 لغير محدود.
                     </p>
                   </div>
                 )}

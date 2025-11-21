@@ -60,7 +60,13 @@ function SettingsContent() {
   const [platformDetails, setPlatformDetails] = useState<Record<string, any>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   const searchParams = useSearchParams();
-
+useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
+  // .......................
+  
   useEffect(() => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("auth_token") || "";
@@ -378,15 +384,7 @@ function SettingsContent() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إعدادات الحساب"
-        featureName="إعدادات الحساب"
-        className="space-y-8"
-      />
-    );
-  }
+
 
   const isPlatformConnected = (platformKey: string) => {
     return connectedPlatforms.includes(platformKey);
@@ -461,6 +459,14 @@ function SettingsContent() {
 
   return (
     <div className="space-y-8">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إعدادات الحساب"
+          featureName="إعدادات الحساب"
+          className="space-y-8"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
   <Card className="bg-dark-custom border-none inner-shadow">
         <CardHeader className="border-text-primary/50 text-white">
           <h2 className="text-lg font-semibold">ملخص الاتصالات</h2>
@@ -999,6 +1005,7 @@ function SettingsContent() {
           </Card>
         </div>
       )}
+      </div>
     </div>
   );
 }

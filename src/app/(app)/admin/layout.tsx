@@ -16,6 +16,7 @@ const adminTabs = [
   { href: "/admin/reviews", label: "التقييمات" },
   { href: "/admin/ai-prompts", label: "برومبتات الذكاء الاصطناعي" },
   { href: "/admin/analytics", label: "التحليلات" },
+  { href: "/admin/tickets", label: "التذاكر" },
 ];
 
 export default function AdminLayout({ children }: PropsWithChildren) {
@@ -26,7 +27,6 @@ export default function AdminLayout({ children }: PropsWithChildren) {
       <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold text-white">لوحة تحكم الإدارة</h1>
-        <p className="text-sm text-gray-300">أدوات وإعدادات الإدارة.</p>
       </div>
       
       <div className="pt-2">
@@ -38,8 +38,8 @@ export default function AdminLayout({ children }: PropsWithChildren) {
               className={clsx(
                 "rounded-md px-3 py-2 text-sm",
                 pathname === tab.href 
-                  ? "bg-light-custom text-white" 
-                  : "bg-card hover:bg-light-custom text-white"
+                  ? "gradient-border text-white" 
+                  : "bg-card  text-white"
               )}
             >
               {tab.label}

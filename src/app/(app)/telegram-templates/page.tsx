@@ -123,7 +123,7 @@ export default function TelegramTemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen  p-6">
+    <div className="min-h-screen  p-2">
       <div className="w-full mx-auto">
         {/* Page Header */}
       

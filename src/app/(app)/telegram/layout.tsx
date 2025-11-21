@@ -1,8 +1,11 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { clsx } from "clsx";
+import { usePermissions } from "@/lib/permissions";
+import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { useToast } from "@/components/ui/toast-provider";
 
 const telegramTabs = [
   { href: "/telegram", label: "الاتصال", exact: true },
@@ -17,9 +20,24 @@ const telegramTabs = [
 
 export default function TelegramLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
-
+  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const { showError } = useToast();
+  
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
   return (
     <div className="space-y-6">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إدارة التليجرام"
+          featureName="إدارة التليجرام"
+          className="container mx-auto p-6"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
       {/* Header */}
       {/* <div className="bg-semidark-custom border border-gray-700 rounded-lg p-6">
         <h1 className="text-2xl font-bold text-white mb-4">إدارة التليجرام</h1>
@@ -27,34 +45,51 @@ export default function TelegramLayout({ children }: PropsWithChildren) {
       </div> */}
 
       {/* Telegram Tabs */}
-      <div className="bg-secondry inner-shadow rounded-lg p-2">
-        <div className="flex flex-wrap gap-3">
-          {telegramTabs.map((tab) => {
-            const isActive = tab.exact 
-              ? pathname === tab.href 
-              : pathname.startsWith(tab.href);
-            
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                className={clsx(
-                  "px-6 py-3 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2",
-                  isActive
-                    ? "gradient-border text-white"
-                    : "text-gray-300 hover:text-white hover:bg-blue-500 hover:transform hover:scale-105"
-                )}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
+      <div className="bg-secondry inner-shadow rounded-lg p-1 sm:p-2">
+        <div className="relative">
+          <div className="flex overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
+            <div className="flex gap-2 px-1 sm:px-2">
+              {telegramTabs.map((tab) => {
+                const isActive = tab.exact 
+                  ? pathname === tab.href 
+                  : pathname.startsWith(tab.href);
+                
+                return (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    className={clsx(
+                      "whitespace-nowrap px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 flex items-center gap-1 sm:gap-2 flex-shrink-0",
+                      isActive
+                        ? "gradient-border text-white shadow-md"
+                        : "text-gray-300 hover:text-white hover:bg-blue-500 hover:scale-105"
+                    )}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+          {/* Scroll indicators */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-secondry to-transparent pointer-events-none"></div>
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-secondry to-transparent pointer-events-none"></div>
         </div>
+        <style jsx>{`
+          .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
 
       {/* Page Content */}
       <div>
         {children}
+      </div>
       </div>
     </div>
   );

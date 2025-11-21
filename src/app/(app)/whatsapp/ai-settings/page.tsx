@@ -215,30 +215,46 @@ export default function AISettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className=" mb-3">
-        <div className="flex justify-center space-x-1 gradient-border inner-shadow p-3 rounded-lg">
-          {[
-            { id: 'general', label: 'عام' },
-            { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
-            { id: 'personality', label: 'الشخصية' },
-            { id: 'business', label: 'الأعمال' },
-            { id: 'prompts', label: 'الرسائل المخصصة' },
-            { id: 'ai-prompts', label: 'برومبتات الذكاء الاصطناعي' },
-            { id: 'advanced', label: 'متقدم' },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-secondry text-white'
-                  : 'text-white '
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className="mb-6 gradient-border inner-shadow">
+        <div className="relative">
+          <div className="flex overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
+            <div className="flex space-x-1 px-1 sm:px-2">
+              {[
+                { id: 'general', label: 'عام' },
+                { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
+                { id: 'personality', label: 'الشخصية' },
+                { id: 'business', label: 'الأعمال' },
+                { id: 'prompts', label: 'الرسائل المخصصة' },
+                { id: 'ai-prompts', label: 'برومبتات الذكاء الاصطناعي' },
+                { id: 'advanced', label: 'متقدم' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`whitespace-nowrap px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${
+                    activeTab === tab.id
+                      ? 'bg-secondry text-white shadow-md'
+                      : 'text-white hover:bg-secondry/50'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Scroll indicators */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none"></div>
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none"></div>
         </div>
+        <style jsx>{`
+          .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
 
       {/* General Settings */}

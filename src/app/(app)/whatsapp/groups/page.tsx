@@ -8,9 +8,12 @@ import {
   sendToWhatsAppGroupsBulk,
   exportGroupMembers,
   postWhatsAppStatus,
+  listWhatsAppSchedules,
+  cancelWhatsAppSchedule,
 } from "@/lib/api";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function WhatsAppGroupsPage() {
   const [loading, setLoading] = useState(false);
@@ -31,11 +34,25 @@ export default function WhatsAppGroupsPage() {
   const [statusImage, setStatusImage] = useState<File | null>(null);
   const [statusCaption, setStatusCaption] = useState<string>("");
 
+  // Schedules state (groups campaigns)
+  const [groupSchedules, setGroupSchedules] = useState<Array<{
+    id: number;
+    type: 'groups' | 'campaign';
+    payload: any;
+    scheduledAt: string;
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  }>>([]);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  const [cancellingScheduleId, setCancellingScheduleId] = useState<number | null>(null);
+  const [schedulePage, setSchedulePage] = useState(1);
+  const schedulesPerPage = 5;
+
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
     if (token) {
       handleListGroups();
+      handleLoadSchedules();
     }
   }, [token]);
 
@@ -45,6 +62,41 @@ export default function WhatsAppGroupsPage() {
       if (res.success) setGroups(res.groups);
     } catch (e: any) {
       setError(e.message);
+    }
+  }
+
+  async function handleLoadSchedules() {
+    try {
+      setIsLoadingSchedules(true);
+      const res = await listWhatsAppSchedules(token);
+      if (res.success && Array.isArray(res.schedules)) {
+        const filtered = res.schedules
+          .filter(s => s.type === 'groups')
+          .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+        setGroupSchedules(filtered);
+        setSchedulePage(1);
+      }
+    } catch (e: any) {
+      console.error('[Groups] Failed to load schedules:', e.message);
+    } finally {
+      setIsLoadingSchedules(false);
+    }
+  }
+
+  async function handleCancelSchedule(id: number) {
+    try {
+      setCancellingScheduleId(id);
+      const res = await cancelWhatsAppSchedule(token, id);
+      if (res.success) {
+        showSuccess("تم إيقاف الحملة المجدولة بنجاح");
+        await handleLoadSchedules();
+      } else {
+        showError("تعذر إيقاف الحملة", res.message || "يمكن إيقاف الحملات قيد الانتظار فقط");
+      }
+    } catch (e: any) {
+      showError("تعذر إيقاف الحملة", e.message);
+    } finally {
+      setCancellingScheduleId(null);
     }
   }
 
@@ -484,6 +536,99 @@ export default function WhatsAppGroupsPage() {
           </div>
 
 
+        </CardContent>
+      </Card>
+
+      {/* Scheduled group campaigns */}
+      <Card className="gradient-border border-none">
+        <CardHeader className="border-text-primary/50 text-white font-bold text-xl">
+          الحملات المجدولة للمجموعات
+          <p className="text-yellow-400 text-sm">بامكانك تعديل معلومات الحملة من صفحة المحتوى المجدول</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoadingSchedules ? (
+            <div className="text-white text-sm">جاري تحميل الحملات المجدولة...</div>
+          ) : groupSchedules.length === 0 ? (
+            <div className="text-white/60 text-sm">
+              لا توجد حملات مجدولة حالياً للمجموعات.
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-lg border border-white/10">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-white">#</TableHead>
+                      <TableHead className="text-white">وقت الإرسال</TableHead>
+                      <TableHead className="text-white">عدد المجموعات</TableHead>
+                      <TableHead className="text-white">الحالة</TableHead>
+                      <TableHead className="text-white">إجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groupSchedules
+                      .slice((schedulePage - 1) * schedulesPerPage, schedulePage * schedulesPerPage)
+                      .map((s) => {
+                        const date = new Date(s.scheduledAt);
+                        const isPending = s.status === 'pending';
+                        const groupsCount = Array.isArray(s.payload?.groupNames) ? s.payload.groupNames.length : 0;
+                        return (
+                          <TableRow key={s.id}>
+                            <TableCell className="text-white">{s.id}</TableCell>
+                            <TableCell className="text-white">{date.toLocaleString()}</TableCell>
+                            <TableCell className="text-white">{groupsCount}</TableCell>
+                            <TableCell className="text-white">
+                              {s.status === 'pending'
+                                ? <span className="text-yellow-400">قيد الانتظار</span>
+                                : s.status === 'running'
+                                ? <span className="text-primary">قيد التنفيذ</span>
+                                : s.status === 'completed'
+                                ? <span className="text-green-400">مكتملة</span>
+                                : s.status === 'cancelled'
+                                ? <span className="text-red-500">ملغاة</span>
+                                : <span className="text-red-500">فشل</span>}
+                            </TableCell>
+                            <TableCell>
+                              <button
+                                type="button"
+                                disabled={!isPending || cancellingScheduleId === s.id}
+                                onClick={() => handleCancelSchedule(s.id)}
+                                className="primary-button after:bg-red-700 before:bg-[#01191080] text-white px-4 py-2 rounded disabled:opacity-60"
+                              >
+                                {cancellingScheduleId === s.id ? 'جاري الإيقاف...' : 'إيقاف الحملة'}
+                              </button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                  </TableBody>
+                </Table>
+              </div>
+              {Math.ceil(groupSchedules.length / schedulesPerPage) > 1 && (
+                <div className="flex items-center justify-between text-white text-sm">
+                  <button
+                    onClick={() => setSchedulePage((prev) => Math.max(prev - 1, 1))}
+                    disabled={schedulePage === 1}
+                    className="primary-button px-3 py-1 text-xs disabled:opacity-50"
+                  >
+                    السابق
+                  </button>
+                  <span>
+                    صفحة {schedulePage} من {Math.ceil(groupSchedules.length / schedulesPerPage)}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setSchedulePage((prev) => Math.min(prev + 1, Math.ceil(groupSchedules.length / schedulesPerPage)))
+                    }
+                    disabled={schedulePage === Math.ceil(groupSchedules.length / schedulesPerPage)}
+                    className="primary-button px-3 py-1 text-xs disabled:opacity-50"
+                  >
+                    التالي
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 

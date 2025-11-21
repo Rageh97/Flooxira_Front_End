@@ -17,7 +17,7 @@ export default function ServicesSlider() {
   const [showSearchInput, setShowSearchInput] = useState(false);
   
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
-    loop: filteredServices.length > 6, // Only loop if more than 6 services
+    loop: true,
     align: "start",
     slidesToScroll: 1,
     containScroll: "trimSnaps",
@@ -36,14 +36,15 @@ export default function ServicesSlider() {
     const autoplay = setInterval(() => {
       if (emblaApi.canScrollNext()) {
         emblaApi.scrollNext();
-      } else if (filteredServices.length > 6) {
-        // Only loop back if we have more than 6 services
+      } else {
         emblaApi.scrollTo(0);
       }
-    }, 5000); // Auto-scroll every 5 seconds
+    }, 3000);
+
+    emblaApi.on("pointerDown", () => clearInterval(autoplay));
 
     return () => clearInterval(autoplay);
-  }, [emblaApi, filteredServices.length]);
+  }, [emblaApi]);
 
   useEffect(() => {
     filterServices();
@@ -133,82 +134,77 @@ export default function ServicesSlider() {
 
   return (
     <div className=" border-none ">
-      <CardHeader className="flex items-center justify-between gradient-border rounded-lg mb-3 border-none">
-        <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
-          <Package className="h-5 w-5 " />
-        <h3 className="text-white text-3xl font-bold"> خدمات التجار</h3>
-            {/* Categories Filter */}
-            {categories.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                {/* <span className="text-sm text-white font-medium">التصنيفات:</span> */}
-                <Button
-                  size="sm"
-                  variant={selectedCategory === null ? "default" : "secondary"}
-                  onClick={() => setSelectedCategory(null)}
-                  className={selectedCategory === null ? "bg-semidark-custom border-1 border-blue-500 " : "bg-white text-black "}
-                >
-                  الكل ({allServices.length})
-                </Button>
-                {categories.map((category) => {
-                  const count = allServices.filter(s => s.category === category).length;
-                  return (
-                    <Button
-                      key={category}
-                      size="sm"
-                      variant={selectedCategory === category ? "default" : "secondary"}
-                      onClick={() => setSelectedCategory(category)}
-                      className={selectedCategory === category ? "bg-semidark-custom border-1 border-blue-500" : "bg-white text-black "}
-                    >
-                      {category} ({count})
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </CardTitle>
-       
-        <div className="relative ">
-          {!showSearchInput ? (
-            // <button
-            //   onClick={() => setShowSearchInput(true)}
-            //   className="flex items-center justify-center w-full h-10 bg-gray-800/50 border border-gray-600 rounded-md hover:bg-gray-700/50 transition-colors"
-            // >
-            //   <img  src="/search.gif" className="w-6 h-6" />
-            // </button>
-            <img onClick={() => setShowSearchInput(true)} src="/search.gif" className="w-10 h-10 border border-text-primary p-1 rounded-full" />
-          ) : (
-            <div className="relative">
-              {/* <img src="/search.gif" className="absolute right-3 w-6 h-6 top-1/2 -translate-y-1/2" /> */}
-              <Input
-                type="text"
-                placeholder="ابحث عن خدمة..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 pl-10"
-                autoFocus
-              />
-              {searchTerm && (
+      <CardHeader className="flex flex-col gap-4 gradient-border rounded-lg mb-3 border-none">
+        <div className="flex items-center justify-between w-full">
+          <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+            <Package className="h-5 w-5 " />
+            <h3 className="text-white text-3xl font-bold"> خدمات التجار</h3>
+          </CardTitle>
+         
+          <div className="relative ">
+            {!showSearchInput ? (
+              <img onClick={() => setShowSearchInput(true)} src="/search.gif" className="w-10 h-10 border border-text-primary p-1 rounded-full cursor-pointer" />
+            ) : (
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="ابحث عن خدمة..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10 pl-10 w-full md:w-64"
+                  autoFocus
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-200 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
                 <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-200 hover:text-gray-600"
+                  onClick={() => {
+                    setShowSearchInput(false);
+                    setSearchTerm("");
+                  }}
+                  className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-200 hover:text-gray-600"
                 >
                   <X className="h-4 w-4" />
                 </button>
-              )}
-              <button
-                onClick={() => {
-                  setShowSearchInput(false);
-                  setSearchTerm("");
-                }}
-                className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-200 hover:text-gray-600"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Categories Filter */}
+        {categories.length > 0 && (
+          <div className="w-full overflow-hidden">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
+              <Button
+                size="sm"
+                variant={selectedCategory === null ? "default" : "secondary"}
+                onClick={() => setSelectedCategory(null)}
+                className={`whitespace-nowrap flex-shrink-0 ${selectedCategory === null ? "bg-semidark-custom border-1 border-blue-500 " : "bg-white text-black "}`}
+              >
+                الكل ({allServices.length})
+              </Button>
+              {categories.map((category) => {
+                const count = allServices.filter(s => s.category === category).length;
+                return (
+                  <Button
+                    key={category}
+                    size="sm"
+                    variant={selectedCategory === category ? "default" : "secondary"}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`whitespace-nowrap flex-shrink-0 ${selectedCategory === category ? "bg-semidark-custom border-1 border-blue-500" : "bg-white text-black "}`}
+                  >
+                    {category} ({count})
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </CardHeader>
       <div className="space-y-4 bg-none ">
         {/* Search and Filter Section */}

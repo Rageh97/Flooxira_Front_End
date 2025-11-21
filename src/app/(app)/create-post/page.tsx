@@ -98,7 +98,11 @@ export default function CreatePostPage() {
   const [youtubeChannel, setYoutubeChannel] = useState<{title: string, subscriberCount: string} | null>(null);
   const [twitterAccount, setTwitterAccount] = useState<{username: string} | null>(null);
   const [linkedinProfile, setLinkedinProfile] = useState<{name: string} | null>(null);
-  
+  useEffect(() => {
+    if (!permissionsLoading && !hasActiveSubscription) {
+      showError("لا يوجد اشتراك نشط");
+    }
+  }, [hasActiveSubscription, permissionsLoading]);
   // Post usage stats state
   const [postUsageStats, setPostUsageStats] = useState<{
     monthlyLimit: number;
@@ -600,15 +604,7 @@ export default function CreatePostPage() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="إنشاء منشور جديد"
-        featureName="إنشاء المنشورات"
-        className="space-y-8"
-      />
-    );
-  }
+
 
   const togglePlatform = (platform: string) => {
     if (platforms.includes(platform)) {
@@ -799,6 +795,14 @@ export default function CreatePostPage() {
 
   return (
     <div className="w-full mx-auto space-y-8 pb-12">
+      {/* {!hasActiveSubscription && (
+        <NoActiveSubscription 
+          heading="إنشاء منشور جديد"
+          featureName="إنشاء المنشورات"
+          className="mb-8"
+        />
+      )} */}
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
       {/* Error Message Display */}
       {error && (
         <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-300 rounded-xl shadow-lg">
@@ -818,9 +822,9 @@ export default function CreatePostPage() {
       )}
       
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">إنشاء منشور جديد</h1>
+          <h1 className="text-xl lg:text-4xl font-bold text-white mb-2">إنشاء منشور جديد</h1>
           <p className="text-gray-400">قم بإنشاء ونشر محتواك على منصات التواصل الاجتماعي</p>
         </div>
         
@@ -891,14 +895,14 @@ export default function CreatePostPage() {
       
       {/* Step 1: Content Type Selection */}
       <Card className="gradient-border ">
-        <CardHeader className="border-b border-green-500/30 pb-4">
-          <div className="flex items-center justify-between gap-3">
+        <CardHeader className=" border-b border-green-500/30 pb-4">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center font-bold shadow-lg">
               1
             </div>
             <div>
-              <h2 className="text-4xl font-bold text-white mb-2">اختر نوع المحتوى</h2>
+              <h2 className="text-xl lg:text-4xl font-bold text-white mb-2">اختر نوع المحتوى</h2>
               <p className="text-sm text-gray-300">حدد نوع المنشور الذي تريد إنشاءه</p>
             </div>
             </div>
@@ -1006,13 +1010,13 @@ export default function CreatePostPage() {
       {/* Step 2: Platform Selection */}
       <Card className="gradient-border ">
         <CardHeader className="border-b border-green-500/30 pb-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center  font-bold shadow-lg">
               2
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-xl lg:text-2xl font-bold text-white">
                 {contentType === 'stories' ? 'اختر منصة الستوري' : 'اختر المنصات للنشر'}
               </h2>
               <p className="text-sm text-gray-200">
@@ -1044,7 +1048,7 @@ export default function CreatePostPage() {
                       </Button>
                     </div>
                   ) : connectedPlatforms.length === 0 ? (
-                    <div className="p-2 bg-red-500 rounded-2xl text-center shadow-lg flex items-center justify-center gap-2">
+                    <div className="p-2 bg-red-500 flex flex-col lg:flex-row items-center justify-between rounded-2xl text-center shadow-lg flex items-center justify-center gap-2">
                     
                       <p className="text-xl font-bold text-white">لا توجد منصات متصلة</p>
                       <p className="text-sm text-white">
@@ -1648,6 +1652,7 @@ export default function CreatePostPage() {
           setShowEmojiPicker(false);
         }}
       />
+      </div>
     </div>
   );
 }

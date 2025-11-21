@@ -178,7 +178,7 @@ export default function CustomerAnalyticsPage() {
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row items-center gap-4">
           <Button 
             variant="secondary" 
             onClick={() => window.location.href = '/customers'}
