@@ -283,9 +283,9 @@ export default function PlansAdminPage() {
   };
 
   const formatPrice = (priceCents: number, interval: string) => {
-    const price = (priceCents / 100).toFixed(2);
+    const price = priceCents;
     const period = interval === 'yearly' ? '/year' : '/month';
-    return { price: `$${price}`, period };
+    return { price: `${price}`, period };
   };
 
   const availablePlatforms = [
@@ -701,11 +701,11 @@ export default function PlansAdminPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="plan-price">السعر (بالسنت)</Label>
+                <Label htmlFor="plan-price">السعر </Label>
                 <Input
                   id="plan-price"
                   type="number"
-                  placeholder="1000 = $10.00"
+                 
                   value={newPlan.priceCents}
                   onChange={(e) => setNewPlan({ ...newPlan, priceCents: e.target.value })}
                 />
@@ -1127,11 +1127,10 @@ export default function PlansAdminPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="edit-plan-price">السعر (بالسنت)</Label>
+                <Label htmlFor="edit-plan-price">السعر </Label>
                 <Input
                   id="edit-plan-price"
                   type="number"
-                  placeholder="1000 = $10.00"
                   value={editPlan.priceCents}
                   onChange={(e) => setEditPlan({ ...editPlan, priceCents: e.target.value })}
                 />

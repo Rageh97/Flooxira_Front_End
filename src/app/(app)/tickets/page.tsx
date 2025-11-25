@@ -213,7 +213,7 @@ export default function TicketsPage() {
   }, []);
   
   // Generate storeId from userId
-  const storeId = user ? `store_${user.id}` : '';
+  const storeId = user ? (user.storeId || `store_${user.id}`) : '';
   const widgetCode = `<script src="${API_BASE_URL}/widget.js" data-store-id="${storeId}"></script>`;
 
   useEffect(() => {

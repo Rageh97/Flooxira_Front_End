@@ -137,7 +137,7 @@ export default function SubscriptionRequestsAdminPage() {
   };
 
   const formatPrice = (priceCents: number, interval: string) => {
-    const price = (priceCents / 100).toFixed(2);
+    const price = priceCents;
     const period = interval === 'yearly' ? '/year' : '/month';
     return { price: `$${price}`, period };
   };
@@ -346,7 +346,7 @@ export default function SubscriptionRequestsAdminPage() {
           <Button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            variant="outline"
+            variant="secondary"
           >
             السابق
           </Button>
@@ -356,7 +356,7 @@ export default function SubscriptionRequestsAdminPage() {
           <Button
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
-            variant="outline"
+            variant="secondary"
           >
             التالي
           </Button>
@@ -403,7 +403,7 @@ export default function SubscriptionRequestsAdminPage() {
             <div className="flex justify-end gap-2">
               <Button
                 onClick={() => setActionModalOpen(false)}
-                variant="outline"
+                variant="secondary"
               >
                 إلغاء
               </Button>

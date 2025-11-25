@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAllSubscriptions } from "@/lib/api";
 import { Users, Calendar, DollarSign } from "lucide-react";
@@ -75,7 +76,7 @@ export default function SubscriptionsAdminPage() {
   };
 
   const formatPrice = (priceCents: number) => {
-    return (priceCents / 100).toFixed(2);
+    return priceCents.toString();
   };
 
   const getStatusColor = (status: string) => {

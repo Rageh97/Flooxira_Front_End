@@ -128,7 +128,7 @@ export default function AnalyticsAdminPage() {
   };
 
   const formatCurrency = (cents: number) => {
-    return (cents / 100).toFixed(2);
+    return cents.toString();
   };
 
   const formatDate = (dateString: string) => {

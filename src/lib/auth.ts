@@ -41,7 +41,8 @@ export function useAuth() {
               name: data.employee.name,
               email: data.employee.email,
               phone: null,
-              role: 'employee' as const
+              role: 'employee' as const,
+              storeId: data.employee.storeId
             };
             console.log('[useAuth] Employee authenticated:', employeeUser);
             setUser(employeeUser);

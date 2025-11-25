@@ -27,7 +27,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
   return data as T;
 }
 
-export type AuthUser = { id: number; name?: string | null; email: string; phone?: string | null; role?: 'user' | 'admin' | 'employee' };
+export type AuthUser = { id: number; name?: string | null; email: string; phone?: string | null; role?: 'user' | 'admin' | 'employee'; storeId?: string | null };
 
 export async function signInRequest(email: string, password: string) {
   return apiFetch<{ user: AuthUser; token: string }>("/api/auth/sign-in", {

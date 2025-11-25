@@ -111,7 +111,7 @@ export default function UserDetailsPage() {
   };
 
   const formatPrice = (priceCents: number) => {
-    return (priceCents / 100).toFixed(2);
+    return priceCents.toString();
   };
 
   const getStatusColor = (status: string) => {
@@ -198,7 +198,7 @@ export default function UserDetailsPage() {
           <Button 
             onClick={() => router.back()} 
             className="mt-4"
-            variant="outline"
+            variant="secondary"
           >
             العودة
           </Button>
@@ -214,7 +214,7 @@ export default function UserDetailsPage() {
         <div className="flex items-center space-x-4 rtl:space-x-reverse">
           <Button 
             onClick={() => router.back()} 
-            variant="outline" 
+            variant="secondary" 
             size="sm"
             className="flex items-center space-x-2 rtl:space-x-reverse"
           >
@@ -528,7 +528,7 @@ export default function UserDetailsPage() {
           </DialogHeader>
           <DialogFooter className="flex gap-2 rtl:flex-row-reverse">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => {
                 setConfirmModalOpen(false);
                 setPendingAction(null);

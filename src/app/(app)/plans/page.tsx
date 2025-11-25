@@ -71,7 +71,7 @@ export default function PlansPage() {
   };
 
   const formatPrice = (priceCents: number, interval: string) => {
-    const price = (priceCents / 100).toFixed(2);
+    const price = priceCents;
     const period = interval === 'yearly' ? '/year' : '/month';
     return { price: `$${price}`, period };
   };
