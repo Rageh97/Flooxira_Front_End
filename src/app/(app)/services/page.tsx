@@ -29,6 +29,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
@@ -86,6 +87,7 @@ export default function ServicesPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -96,6 +98,7 @@ export default function ServicesPage() {
   useEffect(() => {
     if (!token) return;
     loadServices();
+    loadCategories();
   }, [token]);
 
   const loadServices = async () => {
@@ -109,6 +112,26 @@ export default function ServicesPage() {
       // showError("خطأ", e.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/service-categories`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
     }
   };
 
@@ -382,14 +405,14 @@ export default function ServicesPage() {
                       السعر
                     </TableHead>
                     <TableHead >
+                      رابط الخدمة
+                    </TableHead>
+                    <TableHead >
                       الحالة
                     </TableHead>
                     <TableHead >
                       المشاهدات
                     </TableHead>
-                    {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                      النقرات
-                    </th> */}
                     <TableHead >
                       الإجراءات
                     </TableHead>
@@ -428,6 +451,21 @@ export default function ServicesPage() {
                         <div className="text-sm font-semibold text-primary">
                           {parseFloat(service.price.toString()).toFixed(2)} {service.currency}
                         </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 whitespace-nowrap">
+                        {service.purchaseLink ? (
+                          <a
+                            href={service.purchaseLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-sm"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            رابط
+                          </a>
+                        ) : (
+                          <span className="text-gray-500 text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1">
@@ -530,7 +568,7 @@ export default function ServicesPage() {
               />
             </div>
 
-            <div>
+            {/* <div>
               <Label htmlFor="description">وصف الخدمة</Label>
               <Textarea
               className="bg-[#011910]"
@@ -540,7 +578,7 @@ export default function ServicesPage() {
                 placeholder="اكتب وصفاً تفصيلياً للخدمة..."
                 rows={4}
               />
-            </div>
+            </div> */}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -582,13 +620,22 @@ export default function ServicesPage() {
             </div>
 
             <div>
-              <Label htmlFor="category">التصنيف</Label>
-              <Input
+              <Label htmlFor="category">التصنيف *</Label>
+              <select
                 id="category"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="مثال: تصميم، برمجة، كتابة"
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#011910] text-white appearance-none"
+              >
+                <option value="">اختر تصنيفاً</option>
+                {categories.length === 0 ? (
+                  <option value="" disabled>لا توجد تصنيفات متاحة</option>
+                ) : (
+                  categories.map((cat, index) => (
+                    <option key={index} value={cat}>{cat}</option>
+                  ))
+                )}
+              </select>
             </div>
 
             <div>
@@ -633,7 +680,7 @@ export default function ServicesPage() {
               </Button>
               <Button
                 onClick={handleCreateService}
-                disabled={!formData.title || !formData.price}
+                disabled={!formData.title || !formData.price || !formData.category}
                 className="primary-button"
               >
                 إنشاء الخدمة
@@ -663,7 +710,7 @@ export default function ServicesPage() {
               />
             </div>
 
-            <div>
+            {/* <div>
               <Label htmlFor="edit-description">وصف الخدمة</Label>
               <Textarea
               className="bg-[#011910]"
@@ -672,7 +719,7 @@ export default function ServicesPage() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={4}
               />
-            </div>
+            </div> */}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -712,12 +759,22 @@ export default function ServicesPage() {
             </div>
 
             <div>
-              <Label htmlFor="edit-category">التصنيف</Label>
-              <Input
+              <Label htmlFor="edit-category">التصنيف *</Label>
+              <select
                 id="edit-category"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-[#011910] text-white appearance-none"
+              >
+                <option value="">اختر تصنيفاً</option>
+                {categories.length === 0 ? (
+                  <option value="" disabled>لا توجد تصنيفات متاحة</option>
+                ) : (
+                  categories.map((cat, index) => (
+                    <option key={index} value={cat}>{cat}</option>
+                  ))
+                )}
+              </select>
             </div>
 
             <div>

@@ -16,6 +16,7 @@ import {
   ThumbsUp
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
+import { API_URL } from "@/lib/api";
 
 type Review = {
   id: number;

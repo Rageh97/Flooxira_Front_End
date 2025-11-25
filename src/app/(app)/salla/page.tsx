@@ -210,7 +210,10 @@ export default function SallaEventsPage() {
   }
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const webhookUrl = user ? `https://api.flooxira.com/api/salla/webhook/${user.id}` : `${baseUrl}/api/salla/webhook/{user_id}`;
+  const webhookUrl = user?.storeId 
+    ? `https://api.flooxira.com/api/salla/webhook/${user.storeId}` 
+    : `${baseUrl}/api/salla/webhook/{store_id}`;
+
 
   return (
     <div className="space-y-4 text-white">

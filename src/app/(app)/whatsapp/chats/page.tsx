@@ -889,36 +889,40 @@ export default function WhatsAppChatsPage() {
           <div className="flex flex-col w-full h-full min-h-0">
             {/* Chat Header */}
             
+            {/* Active Note - Fixed at top */}
+            {selectedContact && activeNote && activeNote.status === 'open' && (
+              <div className="flex-shrink-0 p-2 sm:p-4 pb-0">
+                <div className="p-3 rounded-md bg-yellow-600/20 border border-yellow-500 text-yellow-200 flex items-start justify-between gap-3">
+                  <div className="text-sm whitespace-pre-wrap flex-1">{activeNote.note}</div>
+                  <Button 
+                    size="sm" 
+                    onClick={async () => {
+                      if (!activeNote) return;
+                      try {
+                        await resolveChatNote(token, activeNote.id);
+                        setActiveNote(null);
+                        setOpenNoteContacts(prev => {
+                          const s = new Set(prev);
+                          s.delete(selectedContact);
+                          return s;
+                        });
+                        showToast('تم تعليم الملاحظة كمحلولة', 'success');
+                      } catch (e: any) {
+                        showToast(e.message || 'فشل في تحديث الملاحظة', 'error');
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                   تعيين تم الحل ✓
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             {/* Messages Display */}
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-2 sm:p-4 scrollbar-hide">
               {selectedContact ? (
                 <div className="space-y-3">
-                    {activeNote && activeNote.status === 'open' && (
-                      <div className="mb-2 p-3 rounded-md bg-yellow-600/20 border border-yellow-500 text-yellow-200 flex items-start justify-between gap-3">
-                        <div className="text-sm whitespace-pre-wrap flex-1">{activeNote.note}</div>
-                        <Button 
-                          size="sm" 
-                          onClick={async () => {
-                            if (!activeNote) return;
-                            try {
-                              await resolveChatNote(token, activeNote.id);
-                              setActiveNote(null);
-                              setOpenNoteContacts(prev => {
-                                const s = new Set(prev);
-                                s.delete(selectedContact);
-                                return s;
-                              });
-                              showToast('تم تعليم الملاحظة كمحلولة', 'success');
-                            } catch (e: any) {
-                              showToast(e.message || 'فشل في تحديث الملاحظة', 'error');
-                            }
-                          }}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                         تعيين تم الحل ✓
-                        </Button>
-                      </div>
-                    )}
                     {chats.length === 0 ? (
                       <div className="text-center py-4 text-gray-500">
                         لم يتم العثور على رسائل. جرب التحديث أو تحقق من إرسال جهة الاتصال لأي رسائل.

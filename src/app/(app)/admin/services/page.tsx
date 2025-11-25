@@ -21,6 +21,10 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Trash2,
+  ExternalLink,
+  Plus,
+  Tags,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 
@@ -55,6 +59,7 @@ export default function AdminServicesPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [searchTerm, setSearchTerm] = useState("");
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,6 +67,13 @@ export default function AdminServicesPage() {
   const [totalCount, setTotalCount] = useState(0);
   const itemsPerPage = 10;
   const { showSuccess, showError } = useToast();
+
+  // Categories state
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [deleteCategoryModalOpen, setDeleteCategoryModalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -77,6 +89,7 @@ export default function AdminServicesPage() {
   useEffect(() => {
     if (!token) return;
     loadServices();
+    loadCategories();
   }, [token, filter, currentPage]);
 
   const loadServices = async () => {
@@ -161,10 +174,41 @@ export default function AdminServicesPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!selectedService) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/services/${selectedService.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("فشل في حذف الخدمة");
+
+      showSuccess("تم حذف الخدمة بنجاح!");
+      setDeleteModalOpen(false);
+      setSelectedService(null);
+      loadServices();
+      loadStatistics();
+    } catch (error: any) {
+      showError("خطأ", error.message);
+    }
+  };
+
   const openRejectModal = (service: Service) => {
     setSelectedService(service);
     setRejectionReason("");
     setRejectModalOpen(true);
+  };
+
+  const openDeleteModal = (service: Service) => {
+    setSelectedService(service);
+    setDeleteModalOpen(true);
   };
 
   const [allStats, setAllStats] = useState({
@@ -203,6 +247,82 @@ export default function AdminServicesPage() {
       });
     } catch (error) {
       console.error('Failed to load statistics:', error);
+    }
+  };
+
+  // Categories functions
+  const loadCategories = async () => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/service-categories`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      showError("خطأ", "يرجى إدخال اسم التصنيف");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/service-categories`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name: newCategoryName.trim() }),
+        }
+      );
+
+      if (!response.ok) throw new Error("فشل في إضافة التصنيف");
+
+      showSuccess("تم إضافة التصنيف بنجاح!");
+      setNewCategoryName("");
+      setCategoryModalOpen(false);
+      loadCategories();
+    } catch (error: any) {
+      showError("خطأ", error.message);
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/service-categories/${encodeURIComponent(categoryToDelete)}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("فشل في حذف التصنيف");
+
+      showSuccess("تم حذف التصنيف بنجاح!");
+      setDeleteCategoryModalOpen(false);
+      setCategoryToDelete(null);
+      loadCategories();
+    } catch (error: any) {
+      showError("خطأ", error.message);
     }
   };
 
@@ -258,8 +378,56 @@ export default function AdminServicesPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-white">إدارة الخدمات</h1>
-        <p className="text-sm text-green-600">الموافقة على الخدمات أو رفضها</p>
+        <p className="text-sm text-green-600">الموافقة على الخدمات أو رفضها وإدارة التصنيفات</p>
       </div>
+
+      {/* Categories Management Section */}
+      <Card className="gradient-border">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Tags className="h-5 w-5" />
+              إدارة التصنيفات
+            </CardTitle>
+            <Button
+              onClick={() => setCategoryModalOpen(true)}
+              className="primary-button"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              إضافة تصنيف
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {categories.length === 0 ? (
+            <div className="text-center py-8">
+              <Tags className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500">لا توجد تصنيفات بعد</p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 px-3 py-2 bg-secondry rounded-lg border border-text-primary/30"
+                >
+                  <span className="text-white text-sm">{category}</span>
+                  <button
+                    onClick={() => {
+                      setCategoryToDelete(category);
+                      setDeleteCategoryModalOpen(true);
+                    }}
+                    className="text-red-400 hover:text-red-300 transition-colors"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -396,6 +564,9 @@ export default function AdminServicesPage() {
                         السعر
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-white uppercase">
+                        رابط الخدمة
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-white uppercase">
                         التصنيف
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-white uppercase">
@@ -459,6 +630,23 @@ export default function AdminServicesPage() {
                           </div>
                         </td>
 
+                        {/* Purchase Link */}
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {service.purchaseLink ? (
+                            <a
+                              href={service.purchaseLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-sm"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              رابط
+                            </a>
+                          ) : (
+                            <span className="text-gray-500 text-sm">-</span>
+                          )}
+                        </td>
+
                         {/* Category */}
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="text-sm text-white">
@@ -481,27 +669,35 @@ export default function AdminServicesPage() {
 
                         {/* Actions */}
                         <td className="px-4 py-4 whitespace-nowrap">
-                          {service.approvalStatus === 'pending' ? (
-                            <div className="flex gap-2">
-                              <Button
-                                onClick={() => handleApprove(service.id)}
-                                className="bg-green-600 hover:bg-green-700"
-                                size="sm"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => openRejectModal(service)}
-                                variant="secondary"
-                                size="sm"
-                                className="border-red-300 text-red-600 bg-red-50"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">-</span>
-                          )}
+                          <div className="flex gap-2">
+                            {service.approvalStatus === 'pending' && (
+                              <>
+                                <Button
+                                  onClick={() => handleApprove(service.id)}
+                                  className="bg-green-600 hover:bg-green-700"
+                                  size="sm"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  onClick={() => openRejectModal(service)}
+                                  variant="secondary"
+                                  size="sm"
+                                  className="border-red-300 text-red-600 bg-red-50"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              onClick={() => openDeleteModal(service)}
+                              variant="secondary"
+                              size="sm"
+                              className="border-red-300 text-red-600 bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -585,6 +781,113 @@ export default function AdminServicesPage() {
                 رفض الخدمة
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">تأكيد الحذف</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              هل أنت متأكد من حذف الخدمة "{selectedService?.title}"؟ هذا الإجراء لا يمكن التراجع عنه.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setSelectedService(null);
+              }}
+              className="primary-button after:bg-gray-600"
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleDelete}
+              className="primary-button after:bg-red-600"
+            >
+              حذف الخدمة
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Category Modal */}
+      <Dialog open={categoryModalOpen} onOpenChange={setCategoryModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">إضافة تصنيف جديد</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              أدخل اسم التصنيف الجديد
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="categoryName">اسم التصنيف *</Label>
+              <Input
+                id="categoryName"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="مثال: تصميم"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newCategoryName.trim()) {
+                    handleCreateCategory();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setCategoryModalOpen(false);
+                  setNewCategoryName("");
+                }}
+                className="primary-button after:bg-gray-600"
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleCreateCategory}
+                disabled={!newCategoryName.trim()}
+                className="primary-button"
+              >
+                إضافة
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Modal */}
+      <Dialog open={deleteCategoryModalOpen} onOpenChange={setDeleteCategoryModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">تأكيد حذف التصنيف</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              هل أنت متأكد من حذف التصنيف "{categoryToDelete}"؟
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setDeleteCategoryModalOpen(false);
+                setCategoryToDelete(null);
+              }}
+              className="primary-button after:bg-gray-600"
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleDeleteCategory}
+              className="primary-button after:bg-red-600"
+            >
+              حذف
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
