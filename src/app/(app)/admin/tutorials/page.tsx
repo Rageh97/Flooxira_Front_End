@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,9 +20,6 @@ import {
   Trash2, 
   Play, 
   Eye,
-  EyeOff,
-  ArrowUp,
-  ArrowDown,
   ExternalLink
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
@@ -59,6 +56,7 @@ export default function TutorialsAdminPage() {
     title: '',
     description: '',
     youtubeUrl: '',
+    thumbnailUrl: '',
     category: 'عام',
     order: 0
   });
@@ -67,12 +65,119 @@ export default function TutorialsAdminPage() {
     title: '',
     description: '',
     youtubeUrl: '',
+    thumbnailUrl: '',
     category: 'عام',
     order: 0,
     isActive: true
   });
 
-  // Read token from localStorage only on the client
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
+  const [editThumbnailPreview, setEditThumbnailPreview] = useState<string>('');
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [uploadingEditThumbnail, setUploadingEditThumbnail] = useState(false);
+
+  // Handle thumbnail upload for create modal
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showError('خطأ', 'يرجى اختيار صورة فقط');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showError('خطأ', 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
+
+    setUploadingThumbnail(true);
+    
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/uploads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.url) {
+        setNewTutorial({ ...newTutorial, thumbnailUrl: data.url });
+        showSuccess('تم رفع الصورة بنجاح!');
+      } else {
+        throw new Error(data.message || 'فشل رفع الصورة');
+      }
+    } catch (error: any) {
+      showError('خطأ في رفع الصورة', error.message);
+      setThumbnailPreview('');
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  };
+
+  // Handle thumbnail upload for edit modal
+  const handleEditThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showError('خطأ', 'يرجى اختيار صورة فقط');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showError('خطأ', 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
+
+    setUploadingEditThumbnail(true);
+    
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditThumbnailPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/uploads', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.url) {
+        setEditTutorial({ ...editTutorial, thumbnailUrl: data.url });
+        showSuccess('تم رفع الصورة بنجاح!');
+      } else {
+        throw new Error(data.message || 'فشل رفع الصورة');
+      }
+    } catch (error: any) {
+      showError('خطأ في رفع الصورة', error.message);
+      setEditThumbnailPreview('');
+    } finally {
+      setUploadingEditThumbnail(false);
+    }
+  };
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
@@ -81,7 +186,6 @@ export default function TutorialsAdminPage() {
 
   useEffect(() => {
     if (!token) return;
-    
     loadTutorials();
   }, [token]);
 
@@ -124,9 +228,11 @@ export default function TutorialsAdminPage() {
           title: '',
           description: '',
           youtubeUrl: '',
+          thumbnailUrl: '',
           category: 'عام',
           order: 0
         });
+        setThumbnailPreview('');
         loadTutorials();
         showSuccess('تم إنشاء الشرح بنجاح!');
       } else {
@@ -194,10 +300,12 @@ export default function TutorialsAdminPage() {
       title: tutorial.title,
       description: tutorial.description || '',
       youtubeUrl: tutorial.youtubeUrl,
+      thumbnailUrl: tutorial.thumbnailUrl || '',
       category: tutorial.category,
       order: tutorial.order,
       isActive: tutorial.isActive
     });
+    setEditThumbnailPreview(tutorial.thumbnailUrl || '');
     setEditModalOpen(true);
   };
 
@@ -210,11 +318,6 @@ export default function TutorialsAdminPage() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getYouTubeEmbedUrl = (url: string) => {
-    const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
   };
 
   if (loading) {
@@ -289,7 +392,7 @@ export default function TutorialsAdminPage() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="default"
                   onClick={() => window.open(tutorial.youtubeUrl, '_blank')}
                   className="flex-1"
                 >
@@ -298,7 +401,7 @@ export default function TutorialsAdminPage() {
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => openEditModal(tutorial)}
                 >
                   <Edit className="w-4 h-4" />
@@ -369,6 +472,32 @@ export default function TutorialsAdminPage() {
               />
             </div>
             <div>
+              <Label htmlFor="thumbnailUrl">صورة مخصصة للفيديو (اختياري)</Label>
+              <Input
+                id="thumbnailUrl"
+                type="file"
+                accept="image/*"
+                onChange={handleThumbnailUpload}
+                disabled={uploadingThumbnail}
+                className="cursor-pointer"
+              />
+              {uploadingThumbnail && (
+                <p className="text-sm text-blue-500 mt-2">جاري رفع الصورة...</p>
+              )}
+              {thumbnailPreview && !uploadingThumbnail && (
+                <div className="mt-2">
+                  <img 
+                    src={thumbnailPreview} 
+                    alt="معاينة الصورة" 
+                    className="w-full h-32 object-cover rounded border border-gray-300"
+                  />
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-1">
+                إذا لم تقم برفع صورة، سيتم استخدام الصورة الافتراضية من يوتيوب
+              </p>
+            </div>
+            <div>
               <Label htmlFor="category">التصنيف</Label>
               <Input
                 id="category"
@@ -389,7 +518,7 @@ export default function TutorialsAdminPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setCreateModalOpen(false)}>
               إلغاء
             </Button>
             <Button onClick={handleCreateTutorial}>
@@ -438,6 +567,32 @@ export default function TutorialsAdminPage() {
               />
             </div>
             <div>
+              <Label htmlFor="edit-thumbnailUrl">صورة مخصصة للفيديو (اختياري)</Label>
+              <Input
+                id="edit-thumbnailUrl"
+                type="file"
+                accept="image/*"
+                onChange={handleEditThumbnailUpload}
+                disabled={uploadingEditThumbnail}
+                className="cursor-pointer"
+              />
+              {uploadingEditThumbnail && (
+                <p className="text-sm text-blue-500 mt-2">جاري رفع الصورة...</p>
+              )}
+              {editThumbnailPreview && !uploadingEditThumbnail && (
+                <div className="mt-2">
+                  <img 
+                    src={editThumbnailPreview} 
+                    alt="معاينة الصورة" 
+                    className="w-full h-32 object-cover rounded border border-gray-300"
+                  />
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-1">
+                إذا لم تقم برفع صورة، سيتم استخدام الصورة الافتراضية من يوتيوب
+              </p>
+            </div>
+            <div>
               <Label htmlFor="edit-category">التصنيف</Label>
               <Input
                 id="edit-category"
@@ -468,7 +623,7 @@ export default function TutorialsAdminPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setEditModalOpen(false)}>
               إلغاء
             </Button>
             <Button onClick={handleUpdateTutorial}>
@@ -490,7 +645,7 @@ export default function TutorialsAdminPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+            <Button variant="secondary" onClick={() => setDeleteModalOpen(false)}>
               إلغاء
             </Button>
             <Button variant="destructive" onClick={handleDeleteTutorial}>
@@ -502,16 +657,3 @@ export default function TutorialsAdminPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

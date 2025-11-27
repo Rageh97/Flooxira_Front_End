@@ -128,7 +128,7 @@ export default function PlansPage() {
               {/* <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p> */}
         </div>
         <div className="text-center py-8">
-          <p className="text-red-600">خطأ في تحميل الباقات: {error}</p>
+          <p className="text-red-400">خطأ في تحميل الباقات: {error}</p>
         </div>
       </div>
     );
@@ -236,8 +236,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -254,8 +254,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -272,8 +272,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -290,8 +290,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -308,8 +308,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -336,8 +336,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -364,8 +364,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -392,8 +392,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>
@@ -419,8 +419,8 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-600" />
-                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                            <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
                           </>
                         )}
                       </div>

@@ -167,7 +167,7 @@ export default function TutorialsPage() {
       </Card>
 
       {/* Tutorials Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {filteredTutorials.map((tutorial) => (
           <div 
             key={tutorial.id} 

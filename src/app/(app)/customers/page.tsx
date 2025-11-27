@@ -889,7 +889,7 @@ useEffect(() => {
   // Check if user has customers management permission
   if (hasActiveSubscription && !canManageCustomers()) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full">
         <h1 className="text-2xl font-semibold mb-4">إدارة العملاء</h1>
         <Card>
           <CardContent className="text-center py-12">
@@ -909,7 +909,7 @@ useEffect(() => {
 
   if (hasActiveSubscription && !hasAccess) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="w-full">
         <Card className="max-w-2xl mx-auto">
           <CardContent className="text-center py-12">
             <div className="mb-6">
@@ -943,7 +943,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full space-y-6">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="إدارة العملاء"

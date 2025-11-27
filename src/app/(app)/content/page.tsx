@@ -730,7 +730,7 @@ export default function ContentHomePage() {
           className="container mx-auto w-full mb-8 pt-6"
         />
       )} */}
-      <div className={`container mx-auto w-full ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
+      <div className={` w-full ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">ادارة وجدولة المحتوى </h1>

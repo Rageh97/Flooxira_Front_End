@@ -4,7 +4,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, ExternalLink, Package, Search, Star, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Eye, Package, Search, Star, X } from "lucide-react";
 import { getAllActiveServices, incrementServiceClick, type Service } from "@/lib/api";
 
 export default function ServicesSlider() {
@@ -270,18 +270,18 @@ export default function ServicesSlider() {
                     key={service.id}
                     className="flex-shrink-0 pl-3 w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/6"
                   >
-                    <div className="h-full rounded-lg gradient-border pt-1  hover:shadow-lg transition-all duration-300 cursor-pointer  hover:border-purple-300">
-                      <div className="p-0 rounded-lg">
+                    <div className="h-full rounded-lg gradient-border pt-1 hover:shadow-lg transition-all duration-300 cursor-pointer hover:border-purple-300 flex flex-col">
+                      <div className="p-0 rounded-lg flex flex-col h-full">
                         {/* Service Image */}
                         {service.image && (
-                          <div className="relative w-full h-full overflow-hidden rounded-lg">
+                          <div className="relative w-full overflow-hidden rounded-lg flex-shrink-0">
                             <img
                               src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${service.image}`}
                               alt={service.title}
-                              className="w-full h-full "
+                              className="w-full h-auto object-cover"
                             />
                             {service.category && (
-                              <div className="absolute top-1 right-1  text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                              <div className="absolute top-1 right-1 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                                 {/* {service.category} */}
                                 <svg
     fill="#ffdd00"
@@ -314,9 +314,9 @@ export default function ServicesSlider() {
                           </div>
                         )}
 
-                        {/* Service Info */}
-                        <div className="p-3 space-y-2 ">
-                          <div >
+                        {/* Service Info - This will be pushed to bottom */}
+                        <div className="p-3 space-y-2 flex flex-col flex-grow justify-end">
+                          <div>
                             <h3 className="font-bold text-center text-lg text-white mb-0.5 line-clamp-1">
                               {service.title}
                             </h3>
@@ -336,8 +336,8 @@ export default function ServicesSlider() {
                           {/* Price and Stats */}
                           <div className="flex items-center justify-around text-xs">
                             
-                            <div className="text-[10px] text-yellow-500 text-left">
-                              <div>👁️ {service.clicksCount || 0}</div>
+                            <div className="text-[10px] flex items-center gap-1 text-yellow-500 text-left">
+                              <Eye className="w-4 h-4" /> {service.clicksCount || 0}
                             </div>
                           </div>
 

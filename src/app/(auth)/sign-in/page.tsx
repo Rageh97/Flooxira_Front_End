@@ -12,6 +12,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
   const mutation = useMutation({
     mutationFn: async () => {
@@ -33,8 +34,14 @@ export default function SignInPage() {
       localStorage.setItem("auth_token", data.token);
       setIsLoading(false);
       
-      // كلاهما يذهب لنفس الصفحة - النظام سيخفي العناصر حسب الصلاحيات
-      router.push("/dashboard");
+      // Show success message
+      setShowSuccess(true);
+      
+      // Redirect after 3 seconds
+      setTimeout(() => {
+        // كلاهما يذهب لنفس الصفحة - النظام سيخفي العناصر حسب الصلاحيات
+        router.push("/dashboard");
+      }, 3000);
     },
     onError: () => {
       setIsLoading(false);
@@ -71,7 +78,7 @@ export default function SignInPage() {
         <div className="flex items-center justify-between text-sm">
           <Link href="/forgot-password" className="text-gray-300 hover:underline">نسيت كلمة المرور؟</Link>
         </div>
-        <Button className="w-full primary-button" disabled={isSubmitting}>
+        <Button className="w-full primary-button" disabled={isSubmitting || showSuccess}>
           {isSubmitting ? (
             <Loader 
               size="sm" 
@@ -85,6 +92,11 @@ export default function SignInPage() {
           )}
         </Button>
         {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
+        {showSuccess && (
+          <div className="p-4 bg-green-500/20 border border-green-500 rounded-lg">
+            <p className="text-sm text-green-500 text-center font-medium">تم تسجيل الدخول بنجاح! </p>
+          </div>
+        )}
         <Link href="/sign-up" className="w-full primary-button after:bg-[#131240]">إنشاء حساب</Link>
 
       </form>

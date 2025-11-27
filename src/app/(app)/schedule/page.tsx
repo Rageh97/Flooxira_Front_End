@@ -335,7 +335,7 @@ export default function SchedulePage() {
 
 
   return (
-    <div className="mx-auto p-3 sm:p-6">
+    <div className=" w-full ">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="الجدولة"

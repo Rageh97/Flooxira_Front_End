@@ -3,7 +3,7 @@ import { ButtonHTMLAttributes, forwardRef } from "react";
 import { clsx } from "clsx";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "default" | "secondary" | "ghost" | "destructive";
+  variant?: "default" | "secondary" | "ghost" | "destructive" | "outline";
   size?: "sm" | "md" | "lg";
 };
 
@@ -15,6 +15,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: "bg-gray-200  text-gray-900",
       ghost: "bg-blue-500 text-white",
       destructive: "bg-red-600 text-white hover:bg-red-700",
+      outline: "border border-gray-300 bg-transparent hover:bg-gray-100 text-gray-700",
     };
     const sizes: Record<string, string> = {
       sm: "h-8 px-3 text-sm",

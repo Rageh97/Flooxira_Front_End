@@ -60,6 +60,7 @@ interface Ticket {
   visitorEmail?: string;
   status: "open" | "pending" | "closed";
   assignedTo?: number;
+  ticketNumber?: string;
   createdAt: string;
   updatedAt: string;
   messages?: TicketMessage[];
@@ -881,6 +882,46 @@ export default function TicketsPage() {
     }
   };
 
+  const deleteTicket = async (ticketId: number) => {
+    if (!confirm("هل أنت متأكد من حذف هذه التذكرة؟ لا يمكن التراجع عن هذا الإجراء.")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/dashboard/tickets/${ticketId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("فشل في حذف التذكرة");
+      }
+
+      showSuccess("تم حذف التذكرة بنجاح");
+      
+      // Update state
+      const updatedTickets = tickets.filter(t => t.id !== ticketId);
+      setTickets(updatedTickets);
+      
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket(updatedTickets.length > 0 ? updatedTickets[0] : null);
+        // selectedTicketRef.current = updatedTickets.length > 0 ? updatedTickets[0] : null; // This line is commented out in the original snippet, keeping it that way.
+        if (updatedTickets.length === 0) {
+          setMessages([]);
+        }
+      }
+      
+      loadStats(); // Refresh stats
+    } catch (error: any) {
+      showError("خطأ", error.message);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "open":
@@ -940,7 +981,7 @@ export default function TicketsPage() {
   }
 
   return (
-    <div  className=" mx-auto p-6 space-y-6">
+    <div  className=" w-full space-y-6">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="نظام التذاكر والدردشة المباشرة"
@@ -1169,11 +1210,11 @@ export default function TicketsPage() {
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-800 pb-4">
                 <div>
                   <h2 className="text-xl font-semibold text-white">
-                    {selectedTicket.visitorName || `تذكرة #${selectedTicket.id}`}
+                    {selectedTicket.visitorName || `عميل جديد`}
                   </h2>
-                  {/* <p className="text-sm text-gray-400 mt-1">
-                    {selectedTicket.visitorEmail || "بريد إلكتروني غير متوفر"}
-                  </p> */}
+                  <p className="text-sm text-primary mt-1">
+                    رقم التذكرة: {selectedTicket.ticketNumber || `#${selectedTicket.id}`}
+                  </p>
                   <p className="text-xs text-gray-200 mt-1">
                     تم الإنشاء في {new Date(selectedTicket.createdAt).toLocaleString("en-US")}
                   </p>
@@ -1205,6 +1246,14 @@ export default function TicketsPage() {
                       <SelectItem value="closed">مغلقة</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteTicket(selectedTicket.id)}
+                    title="حذف التذكرة"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 
