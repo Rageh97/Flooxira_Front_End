@@ -221,7 +221,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Animated Banner */}
       <AnimatedBanner 
         banners={banners}
@@ -260,11 +260,11 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="md:text-xl text-gray-300 mt-1">
+            <div className="text-lg text-gray-300 mt-1">
               المحتوى المنشور
             </div>
           </div>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-4xl md:text-4xl md:text-[55px]  font-bold text-primary">{stats?.totalSuccessfulPublications ?? stats?.published ?? 0}</div>
+           <div className="text-4xl   font-bold text-primary">{stats?.totalSuccessfulPublications ?? stats?.published ?? 0}</div>
            
            </div>
 
@@ -294,11 +294,11 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-5 md:gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-5 md:gap-10 h-10">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="text-sm text-gray-300 mt-1">
+            <div className="text-lg text-gray-300 mt-1">
               العدد المجدول
             </div>
           </div>
@@ -308,7 +308,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-4xl md:text-[55px]  font-bold text-primary">{stats?.scheduled || 0}</div>
+           <div className="text-xl  font-bold text-primary">{stats?.scheduled || 0}</div>
             <div className=" text-xs text-primary">
               شهر ({currentMonthName})
             </div>
@@ -349,17 +349,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
 
 
-          <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <div className="text-md text-gray-300 mt-1">
-             الاشتراكات 
+          <div className="flex  items-center justify-center gap-1 font-bold">
+          <div className="text-lg text-gray-300 mt-1">
+             الاشتراكات الفعالة
           </div>
           <div>
-            <div className="text-md text-gray-300 mt-1">
-              الفعالة
-            </div>
+            {/* <div className="text-sm text-gray-300 mt-1">
+              
+            </div> */}
           </div>
           </div>
 
@@ -368,7 +368,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-4xl md:text-[55px]  font-bold text-primary">{customerStats?.totalCustomers || 0}</div>
+           <div className="text-xl font-bold text-primary">{customerStats?.totalCustomers }</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -391,17 +391,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4 flex flex-col">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
 
 
-          <div className="flex flex-col items-center justify-center gap-1 font-bold">
+          <div className="flex items-center justify-center gap-1 font-bold">
           <div className="text-xl text-gray-300 mt-1">
-             الرسائل  
+             الرسائل    المتبقية
           </div>
           <div>
-            <div className="text-xl text-gray-300 mt-1">
-              المتبقية
-            </div>
+            {/* <div className="text-xl text-gray-300 mt-1">
+            
+            </div> */}
           </div>
           </div>
 
@@ -410,7 +410,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-4xl md:text-[55px]  font-bold text-primary">{whatsappStats?.messagesRemaining || 0}</div>
+           <div className="text-xl   font-bold text-primary">{whatsappStats?.messagesRemaining || 0}</div>
             
            </div>
 
@@ -418,7 +418,7 @@ export default function DashboardPage() {
           </div>
 
 
-          <div className=" flex items-center gap-1">
+          {/* <div className=" flex items-center gap-1">
               <div className="flex-1 bg-gray-900 rounded-full h-2 overflow-hidden">
                 <div 
                   className="bg-light-custom h-full transition-all duration-500"
@@ -434,13 +434,13 @@ export default function DashboardPage() {
                   ? Math.round((whatsappStats.messagesRemaining / whatsappStats.messagesLimit) * 100) 
                   : 0}%
               </span>
-            </div>
-            {whatsappStats && whatsappStats.messagesRemaining < 10 && whatsappStats.messagesLimit > 0 && (
+            </div> */}
+            {/* {whatsappStats && whatsappStats.messagesRemaining < 10 && whatsappStats.messagesLimit > 0 && (
               <div className=" text-xs text-yellow-400 flex items-center gap-1">
                 <span>⚠️</span>
                 <span>وشكت تخلص الرسائل!</span>
               </div>
-            )}
+            )} */}
           </CardContent>
    </Card>
         {/* new  Card */}
@@ -454,17 +454,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-20">
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
           <div className="text-xl text-gray-300 mt-1">
-             اجمالي 
+             اجمالي الربح
           </div>
           <div>
-            <div className="text-xl text-gray-300 mt-1">
-              الربح
-            </div>
+            {/* <div className="text-xl text-gray-300 mt-1">
+              
+            </div> */}
           </div>
           </div>
 
@@ -492,43 +492,43 @@ export default function DashboardPage() {
         <Card className="gradient-border h-fit card-hover-effect">
           <CardHeader className="border-b border-teal-500/20">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">تحليلات المنصات</h3>
+              <h3 className="text-lg font-bold text-white">تحليلات المنصات</h3>
             </div>
             <p className="text-sm text-gray-300">إحصائيات مفصلة لكل منصة</p>
           </CardHeader>
-          <CardContent className="space-y-4 pt-4">
+          <CardContent className="space-y-1 pt-4">
             {/* الصف الأول - 3 منصات */}
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
-              <div className="flex items-center justify-between p-3 bg-blue-600/20 rounded-lg border border-blue-500/30">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-1">
+              <div  className="flex items-center justify-between px-3 h-10 bg-blue-600/20 rounded-lg border border-blue-500/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10  ">
+                <div className="w-6 h-6">
                   <img src="/facebook.gif" alt="" />
                 </div>
-                <span className="text-xl font-medium text-white">فيسبوك</span>
+                <span className="text-sm font-medium text-white">فيسبوك</span>
               </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-blue-400">{stats?.facebookPosts || 0}</span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-pink-600/20 rounded-lg border border-pink-500/30">
-                  <div className="flex items-center space-x-2">
-                <div className="w-10 h-10  ">
+              <div className="flex items-center justify-between px-3 h-10 bg-pink-600/20 rounded-lg border border-pink-500/30">
+                  <div className="flex items-center gap-2">
+                <div className="w-6 h-6  ">
                   <img src="/insta.gif" alt="" />
                 </div>
-                <span className="text-xl font-medium text-white">انستقرام</span>
+                <span className="text-sm font-medium text-white">انستقرام</span>
                   </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-pink-400">{stats?.instagramPosts || 0}</span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-blue-600/20 rounded-lg border border-blue-500/30">
+              <div className="flex items-center justify-between px-3 h-10 bg-blue-600/20 rounded-lg border border-blue-500/30">
                 <div className="flex items-center gap-3">
-                <div className="w-10 h-10  ">
+                <div className="w-6 h-6  ">
                   <img src="/linkedin.gif" alt="" />
                 </div>
-                <span className="text-xl font-medium text-white">لينكدان</span>
+                <span className="text-sm font-medium text-white">لينكدان</span>
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-blue-400">{stats?.linkedinPosts || 0}</span>
@@ -537,37 +537,37 @@ export default function DashboardPage() {
             </div>
 
             {/* الصف الثاني - 3 منصات */}
-            <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
-              <div className="flex items-center justify-between p-3 bg-black/50 rounded-lg border border-sky-500/30">
+            <div className="grid grid-cols-2 xl:grid-cols-3 gap-1">
+              <div className="flex items-center justify-between px-3 h-10 bg-black/50 rounded-lg border border-sky-500/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10  ">
+                <div className="w-6 h-6  ">
                   <img src="/x.gif" alt="" />
                 </div>
-                <span className="text-xl font-medium text-white">تويتر</span>
+                <span className="text-sm font-medium text-white">تويتر</span>
               </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-white">{stats?.twitterPosts || 0}</span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-red-600/20 rounded-lg border border-red-500/30">
+              <div className="flex items-center justify-between px-3 h-10 bg-red-600/20 rounded-lg border border-red-500/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10  ">
+                <div className="w-6 h-6  ">
                   <img src="/youtube.gif" alt="" />
                 </div>
-                <span className="text-xl font-medium text-white">يوتيوب</span>
+                <span className="text-sm font-medium text-white">يوتيوب</span>
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-red-400">{stats?.youtubePosts || 0}</span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-blue-600/20 rounded-lg border border-blue-500/30">
+              <div className="flex items-center justify-between px-3 h-10 bg-blue-600/20 rounded-lg border border-blue-500/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10  ">
+                <div className="w-6 h-6  ">
                   <img src="/telegram.gif" alt="" />
                 </div>
-                <span className="text-xl font-medium text-white">تليجرام</span>
+                <span className="text-sm font-medium text-white">تليجرام</span>
               </div>
                 <div className="text-right">
                   <span className="text-lg font-bold text-blue-400">{tgUsage?.used ?? 0}</span>
@@ -577,12 +577,12 @@ export default function DashboardPage() {
             </div>
 
             {/* الصف الأخير - منصة واحدة تأخذ العرض الكامل */}
-            <div className="flex items-center justify-between p-3 bg-secondry rounded-lg border border-green-500/30">
+            <div className="flex items-center justify-between px-3 h-10 bg-secondry rounded-lg border border-green-500/30">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10  ">
+                <div className="w-6 h-6  ">
                   <img src="/wtsapp.gif" alt="" />
                 </div>
-                <span className="text-xl font-medium text-white">واتساب</span>
+                <span className="text-sm font-medium text-white">واتساب</span>
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold text-green-400">{waUsage?.used ?? 0}</span>
@@ -595,14 +595,14 @@ export default function DashboardPage() {
         <Card className="gradient-border h-fit card-hover-effect">
           <CardHeader className="border-b border-green-500/20">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">الإجراءات السريعة</h3>
+              <h3 className="text-lg font-bold text-white">الإجراءات السريعة</h3>
             </div>
             <p className="text-sm text-gray-300">أدوات سريعة للبدء</p>
           </CardHeader>
-          <CardContent className="flex flex-col gap-2 pt-4">
+          <CardContent className="flex flex-col gap-1 pt-4">
 
             <div className="flex w-full items-center gap-2">
-            <Link className="w-full h-28  rounded-lg" href="/create-post">
+            <Link className="w-full h-15.5  rounded-lg" href="/create-post">
               <Button className="w-full relative h-full gradient-border border border-text-primary text-white p-4 h-auto">
 
 
@@ -615,7 +615,7 @@ export default function DashboardPage() {
               </Button>
             </Link>
             
-            <Link className="w-full h-28" href="/schedule">
+            <Link className="w-full h-15.5" href="/schedule">
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-10 h-10 " src="/hour.gif" alt="" />
@@ -626,7 +626,7 @@ export default function DashboardPage() {
             </div>
             
            <div className="flex w-full items-center gap-2">
-           <Link className="w-full h-28" href="/settings">
+           <Link className="w-full h-15.5" href="/settings">
                 <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                   <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-10 h-10 " src="/setting.gif" alt="" />
@@ -635,7 +635,7 @@ export default function DashboardPage() {
               </Button>
             </Link>
 
-            <Link className="w-full h-28" href="/customers">
+            <Link className="w-full h-15.5" href="/customers">
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-10 h-10 " src="/clients.gif" alt="" />

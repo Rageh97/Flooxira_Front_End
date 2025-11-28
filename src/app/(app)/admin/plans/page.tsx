@@ -83,6 +83,7 @@ export default function PlansAdminPage() {
     priceCents: '',
     interval: 'monthly' as 'monthly' | 'yearly',
     isActive: true,
+    paymentLink: '',
     // الصيغة المبسطة للصلاحيات
     permissions: {
       platforms: [] as string[],
@@ -115,6 +116,7 @@ export default function PlansAdminPage() {
     priceCents: '',
     interval: 'monthly' as 'monthly' | 'yearly',
     isActive: true,
+    paymentLink: '',
     permissions: {
       platforms: [] as string[],
       monthlyPosts: 0,
@@ -171,9 +173,10 @@ export default function PlansAdminPage() {
       await createPlan(token, {
         name: newPlan.name,
         priceCents: parseInt(newPlan.priceCents),
+        paymentLink: newPlan.paymentLink,
+        permissions: newPlan.permissions,
         interval: newPlan.interval,
         isActive: newPlan.isActive,
-        permissions: newPlan.permissions
       });
 
       setCreateModalOpen(false);
@@ -182,6 +185,7 @@ export default function PlansAdminPage() {
         priceCents: '',
         interval: 'monthly',
         isActive: true,
+        paymentLink: '',
         permissions: {
           platforms: [],
           monthlyPosts: 0,
@@ -223,6 +227,7 @@ export default function PlansAdminPage() {
         priceCents: parseInt(editPlan.priceCents),
         interval: editPlan.interval,
         isActive: editPlan.isActive,
+        paymentLink: editPlan.paymentLink,
         permissions: editPlan.permissions
       });
 
@@ -254,6 +259,7 @@ export default function PlansAdminPage() {
       priceCents: plan.priceCents.toString(),
       interval: plan.interval,
       isActive: plan.isActive,
+      paymentLink: plan.paymentLink || '',
       permissions: {
         platforms: plan.permissions?.platforms || [],
         monthlyPosts: plan.permissions?.monthlyPosts || 0,
@@ -737,6 +743,21 @@ export default function PlansAdminPage() {
               </div>
             </div>
 
+            {/* Payment Link */}
+            <div>
+              <Label htmlFor="plan-payment-link">رابط الشراء (اختياري)</Label>
+              <Input
+                id="plan-payment-link"
+                placeholder="أدخل رابط الشراء الخارجي (مثال: رابط Stripe أو PayPal)"
+                value={newPlan.paymentLink}
+                onChange={(e) => setNewPlan({ ...newPlan, paymentLink: e.target.value })}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                إذا تم إدخال رابط، سيتم تحويل المستخدم إليه مباشرة عند النقر على زر الاشتراك.
+              </p>
+            </div>
+
             {/* Platforms */}
             <div>
               <Label>المنصات المسموحة</Label>
@@ -1161,6 +1182,22 @@ export default function PlansAdminPage() {
                 <Label htmlFor="edit-plan-active">الباقة نشطة</Label>
               </div>
             </div>
+
+            {/* Payment Link */}
+            <div>
+              <Label htmlFor="edit-plan-payment-link">رابط الشراء (اختياري)</Label>
+              <Input
+                id="edit-plan-payment-link"
+                placeholder="أدخل رابط الشراء الخارجي (مثال: رابط Stripe أو PayPal)"
+                value={editPlan.paymentLink}
+                onChange={(e) => setEditPlan({ ...editPlan, paymentLink: e.target.value })}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                إذا تم إدخال رابط، سيتم تحويل المستخدم إليه مباشرة عند النقر على زر الاشتراك.
+              </p>
+            </div>
+
 
             {/* Platforms */}
             <div>

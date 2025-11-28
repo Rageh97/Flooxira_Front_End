@@ -280,7 +280,7 @@ export default function AskAIPage() {
   
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100vh-2rem)]">
+    <div className="flex flex-col gap-4 h-[calc(100vh-3rem)]">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription
           heading=" "
@@ -348,7 +348,7 @@ export default function AskAIPage() {
                       size="sm"
                       variant="ghost"
                     >
-                      <Edit2 className="h-4 w-4 text-gray-400" />
+                      <Edit2 className="h-4 w-4 text-gray-200" />
                     </Button>
                     
                   </>

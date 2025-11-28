@@ -10,12 +10,20 @@ import {
   type AIPrompt,
   type PromptCategory
 } from "@/lib/aiPromptApi";
+import { 
+  getAllLinks, 
+  saveLink, 
+  deleteLink, 
+  type SystemLink 
+} from "@/lib/systemLinkApi";
 import { useAuth } from "@/lib/auth";
 import Loader from "@/components/Loader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Plus, Edit, Trash2, Search, Filter } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { X, Plus, Edit, Trash2, Search, Filter, Link as LinkIcon, MessageSquare } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const CATEGORIES: { value: PromptCategory; label: string }[] = [
   { value: 'system', label: 'النظام' },
@@ -29,22 +37,25 @@ const CATEGORIES: { value: PromptCategory; label: string }[] = [
   { value: 'custom', label: 'مخصص' },
 ];
 
-export default function AIPromptsAdminPage() {
+export default function SettingsPage() {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("prompts");
+
+  // Prompts State
   const [prompts, setPrompts] = useState<AIPrompt[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loadingPrompts, setLoadingPrompts] = useState(true);
+  const [isCreatingPrompt, setIsCreatingPrompt] = useState(false);
+  const [isUpdatingPrompt, setIsUpdatingPrompt] = useState(false);
+  const [isDeletingPrompt, setIsDeletingPrompt] = useState(false);
+  const [promptError, setPromptError] = useState("");
+  const [promptSuccess, setPromptSuccess] = useState("");
+  const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<AIPrompt | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [promptSearchTerm, setPromptSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<PromptCategory | "">("");
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | "">("");
   
-  const [formData, setFormData] = useState({
+  const [promptFormData, setPromptFormData] = useState({
     title: "",
     description: "",
     category: "general" as PromptCategory,
@@ -55,37 +66,54 @@ export default function AIPromptsAdminPage() {
     tags: [] as string[],
   });
 
-  useEffect(() => {
-    loadPrompts();
-  }, [categoryFilter, isActiveFilter, searchTerm]);
+  // Links State
+  const [links, setLinks] = useState<SystemLink[]>([]);
+  const [loadingLinks, setLoadingLinks] = useState(false);
+  const [isSavingLink, setIsSavingLink] = useState(false);
+  const [isDeletingLink, setIsDeletingLink] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [linkSuccess, setLinkSuccess] = useState("");
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState<SystemLink | null>(null);
+  
+  const [linkFormData, setLinkFormData] = useState({
+    key: "",
+    url: "",
+    description: "",
+    isActive: true,
+  });
 
+  // Load Data
+  useEffect(() => {
+    if (activeTab === "prompts") {
+      loadPrompts();
+    } else if (activeTab === "links") {
+      loadLinks();
+    }
+  }, [activeTab, categoryFilter, isActiveFilter, promptSearchTerm]);
+
+  // --- Prompts Logic ---
   const loadPrompts = async () => {
-    setLoading(true);
+    setLoadingPrompts(true);
     try {
-      const params: any = {
-        page: 1,
-        limit: 100,
-      };
-      
+      const params: any = { page: 1, limit: 100 };
       if (categoryFilter) params.category = categoryFilter;
       if (isActiveFilter !== "") params.isActive = isActiveFilter;
-      if (searchTerm) params.search = searchTerm;
+      if (promptSearchTerm) params.search = promptSearchTerm;
 
       const res = await getAllPrompts(params);
-      if (res.success) {
-        setPrompts(res.data);
-      }
+      if (res.success) setPrompts(res.data);
     } catch (error: any) {
-      setError(error.message || "فشل في تحميل البرومبتات");
+      setPromptError(error.message || "فشل في تحميل البرومبتات");
     } finally {
-      setLoading(false);
+      setLoadingPrompts(false);
     }
   };
 
-  const handleOpenDialog = (prompt?: AIPrompt) => {
+  const handleOpenPromptDialog = (prompt?: AIPrompt) => {
     if (prompt) {
       setEditingPrompt(prompt);
-      setFormData({
+      setPromptFormData({
         title: prompt.title,
         description: prompt.description || "",
         category: prompt.category,
@@ -97,7 +125,7 @@ export default function AIPromptsAdminPage() {
       });
     } else {
       setEditingPrompt(null);
-      setFormData({
+      setPromptFormData({
         title: "",
         description: "",
         category: "general",
@@ -108,356 +136,409 @@ export default function AIPromptsAdminPage() {
         tags: [],
       });
     }
-    setIsDialogOpen(true);
+    setIsPromptDialogOpen(true);
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingPrompt(null);
-    setFormData({
-      title: "",
-      description: "",
-      category: "general",
-      prompt: "",
-      variables: [],
-      isActive: true,
-      isGlobal: false,
-      tags: [],
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handlePromptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.title || !formData.prompt) {
-      setError("العنوان والبرومبت مطلوبان");
+    if (!promptFormData.title || !promptFormData.prompt) {
+      setPromptError("العنوان والبرومبت مطلوبان");
       return;
     }
 
     try {
       if (editingPrompt) {
-        setIsUpdating(true);
-        const res = await updatePrompt(editingPrompt.id, formData);
+        setIsUpdatingPrompt(true);
+        const res = await updatePrompt(editingPrompt.id, promptFormData);
         if (res.success) {
-          setSuccess("تم تحديث البرومبت بنجاح");
-          handleCloseDialog();
+          setPromptSuccess("تم تحديث البرومبت بنجاح");
+          setIsPromptDialogOpen(false);
           loadPrompts();
         }
       } else {
-        setIsCreating(true);
-        const res = await createPrompt(formData);
+        setIsCreatingPrompt(true);
+        const res = await createPrompt(promptFormData);
         if (res.success) {
-          setSuccess("تم إنشاء البرومبت بنجاح");
-          handleCloseDialog();
+          setPromptSuccess("تم إنشاء البرومبت بنجاح");
+          setIsPromptDialogOpen(false);
           loadPrompts();
         }
       }
     } catch (error: any) {
-      setError(error.message || "فشل في حفظ البرومبت");
+      setPromptError(error.message || "فشل في حفظ البرومبت");
     } finally {
-      setIsCreating(false);
-      setIsUpdating(false);
+      setIsCreatingPrompt(false);
+      setIsUpdatingPrompt(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDeletePrompt = async (id: number) => {
     if (!confirm("هل أنت متأكد من حذف هذا البرومبت؟")) return;
-
-    setIsDeleting(true);
+    setIsDeletingPrompt(true);
     try {
       const res = await deletePrompt(id);
       if (res.success) {
-        setSuccess("تم حذف البرومبت بنجاح");
+        setPromptSuccess("تم حذف البرومبت بنجاح");
         loadPrompts();
       }
     } catch (error: any) {
-      setError(error.message || "فشل في حذف البرومبت");
+      setPromptError(error.message || "فشل في حذف البرومبت");
     } finally {
-      setIsDeleting(false);
+      setIsDeletingPrompt(false);
     }
   };
 
-  if (loading) {
-    return (
-      <Loader
-        text="جاري تحميل البرومبتات..."
-        size="lg"
-        variant="primary"
-        showDots
-        fullScreen
-      />
-    );
-  }
-
-  if (isCreating || isUpdating || isDeleting) {
-    let loaderText = "جاري المعالجة...";
-    if (isCreating) loaderText = "جاري إنشاء البرومبت...";
-    else if (isUpdating) loaderText = "جاري تحديث البرومبت...";
-    else if (isDeleting) loaderText = "جاري حذف البرومبت...";
-
-    return (
-      <Loader
-        text={loaderText}
-        size="lg"
-        variant="success"
-        showDots
-        fullScreen
-      />
-    );
-  }
-
   const filteredPrompts = prompts.filter((p) => {
-    if (searchTerm && !p.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
-        !p.prompt.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (promptSearchTerm && !p.title.toLowerCase().includes(promptSearchTerm.toLowerCase()) && 
+        !p.prompt.toLowerCase().includes(promptSearchTerm.toLowerCase())) {
       return false;
     }
-    if (categoryFilter && p.category !== categoryFilter) return false;
-    if (isActiveFilter !== "" && p.isActive !== isActiveFilter) return false;
     return true;
   });
 
+  // --- Links Logic ---
+  const loadLinks = async () => {
+    setLoadingLinks(true);
+    try {
+      const res = await getAllLinks();
+      if (res.success) setLinks(res.links);
+    } catch (error: any) {
+      setLinkError(error.message || "فشل في تحميل الروابط");
+    } finally {
+      setLoadingLinks(false);
+    }
+  };
+
+  const handleOpenLinkDialog = (link?: SystemLink) => {
+    if (link) {
+      setEditingLink(link);
+      setLinkFormData({
+        key: link.key,
+        url: link.url,
+        description: link.description || "",
+        isActive: link.isActive,
+      });
+    } else {
+      setEditingLink(null);
+      setLinkFormData({
+        key: "",
+        url: "",
+        description: "",
+        isActive: true,
+      });
+    }
+    setIsLinkDialogOpen(true);
+  };
+
+  const handleLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkFormData.key || !linkFormData.url) {
+      setLinkError("المفتاح والرابط مطلوبان");
+      return;
+    }
+
+    setIsSavingLink(true);
+    try {
+      const res = await saveLink(linkFormData);
+      if (res.success) {
+        setLinkSuccess(editingLink ? "تم تحديث الرابط بنجاح" : "تم إنشاء الرابط بنجاح");
+        setIsLinkDialogOpen(false);
+        loadLinks();
+      }
+    } catch (error: any) {
+      setLinkError(error.message || "فشل في حفظ الرابط");
+    } finally {
+      setIsSavingLink(false);
+    }
+  };
+
+  const handleDeleteLink = async (id: number) => {
+    if (!confirm("هل أنت متأكد من حذف هذا الرابط؟")) return;
+    setIsDeletingLink(true);
+    try {
+      const res = await deleteLink(id);
+      if (res.success) {
+        setLinkSuccess("تم حذف الرابط بنجاح");
+        loadLinks();
+      }
+    } catch (error: any) {
+      setLinkError(error.message || "فشل في حذف الرابط");
+    } finally {
+      setIsDeletingLink(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Header */}
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white">إدارة برومبتات الذكاء الاصطناعي</h2>
-          <p className="text-sm text-gray-400">إدارة وتنظيم البرومبتات المستخدمة في النظام</p>
+          <h2 className="text-2xl font-bold text-white">الإعدادات</h2>
+          <p className="text-gray-400">إدارة إعدادات النظام والبرومبتات والروابط</p>
         </div>
-        <Button
-          onClick={() => handleOpenDialog()}
-          className="primary-button"
-        >
-          <Plus className="w-4 h-4 ml-2" />
-          إضافة برومبت جديد
-        </Button>
       </div>
 
-      {/* Messages */}
-      {error && (
-        <Card className="bg-red-500/10 border-red-500/50">
-          <CardContent className="p-4">
-            <p className="text-sm text-red-400">{error}</p>
-          </CardContent>
-        </Card>
-      )}
-      {success && (
-        <Card className="bg-green-500/10 border-green-500/50">
-          <CardContent className="p-4">
-            <p className="text-sm text-green-400">{success}</p>
-          </CardContent>
-        </Card>
-      )}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full justify-start bg-gray-900/50 p-1">
+          <TabsTrigger value="prompts" className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            البرومبتات
+          </TabsTrigger>
+          <TabsTrigger value="links" className="flex items-center gap-2">
+            <LinkIcon className="w-4 h-4" />
+            الروابط
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Filters */}
-      <Card className="bg-card border-none">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="البحث..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 bg-[#01191040] border-blue-300"
-              />
-            </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value as PromptCategory | "")}
-              className="p-2 rounded-md border border-blue-300 bg-[#01191040] text-white"
-            >
-              <option value="">جميع الفئات</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
-              ))}
-            </select>
-            <select
-              value={isActiveFilter}
-              onChange={(e) => setIsActiveFilter(e.target.value === "" ? "" : e.target.value === "true")}
-              className="p-2 rounded-md border border-blue-300 bg-[#01191040] text-white"
-            >
-              <option value="">جميع الحالات</option>
-              <option value="true">نشط</option>
-              <option value="false">غير نشط</option>
-            </select>
+        {/* Prompts Tab */}
+        <TabsContent value="prompts" className="space-y-4 mt-4">
+          <div className="flex justify-end">
+            <Button onClick={() => handleOpenPromptDialog()} className="primary-button">
+              <Plus className="w-4 h-4 ml-2" />
+              إضافة برومبت جديد
+            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Prompts List */}
-      <Card className="bg-card border-none">
-        <CardHeader>
-          <CardTitle className="text-white">البرومبتات ({filteredPrompts.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredPrompts.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">لا توجد برومبتات</p>
+          {promptError && (
+            <Card className="bg-red-500/10 border-red-500/50">
+              <CardContent className="p-4 text-red-400">{promptError}</CardContent>
+            </Card>
+          )}
+          {promptSuccess && (
+            <Card className="bg-green-500/10 border-green-500/50">
+              <CardContent className="p-4 text-green-400">{promptSuccess}</CardContent>
+            </Card>
+          )}
+
+          {/* Filters */}
+          <Card className="bg-card border-none">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="البحث..."
+                    value={promptSearchTerm}
+                    onChange={(e) => setPromptSearchTerm(e.target.value)}
+                    className="pr-10 bg-[#01191040] border-blue-300"
+                  />
+                </div>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value as PromptCategory | "")}
+                  className="p-2 rounded-md border border-blue-300 bg-[#01191040] text-white"
+                >
+                  <option value="">جميع الفئات</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={isActiveFilter}
+                  onChange={(e) => setIsActiveFilter(e.target.value === "" ? "" : e.target.value === "true")}
+                  className="p-2 rounded-md border border-blue-300 bg-[#01191040] text-white"
+                >
+                  <option value="">جميع الحالات</option>
+                  <option value="true">نشط</option>
+                  <option value="false">غير نشط</option>
+                </select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {loadingPrompts ? (
+             <Loader text="جاري تحميل البرومبتات..." size="lg" variant="primary" showDots />
           ) : (
             <div className="space-y-4">
-              {filteredPrompts.map((prompt) => (
-                <Card key={prompt.id} className="gradient-border border-blue-300/30">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-lg font-semibold text-white">{prompt.title}</h3>
-                          <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300">
-                            {CATEGORIES.find(c => c.value === prompt.category)?.label || prompt.category}
-                          </span>
-                          {prompt.isGlobal && (
-                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300">
-                              عام
+              {filteredPrompts.length === 0 ? (
+                <p className="text-center text-gray-400 py-8">لا توجد برومبتات</p>
+              ) : (
+                filteredPrompts.map((prompt) => (
+                  <Card key={prompt.id} className="gradient-border border-blue-300/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold text-white">{prompt.title}</h3>
+                            <span className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300">
+                              {CATEGORIES.find(c => c.value === prompt.category)?.label || prompt.category}
                             </span>
-                          )}
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            prompt.isActive 
-                              ? 'bg-green-500/20 text-green-300' 
-                              : 'bg-red-500/20 text-red-300'
-                          }`}>
-                            {prompt.isActive ? 'نشط' : 'غير نشط'}
-                          </span>
+                            {prompt.isGlobal && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300">عام</span>
+                            )}
+                            <span className={`px-2 py-1 text-xs rounded-full ${prompt.isActive ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+                              {prompt.isActive ? 'نشط' : 'غير نشط'}
+                            </span>
+                          </div>
+                          {prompt.description && <p className="text-sm text-gray-400 mb-2">{prompt.description}</p>}
+                          <div className="text-sm text-gray-300 mb-2 line-clamp-2">{prompt.prompt}</div>
                         </div>
-                        {prompt.description && (
-                          <p className="text-sm text-gray-400 mb-2">{prompt.description}</p>
-                        )}
-                        <div className="text-sm text-gray-300 mb-2 line-clamp-2">
-                          {prompt.prompt}
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span>عدد الاستخدامات: {prompt.usageCount}</span>
-                          <span>أنشأه: {prompt.creator?.name || prompt.creator?.email || 'غير معروف'}</span>
-                          {prompt.tags && prompt.tags.length > 0 && (
-                            <div className="flex gap-1">
-                              {prompt.tags.map((tag, idx) => (
-                                <span key={idx} className="px-2 py-0.5 bg-gray-700 rounded">
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                        <div className="flex gap-2">
+                          <Button variant="secondary" size="sm" onClick={() => handleOpenPromptDialog(prompt)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="secondary" size="sm" onClick={() => handleDeletePrompt(prompt.id)} className="text-red-400 hover:text-red-300">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleOpenDialog(prompt)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleDelete(prompt.id)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {/* Links Tab */}
+        <TabsContent value="links" className="space-y-4 mt-4">
+          <div className="flex justify-end">
+            <Button onClick={() => handleOpenLinkDialog()} className="primary-button">
+              <Plus className="w-4 h-4 ml-2" />
+              إضافة رابط جديد
+            </Button>
+          </div>
+
+          {linkError && (
+            <Card className="bg-red-500/10 border-red-500/50">
+              <CardContent className="p-4 text-red-400">{linkError}</CardContent>
+            </Card>
+          )}
+          {linkSuccess && (
+            <Card className="bg-green-500/10 border-green-500/50">
+              <CardContent className="p-4 text-green-400">{linkSuccess}</CardContent>
+            </Card>
+          )}
+
+          {loadingLinks ? (
+             <Loader text="جاري تحميل الروابط..." size="lg" variant="primary" showDots />
+          ) : (
+            <Card className="bg-card border-none">
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>المفتاح (Key)</TableHead>
+                      <TableHead>الرابط (URL)</TableHead>
+                      <TableHead>الوصف</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {links.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-gray-400">لا توجد روابط</TableCell>
+                      </TableRow>
+                    ) : (
+                      links.map((link) => (
+                        <TableRow key={link.id}>
+                          <TableCell className="font-mono text-blue-300">{link.key}</TableCell>
+                          <TableCell className="max-w-xs truncate" title={link.url}>{link.url}</TableCell>
+                          <TableCell>{link.description || '-'}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 text-xs rounded-full ${link.isActive ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
+                              {link.isActive ? 'نشط' : 'غير نشط'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button variant="secondary" size="sm" onClick={() => handleOpenLinkDialog(link)}>
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button variant="secondary" size="sm" onClick={() => handleDeleteLink(link.id)} className="text-red-400 hover:text-red-300">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Prompt Dialog */}
+      <Dialog open={isPromptDialogOpen} onOpenChange={setIsPromptDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-white">
-              {editingPrompt ? "تعديل البرومبت" : "إضافة برومبت جديد"}
-            </DialogTitle>
+            <DialogTitle className="text-white">{editingPrompt ? "تعديل البرومبت" : "إضافة برومبت جديد"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handlePromptSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2 text-white">العنوان *</label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
-                className="bg-[#01191040] border-blue-300"
-              />
+              <Input value={promptFormData.title} onChange={(e) => setPromptFormData({ ...promptFormData, title: e.target.value })} required className="bg-[#01191040] border-blue-300" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2 text-white">الوصف</label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="bg-[#01191040] border-blue-300"
-                rows={2}
-              />
+              <Textarea value={promptFormData.description} onChange={(e) => setPromptFormData({ ...promptFormData, description: e.target.value })} className="bg-[#01191040] border-blue-300" rows={2} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">الفئة *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as PromptCategory })}
-                  required
-                  className="w-full p-2 rounded-md border border-blue-300 bg-[#01191040] text-white"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
+                <select value={promptFormData.category} onChange={(e) => setPromptFormData({ ...promptFormData, category: e.target.value as PromptCategory })} required className="w-full p-2 rounded-md border border-blue-300 bg-[#01191040] text-white">
+                  {CATEGORIES.map((cat) => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
                 </select>
               </div>
               <div className="flex items-center gap-4 pt-8">
                 <label className="flex items-center gap-2 text-white">
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="w-4 h-4"
-                  />
-                  نشط
+                  <input type="checkbox" checked={promptFormData.isActive} onChange={(e) => setPromptFormData({ ...promptFormData, isActive: e.target.checked })} className="w-4 h-4" /> نشط
                 </label>
                 {user?.role === 'admin' && (
                   <label className="flex items-center gap-2 text-white">
-                    <input
-                      type="checkbox"
-                      checked={formData.isGlobal}
-                      onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })}
-                      className="w-4 h-4"
-                    />
-                    برومبت عام
+                    <input type="checkbox" checked={promptFormData.isGlobal} onChange={(e) => setPromptFormData({ ...promptFormData, isGlobal: e.target.checked })} className="w-4 h-4" /> برومبت عام
                   </label>
                 )}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2 text-white">البرومبت *</label>
-              <Textarea
-                value={formData.prompt}
-                onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
-                required
-                className="bg-[#01191040] border-blue-300"
-                rows={8}
-                placeholder="اكتب البرومبت هنا..."
-              />
+              <Textarea value={promptFormData.prompt} onChange={(e) => setPromptFormData({ ...promptFormData, prompt: e.target.value })} required className="bg-[#01191040] border-blue-300" rows={8} placeholder="اكتب البرومبت هنا..." />
             </div>
             <div className="flex gap-4">
-              <Button
-                type="submit"
-                className="primary-button"
-                disabled={isCreating || isUpdating}
-              >
-                {editingPrompt ? "تحديث" : "إنشاء"}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleCloseDialog}
-              >
-                إلغاء
-              </Button>
+              <Button type="submit" className="primary-button" disabled={isCreatingPrompt || isUpdatingPrompt}>{editingPrompt ? "تحديث" : "إنشاء"}</Button>
+              <Button type="button" variant="secondary" onClick={() => setIsPromptDialogOpen(false)}>إلغاء</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Dialog */}
+      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">{editingLink ? "تعديل الرابط" : "إضافة رابط جديد"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleLinkSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-white">المفتاح (Key) *</label>
+              <Input 
+                value={linkFormData.key} 
+                onChange={(e) => setLinkFormData({ ...linkFormData, key: e.target.value })} 
+                required 
+                placeholder="مثال: content_service_link"
+                className="bg-[#01191040] border-blue-300 font-mono" 
+                disabled={!!editingLink} // Disable key editing to prevent issues
+              />
+              <p className="text-xs text-gray-400 mt-1">يستخدم هذا المفتاح لاستدعاء الرابط في الكود</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-white">الرابط (URL) *</label>
+              <Input value={linkFormData.url} onChange={(e) => setLinkFormData({ ...linkFormData, url: e.target.value })} required className="bg-[#01191040] border-blue-300" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-white">الوصف</label>
+              <Textarea value={linkFormData.description} onChange={(e) => setLinkFormData({ ...linkFormData, description: e.target.value })} className="bg-[#01191040] border-blue-300" rows={2} />
+            </div>
+            <div className="flex items-center gap-2 text-white">
+              <input type="checkbox" checked={linkFormData.isActive} onChange={(e) => setLinkFormData({ ...linkFormData, isActive: e.target.checked })} className="w-4 h-4" /> نشط
+            </div>
+            <div className="flex gap-4">
+              <Button type="submit" className="primary-button" disabled={isSavingLink}>{editingLink ? "تحديث" : "إنشاء"}</Button>
+              <Button type="button" variant="secondary" onClick={() => setIsLinkDialogOpen(false)}>إلغاء</Button>
             </div>
           </form>
         </DialogContent>
@@ -465,18 +546,3 @@ export default function AIPromptsAdminPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

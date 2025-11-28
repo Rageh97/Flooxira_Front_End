@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth";
 import Loader from "@/components/Loader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import Link from "next/link";
+import { getLinkByKey } from "@/lib/systemLinkApi";
 
 type EditableCellProps = {
   value: any;
@@ -58,6 +60,25 @@ export default function BotContentPage() {
   const [isExportingData, setIsExportingData] = React.useState(false);
   const [isUpdatingField, setIsUpdatingField] = React.useState(false);
   const [isDeletingField, setIsDeletingField] = React.useState(false);
+  
+  const [contentServiceLink, setContentServiceLink] = React.useState('/whatsapp');
+
+  React.useEffect(() => {
+    const fetchLink = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const res = await getLinkByKey('content_service_link', token);
+          if (res.success && res.link && res.link.isActive) {
+            setContentServiceLink(res.link.url);
+          }
+        } catch (error) {
+          console.error('Failed to fetch content service link', error);
+        }
+      }
+    };
+    fetchLink();
+  }, []);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -464,6 +485,9 @@ export default function BotContentPage() {
                 {/* Controls */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-wrap gap-4">
+          <Link href={contentServiceLink} className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded" target={contentServiceLink.startsWith('http') ? '_blank' : undefined}>
+            خدمة اضافة المحتوى
+          </Link>
           <button
             onClick={() => setShowAddField(true)}
             className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded"

@@ -430,7 +430,13 @@ export default function PlansPage() {
                   <Button 
                     className="w-full primary-button " 
                     variant={isHighlighted ? "default" : "secondary"}
-                    onClick={() => openSubscriptionModal(plan)}
+                    onClick={() => {
+                      if (plan.paymentLink) {
+                        window.open(plan.paymentLink, '_blank');
+                      } else {
+                        openSubscriptionModal(plan);
+                      }
+                    }}
                   >
                     اشترك الآن
                   </Button>

@@ -140,7 +140,8 @@ export type Plan = {
     canUseLiveChat: boolean;
     liveChatAiResponses?: number;
   };
-  isActive: boolean 
+  isActive: boolean;
+  paymentLink?: string | null;
 };
 
 export async function listPlans(token: string) {

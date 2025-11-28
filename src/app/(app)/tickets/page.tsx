@@ -792,7 +792,7 @@ export default function TicketsPage() {
       }
 
       const data = await response.json();
-      showSuccess("نجح", data.message || "تم رفع قاعدة المعرفة بنجاح!");
+      showSuccess("نجح", data.message || "تم رفع قاعدة البيانات بنجاح!");
       setSelectedFile(null);
       await loadKnowledgeBases();
     } catch (error: any) {
@@ -824,10 +824,10 @@ export default function TicketsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("فشل في حذف قاعدة المعرفة");
+        throw new Error("فشل في حذف قاعدة البيانات");
       }
 
-      showSuccess("نجح", "تم حذف قاعدة المعرفة بنجاح!");
+      showSuccess("نجح", "تم حذف قاعدة البيانات بنجاح!");
       setDeletingKB(null);
       await loadKnowledgeBases();
     } catch (error: any) {
@@ -849,7 +849,7 @@ export default function TicketsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("فشل في تحديث حالة قاعدة المعرفة");
+        throw new Error("فشل في تحديث حالة قاعدة البيانات");
       }
 
       const data = await response.json();
@@ -872,7 +872,7 @@ export default function TicketsPage() {
       );
 
       if (!response.ok) {
-        throw new Error("فشل في جلب قاعدة المعرفة");
+        throw new Error("فشل في جلب قاعدة البيانات");
       }
 
       const data = await response.json();
@@ -981,7 +981,7 @@ export default function TicketsPage() {
   }
 
   return (
-    <div  className=" w-full space-y-6">
+    <div  className=" w-full space-y-3">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="نظام التذاكر والدردشة المباشرة"
@@ -1008,26 +1008,26 @@ export default function TicketsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-0">
         <TabsList className="grid w-full grid-cols-2 gradient-border">
           <TabsTrigger 
             value="tickets" 
-            className="data-[state=active]:bg-[#01191090] data-[state=active]:text-white text-white"
+            className="data-[state=active]:bg-[#03132c] data-[state=active]:text-white text-white"
           >
             <MessageSquare className="h-4 w-4 mr-2" />
             التذاكر
           </TabsTrigger>
           <TabsTrigger 
             value="knowledge" 
-            className="data-[state=active]:bg-[#01191090] data-[state=active]:text-white text-white"
+            className="data-[state=active]:bg-[#03132c] data-[state=active]:text-white text-white"
           >
             <Database className="h-4 w-4 mr-2" />
-            قاعدة المعرفة
+            قاعدة البيانات
           </TabsTrigger>
         </TabsList>
 
         {/* Tickets Tab */}
-        <TabsContent value="tickets" className="space-y-6 mt-6">
+        <TabsContent value="tickets" className="space-y-3 mt-2">
 
       {/* Widget Code Section */}
       {showWidgetCode && (
@@ -1622,7 +1622,7 @@ export default function TicketsPage() {
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Database className="h-5 w-5" />
-                قاعدة المعرفة للردود التلقائية
+                قاعدة البيانات للردود التلقائية
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1851,7 +1851,7 @@ export default function TicketsPage() {
               تأكيد الحذف
             </DialogTitle>
             <DialogDescription className="text-gray-300">
-              هل أنت متأكد من حذف قاعدة المعرفة "{deletingKB?.fileName}"؟
+              هل أنت متأكد من حذف قاعدة البيانات "{deletingKB?.fileName}"؟
               <br />
               <span className="text-red-400 font-medium">لا يمكن التراجع عن هذا الإجراء.</span>
             </DialogDescription>

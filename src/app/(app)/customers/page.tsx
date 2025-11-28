@@ -959,27 +959,27 @@ useEffect(() => {
           <p className="text-gray-300">إدارة قاعدة بيانات العملاء واشتراكاتهم</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
             أضف تصنيف
           </Button>
-          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => { setEntityType('store'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => { setEntityType('store'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
             أضف متجر
           </Button>
-          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => { setEntityType('platform'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => { setEntityType('platform'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
             أضف منصة
           </Button>
-          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={() => window.location.href = '/customers/analytics'}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => window.location.href = '/customers/analytics'}>
               
             الإحصائيات
           </Button>
-          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={handleExportToExcel}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={handleExportToExcel}>
             
             تصدير Excel
           </Button>
-          <Button className='primary-button after:bg-[#011910]' variant="secondary" onClick={handleExportContacts}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={handleExportContacts}>
             تصدير جهات الاتصال
           </Button>
-          <Button variant="secondary" className='primary-button after:bg-[#011910]' onClick={() => setIsCustomFieldsDialogOpen(true)}>
+          <Button variant="secondary" className='primary-button after:bg-[#03132c]' onClick={() => setIsCustomFieldsDialogOpen(true)}>
             
             إدارة الحقول
           </Button>

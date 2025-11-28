@@ -30,6 +30,7 @@ import {
   XCircle,
   AlertCircle,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
@@ -50,6 +51,7 @@ export default function ServicesPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { showSuccess, showError } = useToast();
   
   const {
@@ -137,6 +139,7 @@ export default function ServicesPage() {
 
   const handleCreateService = async () => {
     try {
+      setIsSubmitting(true);
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("description", formData.description);
@@ -163,6 +166,8 @@ export default function ServicesPage() {
       showSuccess("تم إنشاء الخدمة بنجاح! الخدمة الآن قيد الانتظار للموافقة من الإدارة.");
     } catch (e: any) {
       showError("خطأ في إنشاء الخدمة", e.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -170,6 +175,7 @@ export default function ServicesPage() {
     if (!selectedService) return;
 
     try {
+      setIsSubmitting(true);
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("description", formData.description);
@@ -197,6 +203,8 @@ export default function ServicesPage() {
       showSuccess("تم تحديث الخدمة بنجاح!");
     } catch (e: any) {
       showError("خطأ في تحديث الخدمة", e.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -447,7 +455,7 @@ export default function ServicesPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="px-6 py-4 whitespace-nowrap">
+                      <TableCell className="px-2 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-primary">
                           {parseFloat(service.price.toString()).toFixed(2)} {service.currency}
                         </div>
@@ -467,8 +475,8 @@ export default function ServicesPage() {
                           <span className="text-gray-500 text-sm">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-1">
+                      <TableCell className="px-2 py-4 whitespace-nowrap">
+                        <div className="flex flex-col  gap-1">
                           {/* Show approval status first */}
                           {service.approvalStatus === 'pending' && (
                             <span className="px-2 py-1 text-xs w-fit font-medium rounded-full bg-yellow-100 text-yellow-800">
@@ -478,11 +486,11 @@ export default function ServicesPage() {
                           {service.approvalStatus === 'approved' && (
                             <>
                               {service.isActive ? (
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                                <span className="px-2 py-1 w-fit text-xs  font-medium rounded-full bg-green-100 text-green-800">
                                   نشط
                                 </span>
                               ) : (
-                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                                <span className="px-2 py-1 w-fit text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                                   غير نشط
                                 </span>
                               )}
@@ -638,7 +646,7 @@ export default function ServicesPage() {
               </select>
             </div>
 
-            <div>
+            {/* <div>
               <Label htmlFor="tags">الوسوم (افصل بفواصل)</Label>
               <Input
                 id="tags"
@@ -646,7 +654,7 @@ export default function ServicesPage() {
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 placeholder="مثال: تصميم, جرافيك, شعار"
               />
-            </div>
+            </div> */}
 
             <div>
               <Label htmlFor="image">صورة الخدمة</Label>
@@ -680,10 +688,17 @@ export default function ServicesPage() {
               </Button>
               <Button
                 onClick={handleCreateService}
-                disabled={!formData.title || !formData.price || !formData.category}
+                disabled={!formData.title || !formData.price || !formData.category || isSubmitting}
                 className="primary-button"
               >
-                إنشاء الخدمة
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    جاري الإنشاء...
+                  </>
+                ) : (
+                  "إنشاء الخدمة"
+                )}
               </Button>
             </div>
           </div>
@@ -777,14 +792,14 @@ export default function ServicesPage() {
               </select>
             </div>
 
-            <div>
+            {/* <div>
               <Label htmlFor="edit-tags">الوسوم (افصل بفواصل)</Label>
               <Input
                 id="edit-tags"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               />
-            </div>
+            </div> */}
 
             <div>
               <Label htmlFor="edit-image">صورة الخدمة (اختياري - لتحديث الصورة)</Label>
@@ -817,10 +832,17 @@ export default function ServicesPage() {
               </Button>
               <Button
                 onClick={handleUpdateService}
-                disabled={!formData.title || !formData.price}
+                disabled={!formData.title || !formData.price || isSubmitting}
                 className="primary-button"
               >
-                حفظ التعديلات
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    جاري الحفظ...
+                  </>
+                ) : (
+                  "حفظ التعديلات"
+                )}
               </Button>
             </div>
           </div>

@@ -1406,7 +1406,7 @@ export default function CreatePostPage() {
                 نوع المحتوى
               </label>
               <select
-                className="h-12 w-full px-3 rounded-xl bg-[#011910] border appearance-none text-white"
+                className="h-12 w-full px-3 rounded-xl bg-fixed-40 border-primary appearance-none text-white"
                 value={type}
                 onChange={(e) => setType(e.target.value as 'text' | 'link' | 'photo' | 'video')}
               >

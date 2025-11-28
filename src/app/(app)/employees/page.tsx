@@ -43,7 +43,14 @@ import {
   Mail,
   Phone,
   Calendar,
-  Shield
+  Shield,
+  MessageSquare,
+  Ticket,
+  LayoutDashboard,
+  ShoppingCart,
+  FileText,
+  Users2,
+  Megaphone
 } from "lucide-react";
 import { usePermissions } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
@@ -76,6 +83,7 @@ interface EmployeePermissions {
   maxServices: number;
   canManageEmployees: boolean;
   maxEmployees: number;
+  canManageTickets: boolean;
 }
 
 interface EmployeeStats {
@@ -89,8 +97,8 @@ const PLATFORMS = [
   { value: 'instagram', label: 'إنستغرام' },
   { value: 'twitter', label: 'تويتر' },
   { value: 'linkedin', label: 'لينكد إن' },
-  { value: 'pinterest', label: 'بينتيريست' },
-  { value: 'tiktok', label: 'تيك توك' },
+  // { value: 'pinterest', label: 'بينتيريست' },
+  // { value: 'tiktok', label: 'تيك توك' },
   { value: 'youtube', label: 'يوتيوب' }
 ];
 
@@ -126,7 +134,8 @@ export default function EmployeesPage() {
       canMarketServices: false,
       maxServices: 0,
       canManageEmployees: false,
-      maxEmployees: 0
+      maxEmployees: 0,
+      canManageTickets: false
     }
   });
 
@@ -283,7 +292,8 @@ export default function EmployeesPage() {
         canMarketServices: false,
         maxServices: 0,
         canManageEmployees: false,
-        maxEmployees: 0
+        maxEmployees: 0,
+        canManageTickets: false
       }
     });
   };
@@ -436,86 +446,118 @@ export default function EmployeesPage() {
 
               {/* Permissions */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">الصلاحيات</h3>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  الصلاحيات
+                </h3>
                 
-                {/* Platforms */}
-                <div>
-                  <Label className="text-base font-medium">المنصات الاجتماعية</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {PLATFORMS.map(platform => (
-                      <div key={platform.value} className="flex items-center space-x-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Communication & Support */}
+                  <Card className="bg-fixed-40 border-none">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        التواصل والدعم
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id={platform.value}
-                          checked={formData.permissions.platforms.includes(platform.value)}
-                          onCheckedChange={() => handlePlatformToggle(platform.value)}
+                          id="whatsapp"
+                          checked={formData.permissions.canManageWhatsApp}
+                          onCheckedChange={(checked) => handlePermissionChange('canManageWhatsApp', checked)}
                         />
-                        <Label htmlFor={platform.value} className="text-sm">
-                          {platform.label}
-                        </Label>
+                        <Label htmlFor="whatsapp" className="cursor-pointer">إدارة الواتساب</Label>
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="telegram"
+                          checked={formData.permissions.canManageTelegram}
+                          onCheckedChange={(checked) => handlePermissionChange('canManageTelegram', checked)}
+                        />
+                        <Label htmlFor="telegram" className="cursor-pointer">إدارة التليجرام</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="tickets"
+                          checked={formData.permissions.canManageTickets}
+                          onCheckedChange={(checked) => handlePermissionChange('canManageTickets', checked)}
+                        />
+                        <Label htmlFor="tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Management & Operations */}
+                  <Card className="bg-fixed-40 border-none">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                        <LayoutDashboard className="w-4 h-4" />
+                        الإدارة والعمليات
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="salla"
+                          checked={formData.permissions.canSallaIntegration}
+                          onCheckedChange={(checked) => handlePermissionChange('canSallaIntegration', checked)}
+                        />
+                        <Label htmlFor="salla" className="cursor-pointer">تكامل سلة</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="content"
+                          checked={formData.permissions.canManageContent}
+                          onCheckedChange={(checked) => handlePermissionChange('canManageContent', checked)}
+                        />
+                        <Label htmlFor="content" className="cursor-pointer">إدارة المحتوى</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="customers"
+                          checked={formData.permissions.canManageCustomers}
+                          onCheckedChange={(checked) => handlePermissionChange('canManageCustomers', checked)}
+                        />
+                        <Label htmlFor="customers" className="cursor-pointer">إدارة العملاء</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="services"
+                          checked={formData.permissions.canMarketServices}
+                          onCheckedChange={(checked) => handlePermissionChange('canMarketServices', checked)}
+                        />
+                        <Label htmlFor="services" className="cursor-pointer">تسويق الخدمات</Label>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
 
-                {/* WhatsApp */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="whatsapp"
-                    checked={formData.permissions.canManageWhatsApp}
-                    onCheckedChange={(checked) => handlePermissionChange('canManageWhatsApp', checked)}
-                  />
-                  <Label htmlFor="whatsapp">إدارة الواتساب</Label>
-                </div>
-
-                {/* Telegram */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="telegram"
-                    checked={formData.permissions.canManageTelegram}
-                    onCheckedChange={(checked) => handlePermissionChange('canManageTelegram', checked)}
-                  />
-                  <Label htmlFor="telegram">إدارة التليجرام</Label>
-                </div>
-
-                {/* Salla */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="salla"
-                    checked={formData.permissions.canSallaIntegration}
-                    onCheckedChange={(checked) => handlePermissionChange('canSallaIntegration', checked)}
-                  />
-                  <Label htmlFor="salla">تكامل سلة</Label>
-                </div>
-
-                {/* Content */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="content"
-                    checked={formData.permissions.canManageContent}
-                    onCheckedChange={(checked) => handlePermissionChange('canManageContent', checked)}
-                  />
-                  <Label htmlFor="content">إدارة المحتوى</Label>
-                </div>
-
-                {/* Customers */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="customers"
-                    checked={formData.permissions.canManageCustomers}
-                    onCheckedChange={(checked) => handlePermissionChange('canManageCustomers', checked)}
-                  />
-                  <Label htmlFor="customers">إدارة العملاء</Label>
-                </div>
-
-                {/* Services */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="services"
-                    checked={formData.permissions.canMarketServices}
-                    onCheckedChange={(checked) => handlePermissionChange('canMarketServices', checked)}
-                  />
-                  <Label htmlFor="services">تسويق الخدمات</Label>
-                </div>
+                {/* Platforms */}
+                <Card className="bg-fixed-40 border-none">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                      <Megaphone className="w-4 h-4" />
+                      المنصات الاجتماعية
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {PLATFORMS.map(platform => (
+                        <div key={platform.value} className="flex items-center space-x-2 rtl:space-x-reverse">
+                          <Checkbox
+                            id={platform.value}
+                            checked={formData.permissions.platforms.includes(platform.value)}
+                            onCheckedChange={() => handlePlatformToggle(platform.value)}
+                          />
+                          <Label htmlFor={platform.value} className="text-sm cursor-pointer">
+                            {platform.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -629,6 +671,11 @@ export default function EmployeesPage() {
                           </Badge>
                         ))}
                         
+                        {/* Tickets & Live Chat */}
+                        {employee.permissions.canManageTickets && (
+                          <Badge variant="secondary" className="text-xs bg-orange-500/10 text-orange-400 hover:bg-orange-500/20">محادثة وتذاكر</Badge>
+                        )}
+
                         {/* WhatsApp */}
                         {employee.permissions.canManageWhatsApp && (
                           <Badge variant="secondary" className="text-xs">واتساب</Badge>
@@ -746,81 +793,120 @@ export default function EmployeesPage() {
               </div>
             </div>
 
-            {/* Same permissions form as create */}
+            {/* Permissions */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">الصلاحيات</h3>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Shield className="w-5 h-5 text-primary" />
+                الصلاحيات
+              </h3>
               
-              <div>
-                <Label className="text-base font-medium">المنصات الاجتماعية</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {PLATFORMS.map(platform => (
-                    <div key={platform.value} className="flex items-center space-x-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Communication & Support */}
+                <Card className="bg-fixed-40 border-none">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4" />
+                      التواصل والدعم
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
                       <Checkbox
-                        id={`edit-${platform.value}`}
-                        checked={formData.permissions.platforms.includes(platform.value)}
-                        onCheckedChange={() => handlePlatformToggle(platform.value)}
+                        id="edit-whatsapp"
+                        checked={formData.permissions.canManageWhatsApp}
+                        onCheckedChange={(checked) => handlePermissionChange('canManageWhatsApp', checked)}
                       />
-                      <Label htmlFor={`edit-${platform.value}`} className="text-sm">
-                        {platform.label}
-                      </Label>
+                      <Label htmlFor="edit-whatsapp" className="cursor-pointer">إدارة الواتساب</Label>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="edit-telegram"
+                        checked={formData.permissions.canManageTelegram}
+                        onCheckedChange={(checked) => handlePermissionChange('canManageTelegram', checked)}
+                      />
+                      <Label htmlFor="edit-telegram" className="cursor-pointer">إدارة التليجرام</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="edit-tickets"
+                        checked={formData.permissions.canManageTickets}
+                        onCheckedChange={(checked) => handlePermissionChange('canManageTickets', checked)}
+                      />
+                      <Label htmlFor="edit-tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Management & Operations */}
+                <Card className="bg-fixed-40 border-none">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                      <LayoutDashboard className="w-4 h-4" />
+                      الإدارة والعمليات
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="edit-salla"
+                        checked={formData.permissions.canSallaIntegration}
+                        onCheckedChange={(checked) => handlePermissionChange('canSallaIntegration', checked)}
+                      />
+                      <Label htmlFor="edit-salla" className="cursor-pointer">تكامل سلة</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="edit-content"
+                        checked={formData.permissions.canManageContent}
+                        onCheckedChange={(checked) => handlePermissionChange('canManageContent', checked)}
+                      />
+                      <Label htmlFor="edit-content" className="cursor-pointer">إدارة المحتوى</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="edit-customers"
+                        checked={formData.permissions.canManageCustomers}
+                        onCheckedChange={(checked) => handlePermissionChange('canManageCustomers', checked)}
+                      />
+                      <Label htmlFor="edit-customers" className="cursor-pointer">إدارة العملاء</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="edit-services"
+                        checked={formData.permissions.canMarketServices}
+                        onCheckedChange={(checked) => handlePermissionChange('canMarketServices', checked)}
+                      />
+                      <Label htmlFor="edit-services" className="cursor-pointer">تسويق الخدمات</Label>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="edit-whatsapp"
-                  checked={formData.permissions.canManageWhatsApp}
-                  onCheckedChange={(checked) => handlePermissionChange('canManageWhatsApp', checked)}
-                />
-                <Label htmlFor="edit-whatsapp">إدارة الواتساب</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="edit-telegram"
-                  checked={formData.permissions.canManageTelegram}
-                  onCheckedChange={(checked) => handlePermissionChange('canManageTelegram', checked)}
-                />
-                <Label htmlFor="edit-telegram">إدارة التليجرام</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="edit-salla"
-                  checked={formData.permissions.canSallaIntegration}
-                  onCheckedChange={(checked) => handlePermissionChange('canSallaIntegration', checked)}
-                />
-                <Label htmlFor="edit-salla">تكامل سلة</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="edit-content"
-                  checked={formData.permissions.canManageContent}
-                  onCheckedChange={(checked) => handlePermissionChange('canManageContent', checked)}
-                />
-                <Label htmlFor="edit-content">إدارة المحتوى</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="edit-customers"
-                  checked={formData.permissions.canManageCustomers}
-                  onCheckedChange={(checked) => handlePermissionChange('canManageCustomers', checked)}
-                />
-                <Label htmlFor="edit-customers">إدارة العملاء</Label>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="edit-services"
-                  checked={formData.permissions.canMarketServices}
-                  onCheckedChange={(checked) => handlePermissionChange('canMarketServices', checked)}
-                />
-                <Label htmlFor="edit-services">تسويق الخدمات</Label>
-              </div>
+              {/* Platforms */}
+              <Card className="bg-fixed-40 border-none">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                    <Megaphone className="w-4 h-4" />
+                    المنصات الاجتماعية
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {PLATFORMS.map(platform => (
+                      <div key={platform.value} className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id={`edit-${platform.value}`}
+                          checked={formData.permissions.platforms.includes(platform.value)}
+                          onCheckedChange={() => handlePlatformToggle(platform.value)}
+                        />
+                        <Label htmlFor={`edit-${platform.value}`} className="text-sm cursor-pointer">
+                          {platform.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="flex justify-end space-x-2">
