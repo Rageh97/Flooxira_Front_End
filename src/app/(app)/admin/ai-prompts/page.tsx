@@ -38,7 +38,7 @@ const CATEGORIES: { value: PromptCategory; label: string }[] = [
 ];
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const [activeTab, setActiveTab] = useState("prompts");
 
   // Prompts State
@@ -200,7 +200,9 @@ export default function SettingsPage() {
   const loadLinks = async () => {
     setLoadingLinks(true);
     try {
-      const res = await getAllLinks();
+      const token = getToken();
+      if (!token) return;
+      const res = await getAllLinks(token);
       if (res.success) setLinks(res.links);
     } catch (error: any) {
       setLinkError(error.message || "فشل في تحميل الروابط");
@@ -239,7 +241,9 @@ export default function SettingsPage() {
 
     setIsSavingLink(true);
     try {
-      const res = await saveLink(linkFormData);
+      const token = getToken();
+      if (!token) return;
+      const res = await saveLink(token, linkFormData);
       if (res.success) {
         setLinkSuccess(editingLink ? "تم تحديث الرابط بنجاح" : "تم إنشاء الرابط بنجاح");
         setIsLinkDialogOpen(false);
@@ -256,7 +260,9 @@ export default function SettingsPage() {
     if (!confirm("هل أنت متأكد من حذف هذا الرابط؟")) return;
     setIsDeletingLink(true);
     try {
-      const res = await deleteLink(id);
+      const token = getToken();
+      if (!token) return;
+      const res = await deleteLink(token, id);
       if (res.success) {
         setLinkSuccess("تم حذف الرابط بنجاح");
         loadLinks();
@@ -333,7 +339,7 @@ export default function SettingsPage() {
                   ))}
                 </select>
                 <select
-                  value={isActiveFilter}
+                  value={isActiveFilter === "" ? "" : String(isActiveFilter)}
                   onChange={(e) => setIsActiveFilter(e.target.value === "" ? "" : e.target.value === "true")}
                   className="p-2 rounded-md border border-blue-300 bg-[#01191040] text-white"
                 >

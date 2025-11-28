@@ -10,25 +10,29 @@ export interface SystemLink {
   updatedAt: string;
 }
 
-export async function getAllLinks() {
-  return apiFetch<{ success: boolean; links: SystemLink[] }>("/api/system-links");
-}
-
-export async function getLinkByKey(key: string, token?: string) {
-  return apiFetch<{ success: boolean; link: SystemLink }>(\`/api/system-links/key/\${key}\`, {
+export async function getAllLinks(token: string) {
+  return apiFetch<{ success: boolean; links: SystemLink[] }>("/api/system-links", {
     authToken: token
   });
 }
 
-export async function saveLink(data: { key: string; url: string; description?: string; isActive: boolean }) {
+export async function getLinkByKey(key: string, token?: string) {
+  return apiFetch<{ success: boolean; link: SystemLink }>(`/api/system-links/key/${key}`, {
+    authToken: token
+  });
+}
+
+export async function saveLink(token: string, data: { key: string; url: string; description?: string; isActive: boolean }) {
   return apiFetch<{ success: boolean; message: string; link: SystemLink }>("/api/system-links", {
     method: "POST",
+    authToken: token,
     body: JSON.stringify(data),
   });
 }
 
-export async function deleteLink(id: number) {
-  return apiFetch<{ success: boolean; message: string }>(\`/api/system-links/\${id}\`, {
+export async function deleteLink(token: string, id: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/system-links/${id}`, {
     method: "DELETE",
+    authToken: token,
   });
 }
