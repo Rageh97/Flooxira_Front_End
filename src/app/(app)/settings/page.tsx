@@ -467,7 +467,7 @@ useEffect(() => {
         />
       )} */}
       <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
-  <Card className="bg-dark-custom border-none inner-shadow">
+  <Card className="bg-secondry border-none inner-shadow">
         <CardHeader className="border-text-primary/50 text-white">
           <h2 className="text-lg font-semibold">ملخص الاتصالات</h2>
         </CardHeader>
@@ -502,7 +502,7 @@ useEffect(() => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {Object.entries(PLATFORMS).map(([key, platform]) => (
-              <Card key={`creds-${key}`} className="border-none inner-shadow bg-dark-custom">
+              <Card key={`creds-${key}`} className="border-none inner-shadow bg-secondry">
                 <CardContent className="p-6 space-y-3">
                   <div className="flex items-center justify-center">
                     <div className="flex items-center flex-col space-x-2">
@@ -592,7 +592,7 @@ useEffect(() => {
               
               return (
                 <Card key={key} className={`border-none inner-shadow ${
-                  isConnected ? 'bg-fixed-40' : 'bg-dark-custom'
+                  isConnected ? 'bg-fixed-40' : 'bg-secondry'
                 }`}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-center mb-4">

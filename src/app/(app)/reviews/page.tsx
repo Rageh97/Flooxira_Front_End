@@ -13,6 +13,7 @@ import {
   Users
 } from "lucide-react";
 import { API_URL } from "@/lib/api";
+import Link from "next/link";
 
 type Review = {
   id: number;
@@ -322,10 +323,12 @@ export default function ReviewsPage() {
           <p className="text-gray-300 mb-6">
             نحن نقدر آراء عملائنا ونعمل باستمرار على تحسين خدماتنا
           </p>
-          <Button size="lg" className="bg-primary hover:bg-primary/90">
-            <Users className="w-5 h-5 mr-2" />
+          <Link href="/my-review" className="primary-button">
+           <div className="flex items-center gap-2">
+             <Users className="w-5 h-5 mr-2" />
             اترك تقييمك
-          </Button>
+           </div>
+          </Link>
         </CardContent>
       </Card>
     </div>

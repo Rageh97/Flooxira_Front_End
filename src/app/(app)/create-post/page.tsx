@@ -598,7 +598,7 @@ export default function CreatePostPage() {
   // Check permissions after all hooks
   if (permissionsLoading) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-4">
         <Loader text="جاري التحقق من الصلاحيات..." size="lg" variant="warning" showDots fullScreen={false} className="py-16" />
       </div>
     );
@@ -794,7 +794,7 @@ export default function CreatePostPage() {
   }
 
   return (
-    <div className="w-full mx-auto space-y-8 pb-12">
+    <div className="w-full mx-auto space-y-2">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="إنشاء منشور جديد"
@@ -802,7 +802,7 @@ export default function CreatePostPage() {
           className="mb-8"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-4" : "space-y-2"}>
       {/* Error Message Display */}
       {error && (
         <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-300 rounded-xl shadow-lg">
@@ -824,14 +824,14 @@ export default function CreatePostPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl lg:text-4xl font-bold text-white mb-2">إنشاء منشور جديد</h1>
+          <h1 className="text-lg lg:text-2xl font-bold text-white mb-2">إنشاء منشور جديد</h1>
           <p className="text-gray-400">قم بإنشاء ونشر محتواك على منصات التواصل الاجتماعي</p>
         </div>
         
         {/* Post Usage Counter */}
         {postUsageStats && (
           <div className="flex items-center gap-3">
-            <div className={`p-4 rounded-2xl flex  shadow-lg border-2 transition-all ${
+            <div className={`p-3 rounded-2xl flex  shadow-lg border-2 transition-all ${
               postUsageStats.isAtLimit 
                 ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300 ' 
                 : postUsageStats.isNearLimit 
@@ -839,7 +839,7 @@ export default function CreatePostPage() {
                 : 'bg-gradient-to-br from-green-50 to-green-100 border-green-300'
             }`}>
               <div className="text-center flex items-center">
-                <div className={`text-2xl font-bold ${
+                <div className={`text-xl font-bold ${
                   postUsageStats.isAtLimit 
                     ? 'text-red-900' 
                     : postUsageStats.isNearLimit 
@@ -895,34 +895,34 @@ export default function CreatePostPage() {
       
       {/* Step 1: Content Type Selection */}
       <Card className="gradient-border ">
-        <CardHeader className=" border-b border-green-500/30 pb-4">
+        <CardHeader className=" border-b border-white/50 pb-2">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center font-bold shadow-lg">
               1
             </div>
             <div>
-              <h2 className="text-xl lg:text-4xl font-bold text-white mb-2">اختر نوع المحتوى</h2>
+              <h2 className="text-lg lg:text-2xl font-bold text-white mb-2">اختر نوع المحتوى</h2>
               <p className="text-sm text-gray-300">حدد نوع المنشور الذي تريد إنشاءه</p>
             </div>
             </div>
             <div className="flex items-center gap-6">
             <button
               onClick={() => { setContentType('articles'); setType('text'); setFormat('feed'); }}
-              className={`group relative p-4 inner-shadow rounded-2xl transition-all duration-300 flex items-center gap-2 ${
+              className={`group relative p-2  rounded-2xl transition-all duration-300 flex items-center gap-2 ${
                 contentType === 'articles' 
-                  ? 'bg-semidark-custom scale-105 inner-shadow ' 
-                  : ' inner-shadow'
+                  ? 'bg-semidark-custom scale-105 ' 
+                  : ' bg-fixed-40'
               }`}
             >
-              <div className="text-xl mb-4">📝</div>
+              {/* <div className="text-md mb-4">📝</div> */}
              <div className="flex flex-col ">
-             <div className={`text-xl font-bold  ${contentType === 'articles' ? 'text-white' : 'text-gray-200'}`}>
+             <div className={`text-md font-bold  ${contentType === 'articles' ? 'text-white' : 'text-gray-200'}`}>
                 مقالات ومنشورات
               </div>
-              <div className={`text-sm ${contentType === 'articles' ? 'text-green-50' : 'text-gray-400'}`}>
+              {/* <div className={`text-sm ${contentType === 'articles' ? 'text-green-50' : 'text-gray-400'}`}>
                 نصوص مع صور أو فيديو اختياري
-              </div>
+              </div> */}
 
              </div>
             
@@ -977,10 +977,10 @@ export default function CreatePostPage() {
     setType('photo');
     setFormat('story');
   }}
-  className={`group relative  flex items-center gap-2 p-4 rounded-2xl transition-all duration-300 overflow-hidden 
+  className={`group relative  flex items-center gap-2 p-2 rounded-2xl transition-all duration-300 overflow-hidden 
   ${contentType === 'stories'
-    ? 'bg-semidark-custom scale-105 inner-shadow '
-    : 'inner-shadow'
+    ? 'bg-semidark-custom scale-105  '
+    : 'bg-fixed-40'
   }`}
 >
   {/* خلفية زجاجية داخلية (تعمل فقط في الحالة المفعلة) */}
@@ -988,14 +988,14 @@ export default function CreatePostPage() {
     <div className="absolute inset-0 rounded-2xl glass-bg z-0"></div>
   )}
  */}
-  <div className="relative z-10 text-xl mb-4">📱</div>
+  {/* <div className="relative z-10 text-md mb-4">📱</div> */}
   <div className="flex flex-col gap-1">
-    <div className={`relative z-10 text-xl font-bold ${contentType === 'stories' ? 'text-white' : 'text-gray-200'}`}>
-      ستوري
+    <div className={`relative z-10 text-md font-bold ${contentType === 'stories' ? 'text-white' : 'text-gray-200'}`}>
+      ستوري تليجرام 
     </div>
-    <div className={`relative z-10 text-sm ${contentType === 'stories' ? 'text-emerald-50' : 'text-gray-400'}`}>
+    {/* <div className={`relative z-10 text-sm ${contentType === 'stories' ? 'text-emerald-50' : 'text-gray-400'}`}>
       قصص على Telegram
-    </div>
+    </div> */}
   </div>
 
  
@@ -1009,7 +1009,7 @@ export default function CreatePostPage() {
 
       {/* Step 2: Platform Selection */}
       <Card className="gradient-border ">
-        <CardHeader className="border-b border-green-500/30 pb-4">
+        <CardHeader className="border-b border-white/50 pb-4">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center  font-bold shadow-lg">
@@ -1078,7 +1078,7 @@ export default function CreatePostPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="p-6 rounded-xl bg-gray-700/50 animate-pulse">
-                  <div className="w-12 h-12 bg-gray-600 rounded-full mx-auto mb-3"></div>
+                  <div className="w-12 h-12 bg-gray-600 rounded-full mx-auto mb-1"></div>
                   <div className="h-4 bg-gray-600 rounded w-3/4 mx-auto"></div>
             </div>
               ))}
@@ -1364,7 +1364,7 @@ export default function CreatePostPage() {
 
       {/* Step 3: Content Creation */}
       <Card className="gradient-border ">
-        <CardHeader className="border-b border-green-500/30 pb-4">
+        <CardHeader className="border-b border-white/50 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-light-custom flex items-center justify-center  font-bold shadow-lg">
               3

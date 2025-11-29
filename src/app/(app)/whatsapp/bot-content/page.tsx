@@ -66,14 +66,19 @@ export default function BotContentPage() {
   React.useEffect(() => {
     const fetchLink = async () => {
       const token = localStorage.getItem('auth_token');
+      console.log('[Content Service Link] Fetching with token:', token ? 'exists' : 'missing');
       if (token) {
         try {
           const res = await getLinkByKey('content_service_link', token);
+          console.log('[Content Service Link] API Response:', res);
           if (res.success && res.link && res.link.isActive) {
+            console.log('[Content Service Link] Setting link to:', res.link.url);
             setContentServiceLink(res.link.url);
+          } else {
+            console.log('[Content Service Link] Link not found or inactive, using default');
           }
         } catch (error) {
-          console.error('Failed to fetch content service link', error);
+          console.error('[Content Service Link] Failed to fetch:', error);
         }
       }
     };

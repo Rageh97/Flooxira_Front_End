@@ -109,7 +109,7 @@ export default function MyReviewPage() {
       });
       const data = await response.json();
       if (data.success) {
-        showSuccess('تم إرسال التقييم بنجاح!', data.message);
+        showSuccess('تم إرسال التقييم بنجاح!');
         setExistingReview({
           id: data.review.id,
           userId: data.review.userId,

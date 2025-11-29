@@ -411,14 +411,14 @@ export default function SchedulePage() {
               <div className="grid grid-cols-7 gap-1 sm:gap-2 rounded-lg p-2 sm:p-4 overflow-x-auto">
                 {/* Day headers */}
                 {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
-                  <div key={day} className="p-1 sm:p-2 md:p-3 text-center font-semibold text-primary bg-dark-custom rounded text-xs sm:text-sm">
+                  <div key={day} className="p-1 sm:p-2 md:p-3 text-center font-semibold text-primary bg-secondry rounded text-xs sm:text-sm">
                     {day}
                   </div>
                 ))}
                 
                 {/* Empty cells for days before month starts */}
                 {Array.from({ length: firstDay }).map((_, index) => (
-                  <div key={`empty-${index}`} className="p-1 sm:p-2 md:p-3 h-12 sm:h-16 bg-semidark-custom rounded"></div>
+                  <div key={`empty-${index}`} className="p-1 sm:p-2 md:p-3 h-12 sm:h-16 bg-fixed-40 rounded"></div>
                 ))}
                 
                 {/* Days of the month */}
@@ -441,14 +441,14 @@ export default function SchedulePage() {
                   let textColorClass = '';
                   
                   if (isToday) {
-                    cellColorClass = 'bg-green-200 border-green-400';
-                    textColorClass = 'text-green-800';
+                    cellColorClass = 'gradient-border-green after:bg-green-200';
+                    textColorClass = 'text-white';
                   } else if (isPast) {
-                    cellColorClass = 'bg-red-200 border-red-300';
-                    textColorClass = 'text-red-800';
+                    cellColorClass = 'gradient-border-red after:bg-red-200';
+                    textColorClass = 'text-white';
                   } else if (isFuture) {
-                    cellColorClass = 'bg-yellow-200 border-yellow-300';
-                    textColorClass = 'text-yellow-800';
+                    cellColorClass = 'gradient-border-yellow after:bg-yellow-200';
+                    textColorClass = 'text-white';
                   }
                   
                   return (

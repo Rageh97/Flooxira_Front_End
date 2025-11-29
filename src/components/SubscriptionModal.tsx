@@ -38,8 +38,8 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
 
   const formatPrice = (priceCents: number, interval: string) => {
     const price = priceCents;
-    const period = interval === 'yearly' ? '/year' : '/month';
-    return { price: `$${price}`, period };
+    const period = interval === 'yearly' ? '/year' : 'شهري';
+    return { price: `${price}`, period };
   };
 
   const { price, period } = formatPrice(plan.priceCents, plan.interval);
@@ -47,7 +47,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
   // Calculate final price with discount
   const getFinalPrice = () => {
     if (!discountInfo) return price;
-    return `$${discountInfo.finalPrice.toFixed(2)}`;
+    return `{discountInfo.finalPrice.toFixed(2)}`;
   };
   
   // Auto-verify discount when coupon code is entered
@@ -66,9 +66,9 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
             params.append('discountKeyword', couponData.discountKeyword.trim());
           }
           
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/coupons/verify?${params.toString()}`, {
+          const response = await fetch(`{process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/coupons/verify?{params.toString()}`, {
             headers: {
-              'Authorization': `Bearer ${token}`,
+              'Authorization': `Bearer {token}`,
               'Content-Type': 'application/json'
             }
           });
@@ -144,9 +144,9 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
       }
       
       // Try to validate and activate with coupon/discount code
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/subscription-requests/validate-coupon?${params.toString()}`, {
+      const response = await fetch(`{process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/subscription-requests/validate-coupon?{params.toString()}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer {token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -207,20 +207,20 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               {discountInfo ? (
                 <div className="space-y-2">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-lg text-primary line-through">{price}</span>
+                    <span className="text-lg text-primary line-through">{price} <span className="text-xs text-gray-300">ريال</span></span>
                     <span className="text-xs text-gray-300">{period}</span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-primary">{getFinalPrice()}</span>
+                    <span className="text-2xl font-bold text-primary">{getFinalPrice()} <span className="text-xs text-gray-300">ريال</span></span>
                     <span className="text-sm text-green-600">{period}</span>
                     <span className="text-xs bg-primary text-white px-2 py-1 rounded-full">
-                      خصم {discountInfo.type === 'percentage' ? `${discountInfo.value}%` : `$${discountInfo.value}`}
+                      خصم {discountInfo.type === 'percentage' ? `{discountInfo.value}%` : `{discountInfo.value}`}
                     </span>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-primary">{price}</span>
+                  <span className="text-2xl font-bold text-primary">{price} <span className="text-xs text-gray-300">ريال</span></span>
                   <span className="text-sm text-white">{period}</span>
                 </div>
               )}
@@ -317,8 +317,8 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
                       <span className="text-gray-600">الخصم:</span>
                       <span className="text-orange-600 font-medium">
                         {discountInfo.type === 'percentage' 
-                          ? `${discountInfo.value}%` 
-                          : `$${discountInfo.value}`}
+                          ? `{discountInfo.value}%` 
+                          : `{discountInfo.value}`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-base pt-2 border-t border-green-300">
@@ -351,7 +351,7 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               >
                 {loading ? 'جاري التحقق...' : 'تفعيل الاشتراك'}
               </Button>
-              <Link className="w-1/2 primary-button" href="/terms">
+              <Link className="w-1/2 primary-button" href={plan.paymentLink || "/terms"} target={plan.paymentLink ? "_blank" : undefined} rel={plan.paymentLink ? "noopener noreferrer" : undefined}>
              شراء كود الاشتراك 
               </Link>
              </div>
@@ -486,8 +486,8 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
                       <span className="text-gray-600">الخصم:</span>
                       <span className="text-orange-600 font-medium">
                         {discountInfo.type === 'percentage' 
-                          ? `${discountInfo.value}%` 
-                          : `$${discountInfo.value}`}
+                          ? `{discountInfo.value}%` 
+                          : `{discountInfo.value}`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-base pt-2 border-t border-green-300">

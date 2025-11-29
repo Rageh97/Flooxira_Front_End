@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { listPlans, type Plan, createSubscriptionRequest } from "@/lib/api";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { useToast } from "@/components/ui/toast-provider";
-import { CheckCircle, XCircle } from "lucide-react";
+import { Check, CheckCircle, X, XCircle } from "lucide-react";
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -21,8 +21,8 @@ export default function PlansPage() {
     { key: 'instagram', name: 'Instagram', icon: '📷' },
     { key: 'twitter', name: 'Twitter', icon: '𝕏' },
     { key: 'linkedin', name: 'LinkedIn', icon: '💼' },
-    { key: 'pinterest', name: 'Pinterest', icon: '📌' },
-    { key: 'tiktok', name: 'TikTok', icon: '🎵' },
+    // { key: 'pinterest', name: 'Pinterest', icon: '📌' },
+    // { key: 'tiktok', name: 'TikTok', icon: '🎵' },
     { key: 'youtube', name: 'YouTube', icon: '▶️' }
   ];
 
@@ -73,7 +73,7 @@ export default function PlansPage() {
   const formatPrice = (priceCents: number, interval: string) => {
     const price = priceCents;
     const period = interval === 'yearly' ? '/year' : '/month';
-    return { price: `$${price}`, period };
+    return { price: `${price}`, period };
   };
 
   const formatFeatures = (features: any) => {
@@ -146,23 +146,28 @@ export default function PlansPage() {
           <p className="text-gray-600">لا توجد باقات متاحة في الوقت الحالي.</p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
           {plans.map((plan, index) => {
             const { price, period } = formatPrice(plan.priceCents, plan.interval);
             const permissions = plan.permissions || {};
             const isHighlighted = index === 1; // Highlight the middle plan
             
             return (
-              <Card key={plan.id} className={isHighlighted ? "border-gray-900 gradient-border" : "gradient-border"}>
-                <CardHeader>
-                  <div className="flex items-baseline justify-between">
-                    <div className="text-lg font-semibold text-white">{plan.name}</div>
-                    <div className="text-2xl font-bold text-primary">
-                      {price} <span className="text-sm font-normal text-white">{period}</span>
+              <Card key={plan.id} className={isHighlighted ? " " : "rounded-[35px] border-none bg-gradient-to-br from-text-primary via-bg-secondry to-bg-secondry"}>
+                
+                <CardHeader className="border-none">
+                  <div className="relative ">
+<p className="text-7xl font-semibold text-white text-center text-shadow-bottom">
+    {price}
+    <span className="text-xs font-normal text-white">ريال</span>
+</p>                    <div className="text-xl font-semibold text-white text-center">{plan.name}</div>
+                    <div className="text-2xl absolute top-0 left-0 font-bold text-primary">
+                       <span className="text-sm font-bold text-white">{period === 'month' ? 'شهري' : 'شهري'}</span>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4  border-none rounded-[45px] bg-gradient-to-br from-bg-secondry via-bg-purple-700 to-bg-purple-500">
+                  
                   {/* Platforms */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-300 mb-2">المنصات الاجتماعية</h4>
@@ -172,7 +177,7 @@ export default function PlansPage() {
                         {(permissions as any).platforms?.map((platform: string) => {
                           const platformInfo = availablePlatforms.find(p => p.key === platform);
                           return (
-                            <span key={platform} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <span key={platform} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-gray-200">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               {platformInfo?.icon} {platformInfo?.name}
                             </span>
@@ -209,25 +214,40 @@ export default function PlansPage() {
                   </div>
 
                   {/* Permissions */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-300">الصلاحيات والحدود</h4>
+                  <div className="space-y-2 p-3 rounded-[35px] bg-gradient-to-br from-purple-800 to-purple-00">
+                    {/* <h4 className="text-sm text-center font-medium text-gray-300">الصلاحيات</h4> */}
                     
                     {/* Monthly Posts */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
                       <span className="text-xs font-medium text-gray-200">المنشورات الشهرية:</span>
-                      <span className="text-xs font-bold text-primary">
+                      {/* <span className="text-xs font-bold text-primary">
                         {(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts || 0}
-                      </span>
+                      </span> */}
+                      {(permissions as any).monthlyPosts > 0 && (
+                        <span className="text-xs text-primary">
+                          ({(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts}/شهر)
+                        </span>
+                      )}
+                      
+
                     </div>
 
                     {/* WhatsApp Management */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span>
+                    <div className="flex items-center gap-2">
+                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageWhatsApp ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span>
                             {(permissions as any).whatsappMessagesPerMonth > 0 && (
                               <span className="text-xs text-primary">
                                 ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth}/شهر)
@@ -236,93 +256,128 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs text-white line-through font-medium">إدارة الواتساب </span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Telegram Management */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">إدارة التليجرام:</span>
+                    <div className="flex items-center gap-2">
+                        {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageTelegram ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span>
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs text-white line-through font-medium">إدارة التليجرام </span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Salla Integration */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">تكامل سلة:</span>
+                    <div className="flex items-center gap-2">
+                        {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">تكامل سلة</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canSallaIntegration ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium text-gray-200"> سلة ويب هوك</span>
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs text-white line-through font-medium">سلة ويب هوك </span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Content Management */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">إدارة المحتوى:</span>
+                    <div className="flex items-center gap-2">
+                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">إدارة المحتوى</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageContent ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium text-gray-200">إدارة المحتوى</span>
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium line-through text-gray-200">إدارة المحتوى</span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Customer Management */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">إدارة العملاء:</span>
+                    <div className="flex items-center gap-2">
+                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">إدارة العملاء</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageCustomers ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium text-gray-200">إدارة العملاء</span>
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium line-through text-gray-200">إدارة العملاء</span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Service Marketing */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">تسويق الخدمات:</span>
+                    <div className="flex items-center gap-2">
+                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">تسويق الخدمات</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canMarketServices ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium text-gray-200">تسويق الخدمات</span>
                             {(permissions as any).maxServices > 0 && (
                               <span className="text-xs text-primary">
                                 ({(permissions as any).maxServices} خدمة)
@@ -336,25 +391,39 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium line-through text-gray-200">تسويق الخدمات</span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Employee Management */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">إدارة الموظفين:</span>
+                    <div className="flex items-center gap-2">
+                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium text-gray-200">إدارة الموظفين</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canManageEmployees ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            {/* <CheckCircle className="h-3 w-3 text-green-400" />
+                            <span className="text-xs text-green-400 font-medium">مفعل</span> */}
                             {(permissions as any).maxEmployees > 0 && (
-                              <span className="text-xs text-primary">
+                              <>
+                           
+                              <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs text-white">
+                        إدارة الموظفين
+                      </span>
+                         <span className="text-xs text-primary">
                                 ({(permissions as any).maxEmployees} موظف)
                               </span>
+                              </>
                             )}
                             {(permissions as any).maxEmployees === 0 && (
                               <span className="text-xs text-primary">
@@ -364,21 +433,27 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                          <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X  className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium line-through text-white">إدارة الموظفين</span>
+                            {/* <XCircle className="h-3 w-3 text-red-400" />
+                            <span className="text-xs text-red-400 font-medium">غير مفعل</span> */}
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* AI Features */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">الذكاء الاصطناعي (AI):</span>
+                    <div className="flex items-center gap-2">
+                      {/* <span className="text-xs font-medium text-gray-200">الذكاء الاصطناعي (AI):</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canUseAI ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                          <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs text-white font-medium"> الذكاء الاصطناعي</span>
                             {(permissions as any).aiCredits > 0 && (
                               <span className="text-xs text-primary">
                                 ({(permissions as any).aiCredits} كريديت/شهر)
@@ -392,21 +467,25 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs font-medium line-through text-white">الذكاء الاصطناعي (AI)</span>
                           </>
                         )}
                       </div>
                     </div>
 
                     {/* Live Chat & Tickets */}
-                    <div className="flex items-center justify-between p-2 bg-[#01191040] rounded">
-                      <span className="text-xs font-medium text-gray-200">Live Chat & Tickets:</span>
+                    <div className="flex items-center gap-2">
+                      {/* <span className="text-xs font-medium text-gray-200">Live Chat & Tickets:</span> */}
                       <div className="flex items-center gap-1">
                         {(permissions as any).canUseLiveChat ? (
                           <>
-                            <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span>
+                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <Check className="h-3 w-3 text-black font-bold" />
+                      </div>
+                            <span className="text-xs text-white font-medium"> ادارة التذاكر & لايف شات</span>
                           {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
                             <span className="text-xs text-primary">
                               ({(permissions as any).liveChatAiResponses} رد/شهر)
@@ -419,27 +498,26 @@ export default function PlansPage() {
                           </>
                         ) : (
                           <>
-                            <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span>
+                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                        <X className="h-3 w-3 text-black font-bold" />
+                      </div>
+                      <span className="text-xs font-medium line-through text-gray-200">Live Chat & Tickets</span>
+                            {/* <span className="text-xs text-red-400 font-medium">غير مفعل</span> */}
                           </>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <Button 
-                    className="w-full primary-button " 
+                 <div className="flex items-center justify-center">
+                   <Button 
+                    className="w-60 gradient-border-button-header bg-gradient-to-r from-purple-900 to-purple-700 text-white" 
                     variant={isHighlighted ? "default" : "secondary"}
-                    onClick={() => {
-                      if (plan.paymentLink) {
-                        window.open(plan.paymentLink, '_blank');
-                      } else {
-                        openSubscriptionModal(plan);
-                      }
-                    }}
+                    onClick={() => openSubscriptionModal(plan)}
                   >
                     اشترك الآن
                   </Button>
+                 </div>
                 </CardContent>
               </Card>
             );

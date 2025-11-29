@@ -153,7 +153,7 @@ export default function TutorialsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="bg-[#011910] text-white appearance-none px-3 py-2 rounded-md border border-gray-600 focus:border-primary focus:outline-none"
+                className="bg-fixed-40 text-white appearance-none px-3 py-2 rounded-md border border-gray-600 focus:border-primary focus:outline-none"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>

@@ -41,9 +41,23 @@ import {
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 
-type Platform = 'facebook' | 'instagram' | 'linkedin' | 'pinterest' | 'tiktok' | 'youtube' | 'twitter';
+type Platform = 'facebook' | 'instagram' | 'linkedin' | 'youtube' | 'twitter';
 
 export default function ContentHomePage() {
+  // Add style for datetime-local calendar icon
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const router = useRouter();
   const { canManageContent, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
     const { showSuccess, showError } = useToast();
@@ -72,6 +86,7 @@ export default function ContentHomePage() {
   const [reminderWhatsApp, setReminderWhatsApp] = useState("");
   const [reminderMessage, setReminderMessage] = useState("");
   const [itemToRemind, setItemToRemind] = useState<ContentItem | null>(null);
+  const [whatsappSessionPhone, setWhatsappSessionPhone] = useState<string>("");
   const [activeReminders, setActiveReminders] = useState<Set<number>>(new Set());
   
   // Message modals
@@ -580,8 +595,43 @@ export default function ContentHomePage() {
   };
 
   // Reminder functions
-  const onSetReminder = (item: ContentItem) => {
+  const onSetReminder = async (item: ContentItem) => {
     setItemToRemind(item);
+    
+    // Try to get WhatsApp session phone number
+    try {
+      const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/whatsapp/status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        console.log('[Reminder] WhatsApp status:', statusData);
+        
+        // Check if connected and has phone number
+        if (statusData.success && (statusData.status === 'connected' || statusData.status === 'CONNECTED' || statusData.status === 'inChat')) {
+          if (statusData.phoneNumber) {
+            // Format phone number if needed
+            let phoneNumber = statusData.phoneNumber;
+            // Remove @s.whatsapp.net if present
+            phoneNumber = phoneNumber.replace('@s.whatsapp.net', '').replace('@c.us', '');
+            // Add + if not present
+            if (!phoneNumber.startsWith('+')) {
+              phoneNumber = '+' + phoneNumber;
+            }
+            setReminderWhatsApp(phoneNumber);
+            setWhatsappSessionPhone(phoneNumber);
+            console.log('[Reminder] Auto-filled WhatsApp number:', phoneNumber);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[Reminder] Error fetching WhatsApp status:', error);
+      // Don't block - continue with empty phone number
+    }
+    
     setShowReminderModal(true);
   };
 
@@ -638,15 +688,12 @@ export default function ContentHomePage() {
         
         // Add to active reminders
         setActiveReminders(prev => new Set(prev).add(itemToRemind.id));
-        setShowReminderModal(false);
-        setReminderWhatsApp("");
-        setReminderMessage("");
-        setItemToRemind(null);
+        closeReminderModal();
         
         // Show success toast with reminder times
         const description = result.reminder?.reminderTime1Display && result.reminder?.reminderTime2Display
           ? `⏰ سيتم التذكير في: ${result.reminder.reminderTime1Display} و ${result.reminder.reminderTime2Display}`
-          : "سيتم إرسال رسالة قبل ساعتين وساعة واحدة من موعد النشر.";
+          : "سيتم إرسال رسالة قبل ساعتين وساعة واحدة من  الموعد المحدد.";
         
         toast.success("✅ تم إعداد التذكير بنجاح!", {
           description: description,
@@ -660,6 +707,14 @@ export default function ContentHomePage() {
       console.error('Error setting reminder:', error);
       showMessage('حدث خطأ أثناء إعداد التذكير', 'error');
     }
+  };
+
+  const closeReminderModal = () => {
+    setShowReminderModal(false);
+    setReminderWhatsApp("");
+    setReminderMessage("");
+    setItemToRemind(null);
+    setWhatsappSessionPhone("");
   };
 
   const togglePlatform = (p: Platform) => {
@@ -732,12 +787,12 @@ export default function ContentHomePage() {
       )} */}
       <div className={` w-full ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">ادارة وجدولة المحتوى </h1>
+        <div className="mb-2">
+          <h1 className="text-2xl font-bold text-white">ادارة وجدولة المحتوى </h1>
           {/* <p className="text-gray-300 text-lg">إدارة المحتوى الاحترافية للمنصات الاجتماعية</p> */}
           
           {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
             <Card className="gradient-border border-none">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-3">
@@ -785,7 +840,7 @@ export default function ContentHomePage() {
         </div>
 
         {/* Categories Tabs */}
-        <Card className="gradient-border border-none mb-6">
+        <Card className="gradient-border border-none mb-2">
           <CardHeader className="border-b border-gray-700">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">التصنيفات</h2>
@@ -800,11 +855,11 @@ export default function ContentHomePage() {
           </CardHeader>
           <CardContent className="p-0">
         {loading ? (
-              <div className="p-6 text-center text-gray-400">جاري التحميل...</div>
+              <div className="p-2 text-center text-gray-400">جاري التحميل...</div>
         ) : categories.length === 0 ? (
-              <div className="p-6 text-center text-yellow-500">لا توجد تصنيفات بعد</div>
+              <div className="p-2 text-center text-yellow-500">لا توجد تصنيفات بعد</div>
             ) : (
-              <div className="flex flex-wrap gap-2 p-4">
+              <div className="flex flex-wrap gap-2 p-0">
                 {categories.map((category) => (
                   <div
                     key={category.id}
@@ -833,11 +888,11 @@ export default function ContentHomePage() {
         </Card>
 
         {/* Content Area */}
-        {selectedCategory && (
+        
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Calendar View */}
             <div className="lg:col-span-2">
-              <Card className="bg-card border-none">
+              <Card className="gradient-border border-none">
                 <CardHeader className="border-b border-gray-700">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-white">
@@ -846,22 +901,24 @@ export default function ContentHomePage() {
                     <div className="flex items-center gap-2">
                       <Button 
                         onClick={() => navigateMonth('prev')}
-                        className="bg-gray-700 hover:bg-gray-600 text-white"
+                        className="bg-black  text-white"
                       >
                         ← السابق
                       </Button>
                       <Button 
                         onClick={() => navigateMonth('next')}
-                        className="bg-gray-700 hover:bg-gray-600 text-white"
+                        className="bg-black  text-white"
                       >
                         التالي →
                       </Button>
                       <Button 
                         onClick={() => setShowCreateItem(true)}
-                        className="bg-green-600 hover:bg-green-700 text-white"
+                        className="primary-button text-white"
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                       <div className="flex items-center gap-2">
+                         <Plus className="w-4 h-4 mr-2" />
                         إضافة عنصر
+                       </div>
                       </Button>
                     </div>
                   </div>
@@ -870,17 +927,17 @@ export default function ContentHomePage() {
                   {itemsLoading ? (
                     <div className="text-center py-8 text-gray-400">جاري تحميل العناصر...</div>
                   ) : (
-                    <div className="grid grid-cols-7 gap-2">
+                    <div className="grid grid-cols-7 gap-2 ">
                       {/* Day headers */}
                       {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
-                        <div key={day} className="p-3 text-center font-semibold text-green-400 bg-gray-800 rounded-lg">
+                        <div key={day} className="p-3 text-center font-semibold text-green-400 bg-secondry rounded-lg">
                           {day}
                         </div>
                       ))}
                       
                       {/* Empty cells for days before month starts */}
                       {Array.from({ length: firstDay }).map((_, index) => (
-                        <div key={`empty-${index}`} className="p-3 h-20 bg-gray-800 rounded-lg"></div>
+                        <div key={`empty-${index}`} className="p-3 h-20 bg-fixed-40 rounded-lg"></div>
                       ))}
                       
                       {/* Days of the month */}
@@ -898,12 +955,12 @@ export default function ContentHomePage() {
                             key={day}
                             className={`p-2 h-20 rounded-lg cursor-pointer transition-all duration-200 ${
                               isToday 
-                                ? 'bg-green-600 text-white shadow-lg' 
+                                ? 'gradient-border-green text-white shadow-lg' 
                                 : isPast
-                                ? 'bg-red-100 text-red-800 border border-red-200'
+                                ? 'gradient-border-red text-white border border-red-200'
                                 : isFuture
-                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-200 hover:bg-yellow-200'
-                                : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                                ? 'gradient-border-yellow text-white border border-yellow-200 hover:bg-yellow-200'
+                                : 'bg-fixed-40 text-white  text-gray-300'
                             }`}
                           >
                             <div className="text-sm font-semibold mb-1 flex items-center justify-between">
@@ -958,7 +1015,7 @@ export default function ContentHomePage() {
 
             {/* Items List */}
             <div className="lg:col-span-1">
-              <Card className="bg-card border-none">
+              <Card className="gradient-border border-none">
                 <CardHeader className="border-b border-gray-700">
                   <h3 className="text-lg font-semibold text-white">العناصر</h3>
                 </CardHeader>
@@ -975,7 +1032,7 @@ export default function ContentHomePage() {
                       {items.map((item) => (
                         <div
                           key={item.id}
-                          className="p-3  rounded-lg hover:bg-gray-700 transition-colors cursor-pointer content-card"
+                          className="p-3  rounded-lg bg-fixed-40 transition-colors cursor-pointer content-card"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -1043,7 +1100,7 @@ export default function ContentHomePage() {
               </Card>
             </div>
           </div>
-        )}
+       
 
         {/* Create Category Modal */}
         {showCreateCategory && (
@@ -1119,7 +1176,7 @@ export default function ContentHomePage() {
                     multiple 
                     accept="image/*,video/*"
                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                    className="w-full bg-[#011910] border border-gray-700 rounded p-2 text-white"
+                    className="w-full bg-fixed-40 border-primary rounded p-2 text-white"
                   />
                   <div className="flex flex-wrap gap-2">
                     {itemAttachments.map((att, idx) => (
@@ -1150,7 +1207,7 @@ export default function ContentHomePage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(['facebook','instagram','linkedin','pinterest','tiktok','youtube','twitter'] as Platform[]).map((p) => {
+                    {(['facebook','instagram','linkedin','youtube','twitter'] as Platform[]).map((p) => {
                       const selected = selectedPlatforms.includes(p);
                       const connected = connections[p] === true;
                       return (
@@ -1182,7 +1239,8 @@ export default function ContentHomePage() {
                     type="datetime-local"
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
-                    className="w-full bg-[#011910] border border-gray-700 rounded p-2 text-white"
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    className="w-full bg-fixed-40 border-primary rounded p-2 text-white cursor-pointer"
                   />
                 </div>
 
@@ -1236,7 +1294,7 @@ export default function ContentHomePage() {
                       </Button>
                     </div>
                     <p className="text-xs text-gray-400">
-                      سيتم إرسال رسالة تذكير قبل ساعتين وساعة واحدة من موعد النشر
+                      سيتم إرسال رسالة تذكير قبل ساعتين وساعة واحدة من الموعد المحدد 
                     </p>
                   </div>
                 )}
@@ -1318,7 +1376,7 @@ export default function ContentHomePage() {
                     multiple 
                     accept="image/*,video/*"
                     onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                    className="w-full bg-[#011910] border border-gray-300 rounded p-2 text-white"
+                    className="w-full bg-fixed-40 border-primary rounded p-2 text-white"
                   />
                   <div className="flex flex-wrap gap-2">
                     {itemAttachments.map((att, idx) => (
@@ -1349,7 +1407,7 @@ export default function ContentHomePage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(['facebook','instagram','linkedin','pinterest','tiktok','youtube','twitter'] as Platform[]).map((p) => {
+                    {(['facebook','instagram','linkedin','youtube','twitter'] as Platform[]).map((p) => {
                       const selected = selectedPlatforms.includes(p);
                       const connected = connections[p] === true;
                       return (
@@ -1381,7 +1439,8 @@ export default function ContentHomePage() {
                     type="datetime-local"
                     value={scheduledAt}
                     onChange={(e) => setScheduledAt(e.target.value)}
-                    className="w-full bg-[#011910] border border-gray-300 rounded p-2 text-white"
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    className="w-full bg-fixed-40 border-primary rounded p-2 text-white cursor-pointer"
                   />
                 </div>
 
@@ -1413,7 +1472,7 @@ export default function ContentHomePage() {
                       </Button>
                     </div>
                     <p className="text-xs text-gray-400">
-                      سيتم إرسال رسالة تذكير قبل ساعتين وساعة واحدة من موعد النشر
+                       سيتم إرسال رسالة تذكير قبل ساعتين وساعة واحدة من الموعد المحدد
                     </p>
                   </div>
                 )}
@@ -1575,17 +1634,27 @@ export default function ContentHomePage() {
           <div className="fixed inset-0 bg-black/70  backdrop-blur-lg  flex items-center justify-center z-999">
             <div className=" gradient-border rounded-lg p-6 max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold text-white mb-4">إعداد تذكير</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-gray-300 mb-2">العنصر:</p>
+              <div className="space-y-2">
+                
+                  <div className="flex">
+                    <p className="text-gray-300 mb-2">العنصر:</p>
                   <p className="text-white font-medium">{itemToRemind.title}</p>
+                  </div>
                   <p className="text-gray-400 text-sm">
                     مجدول في: {itemToRemind.scheduledAt ? new Date(itemToRemind.scheduledAt).toLocaleString('en-US') : 'غير محدد'}
                   </p>
-                </div>
+                
 
                 <div className="space-y-2">
-                  <label className="text-white text-sm">رقم الواتساب</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-white text-sm">رقم الواتساب</label>
+                    {whatsappSessionPhone && reminderWhatsApp === whatsappSessionPhone && (
+                      <span className="text-xs text-green-400 flex items-center gap-1">
+                        <span>✓</span>
+                        <span>تم الملء تلقائياً من الجلسة</span>
+                      </span>
+                    )}
+                  </div>
                   <Input 
                     placeholder="مثال: +966501234567" 
                     value={reminderWhatsApp} 
@@ -1603,7 +1672,7 @@ export default function ContentHomePage() {
                     className="bg-[#011910] border-gray-300 text-white min-h-[80px]"
                   />
                   <p className="text-gray-300 text-xs">
-                    سيتم إرسال هذه الرسالة قبل ساعتين وساعة واحدة من موعد النشر
+                    سيتم إرسال هذه الرسالة قبل ساعتين وساعة واحدة من الموعد المحدد
                   </p>
                 </div>
 
@@ -1631,12 +1700,7 @@ export default function ContentHomePage() {
                     إعداد التذكير
                   </Button>
                   <Button 
-                    onClick={() => {
-                      setShowReminderModal(false);
-                      setReminderWhatsApp("");
-                      setReminderMessage("");
-                      setItemToRemind(null);
-                    }}
+                    onClick={closeReminderModal}
                     variant="secondary"
                     className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
                   >
@@ -1650,8 +1714,8 @@ export default function ContentHomePage() {
 
         {/* Message Modal */}
         {showMessageModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50">
+            <div className="gradient-border rounded-lg p-6 max-w-md w-full mx-4">
               <div className="flex items-center gap-3 mb-4">
                 {messageType === 'success' && (
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
@@ -1675,7 +1739,7 @@ export default function ContentHomePage() {
               <p className="text-gray-300 mb-6">{messageText}</p>
               <Button 
                 onClick={() => setShowMessageModal(false)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full primary-button text-white"
               >
                 موافق
               </Button>

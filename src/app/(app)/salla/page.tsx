@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SallaEventsPage() {
   const { user, loading } = useAuth();
@@ -19,6 +22,7 @@ export default function SallaEventsPage() {
 
   const [selectedType, setSelectedType] = useState<string>("");
   const [showAllFields, setShowAllFields] = useState<boolean>(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const groupedByType = useMemo(() => {
     const map: Record<string, number> = {};
@@ -148,6 +152,37 @@ export default function SallaEventsPage() {
     }
   }
 
+  // Translate event type to Arabic
+  function getEventTypeArabic(eventType: string): string {
+    const translations: Record<string, string> = {
+      'product.created': 'منتج جديد',
+      'product.updated': 'تحديث منتج',
+      'product.deleted': 'حذف منتج',
+      'product.available': 'منتج متاح',
+      'product.quantity.low': 'كمية منخفضة',
+      'order.created': 'طلب جديد',
+      'order.updated': 'تحديث طلب',
+      'order.cancelled': 'إلغاء طلب',
+      'order.refunded': 'استرجاع طلب',
+      'order.payment.updated': 'تحديث دفع',
+      'order.shipped': 'شحن طلب',
+      'order.delivered': 'تسليم طلب',
+      'shipment.created': 'شحنة جديدة',
+      'shipment.updated': 'تحديث شحنة',
+      'shipment.cancelled': 'إلغاء شحنة',
+      'customer.created': 'عميل جديد',
+      'customer.updated': 'تحديث عميل',
+      'customer.login': 'تسجيل دخول عميل',
+      'coupon.created': 'كوبون جديد',
+      'coupon.updated': 'تحديث كوبون',
+      'category.created': 'تصنيف جديد',
+      'category.updated': 'تحديث تصنيف',
+      'review.created': 'تقييم جديد',
+      'review.updated': 'تحديث تقييم',
+    };
+    return translations[eventType] || eventType;
+  }
+
   const columnsToRender = useMemo(() => {
     const all = selectedTypeColumns;
     if (!selectedType) return all;
@@ -155,6 +190,18 @@ export default function SallaEventsPage() {
     if (!showAllFields && important.length > 0) return important;
     return all;
   }, [selectedTypeColumns, selectedType, showAllFields]);
+
+  // Copy webhook URL to clipboard
+  const copyWebhookUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      setCopiedUrl(true);
+      toast.success("تم نسخ الرابط بنجاح!");
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch (error) {
+      toast.error("فشل نسخ الرابط");
+    }
+  };
 
   async function load() {
     const token = localStorage.getItem("auth_token");
@@ -217,44 +264,63 @@ export default function SallaEventsPage() {
 
   return (
     <div className="space-y-4 text-white">
-      <h1 className="text-xl font-semibold">Salla Webhooks</h1>
+      <h1 className="text-xl font-semibold">سلة ويب هوك</h1>
       <div className="p-4 gradient-border rounded-md space-y-2">
-        <div className="text-sm">Your webhook URL:</div>
-        <code className="block break-all bg-[#011910] p-2 rounded text-white">{webhookUrl}</code>
+        <div className="text-sm">الرابط:</div>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 block break-all bg-secondry p-2 rounded text-white">{webhookUrl}</code>
+          <Button
+            onClick={copyWebhookUrl}
+            className="primary-button shrink-0"
+            size="sm"
+          >
+            {copiedUrl ? (
+              <>
+                {/* <Check className="w-4 h-4 mr-1" /> */}
+                تم النسخ
+              </>
+            ) : (
+              <>
+                {/* <Copy className="w-4 h-4 mr-1" /> */}
+                نسخ
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {sortedTypes.length > 0 && (
         <div className="p-4 gradient-border rounded-md space-y-4">
-          <h2 className="font-medium">Event Types</h2>
+          <h2 className="font-medium">نوع الحدث</h2>
           <div className="flex flex-wrap gap-2">
             {sortedTypes.map((t) => (
-              <Button key={t} variant={t === selectedType ? "default" : "secondary"} onClick={() => setSelectedType(t)}>
-                {t} <span className="ml-2 opacity-70">({groupedByType[t]})</span>
+              <Button className="primary-button" key={t} variant={t === selectedType ? "default" : "secondary"} onClick={() => setSelectedType(t)}>
+               {getEventTypeArabic(t)} <span className="text-xs opacity-70 mr-1">({groupedByType[t]})</span>
               </Button>
             ))}
           </div>
 
           {selectedType && (
             <div className="overflow-x-auto">
-              <h3 className="font-medium mt-2 mb-2">{selectedType}</h3>
+              <h3 className="font-medium mt-2 mb-2">{getEventTypeArabic(selectedType)}</h3>
               <div className="mb-2">
-                <Button variant={showAllFields ? 'secondary' : 'default'} onClick={() => setShowAllFields((v) => !v)}>
-                  {showAllFields ? 'Show important only' : 'Show all fields'}
+                <Button className="primary-button after:bg-[#03132c]" variant={showAllFields ? 'secondary' : 'default'} onClick={() => setShowAllFields((v) => !v)}>
+                  {showAllFields ? 'عرض الحقول المهمة فقط' : 'عرض جميع الحقول'}
                 </Button>
               </div>
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left">
-                    <th className="px-2 py-1">#</th>
+              <Table className="min-w-full text-sm">
+                <TableHeader>
+                  <TableRow>
+                    {/* <TableHead className="px-2 py-1">#</TableHead> */}
                     {columnsToRender.map((key) => (
-                      <th key={key} className="px-2 py-1 whitespace-nowrap">{key}</th>
+                      <TableHead key={key} className="px-2 py-1 whitespace-nowrap">{key}</TableHead>
                     ))}
-                    <th className="px-2 py-1">Store</th>
-                    <th className="px-2 py-1">Signature</th>
-                    <th className="px-2 py-1">Received</th>
-                  </tr>
-                </thead>
-                <tbody>
+                    <TableHead className="px-2 py-1">Store</TableHead>
+                    <TableHead className="px-2 py-1">Signature</TableHead>
+                    <TableHead className="px-2 py-1">Received</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {events
                     .filter((e) => {
                       const p = (e as any)?.payload || {};
@@ -264,31 +330,31 @@ export default function SallaEventsPage() {
                     .map((e, idx) => {
                       const p: any = (e as any)?.payload || {};
                       return (
-                        <tr key={(e as any).id} className="border-b border-gray-800 hover:bg-gray-900/40">
-                          <td className="px-2 py-1">{idx + 1}</td>
+                        <TableRow key={(e as any).id} className="border-b border-gray-800 hover:bg-gray-900/40">
+                          {/* <TableCell className="px-2 py-1">{idx + 1}</TableCell> */}
                           {columnsToRender.map((key) => {
                             const v = getByPath(p?.data || {}, key);
                             let display: any = v;
                             if (v === undefined || v === null || v === "") display = "-";
                             else if (typeof v === "object") display = JSON.stringify(v);
                             return (
-                              <td key={key} className="px-2 py-1 whitespace-nowrap">{display}</td>
+                              <TableCell key={key} className="px-2 py-1 whitespace-nowrap">{display}</TableCell>
                             );
                           })}
-                          <td className="px-2 py-1">{(e as any).storeId || "-"}</td>
-                          <td className="px-2 py-1">{(e as any).signatureValid ? "valid" : "invalid"}</td>
-                          <td className="px-2 py-1">{new Date((e as any).createdAt || (e as any).receivedAt).toLocaleString()}</td>
-                        </tr>
+                          <TableCell className="px-2 py-1">{(e as any).storeId || "-"}</TableCell>
+                          <TableCell className="px-2 py-1">{(e as any).signatureValid ? "valid" : "invalid"}</TableCell>
+                          <TableCell className="px-2 py-1">{new Date((e as any).createdAt || (e as any).receivedAt).toLocaleString()}</TableCell>
+                        </TableRow>
                       );
                     })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>
       )}
 
-      <div className="p-4 gradient-border rounded-md">
+      {/* <div className="p-4 gradient-border rounded-md">
         <h2 className="font-medium mb-2">Recent Events</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {events.map((e) => {
@@ -312,7 +378,7 @@ export default function SallaEventsPage() {
                       {e.storeId && <span className="px-2 py-0.5 bg-blue-600/30 rounded">Store: {e.storeId}</span>}
                       {status && <span className="px-2 py-0.5 bg-gray-600/30 rounded">{status}</span>}
                     </div>
-                    {/* Event-specific pretty view */}
+                   
                     {eventTitle?.startsWith('product.') ? (
                       <ProductDetails product={product} url={url} currency={currency} />
                     ) : (
@@ -326,7 +392,7 @@ export default function SallaEventsPage() {
           })}
         </div>
         {events.length === 0 && <div className="text-sm opacity-70">No events yet.</div>}
-      </div>
+      </div> */}
     </div>
   );
 }

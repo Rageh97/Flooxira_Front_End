@@ -30,7 +30,7 @@ const navItems = [
   { href: "/employees", label: "إدارة الموظفين", img: "/employee.png" },
   { href: "/plans", label: "باقات الاشتراك", img: "/crown.png" },
   { href: "/my-subscription", label: "الاشتراك الفعال", img: "/true.png" },
-  { href: "/my-subscription-requests", label: "طلبات الاشتراك", img: "/order.png" },
+  // { href: "/my-subscription-requests", label: "طلبات الاشتراك", img: "/order.png" },
   { href: "/tutorials", label: "شروحات المنصة", img: "/video.png" },
   { href: "/reviews", label: "تقييمات المنصة", img: "/review.png" },
   { href: "/my-review", label: "قيمنا", img: "/review.png" },

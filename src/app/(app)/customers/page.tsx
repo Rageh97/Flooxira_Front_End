@@ -943,7 +943,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-3">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="إدارة العملاء"
@@ -951,7 +951,7 @@ useEffect(() => {
           className="container mx-auto p-6"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-3" : "space-y-3"}>
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-center gap-3">
         <div>
@@ -1251,6 +1251,12 @@ useEffect(() => {
                   >
                     غير نشط
                   </Button>
+                   {/* Clear Filters */}
+            <div className="flex justify-end">
+              <Button variant="secondary" size="sm" onClick={clearFilters}>
+                مسح الفلاتر
+              </Button>
+            </div>
                 </div>
               </div>
             </div>
@@ -1314,12 +1320,7 @@ useEffect(() => {
               </div>
             )}
 
-            {/* Clear Filters */}
-            <div className="flex justify-end">
-              <Button variant="secondary" size="sm" onClick={clearFilters}>
-                مسح الفلاتر
-              </Button>
-            </div>
+           
           </div>
         </CardContent>
       </Card>
@@ -1574,7 +1575,7 @@ useEffect(() => {
                                   }}
                                 />
                                 <Button
-                                  variant="ghost"
+                                  variant="none"
                                   size="sm"
                                   onClick={() => window.open(imageUrl, '_blank')}
                                 >
@@ -1638,18 +1639,18 @@ useEffect(() => {
                       <TableCell className="p-4 border-r border-green-100">
                         <div className="flex items-center gap-2">
                           <Button 
-                            variant="ghost" 
+                            variant="none" 
                             size="sm" 
                             onClick={() => openEditDialog(customer)}
-                            className="hover:bg-green-100 hover:text-green-700 text-green-400"
+                            className=" text-green-400"
                           >
                             <Edit className="h-6 w-6" />
                           </Button>
                           <Button 
-                            variant="ghost" 
+                            variant="none" 
                             size="sm" 
                             onClick={() => handleDeleteCustomer(customer.id)}
-                            className="hover:bg-red-100 text-red-400"
+                            className=" text-red-400"
                           >
                             <Trash2 className="h-6 w-6" />
                           </Button>
