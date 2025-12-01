@@ -41,6 +41,7 @@ import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen } from "lucide-react";
+import { resolveServiceImageUrl } from "@/lib/media";
 
 interface ServiceWithApproval extends Service {
   approvalStatus?: 'pending' | 'approved' | 'rejected';
@@ -464,13 +465,15 @@ export default function ServicesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody >
-                  {services.map((service) => (
-                    <TableRow key={service.id} className="">
+                  {services.map((service) => {
+                    const imageUrl = resolveServiceImageUrl(service.image);
+                    return (
+                      <TableRow key={service.id} className="">
                       <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {service.image && (
+                          {imageUrl && (
                             <img
-                              src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${service.image}`}
+                              src={imageUrl}
                               alt={service.title}
                               className="w-12 h-12 rounded object-cover"
                             />
@@ -574,8 +577,9 @@ export default function ServicesPage() {
                           </Button>
                         </div>
                       </TableCell>
-                    </TableRow>
-                  ))}
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

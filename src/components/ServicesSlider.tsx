@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, Eye, Package, X } from "lucide-react";
 import { getAllActiveServices, incrementServiceClick, type Service } from "@/lib/api";
+import { resolveServiceImageUrl } from "@/lib/media";
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -254,15 +255,17 @@ export default function ServicesSlider() {
               }}
               className="w-full"
             >
-              {filteredServices.map((service) => (
-                <SwiperSlide key={service.id} className="h-auto">
+              {filteredServices.map((service) => {
+                const imageUrl = resolveServiceImageUrl(service.image);
+                return (
+                  <SwiperSlide key={service.id} className="h-auto">
                   <div className="h-full rounded-lg  card-shine-effect pt-1 hover:shadow-lg transition-all duration-300 cursor-pointer hover:border-purple-300 flex flex-col">
                     <div className="p-0 rounded-lg flex flex-col h-full">
                       {/* Service Image */}
-                      {service.image && (
+                      {imageUrl && (
                         <div className="relative w-full overflow-hidden rounded-lg flex-shrink-0">
                           <img
-                            src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${service.image}`}
+                            src={imageUrl}
                             alt={service.title}
                             className="w-full h-auto object-cover"
                           />
@@ -351,8 +354,9 @@ export default function ServicesSlider() {
                       </div>
                     </div>
                   </div>
-                </SwiperSlide>
-              ))}
+                  </SwiperSlide>
+                );
+              })}
             </Swiper>
 
             {/* Navigation Buttons */}

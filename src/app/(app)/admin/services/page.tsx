@@ -26,6 +26,7 @@ import {
   Plus,
   Tags,
 } from "lucide-react";
+import { resolveServiceImageUrl } from "@/lib/media";
 import { useToast } from "@/components/ui/toast-provider";
 
 interface Service {
@@ -581,13 +582,15 @@ export default function AdminServicesPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-secondry divide-y divide-gray-200">
-                    {filteredServices.map((service) => (
-                      <tr key={service.id} className="hover:bg-[#022015]">
+                    {filteredServices.map((service) => {
+                      const imageUrl = resolveServiceImageUrl(service.image);
+                      return (
+                        <tr key={service.id} className="hover:bg-[#022015]">
                         {/* Image */}
                         <td className="px-4 py-4 whitespace-nowrap">
-                          {service.image ? (
+                          {imageUrl ? (
                             <img
-                              src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${service.image}`}
+                              src={imageUrl}
                               alt={service.title}
                               className="w-12 h-12 rounded object-cover"
                             />
@@ -699,8 +702,9 @@ export default function AdminServicesPage() {
                             </Button>
                           </div>
                         </td>
-                      </tr>
-                    ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
