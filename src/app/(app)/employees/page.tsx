@@ -58,7 +58,10 @@ import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import { useToast } from "@/components/ui/toast-provider";
-
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 
 interface Employee {
   id: number;
@@ -139,6 +142,28 @@ export default function EmployeesPage() {
     }
   });
 
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const handleShowTutorial = () => {
+    const employeesTutorial = 
+      getTutorialByCategory('Employees') || 
+      getTutorialByCategory('موظفين') || 
+      getTutorialByCategory('Employees') ||   
+      getTutorialByCategory('موظفين') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('موظفين') ||
+        t.title.toLowerCase().includes('Employees') ||
+        t.category.toLowerCase().includes('موظفين') ||
+        t.category.toLowerCase().includes('Employees')
+      ) || null;
+    
+    if (employeesTutorial) {
+      setSelectedTutorial(employeesTutorial);
+      incrementViews(employeesTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بالموظفين");
+    }
+  };
   // Check permissions
   const canManageEmployees = permissions?.canManageEmployees || false;
   const maxEmployees = permissions?.maxEmployees || 0;
@@ -370,6 +395,7 @@ export default function EmployeesPage() {
   }
 
   return (
+    <>
     <div className="w-full space-y-6">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
@@ -385,16 +411,26 @@ export default function EmployeesPage() {
           <h1 className="text-3xl font-bold text-white">إدارة الموظفين</h1>
           <p className="text-gray-300 mt-2">إدارة موظفيك وصلاحياتهم</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              disabled={!canCreateMore}
-              className="primary-button "
-            >
-              {/* <Plus className="w-4 h-4 mr-2" /> */}
-              إضافة موظف جديد
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleShowTutorial} 
+            variant="secondary"
+            className="flex items-center gap-2 primary-button">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              <p>شرح الميزة</p>
+            </div>
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                disabled={!canCreateMore}
+                className="primary-button "
+              >
+                {/* <Plus className="w-4 h-4 mr-2" /> */}
+                إضافة موظف جديد
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>إضافة موظف جديد</DialogTitle>
@@ -571,6 +607,7 @@ export default function EmployeesPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
@@ -742,6 +779,11 @@ export default function EmployeesPage() {
             </Table>
           )}
         </CardContent>
+        <TutorialVideoModal
+          tutorial={selectedTutorial}
+          onClose={() => setSelectedTutorial(null)}
+          onViewIncrement={incrementViews}
+        />
       </Card>
 
       {/* Pagination */}
@@ -947,5 +989,7 @@ export default function EmployeesPage() {
       </Dialog>
       </div>
     </div>
+  
+    </>
   );
 }

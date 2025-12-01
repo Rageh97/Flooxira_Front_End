@@ -14,7 +14,7 @@ import {
 import { listTags, addContactToTag, createTag, listContactsByTag } from "@/lib/tagsApi";
 import { sendWhatsAppMedia } from "@/lib/mediaApi";
 import { getBotStatus, pauseBot, resumeBot, BotStatus } from "@/lib/botControlApi";
-import AnimatedEmoji, { EmojiPickerModal } from "@/components/AnimatedEmoji";
+import AnimatedEmoji, { EmojiPickerInline } from "@/components/AnimatedEmoji";
 
 export default function WhatsAppChatsPage() {
   const [loading, setLoading] = useState(false);
@@ -1084,7 +1084,7 @@ export default function WhatsAppChatsPage() {
                 <div className="flex items-center gap-1">
           
                   <button
-                    onClick={() => setShowEmojiPicker(true)}
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     
                     className="px-0 flex-shrink-0"
                     title="إضافة إيموجي"
@@ -1123,6 +1123,18 @@ export default function WhatsAppChatsPage() {
                     disabled={loading}
                   />
                 </div>
+                {showEmojiPicker && (
+                  <div className="mt-2">
+                    <EmojiPickerInline
+                      isOpen={showEmojiPicker}
+                      onClose={() => setShowEmojiPicker(false)}
+                      onEmojiSelect={(emoji) => {
+                        setTestMessage(prev => prev + emoji);
+                      }}
+                      position="bottom"
+                    />
+                  </div>
+                )}
                 <p className="text-xs text-gray-400 mt-1">
                   {loading ? "جاري إرسال الرسالة..." : ""}
                 </p>
@@ -1326,15 +1338,6 @@ export default function WhatsAppChatsPage() {
         </div>
       )}
 
-      {/* Emoji Picker Modal */}
-      <EmojiPickerModal
-        isOpen={showEmojiPicker}
-        onClose={() => setShowEmojiPicker(false)}
-        onEmojiSelect={(emoji) => {
-          setTestMessage(prev => prev + emoji);
-          setShowEmojiPicker(false);
-        }}
-      />
     </>
   );
 }

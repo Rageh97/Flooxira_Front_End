@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { listTags, createTag, deleteTag, addContactToTag, listContactsByTag, getAllContacts } from '@/lib/tagsApi';
+import { Trash2Icon } from 'lucide-react';
 
 type Tag = { id: number; name: string; color?: string };
 type ContactTag = { id: number; contactNumber: string; contactName?: string };
@@ -102,15 +103,17 @@ export default function TagsPage() {
           {loading ? (
             <div className="text-gray-300">جاري التحميل...</div>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2 cursor-pointer grid grid-cols-2 lg:grid-cols-3  gap-2">
               {tags.map(t => (
-                <li key={t.id} className="flex items-center justify-between bg-dark-custom rounded-lg px-3 py-2">
-                  <button className="text-white " onClick={() => onSelectTag(t.id)}>
+                <li onClick={() => onSelectTag(t.id)} key={t.id} className="flex items-center justify-between bg-secondry rounded-lg px-3 py-2">
+                  <button className="text-white " >
                     {t.name}
                   </button>
                   <div className="flex items-center gap-2">
                     {t.color && <span className="inline-block w-4 h-4 rounded-lg" style={{ background: t.color }} />}
-                    <button className="text-red-400 hover:text-red-300" onClick={() => onDelete(t.id)}>حذف</button>
+                    <button className="text-red-400 hover:text-red-300" onClick={() => onDelete(t.id)}>
+                      <Trash2Icon className="w-4 h-4" />
+                    </button>
                   </div>
                 </li>
               ))}

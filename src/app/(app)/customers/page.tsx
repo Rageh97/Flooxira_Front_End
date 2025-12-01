@@ -11,7 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from "@/components/ui/toast-provider";
-
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 import { 
   Plus, 
   Search, 
@@ -184,6 +187,28 @@ export default function CustomersPage() {
   const [isUpdatingField, setIsUpdatingField] = useState(false);
   const [isDeletingField, setIsDeletingField] = useState(false);
   const [isDeletingCustomer, setIsDeletingCustomer] = useState(false);
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const handleShowTutorial = () => {
+    const customersTutorial = 
+      getTutorialByCategory('Customers') || 
+      getTutorialByCategory('عملاء') || 
+      getTutorialByCategory('Customers') || 
+      getTutorialByCategory('عملاء') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('عملاء') ||
+        t.title.toLowerCase().includes('Customers') ||
+        t.category.toLowerCase().includes('عملاء') ||
+        t.category.toLowerCase().includes('Customers')
+      ) || null;
+    
+    if (customersTutorial) {
+      setSelectedTutorial(customersTutorial);
+      incrementViews(customersTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بالعملاء");
+    }
+  };
 useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
       showError("لا يوجد اشتراك نشط");
@@ -957,6 +982,15 @@ useEffect(() => {
         <div>
           <h1 className="text-3xl font-bold text-white">إدارة العملاء</h1>
           <p className="text-gray-300">إدارة قاعدة بيانات العملاء واشتراكاتهم</p>
+          <Button 
+            onClick={handleShowTutorial} 
+            variant="secondary"
+            className="flex items-center gap-2 primary-button">
+            <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            <p> شرح الميزة</p>
+            </div>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
@@ -1665,6 +1699,11 @@ useEffect(() => {
 
         
         </CardContent>
+        <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
       </Card>
 
       {/* Edit Dialog */}

@@ -18,6 +18,10 @@ import {
 } from "@/lib/api";
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 
 export default function SchedulePage() {
   const { showError } = useToast();
@@ -34,6 +38,28 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(false);
 
   const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null;
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const handleShowTutorial = () => {
+    const scheduleTutorial = 
+      getTutorialByCategory('Schedule') || 
+      getTutorialByCategory('جدولة') || 
+      getTutorialByCategory('Schedule') ||  
+      getTutorialByCategory('جدولة') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('جدولة') ||
+        t.title.toLowerCase().includes('Schedule') ||
+        t.category.toLowerCase().includes('جدولة') ||
+        t.category.toLowerCase().includes('Schedule')
+      ) || null;
+    
+    if (scheduleTutorial) {
+      setSelectedTutorial(scheduleTutorial);
+      incrementViews(scheduleTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بالجدولة");
+    }
+  };
   useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
       showError("لا يوجد اشتراك نشط");
@@ -345,8 +371,19 @@ export default function SchedulePage() {
       )} */}
       <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}>
       <div className="mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">ادارة وجدولة المحتوى</h1>
-        {/* <p className="text-gray-300">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p> */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">ادارة وجدولة المحتوى</h1>
+          {/* <p className="text-gray-300">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p> */}
+          <Button 
+            onClick={handleShowTutorial} 
+            variant="secondary"
+            className="flex items-center gap-2 primary-button">
+            <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            <p> شرح الميزة</p>
+            </div>
+          </Button>
+          </div>
       </div>
 
       <Card className="gradient-border">
@@ -625,6 +662,11 @@ export default function SchedulePage() {
         </div>
       )}
       </div>
+      <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar } from "lucide-react";
 
 export default function WhatsAppGroupsPage() {
   const [loading, setLoading] = useState(false);
@@ -31,8 +32,13 @@ export default function WhatsAppGroupsPage() {
   const [groupMessage, setGroupMessage] = useState<string>("");
   const [groupMedia, setGroupMedia] = useState<File | null>(null);
   const [groupScheduleAt, setGroupScheduleAt] = useState<string>("");
+  const groupScheduleInputRef = useRef<HTMLInputElement>(null);
   const [statusImage, setStatusImage] = useState<File | null>(null);
   const [statusCaption, setStatusCaption] = useState<string>("");
+  
+  // Recurring schedule settings
+  const [isRecurring, setIsRecurring] = useState<boolean>(false);
+  const [recurringInterval, setRecurringInterval] = useState<number>(8); // hours
 
   // Schedules state (groups campaigns)
   const [groupSchedules, setGroupSchedules] = useState<Array<{
@@ -48,6 +54,22 @@ export default function WhatsAppGroupsPage() {
   const schedulesPerPage = 5;
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+
+  // Add style for datetime-local calendar icon to be white
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+        opacity: 0;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -125,6 +147,7 @@ export default function WhatsAppGroupsPage() {
       try {
         // ✅ If scheduled: create separate schedule for each group with 2-minute delay
         // ✅ If immediate AND multiple groups: send sequentially with 2-minute delay
+        // Note: Recurring scheduling only works with scheduled sends (not immediate)
         if (isScheduled && isValidSchedule) {
         // Scheduled - create separate schedule for each group with 2-minute delay between them
         const baseScheduleDate = new Date(groupScheduleAt);
@@ -150,7 +173,9 @@ export default function WhatsAppGroupsPage() {
               groupNames: [groupName], // One group at a time
               message: groupMessage || undefined,
               mediaFile: groupMedia || null,
-              scheduleAt: groupScheduleAtString
+              scheduleAt: groupScheduleAtString,
+              isRecurring: isRecurring,
+              recurringInterval: isRecurring ? recurringInterval : undefined
             });
             
             if (result.success) {
@@ -174,6 +199,8 @@ export default function WhatsAppGroupsPage() {
           setGroupMedia(null);
           setGroupScheduleAt("");
           setSelectedGroupNames([]);
+          setIsRecurring(false);
+          setRecurringInterval(8);
         } else {
           setError("فشل في جدولة جميع المجموعات");
           showError("فشل في الجدولة", "فشل في جدولة جميع المجموعات المحددة");
@@ -473,33 +500,38 @@ export default function WhatsAppGroupsPage() {
 
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
-                <input 
-                  type="datetime-local" 
-                  className="w-full px-3 py-4 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none" 
-                  value={groupScheduleAt} 
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Get user's timezone offset
-                    const timezoneOffset = new Date().getTimezoneOffset();
-                    console.log('User timezone offset:', timezoneOffset, 'minutes');
-                    console.log('Selected time:', value);
-                    setGroupScheduleAt(value);
-                  }} 
-                />
+                <div className="relative">
+                  <input 
+                    ref={groupScheduleInputRef}
+                    type="datetime-local" 
+                    className="w-full px-3 py-4 pr-10 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none cursor-pointer" 
+                    value={groupScheduleAt} 
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Get user's timezone offset
+                      const timezoneOffset = new Date().getTimezoneOffset();
+                      console.log('User timezone offset:', timezoneOffset, 'minutes');
+                      console.log('Selected time:', value);
+                      setGroupScheduleAt(value);
+                    }}
+                    onClick={() => groupScheduleInputRef.current?.showPicker()}
+                  />
+                  <Calendar 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
+                  />
+                </div>
               </div>
 
             </div>
           </div>
 
-
-
-
-          <div className="flex gap-2">
-            <button 
-              className="w-50 h-18 primary-button text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-70" 
-              onClick={handleSendToGroup} 
-              disabled={isSendingToGroup || selectedGroupNames.length === 0}
-            >
+          <div className="flex items-center gap-4 w-full">
+            <div className="w-50">
+              <button 
+                className="w-full h-18 primary-button text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-70" 
+                onClick={handleSendToGroup} 
+                disabled={isSendingToGroup || selectedGroupNames.length === 0}
+              >
               {isSendingToGroup ? (
                 <>
                   <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -515,9 +547,15 @@ export default function WhatsAppGroupsPage() {
                   {groupScheduleAt && new Date(groupScheduleAt) > new Date() ? 'جدولة' : 'إرسال'}
                 </>
               )}
-            </button>
+              </button>
+            </div>
+            
+            
+             
+          
+          <div className="flex gap-2">
             <button 
-              className="w-50 primary-button text-white text-xl font-bold after:bg-red-800 before:bg-[#01191080] flex items-center justify-center gap-2 disabled:opacity-70" 
+              className="w-50 h-18 primary-button text-white text-xl font-bold after:bg-red-800 before:bg-[#01191080] flex items-center justify-center gap-2 disabled:opacity-70" 
               onClick={handleExportGroupMembers} 
               disabled={isExportingMembers || selectedGroupNames.length === 0}
             >
@@ -534,6 +572,43 @@ export default function WhatsAppGroupsPage() {
               )}
             </button>
           </div>
+          <div className="w-full flex gap-2 items-center justify-between">
+                <label className="flex items-center gap-2 text-white">
+                  <input
+                    type="checkbox" 
+                    checked={isRecurring} 
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    className="
+                      appearance-none
+                      w-5 h-5
+                      border-2 border-gray-200
+                      rounded
+                      cursor-pointer
+                      checked:bg-green-500
+                      checked:border-green-500
+                      transition-colors duration-200
+                    "
+                  />
+                  <span className="text-sm font-medium">جدولة متكررة</span>
+                </label>
+                <div className="w-3/4">
+                  {isRecurring && (
+                    <div>
+                      <label className="text-sm font-medium mb-2 text-white">تكرار كل (ساعات)</label>
+                      <input 
+                        type="number" 
+                        min="1" 
+                        max="168" 
+                        className="bg-[#01191040] rounded-md text-white border-1 border-blue-300 w-full px-3 py-2 outline-none" 
+                        value={recurringInterval} 
+                        onChange={(e) => setRecurringInterval(parseInt(e.target.value || '1'))}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+          </div>
+
 
 
         </CardContent>

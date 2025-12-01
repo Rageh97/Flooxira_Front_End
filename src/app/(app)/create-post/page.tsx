@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,10 +8,15 @@ import { useMutation } from "@tanstack/react-query";
 import { apiFetch, listPinterestBoards, checkPlatformConnections, getCurrentFacebookPage, getInstagramAccountInfo, getYouTubeChannelDetails, getTwitterAccountDetails, getLinkedInProfileDetails, getPostUsageStats } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
-import AnimatedEmoji, { EmojiPickerModal } from "@/components/AnimatedEmoji";
+import AnimatedEmoji, { EmojiPickerInline } from "@/components/AnimatedEmoji";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { Calendar } from "lucide-react";
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 
 // Platform configuration with icons and supported content types
 const PLATFORMS = {
@@ -81,6 +86,7 @@ export default function CreatePostPage() {
   const [text, setText] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [when, setWhen] = useState<string>("");
+  const dateTimeInputRef = useRef<HTMLInputElement>(null);
   const [type, setType] = useState<'text' | 'link' | 'photo' | 'video'>("text");
   const [format, setFormat] = useState<'feed' | 'reel' | 'story'>("feed");
   const [contentType, setContentType] = useState<'articles' | 'reels' | 'stories'>('articles');
@@ -98,6 +104,30 @@ export default function CreatePostPage() {
   const [youtubeChannel, setYoutubeChannel] = useState<{title: string, subscriberCount: string} | null>(null);
   const [twitterAccount, setTwitterAccount] = useState<{username: string} | null>(null);
   const [linkedinProfile, setLinkedinProfile] = useState<{name: string} | null>(null);
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const handleShowTutorial = () => {
+    const createPostTutorial = 
+      getTutorialByCategory('Create Post') || 
+      getTutorialByCategory('إنشاء منشور') || 
+      getTutorialByCategory('Create Post') || 
+      getTutorialByCategory('إنشاء منشور') ||
+      getTutorialByCategory('Create Post') ||
+      getTutorialByCategory('إنشاء منشور') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('إنشاء منشور') ||
+        t.title.toLowerCase().includes('Create Post') ||
+        t.category.toLowerCase().includes('إنشاء منشور') ||
+        t.category.toLowerCase().includes('Create Post')
+      ) || null;
+    
+    if (createPostTutorial) {
+      setSelectedTutorial(createPostTutorial);
+      incrementViews(createPostTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بإنشاء المنشور");
+    }
+  };
   useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
       showError("لا يوجد اشتراك نشط");
@@ -169,6 +199,22 @@ export default function CreatePostPage() {
     return platforms.includes(platformKey);
   };
   
+  // Add style for datetime-local calendar icon to be white
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+        opacity: 0;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   // Auto-filter platforms when content type changes
   useEffect(() => {
     const availablePlatforms = getAvailablePlatforms();
@@ -831,6 +877,15 @@ export default function CreatePostPage() {
         {/* Post Usage Counter */}
         {postUsageStats && (
           <div className="flex items-center gap-3">
+              <Button 
+              onClick={handleShowTutorial} 
+              variant="secondary"
+              className="flex items-center gap-2 primary-button">
+              <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              <p> شرح الميزة</p>
+              </div>
+            </Button>
             <div className={`p-3 rounded-2xl flex  shadow-lg border-2 transition-all ${
               postUsageStats.isAtLimit 
                 ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300 ' 
@@ -871,7 +926,7 @@ export default function CreatePostPage() {
                
               </div>
             </div>
-            
+          
             {/* Warning Messages */}
             {postUsageStats.isAtLimit && (
               <div className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-lg">
@@ -1101,7 +1156,7 @@ export default function CreatePostPage() {
                       platforms.includes('telegram')
                         ? 'bg-green-700 scale-105' 
                         : (telegramBotActive || isDevelopment)
-                        ? 'bg-[#011910]'
+                        ? 'bg-secondry'
                         : 'bg-gray-800/50 opacity-50 cursor-not-allowed'
                     }`}
                   >
@@ -1120,7 +1175,7 @@ export default function CreatePostPage() {
                   
                   {/* Telegram Groups Display */}
                   {platforms.includes('telegram') && (
-                    <div className="p-6 bg-[#011910] rounded-2xl shadow-lg">
+                    <div className="p-6 bg-fixed-40 rounded-2xl shadow-lg">
                       <div className="flex items-center justify-between mb-5">
                         <div className="flex items-center gap-3">
                          
@@ -1377,25 +1432,35 @@ export default function CreatePostPage() {
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
           {/* Text Content */}
-          <div className="relative">
-            <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
-              <span className="text-xl">✍️</span>
-              نص المنشور
-            </label>
-            <Textarea
-              placeholder="اكتب منشورك هنا... يمكنك إضافة إيموجي وهاشتاغات ونصوص طويلة"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="min-h-[160px] bg-[#011910] rounded-xl text-white"
+          <div>
+            <div className="relative">
+              <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
+                <span className="text-xl">✍️</span>
+                نص المنشور
+              </label>
+              <Textarea
+                placeholder="اكتب منشورك هنا... يمكنك إضافة إيموجي وهاشتاغات ونصوص طويلة"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                className="min-h-[160px] bg-[#011910] rounded-xl text-white"
+              />
+              <Button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="absolute bottom-3 left-3 px-3 py-2 bg-green-600 hover:bg-green-700 shadow-lg rounded-lg"
+                title="إضافة إيموجي"
+              >
+                <AnimatedEmoji emoji="😊" size={20} />
+              </Button>
+            </div>
+            <EmojiPickerInline
+              isOpen={showEmojiPicker}
+              onClose={() => setShowEmojiPicker(false)}
+              onEmojiSelect={(emoji) => {
+                setText(prev => prev + emoji);
+              }}
+              position="bottom"
             />
-            <Button
-              type="button"
-              onClick={() => setShowEmojiPicker(true)}
-              className="absolute bottom-3 left-3 px-3 py-2 bg-green-600 hover:bg-green-700 shadow-lg rounded-lg"
-              title="إضافة إيموجي"
-            >
-              <AnimatedEmoji emoji="😊" size={20} />
-            </Button>
           </div>
           
           {/* Content Type Selection for Articles */}
@@ -1426,7 +1491,7 @@ export default function CreatePostPage() {
                 نوع الستوري
               </label>
               <select
-                className="h-12 w-full px-3 rounded-xl bg-[#011910] border appearance-none text-white"
+                className="h-12 w-full px-3 rounded-xl bg-fixed-40 border-primary appearance-none text-white"
                 value={type}
                 onChange={(e) => setType(e.target.value as 'photo' | 'video')}
               >
@@ -1526,12 +1591,19 @@ export default function CreatePostPage() {
            
                 الجدولة (اختياري)
               </label>
-              <Input
-                type="datetime-local"
-                value={when}
-                onChange={(e) => setWhen(e.target.value)}
-                className="h-12 w-full px-3 rounded-xl bg-[#011910] border appearance-none text-white"
-              />
+              <div className="relative">
+                <Input
+                  ref={dateTimeInputRef}
+                  type="datetime-local"
+                  value={when}
+                  onChange={(e) => setWhen(e.target.value)}
+                  onClick={() => dateTimeInputRef.current?.showPicker()}
+                  className="h-12 w-full px-3 pr-10 rounded-xl appearance-none text-white cursor-pointer"
+                />
+                <Calendar 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
+                />
+              </div>
               {when && (
                 <p className="mt-2 text-sm text-green-400 font-semibold flex items-center gap-2">
                   <span>⏰</span>
@@ -1643,16 +1715,13 @@ export default function CreatePostPage() {
         </CardContent>
       </Card>
 
-      {/* Emoji Picker Modal */}
-      <EmojiPickerModal
-        isOpen={showEmojiPicker}
-        onClose={() => setShowEmojiPicker(false)}
-        onEmojiSelect={(emoji) => {
-          setText(prev => prev + emoji);
-          setShowEmojiPicker(false);
-        }}
-      />
       </div>
+      {/* Tutorial Video Modal */}
+      <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
     </div>
   );
 }

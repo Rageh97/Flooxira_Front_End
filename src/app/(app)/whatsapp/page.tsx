@@ -9,15 +9,21 @@ import {
   getWhatsAppQRCode,
   stopWhatsAppSession,
 } from "@/lib/api";
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 import { usePermissions } from "@/lib/permissions";
 import UsageStats from "@/components/UsageStats";
 import Loader from "@/components/Loader";
 import { getSocket, disconnectSocket } from "@/lib/socket";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { useToast } from "@/components/ui/toast-provider";
 
 export default function WhatsAppPage() {
   const { canManageWhatsApp, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
-  
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+
   const [status, setStatus] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -26,14 +32,35 @@ export default function WhatsAppPage() {
   const [testPhoneNumber, setTestPhoneNumber] = useState("");
   const [testMessage, setTestMessage] = useState("");
   const [isWaitingForQR, setIsWaitingForQR] = useState(false);
-  
+  const { showSuccess, showError } = useToast();
   // ✅ Use ref to track QR code without causing re-renders
   const qrCodeRef = useRef<string>("");
   const statusRef = useRef<any>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
-  
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+
+  const handleShowTutorial = () => {
+    // البحث عن شرح الواتساب - يمكن البحث بالتصنيف "whatsapp" أو "واتساب" أو "WhatsApp"
+    const whatsappTutorial = 
+      getTutorialByCategory('whatsapp') || 
+      getTutorialByCategory('واتساب') || 
+      getTutorialByCategory('WhatsApp') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('whatsapp') || 
+        t.title.toLowerCase().includes('واتساب') ||
+        t.category.toLowerCase().includes('whatsapp') ||
+        t.category.toLowerCase().includes('واتساب')
+      ) || null;
+    
+    if (whatsappTutorial) {
+      setSelectedTutorial(whatsappTutorial);
+      incrementViews(whatsappTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بالواتساب");
+    }
+  };
   // ✅ Sync refs with state (without triggering effects)
   useEffect(() => {
     qrCodeRef.current = qrCode;
@@ -674,18 +701,29 @@ export default function WhatsAppPage() {
   return (
     <div className="space-y-6">
       {/* Status Messages */}
-      {error && (
+      {/* {error && (
         <div className="rounded-md p-4 bg-red-50 text-red-700">
           {error}
         </div>
-      )}
+      )} */}
 
       {success && (
         <div className="rounded-md p-4 bg-green-50 text-green-700">
           {success}
         </div>
       )}
+              <Button 
+             
+                onClick={handleShowTutorial} 
+                variant="secondary"
+                className="flex items-center gap-2 primary-button">
+               <div className="flex items-center gap-2">
+               <BookOpen className="w-4 h-4" />
+               <p> شرح الميزة</p>
+               </div>
+              </Button>
 <div className="flex flex-col lg:flex-row  w-full gap-3">
+             
       {/* Usage Statistics */}
      <div className="w-full ">
      {canManageWhatsApp() && hasActiveSubscription && (
@@ -834,6 +872,13 @@ export default function WhatsAppPage() {
           </Button>
         </CardContent>
       </Card> */}
+       {/* Tutorial Video Modal */}
+       <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
     </div>
+    
   );
 }

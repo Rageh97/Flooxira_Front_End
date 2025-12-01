@@ -11,6 +11,7 @@ import {
 } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 
+
 export default function WhatsAppConnectionPage() {
   const [status, setStatus] = useState<any>(null);
   const [qrCode, setQrCode] = useState<string>("");
@@ -22,6 +23,7 @@ export default function WhatsAppConnectionPage() {
   const [isWaitingForQR, setIsWaitingForQR] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+ 
 
   // Load initial status
   useEffect(() => {
@@ -342,11 +344,11 @@ export default function WhatsAppConnectionPage() {
   return (
     <div className="space-y-6">
       {/* Status Messages */}
-      {error && (
+      {/* {error && (
         <div className="rounded-md p-4 bg-red-50 text-red-700">
           {error}
         </div>
-      )}
+      )} */}
 
       {success && (
         <div className="rounded-md p-4 bg-green-50 text-green-700">
@@ -365,6 +367,7 @@ export default function WhatsAppConnectionPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              
               <Button onClick={checkStatus} disabled={loading} variant="secondary">
                 Refresh
               </Button>
@@ -474,6 +477,8 @@ export default function WhatsAppConnectionPage() {
           </Button>
         </CardContent>
       </Card>
+
+     
     </div>
   );
 }

@@ -37,6 +37,10 @@ import { usePermissions } from "@/lib/permissions";
 import Loader from "@/components/Loader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 
 interface ServiceWithApproval extends Service {
   approvalStatus?: 'pending' | 'approved' | 'rejected';
@@ -53,7 +57,28 @@ export default function ServicesPage() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showSuccess, showError } = useToast();
-  
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const handleShowTutorial = () => {
+    const servicesTutorial = 
+      getTutorialByCategory('Services') || 
+      getTutorialByCategory('خدمات') || 
+      getTutorialByCategory('Services') ||
+      getTutorialByCategory('خدمات') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('خدمات') ||
+        t.title.toLowerCase().includes('Services') ||
+        t.category.toLowerCase().includes('خدمات') ||
+        t.category.toLowerCase().includes('Services')
+      ) || null;
+    
+    if (servicesTutorial) {
+      setSelectedTutorial(servicesTutorial);
+      incrementViews(servicesTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بالخدمات");
+    }
+  };
   const {
     canMarketServices,
     getMaxServices,
@@ -309,6 +334,17 @@ export default function ServicesPage() {
           <h1 className="text-4xl font-semibold text-white">إدارة الخدمات</h1>
           <p className="text-sm text-primary mt-2">سوّق خدماتك للعملاء</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleShowTutorial} 
+            variant="secondary"
+            className="flex items-center gap-2 primary-button">
+            <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            <p> شرح الميزة</p>
+            </div>
+          </Button>
+        
         <Button
           onClick={() => {
             resetForm();
@@ -320,6 +356,7 @@ export default function ServicesPage() {
           {/* <Plus className="h-4 w-4 mr-1" /> */}
           إضافة خدمة جديدة
         </Button>
+        </div>
       </div>
 
       {error && (
@@ -879,6 +916,11 @@ export default function ServicesPage() {
         </DialogContent>
       </Dialog>
       </div>
+      <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
     </div>
   );
 }

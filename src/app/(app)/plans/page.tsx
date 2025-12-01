@@ -6,6 +6,7 @@ import { listPlans, type Plan, createSubscriptionRequest } from "@/lib/api";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { useToast } from "@/components/ui/toast-provider";
 import { Check, CheckCircle, X, XCircle } from "lucide-react";
+import Image from "next/image";
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -17,13 +18,13 @@ export default function PlansPage() {
   const { showSuccess, showError } = useToast();
 
   const availablePlatforms = [
-    { key: 'facebook', name: 'Facebook', icon: '👥' },
-    { key: 'instagram', name: 'Instagram', icon: '📷' },
-    { key: 'twitter', name: 'Twitter', icon: '𝕏' },
-    { key: 'linkedin', name: 'LinkedIn', icon: '💼' },
+    { key: 'facebook', name: 'Facebook', icon: <Image width={25} height={25} src="/facebook.gif" alt="Facebook" /> },
+    { key: 'instagram', name: 'Instagram', icon: <Image width={25} height={25} src="/insta.gif" alt="Instagram" /> },
+    { key: 'twitter', name: 'Twitter', icon: <Image width={25} height={25} src="/x.gif" alt="Twitter" /> },
+    { key: 'linkedin', name: 'LinkedIn', icon: <Image width={25} height={25} src="/linkedin.gif" alt="LinkedIn" /> },
     // { key: 'pinterest', name: 'Pinterest', icon: '📌' },
     // { key: 'tiktok', name: 'TikTok', icon: '🎵' },
-    { key: 'youtube', name: 'YouTube', icon: '▶️' }
+    { key: 'youtube', name: 'YouTube', icon: <Image width={25} height={25} src="/youtube.gif" alt="YouTube" /> }
   ];
 
   // Read token from localStorage only on the client
@@ -153,8 +154,10 @@ export default function PlansPage() {
             const isHighlighted = index === 1; // Highlight the middle plan
             
             return (
-              <Card key={plan.id} className={isHighlighted ? " " : "rounded-[35px] border-none bg-gradient-to-br from-text-primary via-bg-secondry to-bg-secondry"}>
-                
+              <Card key={plan.id} className={isHighlighted ? " border-1 border-white relative" : "relative rounded-[35px]  bg-gradient-to-br from-text-primary via-bg-secondry to-bg-secondry border-1 border-white/50"}>
+                {/* <div className="absolute  w-50 flex items-center justify-center -top-10 left-1/2 -translate-x-1/2 bg-secondry rounded-t-xl px-1">
+<Image src="/Logo.png" alt="plan" width={100} height={70} />
+                </div> */}
                 <CardHeader className="border-none">
                   <div className="relative ">
 <p className="text-7xl font-semibold text-white text-center text-shadow-bottom">
@@ -166,34 +169,34 @@ export default function PlansPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4  border-none rounded-[45px] bg-gradient-to-br from-bg-secondry via-bg-purple-700 to-bg-purple-500">
+                <CardContent className="space-y-4  border-t-1 border-white/50 rounded-[45px] bg-gradient-to-br from-bg-secondry via-bg-purple-700 to-bg-purple-500">
                   
                   {/* Platforms */}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-300 mb-2">المنصات الاجتماعية</h4>
+                    <h4 className="text-sm font-medium text-center text-gray-300 mb-2">المنصات الاجتماعية</h4>
                     <div className="space-y-2">
                       {/* Selected Platforms */}
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1 justify-center">
                         {(permissions as any).platforms?.map((platform: string) => {
                           const platformInfo = availablePlatforms.find(p => p.key === platform);
                           return (
-                            <span key={platform} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-gray-200">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              {platformInfo?.icon} {platformInfo?.name}
-                            </span>
+                            <div key={platform} className="flex items-center justify-center px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-gray-200">
+                              <CheckCircle className="h-3 w-3 mr-1 text-green-400" />
+                              {platformInfo?.icon}
+                            </div>
                           );
                         })}
                       </div>
                       
                       {/* Unselected Platforms */}
                       {(permissions as any).platforms && (permissions as any).platforms.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1 justify-center">
                           {availablePlatforms
                             .filter(p => !(permissions as any).platforms?.includes(p.key))
                             .map((platform) => (
-                              <span key={platform.key} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                {platform.icon} {platform.name}
+                              <span key={platform.key} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-fixed-40 text-red-800">
+                                <XCircle className="h-3 w-3 mr-1 text-red-400" />
+                                {platform.icon} 
                               </span>
                             ))}
                         </div>
@@ -201,7 +204,7 @@ export default function PlansPage() {
                       
                       {/* No Platforms Selected */}
                       {(!(permissions as any).platforms || (permissions as any).platforms.length === 0) && (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1 ">
                           {availablePlatforms.map((platform) => (
                             <span key={platform.key} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                               <XCircle className="h-3 w-3 mr-1" />
@@ -214,7 +217,7 @@ export default function PlansPage() {
                   </div>
 
                   {/* Permissions */}
-                  <div className="space-y-2 p-3 rounded-[35px] bg-gradient-to-br from-purple-800 to-purple-00">
+                  <div className="space-y-2 p-3 rounded-[35px] border-1 border-white/50 bg-text-primary/10">
                     {/* <h4 className="text-sm text-center font-medium text-gray-300">الصلاحيات</h4> */}
                     
                     {/* Monthly Posts */}
@@ -228,7 +231,7 @@ export default function PlansPage() {
                       </span> */}
                       {(permissions as any).monthlyPosts > 0 && (
                         <span className="text-xs text-primary">
-                          ({(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts}/شهر)
+                          ({(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts} منشورات/شهر)
                         </span>
                       )}
                       
@@ -250,7 +253,7 @@ export default function PlansPage() {
                       <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span>
                             {(permissions as any).whatsappMessagesPerMonth > 0 && (
                               <span className="text-xs text-primary">
-                                ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth}/شهر)
+                                ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth} رسالة/شهر)
                               </span>
                             )}
                           </>

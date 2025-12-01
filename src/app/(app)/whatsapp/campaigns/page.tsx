@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { startWhatsAppCampaign, listWhatsAppSchedules, cancelWhatsAppSchedule } from "@/lib/api";
 import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
 import { useToast } from "@/components/ui/toast-provider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar } from "lucide-react";
 
 export default function WhatsAppCampaignsPage() {
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,7 @@ export default function WhatsAppCampaignsPage() {
   const [campaignThrottle, setCampaignThrottle] = useState<number>(5); // minutes
   const [campaignMedia, setCampaignMedia] = useState<File | null>(null);
   const [campaignScheduleAt, setCampaignScheduleAt] = useState<string>("");
+  const campaignScheduleInputRef = useRef<HTMLInputElement>(null);
   const [campaignDailyCap, setCampaignDailyCap] = useState<number | ''>('');
   const [campaignPerNumberDelay, setCampaignPerNumberDelay] = useState<number | ''>('');
   
@@ -48,6 +50,22 @@ export default function WhatsAppCampaignsPage() {
   const schedulesPerPage = 5;
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+
+  // Add style for datetime-local calendar icon to be white
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+        opacity: 0;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     // Load tags and schedules on mount
@@ -341,7 +359,19 @@ export default function WhatsAppCampaignsPage() {
            
             <div>
               <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
-              <input type="datetime-local" className="bg-[#01191040] rounded-md p-2 text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignScheduleAt} onChange={(e) => setCampaignScheduleAt(e.target.value)} />
+              <div className="relative">
+                <input 
+                  ref={campaignScheduleInputRef}
+                  type="datetime-local" 
+                  className="bg-[#01191040] rounded-md p-2 text-white border-1 border-blue-300 w-full px-3 py-4 pr-10 outline-none cursor-pointer" 
+                  value={campaignScheduleAt} 
+                  onChange={(e) => setCampaignScheduleAt(e.target.value)}
+                  onClick={() => campaignScheduleInputRef.current?.showPicker()}
+                />
+                <Calendar 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
+                />
+              </div>
             </div>
           </div>
 

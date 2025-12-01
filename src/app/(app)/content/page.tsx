@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast-provider";
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 
 import { 
   listContentCategories, 
@@ -106,6 +110,31 @@ export default function ContentHomePage() {
   const [createdItemId, setCreatedItemId] = useState<number | null>(null); // Track newly created item ID
   
   const token = typeof window !== 'undefined' ? (localStorage.getItem("auth_token") || "") : "";
+
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const handleShowTutorial = () => {
+    const contentTutorial = 
+      getTutorialByCategory('Content') || 
+      getTutorialByCategory('محتوى') || 
+      getTutorialByCategory('Content') || 
+      getTutorialByCategory('محتوى') ||
+      getTutorialByCategory('Content') || 
+      getTutorialByCategory('محتوى') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('محتوى') ||
+        t.title.toLowerCase().includes('Content') ||
+        t.category.toLowerCase().includes('محتوى') ||
+        t.category.toLowerCase().includes('Content')
+      ) || null;
+    
+    if (contentTutorial) {
+      setSelectedTutorial(contentTutorial);
+      incrementViews(contentTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بالمحتوى");
+    }
+  };
 
   useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
@@ -788,9 +817,20 @@ export default function ContentHomePage() {
       <div className={` w-full ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
         {/* Header */}
         <div className="mb-2">
+         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">ادارة وجدولة المحتوى </h1>
           {/* <p className="text-gray-300 text-lg">إدارة المحتوى الاحترافية للمنصات الاجتماعية</p> */}
-          
+
+          <Button 
+            onClick={handleShowTutorial} 
+            variant="secondary"
+            className="flex items-center gap-2 primary-button">
+            <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            <p> شرح الميزة</p>
+            </div>
+          </Button>
+          </div>
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
             <Card className="gradient-border border-none">
@@ -1747,6 +1787,12 @@ export default function ContentHomePage() {
           </div>
         )}
       </div>
+      {/* Tutorial Video Modal */}
+      <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
     </div>
   );
 }

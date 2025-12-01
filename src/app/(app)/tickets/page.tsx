@@ -10,6 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -132,6 +136,7 @@ export default function TicketsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [viewingKB, setViewingKB] = useState<KnowledgeBase | null>(null);
   const [deletingKB, setDeletingKB] = useState<KnowledgeBase | null>(null);
+  const [deletingTicket, setDeletingTicket] = useState<Ticket | null>(null);
   const [widgetSettings, setWidgetSettings] = useState({
     facebookUrl: "",
     whatsappUrl: "",
@@ -160,6 +165,29 @@ export default function TicketsPage() {
   const selectedTicketRef = useRef<Ticket | null>(null);
   const messagesByTicketRef = useRef<Record<number, TicketMessage[]>>({});
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+
+  const handleShowTutorial = () => {
+    // البحث عن شرح الواتساب - يمكن البحث بالتصنيف "whatsapp" أو "واتساب" أو "WhatsApp"
+    const liveChatTicketsTutorial = 
+      getTutorialByCategory('Live Chat and Tickets') || 
+      getTutorialByCategory('لايف شات') || 
+      getTutorialByCategory('لايف شات والتذاكر') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('لايف شات') || 
+        t.title.toLowerCase().includes('لايف شات والتذاكر') ||
+        t.category.toLowerCase().includes('لايف شات') ||
+        t.category.toLowerCase().includes('لايف شات والتذاكر')
+      ) || null;
+    
+    if (liveChatTicketsTutorial) {
+      setSelectedTutorial(liveChatTicketsTutorial);
+      incrementViews(liveChatTicketsTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بلايف شات والتذاكر");
+    }
+  };
 
   useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
@@ -215,7 +243,11 @@ export default function TicketsPage() {
   
   // Generate storeId from userId
   const storeId = user ? (user.storeId || `store_${user.id}`) : '';
-  const widgetCode = `<script src="${API_BASE_URL}/widget.js" data-store-id="${storeId}"></script>`;
+  const widgetCode = `<script>
+  window.WIDGET_API_URL = '${API_BASE_URL}';
+  window.WIDGET_SOCKET_URL = '${API_BASE_URL}';
+</script>
+<script src="${API_BASE_URL}/widget.js" data-store-id="${storeId}"></script>`;
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -882,14 +914,19 @@ export default function TicketsPage() {
     }
   };
 
-  const deleteTicket = async (ticketId: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذه التذكرة؟ لا يمكن التراجع عن هذا الإجراء.")) {
-      return;
+  const handleDeleteTicket = (ticketId: number) => {
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (ticket) {
+      setDeletingTicket(ticket);
     }
+  };
+
+  const confirmDeleteTicket = async () => {
+    if (!deletingTicket) return;
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/${ticketId}`,
+        `${API_BASE_URL}/api/dashboard/tickets/${deletingTicket.id}`,
         {
           method: "DELETE",
           headers: {
@@ -905,20 +942,21 @@ export default function TicketsPage() {
       showSuccess("تم حذف التذكرة بنجاح");
       
       // Update state
-      const updatedTickets = tickets.filter(t => t.id !== ticketId);
+      const updatedTickets = tickets.filter(t => t.id !== deletingTicket.id);
       setTickets(updatedTickets);
       
-      if (selectedTicket?.id === ticketId) {
+      if (selectedTicket?.id === deletingTicket.id) {
         setSelectedTicket(updatedTickets.length > 0 ? updatedTickets[0] : null);
-        // selectedTicketRef.current = updatedTickets.length > 0 ? updatedTickets[0] : null; // This line is commented out in the original snippet, keeping it that way.
         if (updatedTickets.length === 0) {
           setMessages([]);
         }
       }
       
+      setDeletingTicket(null);
       loadStats(); // Refresh stats
     } catch (error: any) {
       showError("خطأ", error.message);
+      setDeletingTicket(null);
     }
   };
 
@@ -949,13 +987,21 @@ export default function TicketsPage() {
   };
 
   const filteredTickets = tickets.filter((ticket) => {
+    // Filter by status first
+    if (statusFilter !== "all" && ticket.status !== statusFilter) {
+      return false;
+    }
+    
+    // Then filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
         ticket.visitorName?.toLowerCase().includes(query) ||
         ticket.visitorEmail?.toLowerCase().includes(query) ||
         ticket.storeId.toLowerCase().includes(query) ||
-        ticket.id.toString().includes(query)
+        ticket.id.toString().includes(query) ||
+        ticket.ticketNumber?.toLowerCase().includes(query) ||
+        ticket.ticketNumber?.includes(query)
       );
     }
     return true;
@@ -994,8 +1040,9 @@ export default function TicketsPage() {
         <div>
           <h1 className="text-3xl font-bold text-white">نظام التذاكر والدردشة المباشرة</h1>
         </div>
-        {activeTab === "tickets" && (
-          <Button
+        {activeTab === "tickets" && (<>
+        <div className="flex items-center gap-2">
+        <Button
             onClick={() => setShowWidgetCode(!showWidgetCode)}
             className="primary-button flex"
           >
@@ -1004,7 +1051,18 @@ export default function TicketsPage() {
            <span className="text-sm">{showWidgetCode ? "إخفاء" : "عرض"} كود التضمين</span>
            </div>
           </Button>
-        )}
+           <Button 
+             
+           onClick={handleShowTutorial} 
+           variant="secondary"
+           className="flex items-center gap-2 primary-button">
+          <div className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4" />
+          <p> شرح الميزة</p>
+          </div>
+         </Button>
+        </div>
+         </>  )}
       </div>
 
       {/* Tabs */}
@@ -1044,7 +1102,7 @@ export default function TicketsPage() {
                 انسخ هذا الكود وضعّه في موقعك أو متجرك لعرض  الدردشة المباشرة:
               </p>
               <div className="bg-gray-900 rounded-lg p-4 relative">
-                <code className="text-sm text-green-400 break-all block pl-10">{widgetCode}</code>
+                <code className="text-sm text-green-400 whitespace-pre-wrap block pl-10 font-mono leading-relaxed">{widgetCode}</code>
                 <button
                   onClick={copyWidgetCode}
                   className="absolute top-2 left-2 p-2 hover:bg-gray-800 rounded transition-colors"
@@ -1180,10 +1238,11 @@ export default function TicketsPage() {
                         <div className="flex-1">
                           <div className="flex items-center justify-between gap-2">
                             <h3 className="font-semibold text-white truncate">
-                              {ticket.visitorName || `عميل جديد ${ticket.id}`}
+                              {ticket.visitorName || `عميل جديد `}
                             </h3>
                             <span className="text-xs text-gray-400 whitespace-nowrap">
                               {new Date(ticket.createdAt).toLocaleDateString("en-US")}
+                              {/* {ticket.ticketNumber} */}
                             </span>
                           </div>
                           <p className="text-xs text-yellow-400 mt-1">
@@ -1249,7 +1308,7 @@ export default function TicketsPage() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => deleteTicket(selectedTicket.id)}
+                    onClick={() => handleDeleteTicket(selectedTicket.id)}
                     title="حذف التذكرة"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -1842,6 +1901,39 @@ export default function TicketsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Ticket Confirmation Dialog */}
+      <Dialog open={!!deletingTicket} onOpenChange={() => setDeletingTicket(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2 mx-10">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              تأكيد حذف التذكرة
+            </DialogTitle>
+            <DialogDescription className="text-gray-300">
+              هل أنت متأكد من حذف التذكرة رقم {deletingTicket?.ticketNumber || `#${deletingTicket?.id}`}؟
+              <br />
+              <span className="text-red-400 font-medium">لا يمكن التراجع عن هذا الإجراء.</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button
+              variant="destructive"
+              onClick={() => setDeletingTicket(null)}
+              className="text-white border-gray-600 hover:bg-gray-700"
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={confirmDeleteTicket}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              حذف
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Knowledge Base Confirmation Dialog */}
       <Dialog open={!!deletingKB} onOpenChange={() => setDeletingKB(null)}>
         <DialogContent className="max-w-md">
@@ -1875,7 +1967,14 @@ export default function TicketsPage() {
         </DialogContent>
       </Dialog>
       </div>
+       {/* Tutorial Video Modal */}
+       <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
     </div>
+    
   );
 }
 

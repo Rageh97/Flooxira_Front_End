@@ -1,10 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast-provider";
-
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 import { 
   uploadKnowledgeBase, 
   getKnowledgeBase, 
@@ -28,6 +31,7 @@ import {
 import { listTags } from "@/lib/tagsApi";
 import { usePermissions } from "@/lib/permissions";
 import Loader from "@/components/Loader";
+import { Calendar } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
@@ -60,6 +64,7 @@ export default function TelegramBotPage() {
   const [selectedTargets, setSelectedTargets] = useState<string[]>([]);
   const [campaignMessage, setCampaignMessage] = useState<string>("");
   const [campaignWhen, setCampaignWhen] = useState<string>("");
+  const campaignWhenInputRef = useRef<HTMLInputElement>(null);
   const [campaignThrottle, setCampaignThrottle] = useState<number>(1500);
   const [campaignMediaUrl, setCampaignMediaUrl] = useState<string>("");
   const [availableTags, setAvailableTags] = useState<any[]>([]);
@@ -92,9 +97,46 @@ export default function TelegramBotPage() {
   });
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
 
+  const handleShowTutorial = () => {
+    const telegramTutorial = 
+      getTutorialByCategory('Telegram') || 
+      getTutorialByCategory('تليجرام') || 
+      getTutorialByCategory('Telegram Bot') || 
+      getTutorialByCategory('بوت تليجرام') || 
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('تليجرام') || 
+        t.title.toLowerCase().includes('بوت تليجرام') || 
+        t.category.toLowerCase().includes('تليجرام') || 
+        t.category.toLowerCase().includes('بوت تليجرام')
+      ) || null;
+    
+    if (telegramTutorial) {
+      setSelectedTutorial(telegramTutorial);
+      incrementViews(telegramTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بتليجرام");
+    }
+  };
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
 
+  // Add style for datetime-local calendar icon to be white
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+        opacity: 0;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -599,6 +641,16 @@ export default function TelegramBotPage() {
               )}
                
               </div>
+              <Button 
+                onClick={handleShowTutorial} 
+                variant="secondary"
+                className="flex items-center gap-2 primary-button"
+              >
+                <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                <p> شرح الميزة</p>
+                </div>
+              </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -746,6 +798,12 @@ export default function TelegramBotPage() {
           </CardContent>
       </Card>
       </div>
+      {/* Tutorial Video Modal */}
+      <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
     </>
   );
 }
@@ -1036,12 +1094,19 @@ export default function TelegramBotPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">وقت الجدولة (اختياري)</label>
-                <Input 
-                  type="datetime-local" 
-                  value={campaignWhen} 
-                  onChange={(e)=>setCampaignWhen(e.target.value)}
-                  className="bg-[#011910] border-gray-700 text-white"
-                />
+                <div className="relative">
+                  <Input 
+                    ref={campaignWhenInputRef}
+                    type="datetime-local" 
+                    value={campaignWhen} 
+                    onChange={(e)=>setCampaignWhen(e.target.value)}
+                    onClick={() => campaignWhenInputRef.current?.showPicker()}
+                    className="bg-[#011910] border-gray-700 text-white pr-10 cursor-pointer"
+                  />
+                  <Calendar 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
+                  />
+                </div>
               </div>
               {/* <div>
                 <label className="block text-sm font-medium mb-2 text-white">فترة التأخير (ملي ثانية)</label>
@@ -1589,3 +1654,4 @@ export default function TelegramBotPage() {
 
 
 
+  

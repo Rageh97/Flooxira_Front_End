@@ -596,7 +596,7 @@ function TemplateModal({
                   <option value="text">نص</option>
                   <option value="media">وسائط</option>
                   <option value="poll">استطلاع</option>
-                  <option value="quiz">اختبار</option>
+                  {/* <option value="quiz">اختبار</option> */}
                 </select>
               </div>
             </div>

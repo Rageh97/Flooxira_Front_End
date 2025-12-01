@@ -46,16 +46,14 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [planName, setPlanName] = useState<string>("");
   const [newsBarClosed, setNewsBarClosed] = useState(false);
+  const [pendingTicketsCount, setPendingTicketsCount] = useState<number>(0);
 
   // تحديد العناصر المتاحة حسب نوع المستخدم
   const visibleNavItems = useMemo(() => {
-    console.log('[Sidebar] User:', user);
-    console.log('[Sidebar] User role:', user?.role);
-    console.log('[Sidebar] Permissions:', permissions);
+    
     
     // التحقق من أن البيانات محملة
     if (!user) {
-      console.log('[Sidebar] User not loaded yet, showing all items');
       return navItems;
     }
     
@@ -117,6 +115,41 @@ export default function AppLayout({ children }: PropsWithChildren) {
     }
   }, [user, loading]);
 
+  // Load pending tickets count
+  useEffect(() => {
+    const loadPendingTicketsCount = async () => {
+      try {
+        const token = localStorage.getItem('auth_token') || '';
+        if (!token) return;
+        
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        const response = await fetch(
+          `${API_BASE_URL}/api/dashboard/tickets/stats`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setPendingTicketsCount(data.stats?.pending || 0);
+        }
+      } catch (error) {
+        console.error('Failed to load pending tickets count:', error);
+      }
+    };
+
+    if (user && !loading) {
+      loadPendingTicketsCount();
+      
+      // Refresh count every 30 seconds
+      const interval = setInterval(loadPendingTicketsCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, loading]);
+
   return (
     <AuthGuard>
     <div className="flex  h-screen overflow-hidden">
@@ -152,7 +185,14 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   pathname === item.href ? "gradient-border" : ""
                 )}
               >
-                {item.label}
+                <div className="flex items-center justify-between">
+                  <span>{item.label}</span>
+                  {item.href === "/tickets" && pendingTicketsCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      {pendingTicketsCount}
+                    </span>
+                  )}
+                </div>
               </Link>
             ))}
             {user?.role === 'admin' && (
@@ -244,7 +284,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
               )}
             >
               <img src={item.img} className="w-5 h-5" alt="" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/tickets" && pendingTicketsCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {pendingTicketsCount}
+                </span>
+              )}
             </Link>
           ))}
           {!loading && user && (

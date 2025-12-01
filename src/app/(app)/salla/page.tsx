@@ -9,8 +9,11 @@ import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Copy, Check } from "lucide-react";
-import { toast } from "sonner";
-
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
+import { useToast } from "@/components/ui/toast-provider";
 export default function SallaEventsPage() {
   const { user, loading } = useAuth();
   const { canSallaIntegration, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -19,7 +22,7 @@ export default function SallaEventsPage() {
   const [storeId, setStoreId] = useState("");
   const [storeName, setStoreName] = useState("");
   const [secret, setSecret] = useState("");
-
+const { showSuccess, showError } = useToast();
   const [selectedType, setSelectedType] = useState<string>("");
   const [showAllFields, setShowAllFields] = useState<boolean>(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
@@ -36,6 +39,28 @@ export default function SallaEventsPage() {
 
   const sortedTypes = useMemo(() => Object.keys(groupedByType).sort(), [groupedByType]);
 
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  const handleShowTutorial = () => {
+    const sallaTutorial = 
+      getTutorialByCategory('Salla') || 
+      getTutorialByCategory('سلة') || 
+      getTutorialByCategory('Salla') || 
+      getTutorialByCategory('سلة') ||
+      tutorials.find(t => 
+        t.title.toLowerCase().includes('سلة') ||
+        t.title.toLowerCase().includes('Salla') ||
+        t.category.toLowerCase().includes('سلة') ||
+        t.category.toLowerCase().includes('Salla')
+      ) || null;
+    
+    if (sallaTutorial) {
+      setSelectedTutorial(sallaTutorial);
+      incrementViews(sallaTutorial.id);
+    } else {
+      showError("لم يتم العثور على شرح خاص بسلة");
+    }
+  };
   useEffect(() => {
     if (!selectedType && sortedTypes.length > 0) {
       setSelectedType(sortedTypes[0]);
@@ -264,7 +289,18 @@ export default function SallaEventsPage() {
 
   return (
     <div className="space-y-4 text-white">
-      <h1 className="text-xl font-semibold">سلة ويب هوك</h1>
+<div className="flex items-center justify-between">
+  <h1 className="text-xl font-semibold">سلة ويب هوك</h1>
+  <Button 
+    onClick={handleShowTutorial} 
+    variant="secondary"
+    className="flex items-center gap-2 primary-button">
+    <div className="flex items-center gap-2">
+    <BookOpen className="w-4 h-4" />
+    <p> شرح الميزة</p>
+    </div>
+  </Button>
+</div>
       <div className="p-4 gradient-border rounded-md space-y-2">
         <div className="text-sm">الرابط:</div>
         <div className="flex items-center gap-2">

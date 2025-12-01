@@ -337,7 +337,14 @@ export async function exportGroupMembers(token: string, groupName: string) {
 
 export async function sendToWhatsAppGroupsBulk(
   token: string,
-  params: { groupNames: string[]; message?: string; mediaFile?: File | null; scheduleAt?: string | null }
+  params: { 
+    groupNames: string[]; 
+    message?: string; 
+    mediaFile?: File | null; 
+    scheduleAt?: string | null;
+    isRecurring?: boolean;
+    recurringInterval?: number;
+  }
 ) {
   const form = new FormData();
   form.append('groupNames', JSON.stringify(params.groupNames));
@@ -348,6 +355,12 @@ export async function sendToWhatsAppGroupsBulk(
     // Include user's timezone offset
     const timezoneOffset = new Date().getTimezoneOffset();
     form.append('timezoneOffset', timezoneOffset.toString());
+  }
+  if (params.isRecurring) {
+    form.append('isRecurring', 'true');
+    if (params.recurringInterval) {
+      form.append('recurringInterval', params.recurringInterval.toString());
+    }
   }
   return apiFetch<{ success: boolean; message?: string }>(`/api/whatsapp/groups/send-bulk`, {
     method: 'POST',

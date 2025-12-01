@@ -128,14 +128,14 @@ export default function MySubscriptionPage() {
 
   const getPlatformIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
-      case 'facebook': return '📘';
-      case 'instagram': return '📷';
-      case 'twitter': return '🐦';
-      case 'linkedin': return '💼';
-      case 'youtube': return '📺';
-      case 'tiktok': return '🎵';
-      case 'pinterest': return '📌';
-      default: return '🌐';
+      case 'facebook': return '';
+      case 'instagram': return '';
+      case 'twitter': return '';
+      case 'linkedin': return '';
+      case 'youtube': return '';
+      case 'tiktok': return '';
+      case 'pinterest': return '';
+      default: return '';
     }
   };
 
@@ -214,7 +214,7 @@ export default function MySubscriptionPage() {
       <Card className="gradient-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <Crown className="h-5 w-5 text-white" />
+            <Crown className="h-5 w-5 text-primary" />
             معلومات الاشتراك
           </CardTitle>
         </CardHeader>
@@ -246,10 +246,10 @@ export default function MySubscriptionPage() {
 
             <div>
               <h3 className="font-semibold text-white mb-3">مدة الاشتراك</h3>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-fixed-40 border-primary rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-green-600" />
-                  <span className="font-medium text-green-800">
+                  <Clock className="h-4 w-4 text-white" />
+                  <span className="font-medium text-white">
                     {daysRemaining > 0 ? `${daysRemaining} يوم متبقي` : 'انتهت صلاحية الاشتراك'}
                   </span>
                 </div>
@@ -273,7 +273,7 @@ export default function MySubscriptionPage() {
       <Card className="gradient-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <Shield className="h-5 w-5 text-green-600" />
+            <Shield className="h-5 w-5 text-primary" />
             صلاحياتك المتاحة
           </CardTitle>
         </CardHeader>
@@ -300,7 +300,7 @@ export default function MySubscriptionPage() {
                 {/* Social Media Platforms */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-md font-medium text-white" rowSpan={permissions.platforms?.length || 1}>
-                    📱 المنصات الاجتماعية
+                     المنصات الاجتماعية
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     المنصات المسموحة
@@ -329,7 +329,7 @@ export default function MySubscriptionPage() {
                 {/* Monthly Posts */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-md font-medium text-white">
-                    📝 المنشورات الشهرية
+                     المنشورات الشهرية
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     عدد المنشورات المسموح شهرياً
@@ -355,7 +355,7 @@ export default function MySubscriptionPage() {
                 {/* WhatsApp Management */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-md font-medium text-white">
-                    💬 إدارة الواتساب
+                     إدارة الواتساب
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-md text-white">
                     إدارة الواتساب والرسائل
@@ -381,7 +381,7 @@ export default function MySubscriptionPage() {
                 {/* Telegram Management */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    📱 إدارة التليجرام
+                     إدارة التليجرام
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     إدارة التليجرام والرسائل
@@ -407,7 +407,7 @@ export default function MySubscriptionPage() {
                 {/* Salla Integration */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    🛒 تكامل سلة
+                     تكامل سلة
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     تكامل مع منصة سلة للتجارة الإلكترونية
@@ -433,7 +433,7 @@ export default function MySubscriptionPage() {
                 {/* Content Management */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    🎨 إدارة المحتوى
+                     إدارة المحتوى
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     إدارة المحتوى والمنشورات
@@ -459,7 +459,7 @@ export default function MySubscriptionPage() {
                 {/* Service Marketing */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    🛍️ تسويق الخدمات
+                     تسويق الخدمات
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     تسويق وعرض الخدمات على المنصة
@@ -487,7 +487,7 @@ export default function MySubscriptionPage() {
                 {/* Customer Management */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    👥 إدارة العملاء
+                     إدارة العملاء
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     إدارة قاعدة بيانات العملاء والمتابعة
@@ -513,7 +513,7 @@ export default function MySubscriptionPage() {
                 {/* Employee Management */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    👨‍💼 إدارة الموظفين
+                     إدارة الموظفين
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     إضافة وإدارة الموظفين وصلاحياتهم
@@ -541,7 +541,7 @@ export default function MySubscriptionPage() {
                 {/* AI Features */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    🤖 الذكاء الاصطناعي
+                    الذكاء الاصطناعي
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     استخدام AI لإنشاء المحتوى (Ask AI)
@@ -569,7 +569,7 @@ export default function MySubscriptionPage() {
                 {/* Live Chat & Tickets */}
                 <tr>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
-                    💬 Live Chat & Tickets
+                     Live Chat & Tickets
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
                     نظام الدردشة المباشرة وإدارة التذاكر
@@ -602,7 +602,7 @@ export default function MySubscriptionPage() {
       </Card>
 
       {/* Actions */}
-      <div className="flex gap-4">
+      {/* <div className="flex gap-4">
         <Button 
           onClick={() => window.location.href = '/plans'}
           className="bg-green-600 hover:bg-green-700"
@@ -615,7 +615,7 @@ export default function MySubscriptionPage() {
         >
           طلبات الاشتراك
         </Button>
-      </div>
+      </div> */}
     </div>
   );
 }

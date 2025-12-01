@@ -31,15 +31,20 @@ import FacebookPageSelection from "@/components/FacebookPageSelection";
 import YouTubeChannelSelection from "@/components/YouTubeChannelSelection";
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import Link from "next/link";
+import { useTutorials } from "@/hooks/useTutorials";
+import { TutorialVideoModal } from "@/components/TutorialVideoModal";
+import { Tutorial } from "@/types/tutorial";
+import { BookOpen } from "lucide-react";
 
 const PLATFORMS = {
-  facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook` },
+  facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook`,href: "https://developers.facebook.com/docs/development/create-an-app" },
   instagram: { name: "Instagram", icon: <img className="w-12 h-12" src="/insta.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/instagram` },
-  youtube: { name: "YouTube", icon: <img className="w-12 h-12" src="/youtube.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/youtube` },
+  youtube: { name: "YouTube", icon: <img className="w-12 h-12" src="/youtube.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/youtube`,href: "https://play.google.com/console/u/0/signup" },
   // tiktok: { name: "TikTok", icon: <img className="w-10 h-10" src="/tiktok.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/tiktok` },
   linkedin: { name: "LinkedIn", icon: <img className="w-12 h-12" src="/linkedin.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/linkedin` },
   // pinterest: { name: "Pinterest", icon: <img className="w-10 h-10" src="/pinterest.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/pinterest` },
-  twitter: { name: "Twitter (X)", icon: <img className="w-12 h-12" src="/x.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/twitter` }
+  twitter: { name: "Twitter (X)", icon: <img className="w-12 h-12" src="/x.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/twitter`,href: "https://developer.x.com/en" }
 };
 
 function SettingsContent() {
@@ -55,11 +60,55 @@ function SettingsContent() {
   const [availableFacebookPages, setAvailableFacebookPages] = useState<any[]>([]);
   const [currentFacebookPage, setCurrentFacebookPage] = useState<{pageId: string, pageName: string, fanCount: number, instagramId?: string, instagramUsername?: string} | null>(null);
   const [showFacebookPageManager, setShowFacebookPageManager] = useState<boolean>(false);
-  const [creds, setCreds] = useState<Record<string, { clientId: string; redirectUri?: string }>>({});
-  const [edit, setEdit] = useState<{ platform: string; clientId: string; clientSecret: string; redirectUri?: string } | null>(null);
+  const [creds, setCreds] = useState<Record<string, { clientId: string }>>({});
+  const [edit, setEdit] = useState<{ platform: string; clientId: string; clientSecret: string } | null>(null);
   const [platformDetails, setPlatformDetails] = useState<Record<string, any>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
   const searchParams = useSearchParams();
+  const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  
+  // Mapping between platform keys and their Arabic/English names for tutorial search
+  const platformTutorialMap: Record<string, string[]> = {
+    facebook: ['فيسبوك', 'facebook', 'Facebook', 'فيسبوك '],
+    youtube: ['يوتيوب', 'youtube', 'YouTube'],
+    twitter: ['تويتر', 'twitter', 'Twitter', 'X'],
+    linkedin: ['لينكدان', 'linkedin', 'LinkedIn'],
+    instagram: ['انستجرام', 'instagram', 'Instagram'],
+    tiktok: ['تيك توك', 'tiktok', 'TikTok'],
+    pinterest: ['بينتريست', 'pinterest', 'Pinterest']
+  };
+
+  const handleShowTutorial = (platformKey: string) => {
+    const searchTerms = platformTutorialMap[platformKey] || [platformKey];
+    
+    // البحث أولاً بالتصنيف
+    let platformTutorial = null;
+    for (const term of searchTerms) {
+      platformTutorial = getTutorialByCategory(term);
+      if (platformTutorial) break;
+    }
+    
+    // إذا لم يُعثر عليه بالتصنيف، البحث في العنوان والتصنيف
+    if (!platformTutorial) {
+      platformTutorial = tutorials.find(t => {
+        const titleLower = t.title.toLowerCase();
+        const categoryLower = t.category.toLowerCase();
+        return searchTerms.some(term => {
+          const termLower = term.toLowerCase();
+          return titleLower.includes(termLower) || categoryLower.includes(termLower);
+        });
+      }) || null;
+    }
+    
+    if (platformTutorial) {
+      setSelectedTutorial(platformTutorial);
+      incrementViews(platformTutorial.id);
+    } else {
+      const platformName = PLATFORMS[platformKey as keyof typeof PLATFORMS]?.name || platformKey;
+      showError(`لم يتم العثور على شرح خاص بـ ${platformName}`);
+    }
+  };
 useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
       showError("لا يوجد اشتراك نشط");
@@ -207,8 +256,8 @@ useEffect(() => {
     try {
       const res = await listPlatformCredentials(token);
       if (res.success) {
-        const map: Record<string, { clientId: string; redirectUri?: string }> = {};
-        for (const c of res.credentials) map[c.platform] = { clientId: c.clientId, redirectUri: c.redirectUri };
+        const map: Record<string, { clientId: string }> = {};
+        for (const c of res.credentials) map[c.platform] = { clientId: c.clientId };
         setCreds(map);
       }
     } catch {}
@@ -371,7 +420,7 @@ useEffect(() => {
   // Check permissions
   if (permissionsLoading) {
     return (
-      <div className="space-y-8">
+      <div className="space-y-3">
         <Loader 
           text="جاري التحقق من الصلاحيات..." 
           size="lg" 
@@ -458,7 +507,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="إعدادات الحساب"
@@ -466,7 +515,7 @@ useEffect(() => {
           className="space-y-8"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-3" : "space-y-3"}>
   <Card className="bg-secondry border-none inner-shadow">
         <CardHeader className="border-text-primary/50 text-white">
           <h2 className="text-lg font-semibold">ملخص الاتصالات</h2>
@@ -500,25 +549,49 @@ useEffect(() => {
           <h2 className="text-lg font-semibold">تكوين تطبيقات المنصات لكل مستخدم</h2>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {Object.entries(PLATFORMS).map(([key, platform]) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+            {Object.entries(PLATFORMS)
+              .filter(([key]) => key !== 'linkedin' && key !== 'instagram')
+              .map(([key, platform]) => (
               <Card key={`creds-${key}`} className="border-none inner-shadow bg-secondry">
-                <CardContent className="p-6 space-y-3">
+                <CardContent className="p-6 space-y-3 flex justify-between">
                   <div className="flex items-center justify-center">
-                    <div className="flex items-center flex-col space-x-2">
+                    <div className="flex items-center flex-col space-y-3">
                       <div className="text-xl">{platform.icon}</div>
                       <div className="font-semibold text-primary">{platform.name}</div>
+                      <div className="text-xs text-gray-300 text-center">
+                    <div>Client ID: {creds[key]?.clientId ? <span className="text-green-500">محدد</span> : <span className="text-red-500">غير محدد</span>}</div>
+                  </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-300 text-center">
-                    <div>Client ID: {creds[key]?.clientId ? <span className="text-green-500">محدد</span> : <span className="text-red-500">غير محدد</span>}</div>
-                    {creds[key]?.redirectUri && (<div>Redirect URI: <span className="break-all">{creds[key]?.redirectUri}</span></div>)}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="primary-button flex-1" onClick={() => setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '', redirectUri: creds[key]?.redirectUri })}>تعيين/تعديل</Button>
+                 
+                  <div className="flex flex-col gap-2">
+                    <Button size="lg" className="primary-button flex-1" onClick={() => setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '' })}>تعيين/تعديل</Button>
                     {creds[key]?.clientId && (
-                      <Button size="sm" variant="secondary" className="flex-1" onClick={async () => { await deletePlatformCredential(token, key); await loadCredentials(); }}>حذف</Button>
+                      <Button size="lg" variant="secondary" className="flex-1" onClick={async () => { await deletePlatformCredential(token, key); await loadCredentials(); }}>حذف</Button>
                     )}
+                    {'href' in platform && platform.href ? (
+                      <Link href={platform.href} target="_blank" className="primary-button">
+                        انشاء تطبيق 
+                      </Link>
+                    ) : (
+                      <span className="primary-button opacity-60 pointer-events-none cursor-not-allowed">
+                        انشاء تطبيق 
+                      </span>
+                    )}
+                    
+                    <Button 
+                      onClick={() => handleShowTutorial(key)} 
+                      variant="secondary"
+                      className="flex items-center gap-2 primary-button">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        <p>شرح كيفية انشاء تطبيق</p>
+                      </div>
+                    </Button>
+ 
+                   
+
                   </div>
                 </CardContent>
               </Card>
@@ -547,17 +620,16 @@ useEffect(() => {
           )}
 
           {edit && (
-            <div className="mt-4 p-4 bg-[#011910] rounded-lg space-y-3">
+            <div className="mt-4 p-4 bg-secondry rounded-lg space-y-3">
               <div className="text-sm text-primary font-semibold">تعديل إعدادات {PLATFORMS[edit.platform as keyof typeof PLATFORMS].name}</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input className="px-3 py-2 rounded bg-white text-black" placeholder="Client ID" value={edit.clientId} onChange={e => setEdit({ ...edit, clientId: e.target.value })} />
-                <input className="px-3 py-2 rounded bg-white text-black" placeholder="Client Secret" value={edit.clientSecret} onChange={e => setEdit({ ...edit, clientSecret: e.target.value })} />
-                <input className="px-3 py-2 rounded bg-white text-black" placeholder="Redirect URI (اختياري)" value={edit.redirectUri || ''} onChange={e => setEdit({ ...edit, redirectUri: e.target.value })} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input className="px-3 py-2 rounded-lg bg-fixed-40 border-primary text-white" placeholder="Client ID" value={edit.clientId} onChange={e => setEdit({ ...edit, clientId: e.target.value })} />
+                <input className="px-3 py-2 rounded-lg bg-fixed-40 border-primary text-white" placeholder="Client Secret" value={edit.clientSecret} onChange={e => setEdit({ ...edit, clientSecret: e.target.value })} />
               </div>
               <div className="flex gap-2">
                 <Button size="sm" className="primary-button" onClick={async () => { 
                   try {
-                    await upsertPlatformCredential(token, edit.platform, { clientId: edit.clientId, clientSecret: edit.clientSecret, redirectUri: edit.redirectUri }); 
+                    await upsertPlatformCredential(token, edit.platform, { clientId: edit.clientId, clientSecret: edit.clientSecret }); 
                     setEdit(null); 
                     await loadCredentials();
                     showSuccess('تم حفظ الإعدادات بنجاح');
@@ -945,7 +1017,12 @@ useEffect(() => {
         }}
       />
 
-    
+      {/* Tutorial Video Modal */}
+      <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
 
       {/* Facebook Page Manager Modal */}
       {showFacebookPageManager && (
@@ -1013,7 +1090,7 @@ useEffect(() => {
 export default function SettingsPage() {
   return (
     <Suspense fallback={
-      <div className="space-y-6">
+      <div className="space-y-3">
         <h1 className="text-2xl font-semibold text-white">الإعدادات</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -1030,9 +1107,11 @@ export default function SettingsPage() {
             </Card>
           ))}
         </div>
+                         
       </div>
     }>
       <SettingsContent />
+      
     </Suspense>
   );
 }
