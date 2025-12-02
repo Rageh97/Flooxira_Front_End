@@ -28,6 +28,8 @@ export default function TelegramTemplatesPage() {
   });
   const [testMessage, setTestMessage] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<TelegramTemplate | null>(null);
 
   useEffect(() => {
     // Wait for auth to load
@@ -86,16 +88,29 @@ export default function TelegramTemplatesPage() {
     }
   };
 
-  const handleDeleteTemplate = async (id: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا القالب؟')) return;
-    
+  const handleDeleteTemplate = (id: number) => {
+    const tpl = templates.find((t) => t.id === id) || null;
+    setTemplateToDelete(tpl);
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDeleteTemplate = async () => {
+    if (!templateToDelete) return;
+
     try {
-      const response = await deleteTemplate(id);
+      const response = await deleteTemplate(templateToDelete.id);
       if (response.success) {
         await loadTemplates();
+        showSuccess('تم حذف القالب بنجاح');
+      } else {
+        showError('فشل في حذف القالب');
       }
     } catch (error) {
       console.error('Failed to delete template:', error);
+      showError('فشل في حذف القالب');
+    } finally {
+      setConfirmDeleteOpen(false);
+      setTemplateToDelete(null);
     }
   };
 
@@ -297,6 +312,18 @@ export default function TelegramTemplatesPage() {
           }
         />
       )}
+
+      {confirmDeleteOpen && templateToDelete && (
+        <ConfirmModal
+          title="تأكيد الحذف"
+          message={`هل أنت متأكد من حذف القالب "${templateToDelete.name}"؟ لا يمكن التراجع عن هذه العملية.`}
+          onCancel={() => {
+            setConfirmDeleteOpen(false);
+            setTemplateToDelete(null);
+          }}
+          onConfirm={confirmDeleteTemplate}
+        />
+      )}
     </div>
   );
 }
@@ -404,6 +431,23 @@ function TemplateCard({
           >
              حذف
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ title, message, onConfirm, onCancel }: { title: string; message: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="gradient-border rounded-lg max-w-sm w-full">
+        <div className="p-6">
+          <h3 className="text-lg font-medium text-primary mb-2">{title}</h3>
+          <p className="text-sm text-gray-300 mb-4">{message}</p>
+          <div className="flex justify-end gap-3">
+            <button onClick={onCancel} className="primary-button transition-colors">إلغاء</button>
+            <button onClick={onConfirm} className="primary-button after:bg-red-500 transition-colors">حذف</button>
+          </div>
         </div>
       </div>
     </div>

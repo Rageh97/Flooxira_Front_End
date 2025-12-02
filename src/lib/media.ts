@@ -17,3 +17,7 @@ export const resolveServiceImageUrl = (image?: string | null) => {
   return `${base}/uploads/${normalizedPath}`;
 };
 
+
+
+
+

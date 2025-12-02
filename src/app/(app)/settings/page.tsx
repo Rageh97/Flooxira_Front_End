@@ -568,7 +568,7 @@ useEffect(() => {
                   <div className="flex flex-col gap-2">
                     <Button size="lg" className="primary-button flex-1" onClick={() => setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '' })}>تعيين/تعديل</Button>
                     {creds[key]?.clientId && (
-                      <Button size="lg" variant="secondary" className="flex-1" onClick={async () => { await deletePlatformCredential(token, key); await loadCredentials(); }}>حذف</Button>
+                      <Button size="lg" variant="secondary" className="flex-1 primary-button after:bg-red-500" onClick={async () => { await deletePlatformCredential(token, key); await loadCredentials(); }}>حذف</Button>
                     )}
                     {'href' in platform && platform.href ? (
                       <Link href={platform.href} target="_blank" className="primary-button">

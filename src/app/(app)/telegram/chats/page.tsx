@@ -223,7 +223,7 @@ export default function TelegramChatsPage() {
         </div>
         <div className="flex-1 overflow-auto">
           {loadingContacts ? (
-            <div className="p-3 text-sm">جاري تحميل المحادثات...</div>
+            <div className="p-3 text-sm text-white">جاري تحميل المحادثات...</div>
           ) : filtered.length === 0 ? (
             <div className="p-3 text-sm text-white">لا توجد محادثات بعد</div>
           ) : (
@@ -234,7 +234,7 @@ export default function TelegramChatsPage() {
                 return (
                   <li
                     key={c.chatId}
-                    className={`px-3 py-2 cursor-pointer flex items-center gap-3 ${isActive ? "bg-light-custom inner-shadow" : "bg-secondry"}`}
+                    className={`px-3 py-2 cursor-pointer flex items-center gap-3 ${isActive ? "bg-fixed-40 inner-shadow" : "bg-secondry"}`}
                     onClick={() => {
                       setActiveChatId(c.chatId.toString());
                       setIsMobileChatOpen(true);
@@ -285,9 +285,12 @@ export default function TelegramChatsPage() {
                     </span>
                   </div>
                   <ul className="space-y-3">
-                    {g.items.map((m) => (
+                    {g.items
+                      .slice()
+                      .reverse()
+                      .map((m) => (
                       <li key={m.id} className={`flex ${m.messageType === "outgoing" ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm text-white shadow-sm ${m.messageType === "outgoing" ? "bg-card inner-shadow text-white rounded-tr-sm" : "bg-light-custom inner-shadow rounded-tl-sm"}`}>
+                        <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm text-white shadow-sm ${m.messageType === "outgoing" ? "bg-card inner-shadow text-white rounded-tr-sm" : "bg-none inner-shadow rounded-tl-sm"}`}>
                           {/* Media display */}
                           {m.mediaUrl && (
                             <div className="mb-2">
