@@ -598,7 +598,7 @@ export default function TelegramBotPage() {
              <p className="text-sm text-gray-400">إدارة اتصال بوت التليجرام</p>
                   </div>
                 </div>
-            <div className="text-center">
+            <div className="text-center flex items-center gap-3">
                 {/* <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-white text-2xl">🔌</span>
                 </div> */}
@@ -639,9 +639,7 @@ export default function TelegramBotPage() {
                 </Button>
               </div>
               )}
-               
-              </div>
-              <Button 
+                  <Button 
                 onClick={handleShowTutorial} 
                 variant="secondary"
                 className="flex items-center gap-2 primary-button"
@@ -651,6 +649,9 @@ export default function TelegramBotPage() {
                 <p> شرح الميزة</p>
                 </div>
               </Button>
+               
+              </div>
+          
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
