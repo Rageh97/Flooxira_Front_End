@@ -136,25 +136,26 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 ">
       <div>
         <h1 className="text-4xl font-semibold text-white">الباقات</h1>
         {/* <p className="text-sm text-gray-600">اختر الباقة التي تناسب احتياجاتك. يمكنك الترقية في أي وقت.</p> */}
       </div>
       
+    
       {plans.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-600">لا توجد باقات متاحة في الوقت الحالي.</p>
         </div>
       ) : (
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+       <div className="flex items-center justify-center flex-wrap gap-6">
           {plans.map((plan, index) => {
             const { price, period } = formatPrice(plan.priceCents, plan.interval);
             const permissions = plan.permissions || {};
             const isHighlighted = index === 1; // Highlight the middle plan
             
             return (
-              <Card key={plan.id} className={isHighlighted ? " border-1 border-white relative" : "relative rounded-[35px]  bg-gradient-to-br from-text-primary via-bg-secondry to-bg-secondry border-1 border-white/50"}>
+              <Card key={plan.id} className={isHighlighted ? "w-[500px]  relative rounded-[35px]  bg-gradient-to-br from-text-primary via-bg-secondry to-bg-secondry border-1 border-white/50" : "w-[500px] relative rounded-[35px]  bg-gradient-to-br from-text-primary via-bg-secondry to-bg-secondry border-1 border-white/50"}>
                 {/* <div className="absolute  w-50 flex items-center justify-center -top-10 left-1/2 -translate-x-1/2 bg-secondry rounded-t-xl px-1">
 <Image src="/Logo.png" alt="plan" width={100} height={70} />
                 </div> */}
@@ -220,301 +221,309 @@ export default function PlansPage() {
                   <div className="space-y-2 p-3 rounded-[35px] border-1 border-white/50 bg-text-primary/10">
                     {/* <h4 className="text-sm text-center font-medium text-gray-300">الصلاحيات</h4> */}
                     
-                    {/* Monthly Posts */}
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">المنشورات الشهرية:</span>
-                      {/* <span className="text-xs font-bold text-primary">
-                        {(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts || 0}
-                      </span> */}
-                      {(permissions as any).monthlyPosts > 0 && (
-                        <span className="text-xs text-primary">
-                          ({(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts} منشورات/شهر)
-                        </span>
-                      )}
-                      
-
-                    </div>
-
-                    {/* WhatsApp Management */}
-                    <div className="flex items-center gap-2">
-                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canManageWhatsApp ? (
-                          <>
-                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span>
-                            {(permissions as any).whatsappMessagesPerMonth > 0 && (
-                              <span className="text-xs text-primary">
-                                ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth} رسالة/شهر)
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs text-white line-through font-medium">إدارة الواتساب </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Telegram Management */}
-                    <div className="flex items-center gap-2">
-                        {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canManageTelegram ? (
-                          <>
-                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs text-white line-through font-medium">إدارة التليجرام </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Salla Integration */}
-                    <div className="flex items-center gap-2">
-                        {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">تكامل سلة</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canSallaIntegration ? (
-                          <>
-                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium text-gray-200"> سلة ويب هوك</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs text-white line-through font-medium">سلة ويب هوك </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Content Management */}
-                    <div className="flex items-center gap-2">
-                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">إدارة المحتوى</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canManageContent ? (
-                          <>
-                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium text-gray-200">إدارة المحتوى</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium line-through text-gray-200">إدارة المحتوى</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Customer Management */}
-                    <div className="flex items-center gap-2">
-                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">إدارة العملاء</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canManageCustomers ? (
-                          <>
-                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium text-gray-200">إدارة العملاء</span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium line-through text-gray-200">إدارة العملاء</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Service Marketing */}
-                    <div className="flex items-center gap-2">
-                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">تسويق الخدمات</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canMarketServices ? (
-                          <>
-                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium text-gray-200">تسويق الخدمات</span>
-                            {(permissions as any).maxServices > 0 && (
-                              <span className="text-xs text-primary">
-                                ({(permissions as any).maxServices} خدمة)
-                              </span>
-                            )}
-                            {(permissions as any).maxServices === 0 && (
-                              <span className="text-xs text-primary">
-                                (غير محدود)
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium line-through text-gray-200">تسويق الخدمات</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Employee Management */}
-                    <div className="flex items-center gap-2">
-                      {/* <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium text-gray-200">إدارة الموظفين</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canManageEmployees ? (
-                          <>
-                            {/* <CheckCircle className="h-3 w-3 text-green-400" />
-                            <span className="text-xs text-green-400 font-medium">مفعل</span> */}
-                            {(permissions as any).maxEmployees > 0 && (
-                              <>
-                           
+                    {(() => {
+                      // Define all permissions with their enabled status
+                      const permissionItems = [
+                        {
+                          enabled: (permissions as any).monthlyPosts > 0,
+                          render: () => (
+                            <div className="flex items-center gap-2">
                               <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs text-white">
-                        إدارة الموظفين
-                      </span>
-                         <span className="text-xs text-primary">
-                                ({(permissions as any).maxEmployees} موظف)
-                              </span>
-                              </>
-                            )}
-                            {(permissions as any).maxEmployees === 0 && (
-                              <span className="text-xs text-primary">
-                                (غير محدود)
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                          <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X  className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium line-through text-white">إدارة الموظفين</span>
-                            {/* <XCircle className="h-3 w-3 text-red-400" />
-                            <span className="text-xs text-red-400 font-medium">غير مفعل</span> */}
-                          </>
-                        )}
-                      </div>
-                    </div>
+                                <Check className="h-3 w-3 text-black font-bold" />
+                              </div>
+                              <span className="text-xs font-medium text-gray-200">المنشورات الشهرية:</span>
+                              {(permissions as any).monthlyPosts > 0 && (
+                                <span className="text-xs text-primary">
+                                  ({(permissions as any).monthlyPosts === "-1" ? 'غير محدود' : (permissions as any).monthlyPosts} منشورات/شهر)
+                                </span>
+                              )}
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canManageWhatsApp,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canManageWhatsApp ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span>
+                                    {(permissions as any).whatsappMessagesPerMonth > 0 && (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth} رسالة/شهر)
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white line-through font-medium">إدارة الواتساب </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canManageTelegram,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canManageTelegram ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white line-through font-medium">إدارة التليجرام </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canSallaIntegration,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canSallaIntegration ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200"> سلة ويب هوك</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white line-through font-medium">سلة ويب هوك </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canManageContent,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canManageContent ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200">إدارة المحتوى</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-gray-200">إدارة المحتوى</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canManageCustomers,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canManageCustomers ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200">إدارة العملاء</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-gray-200">إدارة العملاء</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canMarketServices,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canMarketServices ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200">تسويق الخدمات</span>
+                                    {(permissions as any).maxServices > 0 && (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).maxServices} خدمة)
+                                      </span>
+                                    )}
+                                    {(permissions as any).maxServices === 0 && (
+                                      <span className="text-xs text-primary">
+                                        (غير محدود)
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-gray-200">تسويق الخدمات</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canManageEmployees,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canManageEmployees ? (
+                                  <>
+                                    {(permissions as any).maxEmployees > 0 && (
+                                      <>
+                                        <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                          <Check className="h-3 w-3 text-black font-bold" />
+                                        </div>
+                                        <span className="text-xs text-white">
+                                          إدارة الموظفين
+                                        </span>
+                                        <span className="text-xs text-primary">
+                                          ({(permissions as any).maxEmployees} موظف)
+                                        </span>
+                                      </>
+                                    )}
+                                    {(permissions as any).maxEmployees === 0 && (
+                                      <span className="text-xs text-primary">
+                                        (غير محدود)
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-white">إدارة الموظفين</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canUseAI,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canUseAI ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white font-medium"> الذكاء الاصطناعي</span>
+                                    {(permissions as any).aiCredits > 0 && (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).aiCredits} كريديت/شهر)
+                                      </span>
+                                    )}
+                                    {(permissions as any).aiCredits === 0 && (
+                                      <span className="text-xs text-primary">
+                                        (غير محدود)
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-white">الذكاء الاصطناعي (AI)</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canUseLiveChat,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canUseLiveChat ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white font-medium"> ادارة التذاكر & لايف شات</span>
+                                    {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).liveChatAiResponses} رد/شهر)
+                                      </span>
+                                    ) : (
+                                      <span className="text-xs text-primary">
+                                        (غير محدود)
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-gray-200">Live Chat & Tickets</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        }
+                      ];
 
-                    {/* AI Features */}
-                    <div className="flex items-center gap-2">
-                      {/* <span className="text-xs font-medium text-gray-200">الذكاء الاصطناعي (AI):</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canUseAI ? (
-                          <>
-                          <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs text-white font-medium"> الذكاء الاصطناعي</span>
-                            {(permissions as any).aiCredits > 0 && (
-                              <span className="text-xs text-primary">
-                                ({(permissions as any).aiCredits} كريديت/شهر)
-                              </span>
-                            )}
-                            {(permissions as any).aiCredits === 0 && (
-                              <span className="text-xs text-primary">
-                                (غير محدود)
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs font-medium line-through text-white">الذكاء الاصطناعي (AI)</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                      // Sort: enabled first, then disabled
+                      const sortedPermissions = [...permissionItems].sort((a, b) => {
+                        if (a.enabled === b.enabled) return 0;
+                        return a.enabled ? -1 : 1;
+                      });
 
-                    {/* Live Chat & Tickets */}
-                    <div className="flex items-center gap-2">
-                      {/* <span className="text-xs font-medium text-gray-200">Live Chat & Tickets:</span> */}
-                      <div className="flex items-center gap-1">
-                        {(permissions as any).canUseLiveChat ? (
-                          <>
-                            <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <Check className="h-3 w-3 text-black font-bold" />
-                      </div>
-                            <span className="text-xs text-white font-medium"> ادارة التذاكر & لايف شات</span>
-                          {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
-                            <span className="text-xs text-primary">
-                              ({(permissions as any).liveChatAiResponses} رد/شهر)
-                            </span>
-                          ) : (
-                            <span className="text-xs text-primary">
-                              (غير محدود)
-                            </span>
-                          )}
-                          </>
-                        ) : (
-                          <>
-                            <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                        <X className="h-3 w-3 text-black font-bold" />
-                      </div>
-                      <span className="text-xs font-medium line-through text-gray-200">Live Chat & Tickets</span>
-                            {/* <span className="text-xs text-red-400 font-medium">غير مفعل</span> */}
-                          </>
-                        )}
-                      </div>
-                    </div>
+                      // Render sorted permissions
+                      return sortedPermissions.map((item, idx) => (
+                        <div key={idx}>
+                          {item.render()}
+                        </div>
+                      ));
+                    })()}
                   </div>
 
                  <div className="flex items-center justify-center">
                    <Button 
-                    className="w-60 gradient-border-button-header bg-gradient-to-r from-purple-900 to-purple-700 text-white" 
+                    className="w-60 primary-button" 
                     variant={isHighlighted ? "default" : "secondary"}
                     onClick={() => openSubscriptionModal(plan)}
                   >
@@ -526,7 +535,9 @@ export default function PlansPage() {
             );
           })}
         </div>
+
       )}
+    
       
       {/* Subscription Modal */}
       {selectedPlan && (

@@ -386,11 +386,11 @@ export default function EmployeesPage() {
 
   if (hasActiveSubscription && !canManageEmployees) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-8">
-          <div className="text-white text-lg">جاري التحميل...</div>
-        </div>
-      </div>
+      <NoActiveSubscription 
+      
+        featureName="إدارة الموظفين"
+        className="container mx-auto p-6"
+      />
     );
   }
 
