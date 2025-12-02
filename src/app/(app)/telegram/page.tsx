@@ -599,9 +599,7 @@ export default function TelegramBotPage() {
                   </div>
                 </div>
             <div className="text-center flex items-center gap-3">
-                {/* <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white text-2xl">🔌</span>
-                </div> */}
+               
                  {/* Disconnect Button */}
               {botInfo && (
               <div className="flex justify-center">
