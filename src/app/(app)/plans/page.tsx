@@ -143,6 +143,7 @@ export default function PlansPage() {
       </div>
       
     
+    
       {plans.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-600">لا توجد باقات متاحة في الوقت الحالي.</p>

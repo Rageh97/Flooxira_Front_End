@@ -383,6 +383,7 @@ export default function EmployeesPage() {
 
   // Show loading or redirect if no permissions
 
+  
 
   if (hasActiveSubscription && !canManageEmployees) {
     return (
