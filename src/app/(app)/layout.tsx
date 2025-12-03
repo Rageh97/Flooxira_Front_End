@@ -180,7 +180,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         <aside className="relative bg-secondry z-50 h-full w-72  border-r border-[#08c47d50] text-white  shadow-xl flex flex-col">
           <div className="px-4 py-4 flex items-center justify-between border-b border-gray-600">
             <div className="w-full ">
-              <Image src="/Logo.png" alt="logo" width={150} height={100} />
+              <Image src="/Logo.gif" alt="logo" width={150} height={100} />
             </div>
             <button
               className="inline-flex h-9 w-9  cursor-pointer items-center justify-center rounded-md  "
@@ -273,7 +273,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       {/* Desktop sidebar - fixed position */}
       <aside className="hidden  md:flex w-[240px] h-screen bg- border-l  border-gray-600 text-white flex-col overflow-hidden flex-shrink-0">
         <div className="px-4 py-1 w-full flex justify-center">
-          <Image src="/Logo.png" alt="logo" width={180} height={110} />
+          <Image src="/Logo.gif" alt="logo" width={180} height={110} />
         </div>
         <div className="border-t border-gray-600 p-2 flex-shrink-0 w-full">
           <div className="flex items-center justify-between">
