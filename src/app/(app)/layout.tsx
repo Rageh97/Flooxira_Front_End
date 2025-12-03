@@ -5,6 +5,7 @@ import { PropsWithChildren, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
 import { getPostUsageStats } from "@/lib/api";
+import { getAllNewsTickers, type NewsTicker } from "@/lib/settingsApi";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
@@ -47,6 +48,21 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const [planName, setPlanName] = useState<string>("");
   const [newsBarClosed, setNewsBarClosed] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState<number>(0);
+  const [newsItems, setNewsItems] = useState<NewsTicker[]>([]);
+
+  useEffect(() => {
+    const loadNews = async () => {
+      try {
+        const res = await getAllNewsTickers();
+        if (res.success) {
+          setNewsItems(res.tickers.filter(t => t.isActive));
+        }
+      } catch (e) {
+        console.error("Failed to load news", e);
+      }
+    };
+    loadNews();
+  }, []);
 
   // تحديد العناصر المتاحة حسب نوع المستخدم
   const visibleNavItems = useMemo(() => {
@@ -385,25 +401,43 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   willChange: 'transform'
                 }}
               >
-                <span className="text-sm font-semibold inline-block mr-12">
-                  مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
-                </span>
-                <span className="text-sm font-semibold inline-block mr-12">
-                  • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
-                </span>
-                <span className="text-sm font-semibold inline-block mr-12">
-                  • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
-                </span>
-                {/* Duplicate for seamless loop */}
-                <span className="text-sm font-semibold inline-block mr-12">
-                  مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
-                </span>
-                <span className="text-sm font-semibold inline-block mr-12">
-                  • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
-                </span>
-                <span className="text-sm font-semibold inline-block mr-12">
-                  • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
-                </span>
+                {newsItems.length > 0 ? (
+                  <>
+                    {newsItems.map((item, index) => (
+                      <span key={`news-${item.id}-${index}`} className="text-sm font-semibold inline-block mr-12">
+                        {item.content}
+                      </span>
+                    ))}
+                    {/* Duplicate for seamless loop */}
+                    {newsItems.map((item, index) => (
+                      <span key={`news-dup-${item.id}-${index}`} className="text-sm font-semibold inline-block mr-12">
+                        {item.content}
+                      </span>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-semibold inline-block mr-12">
+                      مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
+                    </span>
+                    <span className="text-sm font-semibold inline-block mr-12">
+                      • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
+                    </span>
+                    <span className="text-sm font-semibold inline-block mr-12">
+                      • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
+                    </span>
+                    {/* Duplicate for seamless loop */}
+                    <span className="text-sm font-semibold inline-block mr-12">
+                      مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
+                    </span>
+                    <span className="text-sm font-semibold inline-block mr-12">
+                      • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
+                    </span>
+                    <span className="text-sm font-semibold inline-block mr-12">
+                      • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
+                    </span>
+                  </>
+                )}
               </div>
             </div>
             <button

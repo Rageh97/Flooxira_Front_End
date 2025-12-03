@@ -82,8 +82,8 @@ export function usePermissions() {
         try {
           // Check if user is an employee first
           try {
-            const employeeResponse = await apiFetch('/api/employees/me', { authToken: token });
-            if (employeeResponse.success) {
+            const employeeResponse = await apiFetch<{ success: boolean; employee?: { permissions: UserPermissions } }>('/api/employees/me', { authToken: token });
+            if (employeeResponse.success && employeeResponse.employee) {
               // User is an employee - use employee permissions
               cachedPermissions = employeeResponse.employee.permissions;
               cachedSubscription = null;
@@ -233,8 +233,9 @@ export function usePermissions() {
   };
 
   const hasActiveSubscription = useMemo((): boolean => {
-    // إذا كان موظف، يعتبر لديه اشتراك نشط (لأن المالك لديه اشتراك)
-    if (permissions && !permissions.canManageEmployees) {
+    // إذا لم يكن هناك subscription object ولكن هناك permissions، فهو موظف
+    // الموظف يعتبر لديه اشتراك نشط (موروث من المالك)
+    if (permissions && !subscription) {
       console.log('Employee has active subscription (inherited from owner)');
       return true;
     }

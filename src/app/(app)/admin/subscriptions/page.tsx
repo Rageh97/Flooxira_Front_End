@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getAllSubscriptions } from "@/lib/api";
-import { Users, Calendar, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { getAllSubscriptions, updateSubscriptionExpiry } from "@/lib/api";
+import { Users, Calendar, DollarSign, Edit } from "lucide-react";
 
 type Subscription = {
   id: number;
@@ -43,6 +44,12 @@ export default function SubscriptionsAdminPage() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalSubscriptions, setTotalSubscriptions] = useState<number>(0);
   const subscriptionsPerPage = 10;
+
+  // Edit expiry date modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  const [newExpiryDate, setNewExpiryDate] = useState<string>("");
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
   // Read token from localStorage only on the client
   useEffect(() => {
@@ -111,6 +118,38 @@ export default function SubscriptionsAdminPage() {
     const diffTime = expiry.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  const handleEditExpiry = (subscription: Subscription) => {
+    setSelectedSubscription(subscription);
+    // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+    const expiryDate = new Date(subscription.expiresAt);
+    const formattedDate = expiryDate.toISOString().slice(0, 16);
+    setNewExpiryDate(formattedDate);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateExpiry = async () => {
+    if (!selectedSubscription || !newExpiryDate || !token) return;
+
+    setIsUpdating(true);
+    try {
+      await updateSubscriptionExpiry(token, selectedSubscription.id, newExpiryDate);
+      
+      // Refresh subscriptions list
+      const res = await getAllSubscriptions(token, currentPage, subscriptionsPerPage, filter);
+      setSubscriptions(res.subscriptions);
+      setTotalPages(res.totalPages || 1);
+      setTotalSubscriptions(res.total || 0);
+      
+      setIsEditModalOpen(false);
+      setSelectedSubscription(null);
+      setNewExpiryDate("");
+    } catch (error: any) {
+      alert(`خطأ في تحديث تاريخ الانتهاء: ${error.message}`);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const filteredSubscriptions = subscriptions;
@@ -311,12 +350,16 @@ export default function SubscriptionsAdminPage() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex items-center justify-center space-x-1 rtl:space-x-reverse">
+                          <button
+                            onClick={() => handleEditExpiry(subscription)}
+                            className="flex items-center justify-center space-x-1 rtl:space-x-reverse hover:bg-gray-700/30 rounded px-2 py-1 transition-colors group w-full"
+                          >
                             <Calendar className="w-4 h-4 text-orange-400" />
                             <span className="text-sm text-gray-300">
                               {formatDate(subscription.expiresAt)}
                             </span>
-                          </div>
+                            <Edit className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </button>
                         </td>
                         <td className="py-3 px-4">
                           <span className={`text-sm font-medium ${
@@ -382,6 +425,59 @@ export default function SubscriptionsAdminPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Edit Expiry Date Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="bg-card border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">تعديل تاريخ الانتهاء</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedSubscription && (
+              <>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-300">
+                    <span className="font-medium">المستخدم:</span> {selectedSubscription.user.name || selectedSubscription.user.email}
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    <span className="font-medium">الباقة:</span> {selectedSubscription.plan.name}
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    <span className="font-medium">تاريخ الانتهاء الحالي:</span> {formatDate(selectedSubscription.expiresAt)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="newExpiryDate" className="text-sm font-medium text-white">
+                    تاريخ الانتهاء الجديد
+                  </label>
+                  <input
+                    id="newExpiryDate"
+                    type="datetime-local"
+                    value={newExpiryDate}
+                    onChange={(e) => setNewExpiryDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setIsEditModalOpen(false)}
+              disabled={isUpdating}
+            >
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleUpdateExpiry}
+              disabled={isUpdating || !newExpiryDate}
+            >
+              {isUpdating ? 'جاري الحفظ...' : 'حفظ'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

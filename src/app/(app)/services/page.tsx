@@ -360,13 +360,13 @@ export default function ServicesPage() {
         </div>
       </div>
 
-      {error && (
+      {/* {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <p className="text-red-800">{error}</p>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

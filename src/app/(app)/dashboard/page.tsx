@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { apiFetch, getCustomerStats, getUsageStats } from "@/lib/api";
+import { getAllBanners, type Banner } from "@/lib/settingsApi";
 import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -64,41 +65,21 @@ export default function DashboardPage() {
   const currentMonthName = new Date().toLocaleString('ar-EG', { month: 'long' });
 
   // Animated banners data
-  const banners = [
-    {
-      id: 1,
-      title: "مرحباً بك في منصة إدارة السوشيال ميديا",
-      description: "أنشئ، جدول، وانشر محتواك على جميع منصات التواصل الاجتماعي من مكان واحد",
-      image: "/bannerr.png",
-      link: "/create-post",
-      buttonText: "ابدأ النشر الآن",
-      backgroundColor: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      textColor: "#ffffff",
-      duration: 5
-    },
-    // {
-    //   id: 2,
-    //   title: "زِد تفاعلك وحقق أهدافك",
-    //   description: "استخدم التحليلات الذكية لفهم جمهورك وتحسين أداء منشوراتك بشكل مستمر",
-    //   image: "banner.png",
-    //   link: "/analytics",
-    //   buttonText: "استكشف التحليلات",
-    //   backgroundColor: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    //   textColor: "#ffffff",
-    //   duration: 6
-    // },
-    // {
-    //   id: 3,
-    //   title: "اجعل عملك أسهل وأسرع",
-    //   description: "جدولة تلقائية، نشر فوري، وإدارة محترفة لجميع حساباتك الاجتماعية",
-    //   image: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=1200&h=600&fit=crop&q=80",
-    //   link: "/content",
-    //   buttonText: "إدارة المحتوى",
-    //   backgroundColor: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    //   textColor: "#ffffff",
-    //   duration: 7
-    // }
-  ];
+  const [banners, setBanners] = useState<Banner[]>([]);
+
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        const res = await getAllBanners();
+        if (res.success) {
+          setBanners(res.banners.filter(b => b.isActive));
+        }
+      } catch (e) {
+        console.error("Failed to load banners", e);
+      }
+    };
+    loadBanners();
+  }, []);
 
   useEffect(() => {
     loadStats();
@@ -146,14 +127,14 @@ export default function DashboardPage() {
         ]);
         if (wa?.success) {
           setWaUsage({
-            used: wa.data.usage?.used ?? wa.data.usage?.count ?? 0,
+            used: wa.data.usage?.used ?? (wa.data.usage as any)?.count ?? 0,
             limit: wa.data.limits?.whatsappMessagesPerMonth ?? 0,
             remaining: wa.data.usage?.remaining ?? 0,
           });
         }
         if (tg && tg.success) {
           setTgUsage({
-            used: tg.data.usage?.used ?? tg.data.usage?.count ?? 0,
+            used: tg.data.usage?.used ?? (tg.data.usage as any)?.count ?? 0,
             limit: tg.data.limits?.telegramMessagesPerMonth ?? 0,
             remaining: tg.data.usage?.remaining ?? 0,
           });

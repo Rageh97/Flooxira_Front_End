@@ -676,7 +676,7 @@ export default function EmployeesPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8">جاري التحميل...</div>
+            <div className="text-center py-8"></div>
           ) : employees.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               لا يوجد موظفين

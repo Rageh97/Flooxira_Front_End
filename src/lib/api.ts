@@ -829,6 +829,18 @@ export async function getAllSubscriptions(token: string, page: number = 1, limit
   }>(`/api/admin/subscriptions?page=${page}&limit=${limit}&filter=${filter}`, { authToken: token });
 }
 
+export async function updateSubscriptionExpiry(token: string, subscriptionId: number, expiresAt: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    message: string;
+    subscription: any;
+  }>(`/api/subscription-requests/admin/subscription/${subscriptionId}/expiry`, { 
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify({ expiresAt })
+  });
+}
+
 // Platform connection status
 export async function checkPlatformConnections(token: string) {
   return apiFetch<{ 

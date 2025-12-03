@@ -226,16 +226,16 @@ export default function PlansPage() {
                       // Define all permissions with their enabled status
                       const permissionItems = [
                         {
-                          enabled: (permissions as any).monthlyPosts > 0,
+                          enabled: (permissions as any).monthlyPosts !== 0,
                           render: () => (
                             <div className="flex items-center gap-2">
                               <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
                                 <Check className="h-3 w-3 text-black font-bold" />
                               </div>
                               <span className="text-xs font-medium text-gray-200">المنشورات الشهرية:</span>
-                              {(permissions as any).monthlyPosts > 0 && (
+                              {(permissions as any).monthlyPosts !== 0 && (
                                 <span className="text-xs text-primary">
-                                  ({(permissions as any).monthlyPosts === "-1" ? 'غير محدود' : (permissions as any).monthlyPosts} منشورات/شهر)
+                                  ({(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts} منشورات/شهر)
                                 </span>
                               )}
                             </div>

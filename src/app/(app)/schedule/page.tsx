@@ -22,6 +22,7 @@ import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen } from "lucide-react";
+import Image from "next/image";
 
 export default function SchedulePage() {
   const { showError } = useToast();
@@ -510,7 +511,7 @@ export default function SchedulePage() {
                                   : 'bg-blue-600 text-white'
                               }`}
                             >
-                              {schedule.type === 'whatsapp' ? 'WA' : schedule.type === 'telegram' ? 'TG' : 'Post'}
+                              {schedule.type === 'whatsapp' ? <Image src="/whatsapp.gif" alt="WhatsApp" width={20} height={20} /> : schedule.type === 'telegram' ? <Image src="/telegram.gif" alt="Telegram" width={20} height={20} /> : "post"}
                             </div>
                           ))}
                           {daySchedules.length > 2 && (
@@ -532,132 +533,149 @@ export default function SchedulePage() {
       {/* Edit Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-          <div className="gradient-border rounded-lg p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+          <div className="gradient-border  rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
+            {/* Fixed Header */}
+            <div className="flex justify-between items-center  p-4 sm:p-6 pb-3 border-b border-gray-700">
               <h3 className="text-base sm:text-lg font-semibold text-white">العناصر المجدولة</h3>
               <Button variant="secondary" onClick={handleCancelSchedule} className="text-xs sm:text-sm">
                 إغلاق
               </Button>
             </div>
             
-            {selectedDaySchedules.length === 0 ? (
-              <p className="text-gray-300">لا توجد عناصر مجدولة لهذا اليوم</p>
-            ) : (
-              <div className="space-y-4">
-                {selectedDaySchedules.map(({ type, item }) => (
-                  <div key={`${type}_${item.id}`} className="border rounded p-3 sm:p-4 space-y-2 sm:space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-xs sm:text-sm font-medium text-primary">
-                          {type === 'whatsapp' ? 'واتساب' : type === 'telegram' ? 'تليجرام' : 'منشور'} 
-                        </div>
-                        <div className="text-xs text-gray-200">
-                          {new Date(item.scheduledAt).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Content editing */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-white">محتوى الرسالة</label>
-                      <textarea
-                        className="w-full px-3 py-2 border-primary bg-fixed-40 text-white rounded-md text-sm"
-                        rows={3}
-                        defaultValue={type === 'whatsapp' ? (item.payload?.message || '') : (item.content || '')}
-                        onChange={(e) => (item.__newContent = e.target.value)}
-                        placeholder="أدخل محتوى الرسالة..."
-                      />
-                    </div>
-                    
-                    {/* Media editing */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-white">ملف الوسائط</label>
-                      <div className="space-y-2">
-                        {item.mediaPath && (
-                          <div className="text-xs text-gray-200">
-                            الوسائط الحالية: {item.mediaPath.split('/').pop()}
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto scrollbar-hide p-4 sm:p-6 pt-4">
+              {selectedDaySchedules.length === 0 ? (
+                <p className="text-gray-300">لا توجد عناصر مجدولة لهذا اليوم</p>
+              ) : (
+                <div className="space-y-4">
+                  {selectedDaySchedules.map(({ type, item }) => (
+                    <div key={`${type}_${item.id}`} className="border-primary rounded p-3 sm:p-4 space-y-2 sm:space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs sm:text-sm font-medium text-primary">
+                            {type === 'whatsapp' ? 'واتساب' : type === 'telegram' ? 'تليجرام' : 'منشور'} 
                           </div>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*,video/*"
-                          className="w-full px-3 py-2 border-primary bg-fixed-40 rounded-md text-sm text-white"
-                          onChange={(e) => (item.__newMedia = e.target.files?.[0] || null)}
-                        />
-                        <div className="text-xs text-gray-200">
-                          اتركه فارغاً للاحتفاظ بالوسائط الحالية، أو اختر ملفاً جديداً للاستبدال
+                          <div className="text-xs text-gray-200">
+                            {new Date(item.scheduledAt).toLocaleString()}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Time editing */}
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-white">وقت الجدولة</label>
-                      <input 
-                        type="datetime-local" 
-                        className="w-full px-3 py-2 border-primary bg-fixed-40 rounded-md text-sm text-white" 
-                        defaultValue={(() => {
-                          const date = new Date(item.scheduledAt);
-                          // Get local time components (this handles timezone correctly)
-                          const year = date.getFullYear();
-                          const month = String(date.getMonth() + 1).padStart(2, '0');
-                          const day = String(date.getDate()).padStart(2, '0');
-                          const hours = String(date.getHours()).padStart(2, '0');
-                          const minutes = String(date.getMinutes()).padStart(2, '0');
-                          return `${year}-${month}-${day}T${hours}:${minutes}`;
-                        })()}
-                        onChange={(e) => (item.__newDate = e.target.value)} 
-                      />
-                    </div>
-                    
-                    {/* Action buttons */}
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Button 
-                      className="primary-button text-xs sm:text-sm"
-                        size="sm" 
-                        onClick={() => {
-                          if (type === 'whatsapp') {
-                            handleUpdateSchedule(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
-                          } else {
-                            if (type === 'post') {
-                              handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
+                      
+                      {/* Content editing */}
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-white">محتوى الرسالة</label>
+                        <textarea
+                          className="w-full px-3 py-2 border-primary bg-fixed-40 text-white rounded-md text-sm"
+                          rows={3}
+                          defaultValue={(() => {
+                            // Debug: log the item to see its structure
+                            console.log('Item structure:', type, item);
+                            
+                            // Try different possible property paths
+                            if (type === 'whatsapp') {
+                              return item.payload?.message || item.message || '';
+                            } else if (type === 'telegram') {
+                              return item.payload?.message || item.message || item.content || '';
                             } else {
-                              // Telegram schedule update
-                              const newDate = item.__newDate || item.scheduledAt;
-                              telegramUpdateSchedule(token as string, item.id, newDate, item.__newContent ? { message: item.__newContent } : undefined)
-                                .then(()=> { toast.success('تم تحديث جدولة تليجرام بنجاح'); handleLoadMonthlySchedules(); setIsEditModalOpen(false); })
-                                .catch((e)=> console.error('Failed to update telegram schedule:', e));
+                              // For posts
+                              return item.content || item.message || '';
                             }
-                          }
-                        }}
-                      >
-                        تحديث
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="primary-button after:bg-red-500 text-xs sm:text-sm"
-                        variant="destructive" 
-                        onClick={() => {
-                          if (type === 'whatsapp') {
-                            handleDeleteSchedule(item.id);
-                          } else {
-                            if (type === 'post') {
-                              handleDeletePost(item.id);
+                          })()}
+                          onChange={(e) => (item.__newContent = e.target.value)}
+                          placeholder="أدخل محتوى الرسالة..."
+                        />
+                      </div>
+                      
+                      {/* Media editing */}
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-white">ملف الوسائط</label>
+                        <div className="space-y-2">
+                          {item.mediaPath && (
+                            <div className="text-xs text-gray-200">
+                              الوسائط الحالية: {item.mediaPath.split('/').pop()}
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*,video/*"
+                            className="w-full px-3 py-2 border-primary bg-fixed-40 rounded-md text-sm text-white"
+                            onChange={(e) => (item.__newMedia = e.target.files?.[0] || null)}
+                          />
+                          <div className="text-xs text-gray-200">
+                            اتركه فارغاً للاحتفاظ بالوسائط الحالية، أو اختر ملفاً جديداً للاستبدال
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Time editing */}
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-white">وقت الجدولة</label>
+                        <input 
+                          type="datetime-local" 
+                          className="w-full px-3 py-2 border-primary bg-fixed-40 rounded-md text-sm text-white" 
+                          defaultValue={(() => {
+                            const date = new Date(item.scheduledAt);
+                            // Get local time components (this handles timezone correctly)
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            return `${year}-${month}-${day}T${hours}:${minutes}`;
+                          })()}
+                          onChange={(e) => (item.__newDate = e.target.value)} 
+                        />
+                      </div>
+                      
+                      {/* Action buttons */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button 
+                        className="primary-button text-xs sm:text-sm"
+                          size="sm" 
+                          onClick={() => {
+                            if (type === 'whatsapp') {
+                              handleUpdateSchedule(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
                             } else {
-                              telegramDeleteSchedule(token as string, item.id)
-                                .then(()=> { toast.success('تم حذف جدولة تليجرام بنجاح'); handleLoadMonthlySchedules(); setIsEditModalOpen(false); })
-                                .catch((e)=> console.error('Failed to delete telegram schedule:', e));
+                              if (type === 'post') {
+                                handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
+                              } else {
+                                // Telegram schedule update
+                                const newDate = item.__newDate || item.scheduledAt;
+                                telegramUpdateSchedule(token as string, item.id, newDate, item.__newContent ? { message: item.__newContent } : undefined)
+                                  .then(()=> { toast.success('تم تحديث جدولة تليجرام بنجاح'); handleLoadMonthlySchedules(); setIsEditModalOpen(false); })
+                                  .catch((e)=> console.error('Failed to update telegram schedule:', e));
+                              }
                             }
-                          }
-                        }}
-                      >
-                        حذف
-                      </Button>
+                          }}
+                        >
+                          تحديث
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          className="primary-button after:bg-red-500 text-xs sm:text-sm"
+                          variant="destructive" 
+                          onClick={() => {
+                            if (type === 'whatsapp') {
+                              handleDeleteSchedule(item.id);
+                            } else {
+                              if (type === 'post') {
+                                handleDeletePost(item.id);
+                              } else {
+                                telegramDeleteSchedule(token as string, item.id)
+                                  .then(()=> { toast.success('تم حذف جدولة تليجرام بنجاح'); handleLoadMonthlySchedules(); setIsEditModalOpen(false); })
+                                  .catch((e)=> console.error('Failed to delete telegram schedule:', e));
+                              }
+                            }
+                          }}
+                        >
+                          حذف
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -14,7 +14,7 @@ const adminTabs = [
   { href: "/admin/services", label: "إدارة الخدمات" },
   { href: "/admin/tutorials", label: "الشروحات" },
   { href: "/admin/reviews", label: "التقييمات" },
-  { href: "/admin/ai-prompts", label: "برومبتات الذكاء الاصطناعي" },
+  { href: "/admin/settings", label: "الاعدادات" },
   { href: "/admin/analytics", label: "التحليلات" },
   { href: "/admin/tickets", label: "التذاكر" },
 ];
