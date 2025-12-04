@@ -80,10 +80,8 @@ const AnimatedBanner: React.FC<AnimatedBannerProps> = ({
         {banners.map((banner) => (
           <SwiperSlide key={banner.id}>
             <div
-              className="relative w-full h-[120px] lg:h-[320px] overflow-hidden cursor-pointer"
-              style={{
-                background: banner.backgroundColor || '#1a1a1a',
-              }}
+              className="relative w-full h-full overflow-hidden cursor-pointer"
+             
               onClick={() => banner.link && window.open(banner.link, '_blank')}
             >
               {/* Background Image */}
