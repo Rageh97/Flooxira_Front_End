@@ -1038,7 +1038,7 @@ export default function TicketsPage() {
       <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
       <div className="flex flex-col lg:flex-row gap-3 items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">نظام التذاكر والدردشة المباشرة</h1>
+          <h1 className="lg:text-3xl text-2xl font-bold text-white">نظام التذاكر والدردشة المباشرة</h1>
         </div>
         {activeTab === "tickets" && (<>
         <div className="flex items-center gap-2">
@@ -1135,7 +1135,7 @@ export default function TicketsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="gradient-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

@@ -376,7 +376,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       {/* Content area - independent scrolling */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile menu button */}
-        <div className="md:hidden fixed top-10 left-4 z-30">
+        <div className="md:hidden fixed top-0 left-4 z-30">
           <button
             className="inline-flex h-9 w-9 items-center justify-center rounded-md "
             aria-label="Open sidebar"
@@ -440,13 +440,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 )}
               </div>
             </div>
-            <button
+            {/* <button
               onClick={() => setNewsBarClosed(true)}
               className=" cursor-pointer  rounded-full p-1.5 transition-colors active:scale-95 "
               aria-label="إغلاق الشريط الإخباري"
             >
               <X className="w-4 h-4 text-red-400" />
-            </button>
+            </button> */}
           </div>
         )}
         

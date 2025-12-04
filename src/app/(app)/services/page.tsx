@@ -330,7 +330,7 @@ export default function ServicesPage() {
         />
       )} */}
       <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row gap-2 items-center justify-between">
         <div>
           <h1 className="text-4xl font-semibold text-white">إدارة الخدمات</h1>
           <p className="text-sm text-primary mt-2">سوّق خدماتك للعملاء</p>
@@ -589,7 +589,7 @@ export default function ServicesPage() {
 
       {/* Create Service Modal */}
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl  max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>إضافة خدمة جديدة</DialogTitle>
             <DialogDescription className="text-white">

@@ -589,9 +589,9 @@ export default function DashboardPage() {
 
                 <div className="flex items-center flex-col md:flex-row  w-full ">
                  
-                  <img className="w-10 h-10 " src="/plus.gif" alt="" />
+                  <img className="w-6 h-6 lg:w-10 lg:h-10" src="/plus.gif" alt="" />
                 
-                  <div className="font-medium text-xl ">إنشاء منشور جديد</div>
+                  <div className="font-medium text-sm lg:text-xl ">إنشاء منشور جديد</div>
                 </div>
               </Button>
             </Link>
@@ -599,8 +599,8 @@ export default function DashboardPage() {
             <Link className="w-full h-15.5" href="/schedule">
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center flex-col md:flex-row  w-full">
-                <img className="w-10 h-10 " src="/hour.gif" alt="" />
-                  <div className="font-medium text-xl"> المنشورات المجدولة</div>
+                <img className="w-6 h-6 lg:w-10 lg:h-10" src="/hour.gif" alt="" />
+                  <div className="font-medium text-sm lg:text-xl"> المنشورات المجدولة</div>
                 </div>
               </Button>
             </Link>
@@ -610,8 +610,8 @@ export default function DashboardPage() {
            <Link className="w-full h-15.5" href="/settings">
                 <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                   <div className="flex items-center flex-col md:flex-row  w-full">
-                <img className="w-10 h-10 " src="/setting.gif" alt="" />
-                  <div className="font-medium text-xl">إدارة الحسابات</div>
+                <img className="w-6 h-6 lg:w-10 lg:h-10" src="/setting.gif" alt="" />
+                  <div className="font-medium text-sm lg:text-xl">إدارة الحسابات</div>
                 </div>
               </Button>
             </Link>
@@ -619,8 +619,8 @@ export default function DashboardPage() {
             <Link className="w-full h-15.5" href="/customers">
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center flex-col md:flex-row  w-full">
-                <img className="w-10 h-10 " src="/clients.gif" alt="" />
-                  <div className="font-medium text-xl">ادارة العملاء </div>
+                <img className="w-6 h-6 lg:w-10 lg:h-10" src="/clients.gif" alt="" />
+                  <div className="font-medium text-sm lg:text-xl">ادارة العملاء </div>
                 </div>
               </Button>
             </Link>

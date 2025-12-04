@@ -407,7 +407,7 @@ export default function EmployeesPage() {
       )} */}
       <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col lg:flex-row gap-2 justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white">إدارة الموظفين</h1>
           <p className="text-gray-300 mt-2">إدارة موظفيك وصلاحياتهم</p>

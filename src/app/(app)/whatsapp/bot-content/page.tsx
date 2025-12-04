@@ -490,9 +490,9 @@ export default function BotContentPage() {
                 {/* Controls */}
       <div className="mb-6 space-y-4">
         <div className="flex flex-wrap gap-4">
-          <Link href={contentServiceLink} className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded" target={contentServiceLink.startsWith('http') ? '_blank' : undefined}>
+          <a href={contentServiceLink} className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded" target={contentServiceLink.startsWith('http') ? '_blank' : undefined}>
             خدمة اضافة المحتوى
-          </Link>
+          </a>
           <button
             onClick={() => setShowAddField(true)}
             className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded"

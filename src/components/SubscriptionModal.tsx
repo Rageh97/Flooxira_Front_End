@@ -351,9 +351,9 @@ export function SubscriptionModal({ isOpen, onClose, plan, onSubscribe, token }:
               >
                 {loading ? 'جاري التحقق...' : 'تفعيل الاشتراك'}
               </Button>
-              <Link className="w-1/2 primary-button" href={plan.paymentLink || "/terms"} target={plan.paymentLink ? "_blank" : undefined} rel={plan.paymentLink ? "noopener noreferrer" : undefined}>
+              <a className="w-1/2 primary-button" href={plan.paymentLink || "/terms"} target={plan.paymentLink ? "_blank" : undefined} rel={plan.paymentLink ? "noopener noreferrer" : undefined}>
              شراء كود الاشتراك 
-              </Link>
+              </a>
              </div>
             </div>
               </div>

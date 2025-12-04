@@ -934,11 +934,11 @@ export default function ContentHomePage() {
             <div className="lg:col-span-2">
               <Card className="gradient-border border-none">
                 <CardHeader className="border-b border-gray-700">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h3 className="text-lg font-semibold text-white">
                       {monthNames[currentMonth - 1]} {currentYear}
                     </h3>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 justify-end">
                       <Button 
                         onClick={() => navigateMonth('prev')}
                         className="bg-black  text-white"
@@ -967,7 +967,8 @@ export default function ContentHomePage() {
                   {itemsLoading ? (
                     <div className="text-center py-8 text-gray-400">جاري تحميل العناصر...</div>
                   ) : (
-                    <div className="grid grid-cols-7 gap-2 ">
+                    <div className="w-full overflow-x-auto">
+                      <div className="grid min-w-[700px] grid-cols-7 gap-2">
                       {/* Day headers */}
                       {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
                         <div key={day} className="p-3 text-center font-semibold text-green-400 bg-secondry rounded-lg">
@@ -1047,6 +1048,7 @@ export default function ContentHomePage() {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
                   )}
                 </CardContent>

@@ -374,7 +374,7 @@ export default function WhatsAppGroupsPage() {
 
 
 
-          <div className="flex gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
 
 
            <div className="w-full flex flex-col gap-4">
@@ -525,53 +525,7 @@ export default function WhatsAppGroupsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-full">
-            <div className="w-50">
-              <button 
-                className="w-full h-18 primary-button text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-70" 
-                onClick={handleSendToGroup} 
-                disabled={isSendingToGroup || selectedGroupNames.length === 0}
-              >
-              {isSendingToGroup ? (
-                <>
-                  <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                  </svg>
-                  <span>
-                    {groupScheduleAt && new Date(groupScheduleAt) > new Date() ? ' ' : ''}
-                  </span>
-                </>
-              ) : (
-                <>
-                  {groupScheduleAt && new Date(groupScheduleAt) > new Date() ? 'جدولة' : 'إرسال'}
-                </>
-              )}
-              </button>
-            </div>
-            
-            
-             
-          
-          <div className="flex gap-2">
-            <button 
-              className="w-50 h-18 primary-button text-white text-xl font-bold after:bg-red-800 before:bg-[#01191080] flex items-center justify-center gap-2 disabled:opacity-70" 
-              onClick={handleExportGroupMembers} 
-              disabled={isExportingMembers || selectedGroupNames.length === 0}
-            >
-              {isExportingMembers ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                  </svg>
-                  <span>جارٍ التصدير...</span>
-                </>
-              ) : (
-                'تصدير الأعضاء'
-              )}
-            </button>
-          </div>
+          <div className="flex items-center flex-col lg:flex-row gap-4 w-full">
           <div className="w-full flex gap-2 items-center justify-between">
                 <label className="flex items-center gap-2 text-white">
                   <input
@@ -607,6 +561,53 @@ export default function WhatsAppGroupsPage() {
                   )}
                 </div>
               </div>
+            <div className="w-50">
+              <button 
+                className="w-full lg:h-18 h-12 primary-button text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-70" 
+                onClick={handleSendToGroup} 
+                disabled={isSendingToGroup || selectedGroupNames.length === 0}
+              >
+              {isSendingToGroup ? (
+                <>
+                  <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                  <span>
+                    {groupScheduleAt && new Date(groupScheduleAt) > new Date() ? ' ' : ''}
+                  </span>
+                </>
+              ) : (
+                <>
+                  {groupScheduleAt && new Date(groupScheduleAt) > new Date() ? 'جدولة' : 'إرسال'}
+                </>
+              )}
+              </button>
+            </div>
+            
+            
+             
+          
+          <div className="flex gap-2">
+            <button 
+              className="w-50 lg:h-18 h-12 primary-button text-white text-xl font-bold after:bg-red-800 before:bg-[#01191080] flex items-center justify-center gap-2 disabled:opacity-70" 
+              onClick={handleExportGroupMembers} 
+              disabled={isExportingMembers || selectedGroupNames.length === 0}
+            >
+              {isExportingMembers ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                  </svg>
+                  <span>جارٍ التصدير...</span>
+                </>
+              ) : (
+                'تصدير الأعضاء'
+              )}
+            </button>
+          </div>
+          
           </div>
 
 

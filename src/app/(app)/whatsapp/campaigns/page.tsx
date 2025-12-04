@@ -255,8 +255,8 @@ export default function WhatsAppCampaignsPage() {
         <CardContent className="space-y-4">
 
 
-       <div className="flex gap-5 w-full">
-       <div className="flex flex-col gap-4 w-1/4">
+       <div className="flex flex-col lg:flex-row gap-5 w-full">
+       <div className="flex flex-col gap-4 w-full lg:w-1/4">
 
 <div>
   <label className="block text-sm font-medium mb-2 text-white">رفع ملف Excel للأرقام</label>
@@ -347,7 +347,7 @@ export default function WhatsAppCampaignsPage() {
 </div>
        </div>
 
-    <div className="flex w-full gap-4">
+    <div className="flex flex-col lg:flex-row w-full gap-4">
           <div className=" w-full">
             <label className="block text-sm font-medium mb-2 text-white">التحكم في السرعة (دقائق بين الرسائل)</label>
             <input min="5" max="100" type="number" className="bg-[#01191040] rounded-md p-2 text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignThrottle} onChange={(e) => setCampaignThrottle(parseInt(e.target.value || '5'))} />
@@ -393,22 +393,8 @@ export default function WhatsAppCampaignsPage() {
           </div> 
 
 
-          <div className="flex items-center gap-4 w-full">
-          <div className="w-50">
-            <button 
-              className=" w-full h-18 primary-button text-white text-2xl font-bold" 
-              onClick={handleStartCampaign} 
-              disabled={isStartingCampaign || !campaignFile || !campaignTemplate}
-            >
-              {campaignScheduleAt && new Date(campaignScheduleAt) > new Date() 
-                ? "بدء جدولة الحملة" 
-                : "بدء الحملة"}
-            </button>
-
-            </div>
-         
-          
-              <div className="w-full flex gap-2 items-center justify-between">
+          <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
+          <div className="w-full flex gap-2 items-center justify-between">
               <label className="flex items-center gap-2 text-white">
               <input
                   type="checkbox" 
@@ -445,6 +431,21 @@ export default function WhatsAppCampaignsPage() {
             )}
           </div>
             </div>
+          <div className="w-50">
+            <button 
+              className=" w-full lg:h-18 h-12 primary-button text-white text-2xl font-bold" 
+              onClick={handleStartCampaign} 
+              disabled={isStartingCampaign || !campaignFile || !campaignTemplate}
+            >
+              {campaignScheduleAt && new Date(campaignScheduleAt) > new Date() 
+                ? "بدء جدولة الحملة" 
+                : "بدء الحملة"}
+            </button>
+
+            </div>
+         
+          
+             
           </div>
          
         </CardContent>
@@ -559,7 +560,7 @@ export default function WhatsAppCampaignsPage() {
       <Card className="gradient-border border-none">
         <CardHeader className="border-text-primary/50 text-white font-bold text-xl"> حملة اعلانية لتصنيف محدد </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex  gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
 
 
             <div className="w-full flex flex-col gap-4">

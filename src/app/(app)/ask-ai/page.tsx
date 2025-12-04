@@ -290,7 +290,7 @@ export default function AskAIPage() {
       )} */}
       <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden">
         {/* Main Chat Area */}
-        <div className={`flex-1 flex flex-col ${isMobileListOpen ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col ${isMobileListOpen ? 'hidden lg:flex' : 'flex'}`}>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
@@ -513,7 +513,7 @@ export default function AskAIPage() {
         )}
         </div>
         {/* Sidebar - Conversations List */}
-        <div className={`w-full md:w-64 border-r border-gray-700 flex flex-col ${isMobileListOpen ? 'flex' : 'hidden md:flex'}`}>
+        <div className={`w-full md:w-64 border-r border-gray-700 flex flex-col ${isMobileListOpen ? 'flex' : 'hidden lg:flex'}`}>
         {/* New Chat Button */}
         <div className="p-3">
             <Button
@@ -550,8 +550,8 @@ export default function AskAIPage() {
         <div className="flex-1 overflow-y-auto px-2">
           {conversations.length === 0 ? (
             <div className="text-center py-8 px-4">
-              <MessageSquare className="h-12 w-12 text-gray-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">لا توجد محادثات بعد</p>
+              <MessageSquare className="h-12 w-12 text-yellow-600 mx-auto mb-2" />
+              <p className="text-sm text-gray-200">لا توجد محادثات بعد</p>
             </div>
           ) : (
             <div className="space-y-1">
