@@ -489,7 +489,7 @@ export default function BotContentPage() {
 
                 {/* Controls */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-2 ">
           <a href={contentServiceLink} className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded" target={contentServiceLink.startsWith('http') ? '_blank' : undefined}>
             خدمة اضافة المحتوى
           </a>

@@ -111,7 +111,7 @@ export default function ServicesSlider() {
   return (
     <div className=" border-none ">
       <CardHeader className="flex flex-col gap-4 gradient-border rounded-lg mb-1 border-none">
-        <div className="flex items-center justify-between w-full">
+        <div className="flex flex-col lg:flex-row items-center justify-between w-full">
           <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
             <Package className="h-5 w-5 " />
             <h3 className="text-white text-xl font-bold"> خدمات التجار</h3>
@@ -333,7 +333,7 @@ export default function ServicesSlider() {
                           >
                           </span>
                           <span
-                            className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg bg-[linear-gradient(to_right,var(--color-bg-light),var(--color-bg-dark))] px-7 text-sm font-medium text-white backdrop-blur-3xl gap-2 undefined"
+                            className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg bg-[linear-gradient(to_right,var(--color-bg-light),var(--color-bg-dark))] px-3 lg:px-7 text-sm font-medium text-white backdrop-blur-3xl gap-2 undefined"
                           >
                             عرض الخدمة
                             <svg

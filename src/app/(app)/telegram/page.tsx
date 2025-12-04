@@ -587,7 +587,7 @@ export default function TelegramBotPage() {
       {/* Bot Connection Status */}
       <Card className="gradient-border">
         <CardHeader className="border-text-primary/50 text-primary">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
          
            
            
