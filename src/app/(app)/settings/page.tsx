@@ -35,10 +35,11 @@ import Link from "next/link";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Download } from "lucide-react";
+import Image from "next/image";
 
 const PLATFORMS = {
-  facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook`,href: "https://developers.facebook.com/docs/development/create-an-app" },
+  facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook`,href: "https://business.facebook.com/business/loginpage" },
   instagram: { name: "Instagram", icon: <img className="w-12 h-12" src="/insta.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/instagram` },
   youtube: { name: "YouTube", icon: <img className="w-12 h-12" src="/youtube.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/youtube`,href: "https://play.google.com/console/u/0/signup" },
   // tiktok: { name: "TikTok", icon: <img className="w-10 h-10" src="/tiktok.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/tiktok` },
@@ -64,6 +65,7 @@ function SettingsContent() {
   const [edit, setEdit] = useState<{ platform: string; clientId: string; clientSecret: string } | null>(null);
   const [platformDetails, setPlatformDetails] = useState<Record<string, any>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
+  const [showRedirectModal, setShowRedirectModal] = useState<boolean>(false);
   const searchParams = useSearchParams();
   const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
   const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
@@ -545,8 +547,32 @@ useEffect(() => {
      
 
       <Card className="gradient-border">
-        <CardHeader className="border-text-primary/50 text-white">
+        <CardHeader className="border-text-primary/50 text-white flex flex-col md:flex-row items-center justify-between ">
           <h2 className="text-lg font-semibold">تكوين تطبيقات المنصات لكل مستخدم</h2>
+          
+          <div className="flex items-center flex-col md:flex-row gap-4 ">
+          <Button className="primary-button after:bg-green-600" onClick={() => setShowRedirectModal(true)}>
+            عرض معلومات الربط
+          </Button>
+              <p className="mb-1">تنزيل ايقونة التطبيق  </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = '/favicon.ico.png';
+                  link.download = 'app-icon.png';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="inline-flex cursor-pointer items-center justify-center rounded-full p-2 bg-primary text-white hover:opacity-90 transition"
+                aria-label="تنزيل ايقونة التطبيق"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+            
+            <Image src="/favicon.ico.png" alt="app-icon" width={50} height={50} />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
@@ -644,6 +670,118 @@ useEffect(() => {
           )}
         </CardContent>
       </Card>
+
+      {showRedirectModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="gradient-border border border-gray-700 rounded-xl p-6 w-full max-w-xl mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">معلومات الربط للتطبيقات</h3>
+            <p className="text-sm text-gray-400 mb-4">
+              استخدم هذه المعلومات في إعدادات التطبيقات على فيسبوك، يوتيوب، وتويتر (X).
+            </p>
+            
+            <div className="space-y-3 mb-6">
+              {[
+                {
+                  key:"اسم التطبيق",
+                  label: "اسم التطبيق",
+                  url: "Flooxira",
+                },
+                {
+                  key: "facebook",
+                  label: "فيسبوك",
+                  url: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/auth/callback`,
+                },
+                {
+                  key: "youtube",
+                  label: "يوتيوب",
+                  url: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/auth/youtube/callback`,
+                },
+                {
+                  key: "twitter",
+                  label: "تويتر (X)",
+                  url: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/auth/twitter/callback`,
+                },
+              ].map(({ key, label, url }) => (
+                <div
+                  key={key}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 border border-gray-700 rounded-lg px-3 py-2"
+                >
+                  <span className="text-sm text-primary min-w-[80px]">{label}</span>
+                  <span className="flex-1 text-xs text-gray-300 break-all">{url}</span>
+                  <Button
+                    size="sm"
+                    className="primary-button text-xs"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(url);
+                        showSuccess("تم نسخ الرابط إلى الحافظة");
+                      } catch (err) {
+                        console.error("Clipboard error:", err);
+                        showError("تعذر نسخ الرابط، حاول يدويًا");
+                      }
+                    }}
+                  >
+                    نسخ
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-gray-800 pt-4 space-y-3">
+              {/* <div className="text-sm text-gray-300 mb-1">
+                إعدادات فيسبوك: النطاق وروابط سياسة الخصوصية والشروط:
+              </div> */}
+              {[
+                {
+                  label: "نطاق التطبيق (App Domain)",
+                  url: "https://flooxira.com",
+                },
+                {
+                  label: "رابط سياسة الخصوصية (Privacy Policy URL)",
+                  url: "https://flooxira.com/privacy-police",
+                },
+                {
+                  label: "رابط الشروط والأحكام (Terms URL)",
+                  url: "https://flooxira.com/terms",
+                },
+              ].map(({ label, url }) => (
+                <div
+                  key={label}
+                  className="flex flex-col sm:flex-row sm:items-center gap-2 border border-gray-700 rounded-lg px-3 py-2"
+                >
+                  <span className="text-xs text-primary min-w-[140px]">{label}</span>
+                  <span className="flex-1 text-xs text-gray-300 break-all">{url}</span>
+                  <Button
+                    size="sm"
+                    className="primary-button text-xs"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(url);
+                        showSuccess("تم نسخ الرابط إلى الحافظة");
+                      } catch (err) {
+                        console.error("Clipboard error:", err);
+                        showError("تعذر نسخ الرابط، حاول يدويًا");
+                      }
+                    }}
+                  >
+                    نسخ
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <Button
+                variant="secondary"
+                className="primary-button after:bg-red-600"
+                onClick={() => setShowRedirectModal(false)}
+              >
+                إغلاق
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* .......................... */}
        {/* Platform Connections */}
