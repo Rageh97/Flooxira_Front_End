@@ -457,20 +457,7 @@ export default function BotContentPage() {
   const endIndex = startIndex + itemsPerPage;
   const currentRows = rows.slice(startIndex, endIndex);
 
-  // Show countdown loader for updates
-  if (updateCountdown !== null) {
-    return (
-      <Loader 
-        text={`جاري إتمام التحديث... (${updateCountdown} ث)`}
-        size="lg"
-        variant="success"
-        showDots
-        fullScreen
-      />
-    );
-  }
-
-  // Show fullscreen loader during operations
+  // Show fullscreen loader during operations (except update countdown)
   if (isAddingField || isUpdatingField || isDeletingField || isAddingRow || isUpdatingRow || isDeletingRow || isClearingData || isUploadingExcel || isExportingData) {
     let loaderText = "جاري المعالجة...";
     if (isAddingField) loaderText = "جاري إضافة العمود...";
@@ -550,10 +537,10 @@ export default function BotContentPage() {
           {rows.length > 0 && (
             <button
               onClick={handleExportData}
-              disabled={loading}
-              className="primary-button  text-white px-4 py-2 rounded"
+              disabled={loading || updateCountdown !== null}
+              className="primary-button text-white px-4 py-2 rounded"
             >
-              {loading ? 'جاري التصدير...' : 'تصدير إلى Excel'}
+              تصدير إلى Excel
             </button>
           )}
           
@@ -566,6 +553,41 @@ export default function BotContentPage() {
             </button>
           )}
         </div>
+        
+        {/* Update Progress Bar */}
+        {updateCountdown !== null && (
+          <div className="w-full bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-lg p-4 border border-purple-500/30 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <svg className="animate-spin h-5 w-5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+                <span className="text-white font-medium">جاري إتمام التحديث...</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-purple-300 text-sm font-mono">{updateCountdown} ثانية</span>
+                <div className="w-12 h-12 rounded-full border-4 border-purple-500/30 border-t-purple-400 flex items-center justify-center">
+                  <span className="text-purple-300 font-bold text-sm">{updateCountdown}</span>
+                </div>
+              </div>
+            </div>
+            <div className="relative w-full h-2 bg-gray-700/50 rounded-full overflow-hidden">
+              <div 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 rounded-full transition-all duration-1000 ease-linear"
+                style={{ 
+                  width: `${((30 - updateCountdown) / 30) * 100}%`,
+                  boxShadow: '0 0 10px rgba(168, 85, 247, 0.5)'
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
+              </div>
+            </div>
+            <p className="text-purple-200/70 text-xs mt-2 text-center">يرجى الانتظار حتى يتم تحديث البيانات في جميع الأنظمة...</p>
+          </div>
+        )}
       </div>
           </div>   
 
