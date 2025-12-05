@@ -60,6 +60,7 @@ export default function BotContentPage() {
   const [isExportingData, setIsExportingData] = React.useState(false);
   const [isUpdatingField, setIsUpdatingField] = React.useState(false);
   const [isDeletingField, setIsDeletingField] = React.useState(false);
+  const [updateCountdown, setUpdateCountdown] = React.useState<number | null>(null);
   
   const [contentServiceLink, setContentServiceLink] = React.useState('/whatsapp');
 
@@ -84,6 +85,18 @@ export default function BotContentPage() {
     };
     fetchLink();
   }, []);
+
+  React.useEffect(() => {
+    if (updateCountdown === null) return;
+    if (updateCountdown <= 0) {
+      setUpdateCountdown(null);
+      setSuccessMessage('تم التحديث بنجاح');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      return;
+    }
+    const timer = setTimeout(() => setUpdateCountdown((prev) => (prev ? prev - 1 : null)), 1000);
+    return () => clearTimeout(timer);
+  }, [updateCountdown]);
 
   React.useEffect(() => {
     if (authLoading) return;
@@ -186,8 +199,7 @@ export default function BotContentPage() {
       if (res.field) {
         setShowEditFieldModal(false);
         setFieldToEdit(null);
-        setSuccessMessage('تم تحديث العمود بنجاح');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        setUpdateCountdown(30);
         loadData();
       } else {
         alert('فشل في تحديث العمود');
@@ -280,8 +292,7 @@ export default function BotContentPage() {
       if (res.row) {
         setEditingData({});
         setEditingRow(null);
-        setSuccessMessage('تم تحديث الصف بنجاح');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        setUpdateCountdown(30);
         loadData();
       } else {
         alert('فشل في تحديث الصف');
@@ -445,6 +456,19 @@ export default function BotContentPage() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentRows = rows.slice(startIndex, endIndex);
+
+  // Show countdown loader for updates
+  if (updateCountdown !== null) {
+    return (
+      <Loader 
+        text={`جاري إتمام التحديث... (${updateCountdown} ث)`}
+        size="lg"
+        variant="success"
+        showDots
+        fullScreen
+      />
+    );
+  }
 
   // Show fullscreen loader during operations
   if (isAddingField || isUpdatingField || isDeletingField || isAddingRow || isUpdatingRow || isDeletingRow || isClearingData || isUploadingExcel || isExportingData) {

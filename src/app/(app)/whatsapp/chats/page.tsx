@@ -948,7 +948,7 @@ export default function WhatsAppChatsPage() {
                               {chat.contentType === 'image' && chat.mediaUrl && (
                                 <div className="mb-2">
                                   <img 
-                                    src={`process.env.NEXT_PUBLIC_API_URL${chat.mediaUrl}`} 
+                                    src={`${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
                                     alt="Sent image" 
                                     className="max-w-full h-auto rounded-lg"
                                     onError={(e) => {
@@ -961,7 +961,7 @@ export default function WhatsAppChatsPage() {
                               {chat.contentType === 'video' && chat.mediaUrl && (
                                 <div className="mb-2">
                                   <video 
-                                    src={`process.env.NEXT_PUBLIC_API_URL${chat.mediaUrl}`} 
+                                    src={`${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
                                     controls 
                                     className="max-w-full h-auto rounded-lg"
                                     onError={(e) => {
@@ -984,7 +984,7 @@ export default function WhatsAppChatsPage() {
                                         {chat.mediaFilename || `${chat.contentType.toUpperCase()} File`}
                                       </div>
                                       <a 
-                                        href={`process.env.NEXT_PUBLIC_API_URL${chat.mediaUrl}`} 
+                                        href={`${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="text-xs underline"
@@ -997,9 +997,16 @@ export default function WhatsAppChatsPage() {
                               )}
                               
                               {/* Text Content */}
-                              <div className="text-sm">
-                                <AnimatedEmoji emoji={chat.messageContent} size={16} />
-                              </div>
+                              {chat.messageContent && 
+                               chat.messageContent.trim() !== '' && 
+                               chat.messageContent.toLowerCase() !== 'image' && 
+                               chat.messageContent.toLowerCase() !== 'video' && 
+                               chat.messageContent.toLowerCase() !== 'audio' && 
+                               chat.messageContent.toLowerCase() !== 'document' && (
+                                <div className="text-sm whitespace-pre-wrap break-words">
+                                  {chat.messageContent}
+                                </div>
+                              )}
                               <div className="text-xs mt-1 opacity-70">
                                 {new Date(chat.timestamp).toLocaleTimeString()}
                                 {chat.responseSource && (

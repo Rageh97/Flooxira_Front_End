@@ -44,6 +44,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 export default function AskAIPage() {
   const [token, setToken] = useState("");
@@ -388,14 +389,14 @@ export default function AskAIPage() {
                       >
                         {message.role === "assistant" ? (
                           <>
-                            <div className="prose prose-invert max-w-none">
-                              <ReactMarkdown>{message.content}</ReactMarkdown>
+                            <div className="w-full">
+                              <MarkdownRenderer content={message.content} />
                             </div>
                             <Button
                               onClick={() => handleCopyMessage(message.id, message.content)}
                               size="sm"
                               variant="ghost"
-                              className="absolute bottom-2 left-2 transition-opacity bg-gray-700/50 hover:bg-gray-700 p-1.5 h-auto"
+                              className="absolute bottom-2 left-2 transition-opacity bg-gray-700/50 hover:bg-gray-700 p-1.5 h-auto opacity-0 group-hover:opacity-100"
                             >
                               {copiedMessageId === message.id ? (
                                 <CheckCheck className="h-4 w-4 text-green-400" />
