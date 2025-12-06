@@ -7,6 +7,7 @@ import { signInRequest, employeeLogin } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
+import Image from "next/image";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
@@ -61,7 +62,9 @@ export default function SignInPage() {
   const isSubmitting = isLoading || mutation.isPending;
 
   return (
-    <div className="space-y-14 ">
+    <>
+    
+    <div className="space-y-5 ">
       <div className="flex items-center justify-center flex-col gap-2">
         <h1 className="text-xl font-semibold text-white">تسجيل الدخول</h1>
         <p className="text-sm text-white">مرحباً بعودتك. يرجى إدخال بياناتك.</p>
@@ -101,7 +104,7 @@ export default function SignInPage() {
 
       </form>
     </div>
-  );
+    </>  );
 }
 
 

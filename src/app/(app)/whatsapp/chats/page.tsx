@@ -203,7 +203,24 @@ export default function WhatsAppChatsPage() {
   async function loadChatContacts() {
     try {
       const data = await getChatContacts(token);
+      console.log('=== getChatContacts API Response ===');
+      console.log('Full API response:', data);
+      console.log('Contacts array:', data.contacts);
+      
       if (data.success) {
+        // Log each contact to see all available fields
+        data.contacts.forEach((contact, index) => {
+          console.log(`Contact ${index + 1}:`, {
+            contactNumber: contact.contactNumber,
+            contactName: contact.contactName,
+            profilePicture: contact.profilePicture,
+            messageCount: contact.messageCount,
+            lastMessageTime: contact.lastMessageTime,
+            allKeys: Object.keys(contact),
+            fullObject: contact
+          });
+        });
+        
         setContacts(data.contacts);
         // Load tags for each contact
         await loadContactTags(data.contacts);
@@ -558,7 +575,7 @@ export default function WhatsAppChatsPage() {
                     {selectedContact ? (() => {
                       // Prefer real contact name if available
                       const found = contacts.find(c => c.contactNumber === selectedContact);
-                      if (found && found.contactName) return found.contactName;
+                      if (found && found.contactNumber) return found.contactNumber;
 
                       // Fallback: format number as before
                       let num = selectedContact.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '');
@@ -932,11 +949,35 @@ export default function WhatsAppChatsPage() {
                         <div className="text-xs text-gray-500 text-center">
                           {chats.length} رسالة محملة
                         </div>
-                        {chats.map((chat) => (
+                        {chats.map((chat) => {
+                          // Get contact profile picture for incoming messages
+                          const contactProfile = contacts.find(c => c.contactNumber === selectedContact);
+                          const profilePicture = contactProfile?.profilePicture;
+                          
+                          return (
                           <div
                             key={chat.id}
-                            className={`flex ${chat.messageType === 'outgoing' ? 'justify-end' : 'justify-start'}`}
+                            className={`flex items-end gap-2 ${chat.messageType === 'outgoing' ? 'justify-end' : 'justify-start'}`}
                           >
+                            {/* Avatar for incoming messages (user's profile picture) */}
+                            {chat.messageType === 'incoming' && (
+                              <div className="flex-shrink-0">
+                                {profilePicture ? (
+                                  <img 
+                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" 
+                                    src={profilePicture} 
+                                    alt="Contact" 
+                                  />
+                                ) : (
+                                  <img 
+                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
+                                    src="/user.gif" 
+                                    alt="Contact" 
+                                  />
+                                )}
+                              </div>
+                            )}
+                            
                             <div
                               className={`max-w-[85%] sm:max-w-xs p-2 sm:p-3 rounded-lg ${
                                 chat.messageType === 'outgoing'
@@ -1016,8 +1057,20 @@ export default function WhatsAppChatsPage() {
                                 )}
                               </div>
                             </div>
+                            
+                            {/* Bot icon for outgoing messages (bot's response) */}
+                            {chat.messageType === 'outgoing' && (
+                              <div className="flex-shrink-0 bg-secondry rounded-full p-1 items-center justify-center">
+                                <img 
+                                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
+                                  src="/rebot.gif" 
+                                  alt="Bot" 
+                                />
+                              </div>
+                            )}
                           </div>
-                        ))}
+                        );
+                        })}
                       </>
                     )}
                     {/* Invisible element to scroll to */}
