@@ -15,12 +15,13 @@ import { listTags, addContactToTag, createTag, listContactsByTag } from "@/lib/t
 import { sendWhatsAppMedia } from "@/lib/mediaApi";
 import { getBotStatus, pauseBot, resumeBot, BotStatus } from "@/lib/botControlApi";
 import AnimatedEmoji, { EmojiPickerInline } from "@/components/AnimatedEmoji";
+import { useAuth } from "@/lib/auth";
 
 export default function WhatsAppChatsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
-
+  const { user } = useAuth();
   // Toast function
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const toast = document.createElement('div');
@@ -145,17 +146,20 @@ export default function WhatsAppChatsPage() {
     }
   }, [selectedContact, token]);
 
-  // Auto-refresh chat every 15 seconds when a contact is selected (improved performance)
+  // Auto-refresh chat - faster when bot is paused, slower when bot is active
   useEffect(() => {
     if (!selectedContact) return;
 
+    // Use faster interval (3 seconds) when bot is paused, slower (15 seconds) when active
+    const refreshInterval = botStatus?.isPaused ? 3000 : 15000;
+
     const interval = setInterval(() => {
-      console.log(`[WhatsApp] Auto-refreshing chat for ${selectedContact}`);
+      console.log(`[WhatsApp] Auto-refreshing chat for ${selectedContact} (bot paused: ${botStatus?.isPaused})`);
       loadChatHistory(selectedContact, true);
-    }, 15000); // Refresh every 15 seconds (reduced from 5 seconds)
+    }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [selectedContact]);
+  }, [selectedContact, botStatus?.isPaused]);
 
   // Scroll to bottom when chats are loaded or updated
   useEffect(() => {
@@ -179,13 +183,105 @@ export default function WhatsAppChatsPage() {
       const data = await getChatHistory(token, contactNumber);
       console.log(`[WhatsApp] Chat history response:`, data);
       if (data.success) {
-        setChats(data.chats.map((chat: any) => ({
+        const processedChats = data.chats.map((chat: any) => ({
           ...chat,
           contentType: chat.contentType || 'text',
           mediaUrl: chat.mediaUrl || undefined,
           mediaFilename: chat.mediaFilename || undefined,
           mediaMimetype: chat.mediaMimetype || undefined
-        })).reverse());
+        }));
+        
+        // Log media messages for debugging
+        processedChats.forEach((chat: any) => {
+          if (chat.contentType === 'image' || chat.contentType === 'video') {
+            console.log(`[WhatsApp] Media message:`, {
+              contentType: chat.contentType,
+              messageContent: chat.messageContent,
+              mediaUrl: chat.mediaUrl,
+              hasMediaUrl: !!chat.mediaUrl
+            });
+          }
+        });
+        
+        // Merge with existing optimistic messages (keep optimistic messages that don't have a match yet)
+        setChats(prev => {
+          const serverChats = processedChats.reverse();
+          
+          // Identify optimistic messages (those with temporary IDs > 1000000000000 or _isOptimistic flag)
+          const optimisticMessages = prev.filter(msg => {
+            return (typeof msg.id === 'number' && msg.id > 1000000000000) || 
+                   (msg as any)._isOptimistic === true;
+          });
+          
+          // For each optimistic message, try to find a matching server message
+          const matchedOptimisticIds = new Set<number>();
+          const mergedChats = serverChats.map((serverChat: any) => {
+            // Try to find matching optimistic message
+            const matchingOptimistic = optimisticMessages.find(optMsg => {
+              if (matchedOptimisticIds.has(optMsg.id)) return false; // Already matched
+              
+              const timeDiff = Math.abs(new Date(serverChat.timestamp).getTime() - new Date(optMsg.timestamp).getTime());
+              const sameContact = serverChat.contactNumber === optMsg.contactNumber;
+              const sameType = serverChat.messageType === optMsg.messageType;
+              
+              // Match by contentType for media messages
+              if (optMsg.contentType === 'image' || optMsg.contentType === 'video') {
+                const sameContentType = serverChat.contentType === optMsg.contentType;
+                const timeClose = timeDiff < 60000; // Within 60 seconds
+                
+                if (sameContact && sameType && sameContentType && timeClose) {
+                  matchedOptimisticIds.add(optMsg.id);
+                  return true;
+                }
+              } else {
+                // For text messages, match by content
+                const sameContent = serverChat.messageContent === optMsg.messageContent;
+                const timeClose = timeDiff < 30000; // Within 30 seconds
+                
+                if (sameContact && sameType && sameContent && timeClose) {
+                  matchedOptimisticIds.add(optMsg.id);
+                  return true;
+                }
+              }
+              
+              return false;
+            });
+            
+            // If found matching optimistic message, use server chat (which has real ID and mediaUrl)
+            // But preserve mediaUrl from optimistic if server doesn't have it yet or if it's a data URL
+            if (matchingOptimistic) {
+              // For media messages, prefer server mediaUrl, but keep optimistic preview if server doesn't have it yet
+              const optimisticPreview = (matchingOptimistic as any)._previewUrl || matchingOptimistic.mediaUrl;
+              const finalMediaUrl = serverChat.mediaUrl 
+                ? serverChat.mediaUrl 
+                : optimisticPreview; // Use preview if server doesn't have URL yet
+              
+              return {
+                ...serverChat,
+                // Always preserve mediaUrl (from server or optimistic preview)
+                mediaUrl: finalMediaUrl,
+                // Also preserve other media fields from optimistic if missing
+                mediaFilename: serverChat.mediaFilename || matchingOptimistic.mediaFilename,
+                mediaMimetype: serverChat.mediaMimetype || matchingOptimistic.mediaMimetype,
+                // Remove optimistic flag
+                _isOptimistic: undefined,
+                _previewUrl: undefined
+              };
+            }
+            
+            return serverChat;
+          });
+          
+          // Keep unmatched optimistic messages
+          const unmatchedOptimistic = optimisticMessages.filter(msg => !matchedOptimisticIds.has(msg.id));
+          
+          // Combine server chats with unmatched optimistic messages, then sort by timestamp
+          const allChats = [...mergedChats, ...unmatchedOptimistic];
+          return allChats.sort((a, b) => {
+            return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+          });
+        });
+        
         console.log(`[WhatsApp] Loaded ${data.chats.length} messages`);
       } else {
         console.log(`[WhatsApp] Failed to load chat history:`, data);
@@ -337,7 +433,6 @@ export default function WhatsAppChatsPage() {
     }
     
     try {
-      setLoading(true);
       setError("");
       
       // Add to sending set to prevent duplicates
@@ -359,26 +454,54 @@ export default function WhatsAppChatsPage() {
         };
         setChats(prev => [...prev, optimisticMessage]);
         console.log(`[WhatsApp Frontend] Added optimistic message to UI`);
-      }
-      
-      const result = await sendWhatsAppMessage(token, targetPhone, targetMessage);
-      
-      if (result.success) {
-        showToast("تم إرسال الرسالة بنجاح!", 'success');
+        
+        // Clear input and scroll immediately for better UX
         setTestMessage("");
-        console.log(`[WhatsApp Frontend] Message sent successfully`);
-        // Scroll to bottom after sending message
         setTimeout(() => {
           if (messagesContainerRef.current) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
           }
-        }, 100);
-        // Refresh to get the real message from backend (with correct ID)
+        }, 50);
+      }
+      
+      // Send message in background without blocking UI
+      const result = await sendWhatsAppMessage(token, targetPhone, targetMessage);
+      
+      if (result.success) {
+        showToast("تم إرسال الرسالة بنجاح!", 'success');
+        console.log(`[WhatsApp Frontend] Message sent successfully`);
+        
+        // If bot is paused or message is manual, refresh immediately without waiting for interval
+        const isBotPaused = botStatus?.isPaused;
+        const isManualMessage = true; // This is always a manual message from user
+        
+        if (selectedContact && phoneNumber && (isBotPaused || isManualMessage)) {
+          // Immediate refresh for manual messages or when bot is paused
+          console.log(`[WhatsApp Frontend] Immediate refresh (bot paused: ${isBotPaused}, manual: ${isManualMessage})`);
+        setTimeout(() => {
+            loadChatHistory(selectedContact);
+          }, 300); // Quick refresh after sending
+          
+          // Also set up a few quick polls to catch any delayed responses
+          let pollCount = 0;
+          const maxPolls = 3;
+          const pollInterval = setInterval(() => {
+            pollCount++;
+            if (pollCount <= maxPolls) {
+              console.log(`[WhatsApp Frontend] Polling for new messages (${pollCount}/${maxPolls})`);
+              loadChatHistory(selectedContact, true);
+            } else {
+              clearInterval(pollInterval);
+            }
+          }, 2000); // Poll every 2 seconds for 3 times (6 seconds total)
+        } else {
+          // Normal refresh for bot responses
         if (selectedContact && phoneNumber) {
           setTimeout(() => {
             console.log(`[WhatsApp Frontend] Refreshing chat history to sync with backend`);
             loadChatHistory(selectedContact);
-          }, 500); // Reduced delay since we already showed the message
+            }, 500);
+          }
         }
       } else {
         console.log(`[WhatsApp Frontend] Message send failed:`, result.message);
@@ -391,8 +514,11 @@ export default function WhatsAppChatsPage() {
     } catch (e: any) {
       console.error('[WhatsApp Frontend] Send message error:', e);
       showToast(`فشل في الإرسال: ${e.message}`, 'error');
+      // Remove optimistic message on error
+      if (selectedContact && phoneNumber === selectedContact) {
+        setChats(prev => prev.filter(msg => msg.id !== Date.now()));
+      }
     } finally {
-      setLoading(false);
       // Remove from sending set after completion
       setSendingMessages(prev => {
         const newSet = new Set(prev);
@@ -414,7 +540,6 @@ export default function WhatsAppChatsPage() {
       return;
     }
     
-    setSendingMedia(true);
     setError("");
     setSuccess("");
     
@@ -422,31 +547,87 @@ export default function WhatsAppChatsPage() {
       // Add to sending set to prevent duplicates
       setSendingMessages(prev => new Set(prev).add(mediaKey));
       
+      const isImage = mediaFile.type.startsWith('image/');
+      const isVideo = mediaFile.type.startsWith('video/');
+      const contentType = isImage ? 'image' : isVideo ? 'video' : 'document';
+      
+      // Optimistic update: Add media message to UI immediately
+      if (selectedContact && contactNumber === selectedContact) {
+        // Store preview in a ref or state to preserve it
+        const optimisticId = Date.now();
+        const optimisticMessage = {
+          id: optimisticId, // Temporary ID - store it to track this message
+          contactNumber: contactNumber,
+          messageType: 'outgoing' as 'outgoing',
+          messageContent: mediaCaption || (isImage ? 'image' : isVideo ? 'video' : 'document'),
+          contentType: contentType as 'image' | 'video' | 'document',
+          mediaUrl: mediaPreview || undefined, // Use preview as temporary URL (data URL)
+          mediaFilename: mediaFile.name,
+          mediaMimetype: mediaFile.type,
+          responseSource: 'manual',
+          knowledgeBaseMatch: null,
+          timestamp: new Date().toISOString(),
+          _isOptimistic: true, // Flag to identify optimistic messages
+          _previewUrl: mediaPreview // Store preview URL separately
+        };
+        setChats(prev => [...prev, optimisticMessage]);
+        console.log(`[WhatsApp Frontend] Added optimistic media message to UI with ID: ${optimisticId}`);
+        console.log(`[WhatsApp Frontend] Added optimistic media message to UI`);
+        
+        // Clear media inputs and scroll immediately
+        setMediaFile(null);
+        setMediaPreview(null);
+        setMediaCaption("");
+        
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 50);
+      }
+      
       console.log(`[WhatsApp] Sending media to ${contactNumber}:`, mediaFile.name);
       const data = await sendWhatsAppMedia(contactNumber, mediaFile, mediaCaption || undefined);
       console.log(`[WhatsApp] Send media response:`, data);
       
       if (data.success) {
         showToast(`تم إرسال الوسائط بنجاح إلى ${contactNumber}`, 'success');
-        setMediaFile(null);
-        setMediaPreview(null);
-        setMediaCaption("");
-        // Refresh chat history to show the new message
-        await loadChatHistory(contactNumber);
-        // Scroll to bottom after sending media
+        
+        // If bot is paused, set up quick polls to catch any responses
+        const isBotPaused = botStatus?.isPaused;
+        if (isBotPaused) {
+          let pollCount = 0;
+          const maxPolls = 3;
+          const pollInterval = setInterval(() => {
+            pollCount++;
+            if (pollCount <= maxPolls) {
+              console.log(`[WhatsApp Frontend] Polling for new messages after media (${pollCount}/${maxPolls})`);
+              loadChatHistory(contactNumber, true);
+            } else {
+              clearInterval(pollInterval);
+            }
+          }, 2000); // Poll every 2 seconds for 3 times
+        }
+        
+        // Refresh chat history to get the real message from backend (with correct URL)
         setTimeout(() => {
-          if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-          }
-        }, 100);
+          loadChatHistory(contactNumber);
+        }, 300);
       } else {
         showToast(data.message || "فشل في إرسال الوسائط", 'error');
+        // Remove optimistic message on failure
+        if (selectedContact && contactNumber === selectedContact) {
+          setChats(prev => prev.filter(msg => msg.id !== Date.now()));
+        }
       }
     } catch (error) {
       console.error("[WhatsApp] Error sending media:", error);
       showToast("فشل في إرسال الوسائط. حاول مرة أخرى.", 'error');
+      // Remove optimistic message on error
+      if (selectedContact && contactNumber === selectedContact) {
+        setChats(prev => prev.filter(msg => msg.id !== Date.now()));
+      }
     } finally {
-      setSendingMedia(false);
       // Remove from sending set after completion
       setSendingMessages(prev => {
         const newSet = new Set(prev);
@@ -570,7 +751,14 @@ export default function WhatsAppChatsPage() {
            
            
            <div className="flex items-center gap-2">
-                  <img className="w-8 h-8 sm:w-10 sm:h-10" src="/user.gif" alt="" />
+                  {selectedContact ? <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />}
+                  <div className="flex flex-col">
+                  {/* <span className="text-white text-xs sm:text-sm">
+                      {selectedContact ? (() => {
+                        const found = contacts.find(c => c.contactNumber === selectedContact);
+                        return found?.contactName || '';
+                      })() : ''}
+                    </span> */}
            <span className="text-white font-medium text-xs sm:text-sm p-1 rounded-md truncate max-w-[150px] sm:max-w-none">
                     {selectedContact ? (() => {
                       // Prefer real contact name if available
@@ -643,6 +831,8 @@ export default function WhatsAppChatsPage() {
                       return cleanNum || selectedContact;
                     })() : 'اختر جهة اتصال لعرض الرسائل'}
                   </span>
+                   
+                  </div>
            </div>
            
           </div>
@@ -989,7 +1179,9 @@ export default function WhatsAppChatsPage() {
                               {chat.contentType === 'image' && chat.mediaUrl && (
                                 <div className="mb-2">
                                   <img 
-                                    src={`${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
+                                    src={chat.mediaUrl.startsWith('data:') || chat.mediaUrl.startsWith('http') 
+                                      ? chat.mediaUrl 
+                                      : `${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
                                     alt="Sent image" 
                                     className="max-w-full h-auto rounded-lg"
                                     onError={(e) => {
@@ -1002,7 +1194,9 @@ export default function WhatsAppChatsPage() {
                               {chat.contentType === 'video' && chat.mediaUrl && (
                                 <div className="mb-2">
                                   <video 
-                                    src={`${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
+                                    src={chat.mediaUrl.startsWith('data:') || chat.mediaUrl.startsWith('http') 
+                                      ? chat.mediaUrl 
+                                      : `${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
                                     controls 
                                     className="max-w-full h-auto rounded-lg"
                                     onError={(e) => {
@@ -1025,7 +1219,9 @@ export default function WhatsAppChatsPage() {
                                         {chat.mediaFilename || `${chat.contentType.toUpperCase()} File`}
                                       </div>
                                       <a 
-                                        href={`${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
+                                        href={chat.mediaUrl.startsWith('http') 
+                                          ? chat.mediaUrl 
+                                          : `${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="text-xs underline"
@@ -1037,22 +1233,40 @@ export default function WhatsAppChatsPage() {
                                 </div>
                               )}
                               
-                              {/* Text Content */}
-                              {chat.messageContent && 
+                              {/* Text Content - Only show if not a media-only message */}
+                              {(() => {
+                                // Helper function to check if messageContent is just a media placeholder
+                                const isMediaPlaceholder = (content: string, contentType: string) => {
+                                  const normalized = content.trim().toLowerCase();
+                                  const placeholders = [
+                                    contentType.toLowerCase(),
+                                    `[${contentType.toLowerCase()}]`,
+                                    contentType,
+                                    `[${contentType.toUpperCase()}]`,
+                                    contentType.toUpperCase()
+                                  ];
+                                  return placeholders.includes(normalized) || placeholders.includes(content.trim());
+                                };
+                                
+                                // Only show text if:
+                                // 1. messageContent exists and is not empty
+                                // 2. It's not a media placeholder when mediaUrl exists
+                                const hasMedia = (chat.contentType === 'image' || chat.contentType === 'video' || chat.contentType === 'audio' || chat.contentType === 'document') && chat.mediaUrl;
+                                const isPlaceholder = hasMedia && chat.messageContent && isMediaPlaceholder(chat.messageContent, chat.contentType);
+                                
+                                return chat.messageContent && 
                                chat.messageContent.trim() !== '' && 
-                               chat.messageContent.toLowerCase() !== 'image' && 
-                               chat.messageContent.toLowerCase() !== 'video' && 
-                               chat.messageContent.toLowerCase() !== 'audio' && 
-                               chat.messageContent.toLowerCase() !== 'document' && (
+                                  !isPlaceholder && (
                                 <div className="text-sm whitespace-pre-wrap break-words">
                                   {chat.messageContent}
                                 </div>
-                              )}
+                                  );
+                              })()}
                               <div className="text-xs mt-1 opacity-70">
                                 {new Date(chat.timestamp).toLocaleTimeString()}
                                 {chat.responseSource && (
                                   <span className="ml-2">
-                                    ({chat.responseSource === 'knowledge_base' ? 'KB' : chat.responseSource === 'openai' ? 'AI' : 'FB'})
+                                    ({chat.responseSource === 'knowledge_base' ? 'KB' : chat.responseSource === 'openai' || chat.responseSource=== "gemini" ? 'AI' : user?.name})
                                   </span>
                                 )}
                               </div>
@@ -1060,13 +1274,15 @@ export default function WhatsAppChatsPage() {
                             
                             {/* Bot icon for outgoing messages (bot's response) */}
                             {chat.messageType === 'outgoing' && (
-                              <div className="flex-shrink-0 bg-secondry rounded-full p-1 items-center justify-center">
+                              (chat.responseSource === 'gemini' || chat.responseSource === 'openai') ? (
                                 <img 
                                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
-                                  src="/rebot.gif" 
+                                  src="/Bott.gif" 
                                   alt="Bot" 
                                 />
-                              </div>
+                              ) : (
+                                <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="User" />
+                              )
                             )}
                           </div>
                         );
@@ -1163,10 +1379,10 @@ export default function WhatsAppChatsPage() {
                   </label>
                   <button 
                     onClick={() => handleSendMessage(selectedContact, testMessage)}
-                    disabled={!testMessage.trim() || loading}
+                    disabled={!testMessage.trim()}
                     className="flex-shrink-0"
                   >
-                    {loading ? <span className="text-xs sm:text-sm">جاري الإرسال...</span> : <img className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />}
+                    <img className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />
                   </button>
                  
                   <input
@@ -1176,11 +1392,10 @@ export default function WhatsAppChatsPage() {
                     onChange={(e) => setTestMessage(e.target.value)}
                     className="flex-1 px-2 sm:px-3 bg-[#01191040] py-2 sm:py-4 border border-blue-300 rounded-2xl text-sm sm:text-base text-white placeholder-white/50 min-w-0"
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !loading) {
+                      if (e.key === 'Enter') {
                         handleSendMessage(selectedContact, testMessage);
                       }
                     }}
-                    disabled={loading}
                   />
                 </div>
                 {showEmojiPicker && (
@@ -1195,9 +1410,6 @@ export default function WhatsAppChatsPage() {
                     />
                   </div>
                 )}
-                <p className="text-xs text-gray-400 mt-1">
-                  {loading ? "جاري إرسال الرسالة..." : ""}
-                </p>
               </div>
             )}
           </div>

@@ -6,6 +6,18 @@ export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+    
+    try {
+      const res = await meRequest(token);
+      setUser(res.user);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) {
@@ -69,7 +81,7 @@ export function useAuth() {
     return localStorage.getItem("auth_token");
   }, []);
 
-  return { user, loading, signOut, getToken };
+  return { user, loading, signOut, getToken, refreshUser };
 }
 
 

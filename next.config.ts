@@ -32,6 +32,25 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // إعدادات الصور للسماح بعرض الصور من API server
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '4000',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+        pathname: '/uploads/**',
+      },
+    ],
+    // السماح أيضاً بالصور من نفس النطاق
+    domains: ['localhost'],
+  },
 };
 
 export default nextConfig;

@@ -27,7 +27,7 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
   return data as T;
 }
 
-export type AuthUser = { id: number; name?: string | null; email: string; phone?: string | null; role?: 'user' | 'admin' | 'employee'; storeId?: string | null };
+export type AuthUser = { id: number; name?: string | null; email: string; phone?: string | null; role?: 'user' | 'admin' | 'employee'; storeId?: string | null; avatar?: string | null };
 
 export async function signInRequest(email: string, password: string) {
   return apiFetch<{ user: AuthUser; token: string }>("/api/auth/sign-in", {
@@ -58,6 +58,23 @@ export async function resetPasswordRequest(email: string, token: string, passwor
   return apiFetch<{ ok: boolean }>("/api/auth/reset", {
     method: "POST",
     body: JSON.stringify({ email, token, password }),
+  });
+}
+
+// Profile management
+export async function updateProfile(token: string, formData: FormData) {
+  return apiFetch<{ success: boolean; message?: string; user?: AuthUser }>("/api/auth/profile", {
+    method: "PUT",
+    body: formData,
+    authToken: token,
+  });
+}
+
+export async function changePassword(token: string, data: { currentPassword: string; newPassword: string }) {
+  return apiFetch<{ success: boolean; message?: string }>("/api/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(data),
+    authToken: token,
   });
 }
 

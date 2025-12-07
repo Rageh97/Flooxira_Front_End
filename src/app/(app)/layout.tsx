@@ -248,24 +248,31 @@ export default function AppLayout({ children }: PropsWithChildren) {
           </nav>
           {/* User info at bottom */}
           <div className="border-t border-gray-600 p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm flex flex-col">
-                {!loading && user && <span className="font-medium">{user.name || user.email}</span>}
-                {planName && (
-                  <span className="text-xs text-primary mt-1"> {planName}</span>
-                )}
+            <Link href="/profile" className="block mb-3 hover:bg-light-custom/50 rounded-lg p-2 transition-colors">
+              <div className="text-sm flex items-center gap-2">
+                <img 
+                  src={!loading && user ? (user.avatar || (typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null) || "/user.gif") : "/user.gif"} 
+                  alt="" 
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer" 
+                />
+                <div className="flex flex-col">
+                  {!loading && user && <span className="font-medium cursor-pointer">{user.name || user.email}</span>}
+                  {planName && (
+                    <span className="text-xs text-primary mt-1"> {planName}</span>
+                  )}
+                </div>
               </div>
-              {!loading && user && (
-                <Button 
-                  size="sm" 
-                 
-                  onClick={() => { signOut(); router.push('/sign-in'); }}
-                  className="primary-button after:bg-red-500 text-white"
-                >
-                  تسجيل الخروج
-                </Button>
-              )}
-            </div>
+            </Link>
+            {!loading && user && (
+              <Button 
+                size="sm" 
+               
+                onClick={() => { signOut(); router.push('/sign-in'); }}
+                className="primary-button after:bg-red-500 text-white w-full"
+              >
+                تسجيل الخروج
+              </Button>
+            )}
           </div>
         </aside>
       </div>
@@ -276,18 +283,22 @@ export default function AppLayout({ children }: PropsWithChildren) {
           <Image src="/Logo.gif" alt="logo" width={180} height={110} />
         </div>
         <div className="border-t border-gray-600 p-2 flex-shrink-0 w-full">
-          <div className="flex items-center justify-between">
+          <Link href="/profile" className="flex items-center justify-between hover:bg-light-custom/50 rounded-lg p-2 transition-colors">
             <div className="text-sm flex items-center gap-2">
-              <img src="/user.gif" alt="" className="w-10 h-10 rounded-full" />
+              <img 
+                src={!loading && user ? (user.avatar || (typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null) || "/user.gif") : "/user.gif"} 
+                alt="" 
+                className="w-10 h-10 rounded-full object-cover cursor-pointer" 
+              />
               <div className="flex items-center gap-2  ">
-                {!loading && user && <span className="font-medium text-md">{user.name }</span>}
+                {!loading && user && <span className="font-medium text-md cursor-pointer">{user.name }</span>}
                 {planName && (
                   <span className="text-xs text-primary gradient-border  p-1"> {planName}</span>
                 )}
               </div>
             </div>
            
-          </div>
+          </Link>
         </div>
         <nav className="px-2 py-2 space-y-1 flex-1 overflow-y-auto scrollbar-hide">
           {visibleNavItems.map((item) => (
