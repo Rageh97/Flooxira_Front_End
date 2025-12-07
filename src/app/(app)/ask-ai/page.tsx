@@ -289,9 +289,9 @@ export default function AskAIPage() {
           className="w-full"
         />
       )} */}
-      <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden">
+      <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden min-w-0">
         {/* Main Chat Area */}
-        <div className={`flex-1 flex flex-col ${isMobileListOpen ? 'hidden lg:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col min-w-0 ${isMobileListOpen ? 'hidden lg:flex' : 'flex'}`}>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
@@ -299,7 +299,7 @@ export default function AskAIPage() {
               <div className="flex items-center justify-between gap-2">
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   className="md:hidden shrink-0"
                   onClick={() => setIsMobileListOpen(true)}
                 >
@@ -358,7 +358,7 @@ export default function AskAIPage() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
               {messages.length === 0 ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
@@ -376,21 +376,24 @@ export default function AskAIPage() {
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex ${
+                      className={`flex w-full ${
                         message.role === "user" ? "justify-end" : "justify-start"
                       }`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg p-4 relative group ${
+                        className={`max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%] min-w-0 rounded-lg p-4 relative group break-words overflow-hidden ${
                           message.role === "user"
                             ? "bg-blue-600/20 text-white"
                             : "bg-gray-800 text-white"
                         }`}
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                       >
                         {message.role === "assistant" ? (
                           <>
-                            <div className="w-full">
-                              <MarkdownRenderer content={message.content} />
+                            <div className="w-full min-w-0 max-w-full overflow-x-auto">
+                              <div className="min-w-0 max-w-full">
+                                <MarkdownRenderer content={message.content} />
+                              </div>
                             </div>
                             <Button
                               onClick={() => handleCopyMessage(message.id, message.content)}
@@ -406,7 +409,7 @@ export default function AskAIPage() {
                             </Button>
                           </>
                         ) : (
-                          <p className="whitespace-pre-wrap">{message.content}</p>
+                          <p className="whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{message.content}</p>
                         )}
                         <p className="text-xs opacity-70 mt-2">
                           {new Date(message.createdAt).toLocaleTimeString('ar-SA', {
@@ -487,7 +490,7 @@ export default function AskAIPage() {
           <div className="flex-1 flex items-center justify-center relative">
              <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   className="md:hidden absolute top-4 right-4"
                   onClick={() => setIsMobileListOpen(true)}
                 >
@@ -514,7 +517,7 @@ export default function AskAIPage() {
         )}
         </div>
         {/* Sidebar - Conversations List */}
-        <div className={`w-full md:w-64 border-r border-gray-700 flex flex-col ${isMobileListOpen ? 'flex' : 'hidden lg:flex'}`}>
+        <div className={`w-full md:w-64 border-r border-gray-700 flex flex-col shrink-0 ${isMobileListOpen ? 'flex' : 'hidden lg:flex'}`}>
         {/* New Chat Button */}
         <div className="p-3">
             <Button

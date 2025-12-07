@@ -23,7 +23,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
   };
 
   return (
-    <div className="markdown-content text-white">
+    <div className="markdown-content text-white min-w-0 max-w-full overflow-hidden">
       <ReactMarkdown
         components={{
           // Headings
@@ -48,7 +48,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
           // Paragraphs
           p: ({ node, ...props }) => (
-            <p className="mb-4 leading-7 text-gray-100 whitespace-pre-wrap" {...props} />
+            <p className="mb-4 leading-7 text-gray-100 whitespace-pre-wrap break-words overflow-wrap-anywhere" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }} {...props} />
           ),
 
           // Lists
@@ -82,11 +82,11 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
             if (!inline && codeString) {
               return (
-                <div className="relative my-4 rounded-lg overflow-hidden border border-gray-700 bg-gray-900/50">
+                <div className="relative my-4 rounded-lg overflow-hidden border border-gray-700 bg-gray-900/50 max-w-full">
                   <div className="flex items-center justify-between bg-gray-800/70 px-4 py-2 border-b border-gray-700">
-                    <div className="flex items-center gap-2">
-                      <Code className="h-4 w-4 text-gray-400" />
-                      <span className="text-xs text-gray-400 uppercase font-medium">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Code className="h-4 w-4 text-gray-400 shrink-0" />
+                      <span className="text-xs text-gray-400 uppercase font-medium truncate">
                         {language || 'Code'}
                       </span>
                     </div>
@@ -94,7 +94,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
                       onClick={() => handleCopyCode(codeString, codeId)}
                       size="sm"
                       variant="ghost"
-                      className="h-7 px-2 hover:bg-gray-700"
+                      className="h-7 px-2 hover:bg-gray-700 shrink-0"
                     >
                       {copiedCode === codeId ? (
                         <CheckCheck className="h-3.5 w-3.5 text-green-400" />
@@ -103,7 +103,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
                       )}
                     </Button>
                   </div>
-                  <pre className="overflow-x-auto" {...props}>
+                  <pre className="overflow-x-auto max-w-full" {...props}>
                     <code className={`language-${language || 'text'}`}>{codeString}</code>
                   </pre>
                 </div>
@@ -130,8 +130,8 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
 
           // Tables
           table: ({ node, ...props }) => (
-            <div className="overflow-x-auto my-4 rounded-lg border border-gray-700">
-              <table className="min-w-full" {...props} />
+            <div className="overflow-x-auto my-4 rounded-lg border border-gray-700 max-w-full">
+              <table className="min-w-full max-w-full" {...props} />
             </div>
           ),
           thead: ({ node, ...props }) => (
@@ -168,7 +168,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
           // Images
           img: ({ node, ...props }: any) => (
             <img
-              className="max-w-full h-auto rounded-lg my-4 border border-gray-700 shadow-lg"
+              className="max-w-full h-auto rounded-lg my-4 border border-gray-700 shadow-lg w-full object-contain"
               alt={props.alt || ''}
               {...props}
             />
