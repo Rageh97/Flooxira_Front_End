@@ -751,7 +751,7 @@ export default function WhatsAppChatsPage() {
            
            
            <div className="flex items-center gap-2">
-                  {selectedContact ? <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />}
+                  {selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : <img className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />}
                   <div className="flex flex-col">
                   {/* <span className="text-white text-xs sm:text-sm">
                       {selectedContact ? (() => {
