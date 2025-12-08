@@ -230,7 +230,7 @@ export default function DashboardPage() {
       </div> */}
 
       {/* Main Stats Grid */}
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-2 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Card className="gradient-border card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between  pb-2">
             <div className="flex items-center  gap-2">
@@ -469,7 +469,7 @@ export default function DashboardPage() {
 
 
       {/* Platform Analytics */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-2 lg:grid-cols-2">
         <Card className="gradient-border h-fit card-hover-effect">
           <CardHeader className="border-b border-teal-500/20">
             <div className="flex items-center justify-between">

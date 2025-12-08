@@ -146,7 +146,10 @@ export default function TicketsPage() {
     youtubeUrl: "",
     instagramUrl: "",
     twitterUrl: "",
+    widgetIconUrl: "",
   });
+  const [widgetIconPreview, setWidgetIconPreview] = useState<string>("");
+  const [uploadingIcon, setUploadingIcon] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [liveChatUsage, setLiveChatUsage] = useState<{
     total: number | null;
@@ -599,6 +602,24 @@ export default function TicketsPage() {
     }
   };
 
+  const uploadWidgetIcon = async (file: File) => {
+    const formData = new FormData();
+    formData.append("icon", file);
+    const res = await fetch(`${API_BASE_URL}/api/dashboard/tickets/widget-icon`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`فشل رفع الأيقونة: ${res.status} ${errText}`);
+    }
+    const data = await res.json();
+    return data.url as string;
+  };
+
   const loadWidgetSettings = async () => {
     try {
       const response = await fetch(
@@ -625,16 +646,19 @@ export default function TicketsPage() {
           youtubeUrl: data.settings.youtubeUrl || "",
           instagramUrl: data.settings.instagramUrl || "",
           twitterUrl: data.settings.twitterUrl || "",
+          widgetIconUrl: data.settings.widgetIconUrl || "",
         });
+        setWidgetIconPreview(data.settings.widgetIconUrl || "");
       }
     } catch (error: any) {
       console.error("Failed to load widget settings:", error);
     }
   };
 
-  const saveWidgetSettings = async () => {
+  const saveWidgetSettings = async (override?: typeof widgetSettings) => {
     setSavingSettings(true);
     try {
+      const payload = override ?? widgetSettings;
       const response = await fetch(
         `${API_BASE_URL}/api/dashboard/tickets/widget-settings`,
         {
@@ -643,7 +667,7 @@ export default function TicketsPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(widgetSettings),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -651,11 +675,35 @@ export default function TicketsPage() {
         throw new Error("فشل في حفظ إعدادات الويدجت");
       }
 
+      if (override) {
+        setWidgetSettings(override);
+      }
+
       showSuccess("تم حفظ إعدادات الويدجت بنجاح!");
     } catch (error: any) {
       showError("خطأ", error.message);
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const handleWidgetIconSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploadingIcon(true);
+      const url = await uploadWidgetIcon(file);
+      const nextSettings = { ...widgetSettings, widgetIconUrl: url };
+      setWidgetSettings(nextSettings);
+      setWidgetIconPreview(url);
+      // حفظ تلقائي بعد رفع الأيقونة لضمان تسجيل الرابط في قاعدة البيانات
+      await saveWidgetSettings(nextSettings);
+      showSuccess("تم رفع الأيقونة بنجاح!");
+    } catch (error: any) {
+      showError("خطأ", error.message || "فشل رفع الأيقونة");
+    } finally {
+      setUploadingIcon(false);
+      e.target.value = "";
     }
   };
 
@@ -1118,7 +1166,7 @@ export default function TicketsPage() {
             </div>
             <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
               <p className="text-sm text-blue-300">
-                <strong>💡 نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <code className="bg-gray-800 px-1 rounded">&lt;/body&gt;</code> في صفحة HTML الخاصة بك
+                <strong> نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <code className="bg-gray-800 px-1 rounded">&lt;/body&gt;</code> في صفحة HTML الخاصة بك
               </p>
             </div>
             <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
@@ -1533,6 +1581,35 @@ export default function TicketsPage() {
           <p className="text-sm text-gray-400 mb-4">
             أضف روابط حساباتك على منصات التواصل الاجتماعي لتظهر في نهاية الشات:
           </p>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 p-3 border border-gray-700 rounded-lg bg-fixed-40">
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-gray-800 border border-gray-700 overflow-hidden flex items-center justify-center">
+                {widgetIconPreview ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={widgetIconPreview} alt="Widget Icon" className="w-full h-full object-contain" />
+                ) : (
+                  <span className="text-xs text-gray-400 text-center px-2">لا توجد أيقونة</span>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-white font-medium">أيقونة الويدجت</p>
+                <p className="text-xs text-gray-400">ارفع صورة (PNG/GIF) لاستخدامها كأيقونة</p>
+              </div>
+            </div>
+            <div className="flex-1 flex items-center justify-end gap-2">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleWidgetIconSelect}
+                disabled={uploadingIcon}
+                className="bg-fixed-40 border-primary cursor-pointer"
+              />
+              <Button disabled={uploadingIcon} className="primary-button">
+                {uploadingIcon ? <Loader2 className="h-4 w-4 animate-spin" /> : "رفع الأيقونة"}
+              </Button>
+            </div>
+          </div>
           
           <div className="space-y-4 grid grid-cols-2 lg:grid-cols-4 gap-2">
             <div>
@@ -1687,7 +1764,7 @@ export default function TicketsPage() {
             <CardContent className="space-y-6">
               <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
                 <p className="text-sm text-blue-300 font-semibold mb-2">
-                  💡 كيف يعمل النظام:
+                  كيف يعمل النظام:
                 </p>
                 <ul className="text-sm text-blue-200 space-y-1 list-disc list-inside">
                   <li>ارفع ملف Excel يحتوي على بيانات منتجاتك أو خدماتك</li>

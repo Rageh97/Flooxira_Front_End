@@ -533,7 +533,7 @@ export default function AskAIPage() {
         {/* Stats */}
         {stats && (
           <div className="px-3 pb-3">
-            <Card className="bg-gradient-custom border-primary ">
+            <Card className="bg-gradient-custom border-primary rounded-lg">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles className="h-4 w-4 text-green-400" />

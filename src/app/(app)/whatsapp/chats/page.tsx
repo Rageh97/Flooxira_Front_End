@@ -114,6 +114,23 @@ export default function WhatsAppChatsPage() {
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
+  // Linkify plain text into clickable anchors and keep line breaks
+  const linkify = (text: string) => {
+    if (!text) return "";
+    const urlPattern = /(https?:\/\/[^\s<>"']+|www\.[^\s<>"']+|[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.[a-zA-Z]{2,}[^\s<>"']*)/gi;
+    const withLinks = text.replace(urlPattern, (url) => {
+      const cleanUrl = url.replace(/[.,;:!?]+$/, "");
+      const trailing = url.slice(cleanUrl.length);
+      const href = cleanUrl.match(/^https?:\/\//i)
+        ? cleanUrl
+        : cleanUrl.startsWith("www.")
+        ? `https://${cleanUrl}`
+        : `https://${cleanUrl}`;
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="underline text-blue-300 break-all">${cleanUrl}</a>${trailing}`;
+    });
+    return withLinks.replace(/\n/g, "<br>");
+  };
+
   useEffect(() => {
     if (token) {
       loadChatContacts();
@@ -1257,9 +1274,10 @@ export default function WhatsAppChatsPage() {
                                 return chat.messageContent && 
                                chat.messageContent.trim() !== '' && 
                                   !isPlaceholder && (
-                                <div className="text-sm whitespace-pre-wrap break-words">
-                                  {chat.messageContent}
-                                </div>
+                                <div
+                                  className="text-sm whitespace-pre-wrap break-words"
+                                  dangerouslySetInnerHTML={{ __html: linkify(chat.messageContent) }}
+                                />
                                   );
                               })()}
                               <div className="text-xs mt-1 opacity-70">

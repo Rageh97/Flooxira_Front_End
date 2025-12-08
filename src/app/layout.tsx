@@ -27,6 +27,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html dir="rtl" lang="en">
       <body className={` antialiased`}>
         <Providers>{children}</Providers>
+        <script>
+  window.WIDGET_API_URL = 'https://api.flooxira.com';
+  window.WIDGET_SOCKET_URL = 'https://api.flooxira.com';
+</script>
+<script src="https://api.flooxira.com/widget.js" data-store-id="728a0211-a7ae-4279-b045-39dc52e8599b"></script>
       </body>
     </html>
   );

@@ -924,7 +924,7 @@ export default function TelegramBotPage() {
               <div className="text-gray-400">
                 <div className="text-6xl mb-4">🤖</div>
                 <h3 className="text-lg font-semibold text-white mb-2">البوت غير متصل</h3>
-                <p className="text-gray-400 mb-4">تحتاج إلى ربط البوت أولاً لإنشاء الحملات</p>
+                <p className="text-yellow-400 mb-4">تحتاج إلى ربط البوت أولاً لإنشاء الحملات</p>
                 <Button 
                   onClick={() => setActiveTab('overview')}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
