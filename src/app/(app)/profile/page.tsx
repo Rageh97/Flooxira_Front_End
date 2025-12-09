@@ -103,15 +103,10 @@ export default function ProfilePage() {
       if (result.success) {
         showSuccess('نجح', 'تم تحديث الملف الشخصي بنجاح');
         
-        // Save avatar to localStorage if uploaded
-        if (avatarPreview && typeof window !== 'undefined') {
-          localStorage.setItem(`user_avatar_${user.id}`, avatarPreview);
-          setUserAvatar(avatarPreview);
-        }
-        
-        // Update user avatar from response if available
+        // Update user avatar from response if available (Cloudinary URL)
         if (result.user?.avatar) {
           setUserAvatar(result.user.avatar);
+          setAvatarPreview(result.user.avatar);
           if (typeof window !== 'undefined') {
             localStorage.setItem(`user_avatar_${user.id}`, result.user.avatar);
           }

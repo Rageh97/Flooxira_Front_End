@@ -1734,7 +1734,7 @@ export default function TicketsPage() {
           </div>
 
           <Button
-            onClick={saveWidgetSettings}
+            onClick={() => saveWidgetSettings()}
             disabled={savingSettings}
             className="w-full primary-button"
           >
