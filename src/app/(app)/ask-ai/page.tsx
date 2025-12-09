@@ -316,7 +316,7 @@ export default function AskAIPage() {
                     <Button
                       onClick={handleUpdateTitle}
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-blue-600 hover:bg-blue-700"
                     >
                       <Check className="h-4 w-4" />
                     </Button>
@@ -358,7 +358,7 @@ export default function AskAIPage() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
+            <div className="flex-1 custom-scrollbar overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
               {messages.length === 0 ? (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center">
@@ -564,7 +564,7 @@ export default function AskAIPage() {
                   key={conversation.id}
                   className={`group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
                     selectedConversation?.id === conversation.id
-                      ? "bg-green-600/20 border border-green-600/30"
+                      ? "bg-blue-600/20 border border-green-600/30"
                       : "hover:bg-gray-800"
                   }`}
                   onClick={() => loadConversation(conversation.id)}

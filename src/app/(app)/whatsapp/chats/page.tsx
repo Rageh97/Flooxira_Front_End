@@ -769,7 +769,7 @@ export default function WhatsAppChatsPage() {
            
            
            <div className="flex items-center gap-2">
-                  {selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />}
+                  {selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />}
                   <div className="flex flex-col">
                   {/* <span className="text-white text-xs sm:text-sm">
                       {selectedContact ? (() => {
@@ -934,7 +934,7 @@ export default function WhatsAppChatsPage() {
             </div>
           </CardHeader>
           <CardContent className=" overflow-y-auto h-full w-full flex flex-col sm:flex-row">
-            <div className="space-y-2 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-l border-text-primary/50 max-h-[300px] sm:max-h-none overflow-y-auto">
+            <div className="space-y-2 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-l border-text-primary/50 max-h-[300px] sm:max-h-none overflow-y-auto custom-scrollbar">
               {contacts.map((contact, index) => (
                 <div
                   key={contact.contactNumber || `contact-${index}`}
@@ -944,7 +944,7 @@ export default function WhatsAppChatsPage() {
                       loadChatHistory(contact.contactNumber);
                     }
                   }}
-                  className={`p-2 sm:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
+                  className={`p-2 ml-1 sm:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
                     selectedContact === contact.contactNumber
                       ? ' inner-shadow'
                       : openNoteContacts.has(contact.contactNumber) ? 'bg-yellow-600/30' : 'bg-secondry'
@@ -962,7 +962,7 @@ export default function WhatsAppChatsPage() {
                         : (contact.contactNumber && contact.contactNumber.length > 0)
                           ? contact.contactNumber.charAt(0).toUpperCase()
                           : '?'} */}
-                          <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
+                          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
                     </div>
                   )}
                    <div className="flex flex-col">
@@ -1171,13 +1171,13 @@ export default function WhatsAppChatsPage() {
                             {chat.messageType === 'incoming' && (
                               <div className="flex-shrink-0">
                                 {profilePicture ? (
-                                  <Image width={40} height={40} 
+                                  <img width={40} height={40} 
                                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" 
                                     src={profilePicture} 
                                     alt="Contact" 
                                   />
                                 ) : (
-                                  <Image width={40} height={40} 
+                                  <img width={40} height={40} 
                                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
                                     src="/user.gif" 
                                     alt="Contact" 
@@ -1196,7 +1196,7 @@ export default function WhatsAppChatsPage() {
                               {/* Media Content */}
                               {chat.contentType === 'image' && chat.mediaUrl && (
                                 <div className="mb-2">
-                                  <Image width={40} height={40} 
+                                  <img width={40} height={40} 
                                     src={chat.mediaUrl.startsWith('data:') || chat.mediaUrl.startsWith('http') 
                                       ? chat.mediaUrl 
                                       : `${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
@@ -1294,7 +1294,7 @@ export default function WhatsAppChatsPage() {
                             {/* Bot icon for outgoing messages (bot's response) */}
                             {chat.messageType === 'outgoing' && (
                               (chat.responseSource === 'gemini' || chat.responseSource === 'openai') ? (
-                                <Image 
+                                <img 
                                   width={40}
                                   height={40}
                                   className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
@@ -1302,7 +1302,7 @@ export default function WhatsAppChatsPage() {
                                   alt="Bot" 
                                 />
                               ) : (
-                                <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="User" />
+                                <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="User" />
                               )
                             )}
                           </div>
@@ -1337,7 +1337,7 @@ export default function WhatsAppChatsPage() {
                     
                     {mediaPreview && (
                       <div className="mb-3">
-                        <Image width={40} height={40} 
+                        <img width={40} height={40} 
                           src={mediaPreview} 
                           alt="Preview" 
                           className="max-w-xs max-h-48 rounded-lg object-cover"
@@ -1386,11 +1386,11 @@ export default function WhatsAppChatsPage() {
                     className="px-0 flex-shrink-0"
                     title="إضافة إيموجي"
                   >
-                    <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/imogi.gif" alt="" />
+                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/imogi.gif" alt="" />
                     {/* <AnimatedEmoji emoji="😊" size={20} /> */}
                   </button>
                   <label className="text-white px-0 py-2 rounded cursor-pointer flex items-center flex-shrink-0">
-                    <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/img.gif" alt="" />
+                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/img.gif" alt="" />
                     <input
                       type="file"
                       accept="image/*,video/*"
@@ -1403,7 +1403,7 @@ export default function WhatsAppChatsPage() {
                     disabled={!testMessage.trim()}
                     className="flex-shrink-0"
                   >
-                    <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />
+                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />
                   </button>
                  
                   <input

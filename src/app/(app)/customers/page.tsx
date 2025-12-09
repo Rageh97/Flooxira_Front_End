@@ -14,7 +14,7 @@ import { useToast } from "@/components/ui/toast-provider";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Calendar1Icon } from "lucide-react";
 import { 
   Plus, 
   Search, 
@@ -706,7 +706,7 @@ useEffect(() => {
           'تاريخ انتهاء الاشتراك': customer.subscriptionEndDate ? new Date(customer.subscriptionEndDate).toLocaleDateString('en-US') : '',
           'حالة الاشتراك': getSubscriptionStatus(customer) === 'active' ? 'نشط' : getSubscriptionStatus(customer) === 'expired' ? 'منتهي' : 'غير نشط',
           'العنوان': customer.address || '',
-          'سعر الشراء': (customer as any).purchasePrice || 0,
+          'سعر التكلفة': (customer as any).purchasePrice || 0,
           'سعر البيع': (customer as any).salePrice || 0,
           'الربح': ((customer as any).salePrice || 0) - ((customer as any).purchasePrice || 0),
           'العلامات': customer.tags.join(', '),
@@ -1084,8 +1084,8 @@ useEffect(() => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                    <Users className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-lg font-bold">إجمالي العملاء</p>
                 </div>
@@ -1098,8 +1098,8 @@ useEffect(() => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                    <UserCheck className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                    <UserCheck className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-lg font-bold">العملاء النشطين</p>
                 </div>
@@ -1126,8 +1126,8 @@ useEffect(() => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-lg font-bold">معدل النمو</p>
                 </div>
@@ -1145,8 +1145,8 @@ useEffect(() => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <Package className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                    <Package className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-lg font-bold">رأس المال الكلي</p>
                 </div>
@@ -1159,8 +1159,8 @@ useEffect(() => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-lg font-bold">الإيرادات الكلية</p>
                 </div>
@@ -1173,8 +1173,8 @@ useEffect(() => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
-                    <Crown className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                    <Crown className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-lg font-bold">صافي الربح</p>
                 </div>
@@ -1444,7 +1444,7 @@ useEffect(() => {
                     <TableHead className='border-r '>اسم المنصة</TableHead>
                     <TableHead className='border-r '>التصنيف</TableHead>
                     <TableHead className='border-r '>المنتج</TableHead>
-                    <TableHead className='border-r '>سعر الشراء</TableHead>
+                    <TableHead className='border-r '>سعر التكلفة</TableHead>
                     <TableHead className='border-r '>سعر البيع</TableHead>
                     <TableHead className='border-r '>الربح</TableHead>
                     <TableHead className='border-r '>صورة الفاتورة</TableHead>
@@ -1988,21 +1988,56 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
         </div>
         <div>
           <Label htmlFor="subscriptionStartDate">تاريخ بداية الاشتراك</Label>
+          <div className="relative">
           <Input
             id="subscriptionStartDate"
             type="date"
             value={formData.subscriptionStartDate}
             onChange={(e) => setFormData({ ...formData, subscriptionStartDate: e.target.value })}
           />
+          <Calendar1Icon 
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
+                          />
+          </div>
         </div>
         <div>
           <Label htmlFor="subscriptionEndDate">تاريخ انتهاء الاشتراك</Label>
+          <div className="relative">
           <Input
             id="subscriptionEndDate"
             type="date"
             value={formData.subscriptionEndDate}
             onChange={(e) => setFormData({ ...formData, subscriptionEndDate: e.target.value })}
           />
+           <Calendar1Icon 
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
+                          />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="salePrice">سعر البيع</Label>
+          <Input
+            id="salePrice"
+            type="number"
+            step="1"
+            value={formData.salePrice}
+            onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+            placeholder="0"
+          />
+        </div>
+        <div>
+          <Label htmlFor="purchasePrice">سعر التكلفة</Label>
+         
+          <Input
+            id="purchasePrice"
+            type="number"
+            step="1"
+            value={formData.purchasePrice}
+            onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+            placeholder="0"
+          />
+          
+          
         </div>
         <div>
           <Label htmlFor="subscriptionStatus">حالة الاشتراك</Label>
@@ -2019,28 +2054,6 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
               {formData.subscriptionStatus === 'active' ? 'نشط' : 'غير نشط'}
             </Label>
           </div>
-        </div>
-        <div>
-          <Label htmlFor="purchasePrice">سعر الشراء</Label>
-          <Input
-            id="purchasePrice"
-            type="number"
-            step="1"
-            value={formData.purchasePrice}
-            onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-            placeholder="0"
-          />
-        </div>
-        <div>
-          <Label htmlFor="salePrice">سعر البيع</Label>
-          <Input
-            id="salePrice"
-            type="number"
-            step="1"
-            value={formData.salePrice}
-            onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
-            placeholder="0"
-          />
         </div>
       </div>
       

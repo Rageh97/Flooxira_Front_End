@@ -952,7 +952,7 @@ export default function BotContentPage() {
                           />
                         ) : (
                           <div className="w-full">
-                            <div className="break-words whitespace-pre-wrap text-sm max-h-32 overflow-y-auto text-white rounded p-2 bg-[#01191040] min-h-[40px] max-w-[300px]">
+                            <div className="break-words whitespace-pre-wrap text-sm max-h-32 overflow-y-auto text-white rounded p-2 bg-[#01191040] min-h-[40px] custom-scrollbar max-w-[300px]">
                               {row.data[field.fieldName] !== undefined && row.data[field.fieldName] !== null && row.data[field.fieldName] !== '' 
                                 ? String(row.data[field.fieldName]) 
                                 : <span className="text-gray-400 italic">فارغ</span>}

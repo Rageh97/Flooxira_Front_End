@@ -1313,8 +1313,8 @@ export default function TicketsPage() {
 
         <Card className="gradient-border border-none h-[640px] flex flex-col overflow-hidden">
           {selectedTicket ? (
-            <CardContent className="p-4 flex-1 flex flex-col min-h-0">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-gray-800 pb-4">
+            <CardContent className="p-4 flex-1 flex flex-col min-h-0 border-none">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4  ">
                 <div>
                   <h2 className="text-xl font-semibold text-white">
                     {selectedTicket.visitorName || `عميل جديد`}
@@ -1366,7 +1366,7 @@ export default function TicketsPage() {
 
               <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto space-y-4 p-4 rounded-lg mt-4 bg-gray-900 min-h-0"
+                className="flex-1 custom-scrollbar overflow-y-auto space-y-4 p-4 rounded-lg mt-4 bg-gray-900 min-h-0"
               >
                 {messages.map((message) => {
                   const agentDisplayName =
@@ -1382,12 +1382,12 @@ export default function TicketsPage() {
                       }`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-lg p-4 ${
+                        className={`max-w-[85%] rounded-lg  p-4 ${
                           message.senderType === "visitor"
                             ? "bg-blue-600/20 text-white"
                             : message.senderType === "bot"
                             ? "bg-gray-800 text-white"
-                            : "bg-green-600/20 text-white"
+                            : "bg-purple-600/20 text-white"
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-2">
@@ -1431,9 +1431,9 @@ export default function TicketsPage() {
                 })}
               </div>
 
-              <div className="flex flex-col border-t border-gray-800 mt-4">
+              <div className="flex flex-col  mt-4">
                 {previewUrl && (
-                  <div className="p-4 flex items-center gap-4 bg-gray-900/50">
+                  <div className="p-4 flex items-center gap-4 bg-gray-900/50 ">
                     <div className="relative group">
                       <img 
                         src={previewUrl} 
@@ -1584,7 +1584,7 @@ export default function TicketsPage() {
 
           <div className="flex flex-col sm:flex-row items-center gap-3 p-3 border border-gray-700 rounded-lg bg-fixed-40">
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-full bg-gray-800 border border-gray-700 overflow-hidden flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full  bg-gray-800 border border-gray-700 overflow-hidden flex items-center justify-center">
                 {widgetIconPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={widgetIconPreview} alt="Widget Icon" className="w-full h-full object-contain" />
