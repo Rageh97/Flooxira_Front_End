@@ -64,7 +64,10 @@ export default function SignInPage() {
   return (
     <>
     
-    <div className="space-y-5 ">
+    <div className="space-y-2 ">
+      <div>
+        <Image src="/Logo.gif" alt="logo" width={400} height={100} />
+      </div>
       <div className="flex items-center justify-center flex-col gap-2">
         <h1 className="text-xl font-semibold text-white">تسجيل الدخول</h1>
         <p className="text-sm text-white">مرحباً بعودتك. يرجى إدخال بياناتك.</p>

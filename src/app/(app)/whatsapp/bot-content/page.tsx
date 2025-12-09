@@ -15,12 +15,27 @@ type EditableCellProps = {
 };
 
 function EditableCell({ value, onChange, type = 'text' }: EditableCellProps) {
+  // Use textarea for better editing experience with larger input area
+  if (type === 'text' || type === 'string') {
+    return (
+      <textarea
+        className="w-full min-h-[80px] max-h-[300px] border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-[#01191040] resize-y"
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="أدخل النص هنا..."
+        rows={3}
+      />
+    );
+  }
+  
+  // For number inputs, use regular input
   return (
     <input
-      className="border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white"
+      className="w-full border-[0.5px] border-white/60 outline-none rounded px-3 py-2 text-white bg-[#01191040]"
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       type={type}
+      placeholder={type === 'number' ? 'أدخل رقم...' : 'أدخل قيمة...'}
     />
   );
 }

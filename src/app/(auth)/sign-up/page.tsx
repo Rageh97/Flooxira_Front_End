@@ -7,6 +7,7 @@ import { signUpRequest } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
+import Image from "next/image";
 
 export default function SignUpPage() {
   const [name, setName] = useState("");
@@ -34,6 +35,9 @@ export default function SignUpPage() {
 
   return (
     <div className="space-y-6 ">
+      <div>
+        <Image src="/Logo.gif" alt="logo" width={400} height={100} />
+      </div>
       <div>
         <h1 className="text-xl font-semibold text-white">إنشاء حساب</h1>
       </div>
