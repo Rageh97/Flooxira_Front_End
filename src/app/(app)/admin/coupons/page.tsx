@@ -32,7 +32,8 @@ import {
   XCircle,
   Clock,
   Copy,
-  Sparkles
+  Sparkles,
+  Download
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 
@@ -230,6 +231,66 @@ export default function CouponsAdminPage() {
     }
   };
 
+  const handleExportPlanCoupons = async (type: 'growth' | 'plus' | 'business') => {
+    let keyword = '';
+    let arabicKeyword = '';
+    
+    switch (type) {
+      case 'growth':
+        keyword = 'growth';
+        arabicKeyword = 'نمو';
+        break;
+      case 'plus':
+        keyword = 'plus';
+        arabicKeyword = 'بلس';
+        break;
+      case 'business':
+        keyword = 'business';
+        arabicKeyword = 'عمال'; // Covers اعمال and أعمال
+        break;
+    }
+
+    const plan = plans.find(p => 
+      p.name.toLowerCase().includes(keyword) || 
+      p.name.includes(arabicKeyword)
+    );
+
+    if (!plan) {
+      showError(`لم يتم العثور على باقة ${type === 'growth' ? 'النمو' : type === 'plus' ? 'البلس' : 'الأعمال'}`);
+      return;
+    }
+
+    try {
+      showInfo('جاري التصدير...', 'يرجى الانتظار قليلاً');
+      
+      // Fetch all coupons for this plan
+      const res = await listCoupons(token, { 
+        planId: plan.id,
+        limit: 10000 // High limit to get all
+      });
+
+      if (!res.coupons || res.coupons.length === 0) {
+        showError('لا توجد قسائم لهذه الباقة');
+        return;
+      }
+      
+      const codes = res.coupons.map(c => c.code).join('\n');
+      const blob = new Blob([codes], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `coupons_${type}_${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      showSuccess(`تم تصدير ${res.coupons.length} كود بنجاح`);
+    } catch (e: any) {
+      showError(e.message || 'فشل في تصدير القسائم');
+    }
+  };
+
   const openEditModal = (coupon: Coupon) => {
     setSelectedCoupon(coupon);
     setEditCoupon({
@@ -287,6 +348,30 @@ export default function CouponsAdminPage() {
           <h1 className="text-2xl font-semibold text-white">إدارة القسائم</h1>
         </div>
         <div className="flex gap-2">
+          <Button
+            onClick={() => handleExportPlanCoupons('growth')}
+            variant="outline"
+            className="bg-white/10 text-white hover:bg-white/20 border-white/20"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            تصدير باقة النمو
+          </Button>
+          <Button
+            onClick={() => handleExportPlanCoupons('plus')}
+            variant="outline"
+            className="bg-white/10 text-white hover:bg-white/20 border-white/20"
+          >
+             <Download className="h-4 w-4 mr-2" />
+             تصدير باقة بلس
+          </Button>
+          <Button
+            onClick={() => handleExportPlanCoupons('business')}
+            variant="outline"
+            className="bg-white/10 text-white hover:bg-white/20 border-white/20"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            تصدير باقة الأعمال
+          </Button>
           <Button
             onClick={() => setGenerateModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700"
