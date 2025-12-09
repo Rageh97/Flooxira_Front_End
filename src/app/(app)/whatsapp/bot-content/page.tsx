@@ -125,7 +125,18 @@ export default function BotContentPage() {
       
       console.log('Fields from API:', fieldsRes.fields);
       console.log('Rows from API:', rowsRes.rows);
-      if (fieldsRes.fields) setFields(fieldsRes.fields);
+      
+      // ✅ CRITICAL: Sort fields by createdAt to ensure consistent order
+      if (fieldsRes.fields) {
+        const sortedFields = [...fieldsRes.fields].sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateA - dateB; // Ascending order (oldest first)
+        });
+        console.log('Sorted fields:', sortedFields.map(f => f.fieldName));
+        setFields(sortedFields);
+      }
+      
       if (rowsRes.rows) setRows(rowsRes.rows);
     } catch (error) {
       console.error('Error loading data:', error);
