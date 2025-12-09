@@ -282,7 +282,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         <div className="px-4 py-1 w-full flex justify-center">
           <Image src="/Logo.gif" alt="logo" width={180} height={110} />
         </div>
-        <div className="border-t border-gray-600 p-2 flex-shrink-0 w-full">
+        <div className="border-t border-gray-600 px-2 py-0 flex-shrink-0 w-full">
           <Link href="/profile" className="flex items-center justify-between hover:bg-light-custom/50 rounded-lg p-2 transition-colors">
             <div className="text-sm flex items-center gap-2">
               <img 
@@ -291,9 +291,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 className="w-10 h-10 rounded-full object-cover cursor-pointer" 
               />
               <div className="flex items-center gap-2  ">
-                {!loading && user && <span className="font-medium text-md cursor-pointer">{user.name }</span>}
+                {!loading && user && <span className="font-medium text-[9px] cursor-pointer">{user.name }</span>}
                 {planName && (
-                  <span className="text-xs text-primary gradient-border  p-1"> {planName}</span>
+                  <span className="text-[9px] text-primary gradient-border  p-1"> {planName}</span>
                 )}
               </div>
             </div>

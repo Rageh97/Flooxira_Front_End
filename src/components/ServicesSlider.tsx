@@ -259,7 +259,7 @@ export default function ServicesSlider() {
                 const imageUrl = resolveServiceImageUrl(service.image);
                 return (
                   <SwiperSlide key={service.id} className="h-auto">
-                  <div className="h-full rounded-lg  card-shine-effect pt-1 hover:shadow-lg transition-all duration-300 cursor-pointer hover:border-purple-300 flex flex-col">
+                  <div className="h-full rounded-lg  card-shine-effect  hover:shadow-lg transition-all duration-300 cursor-pointer hover:border-purple-300 flex flex-col">
                     <div className="p-0 rounded-lg flex flex-col h-full">
                       {/* Service Image */}
                       {imageUrl && (

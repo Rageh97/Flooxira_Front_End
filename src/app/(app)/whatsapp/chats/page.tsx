@@ -952,9 +952,9 @@ export default function WhatsAppChatsPage() {
                 >
                    <div className="flex items-center gap-2">
                    {contact.profilePicture ? (
-                    <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
+                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
                   ) : contact.messageCount > 0 ? (
-                    <Image width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/belll.gif" alt="" />
+                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/belll.gif" alt="" />
                   ) : (
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
                       {/* {contact.contactName 
