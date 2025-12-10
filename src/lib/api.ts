@@ -1686,6 +1686,17 @@ export async function getUSDTWalletInfo(token: string) {
   return apiFetch<{ success: boolean; walletInfo: { address: string; network: string; instructions: string } }>("/api/subscription-requests/wallet-info", { authToken: token });
 }
 
+export async function deleteExhaustedCoupons(token: string) {
+  return apiFetch<{ success: boolean; count: number; message: string }>("/api/coupons/bulk/exhausted", {
+    method: "DELETE",
+    authToken: token
+  });
+}
+
+export async function getMySubscription(token: string) {
+  return apiFetch<{ success: boolean; subscription: any }>("/api/subscription-requests/my-subscription", { authToken: token });
+}
+
 // ===== COUPONS API =====
 export type Coupon = {
   id: number;
@@ -2168,6 +2179,10 @@ export async function getPostUsageStats(token: string) {
       isAtLimit: boolean;
       platformUsage: Record<string, number>;
       planName: string;
+      subscription?: {
+        startedAt: string;
+        expiresAt: string;
+      };
     };
   }>('/api/posts/usage-stats', {
     method: 'GET',

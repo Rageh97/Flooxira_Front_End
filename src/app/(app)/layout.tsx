@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { PropsWithChildren, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
-import { getPostUsageStats } from "@/lib/api";
+import { getPostUsageStats, getMySubscription } from "@/lib/api";
 import { getAllNewsTickers, type NewsTicker } from "@/lib/settingsApi";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -46,6 +46,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [planName, setPlanName] = useState<string>("");
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{ daysRemaining: number | null, colorClass: string }>({ daysRemaining: null, colorClass: '' });
   const [newsBarClosed, setNewsBarClosed] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState<number>(0);
   const [newsItems, setNewsItems] = useState<NewsTicker[]>([]);
@@ -117,9 +118,44 @@ export default function AppLayout({ children }: PropsWithChildren) {
         const token = localStorage.getItem('auth_token') || '';
         if (!token) return;
         
+        // Try getting full subscription details first for accurate dates
+        try {
+          const subRes = await getMySubscription(token);
+          if (subRes.success && subRes.subscription) {
+            setPlanName(subRes.subscription.plan.name || 'غير محدد');
+            
+            if (subRes.subscription.expiresAt) {
+              const start = new Date(subRes.subscription.startedAt).getTime();
+              const end = new Date(subRes.subscription.expiresAt).getTime();
+              const now = new Date().getTime();
+
+              const totalDuration = end - start;
+              const remainingTime = end - now;
+              const daysRemaining = Math.max(0, Math.ceil(remainingTime / (1000 * 60 * 60 * 24)));
+
+              let colorClass = 'text-green-500';
+
+              if (remainingTime <= (totalDuration / 2)) {
+                colorClass = 'text-yellow-500';
+              }
+
+              if (daysRemaining <= 5) {
+                colorClass = 'text-red-500';
+              }
+
+              setSubscriptionStatus({ daysRemaining, colorClass });
+              return; // Successfully loaded from subscription endpoint
+            }
+          }
+        } catch (subError) {
+          console.log('Failed to load subscription details, falling back to usage stats');
+        }
+
+        // Fallback to usage stats if my-subscription fails or returns no data
         const res = await getPostUsageStats(token);
         if (res.success && res.data) {
           setPlanName(res.data.planName || 'غير محدد');
+          // Old logic for dates from usage-stats (if available) - likely not needed if we want to rely on the above
         }
       } catch (error) {
         console.error('Failed to load plan name:', error);
@@ -258,7 +294,14 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 <div className="flex flex-col">
                   {!loading && user && <span className="font-medium cursor-pointer">{user.name || user.email}</span>}
                   {planName && (
-                    <span className="text-xs text-primary mt-1"> {planName}</span>
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-xs text-primary"> {planName}</span>
+                      {subscriptionStatus.daysRemaining !== null && (
+                        <span className={`text-[10px] font-bold ${subscriptionStatus.colorClass} border border-current rounded px-1`}>
+                          {subscriptionStatus.daysRemaining}D
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -291,14 +334,30 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 className="w-10 h-10 rounded-full object-cover cursor-pointer" 
               />
               <div className="flex items-center gap-2  ">
-                {!loading && user && <span className="font-medium text-[9px] cursor-pointer">{user.name }</span>}
+                {!loading && user && <span className="font-medium text-xs cursor-pointer">{user.name }</span>}
                 {planName && (
-                  <span className="text-[9px] text-primary gradient-border  p-1"> {planName}</span>
+                  <div className="flex flex-col items-start ml-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-primary gradient-border text-center p-1">{planName} {subscriptionStatus.daysRemaining !== null && (
+                        <span className={`text-[9px] font-bold ${subscriptionStatus.colorClass}  `}>
+                          {subscriptionStatus.daysRemaining}D
+                        </span>
+                      )} </span>
+                    </div>
+                  
+                  </div>
                 )}
               </div>
             </div>
            
           </Link>
+            <div className="flex justify-start mx-5">
+              {(subscriptionStatus.colorClass.includes('yellow') || subscriptionStatus.colorClass.includes('red')) && (
+                      <Link href="/plans" className="text-xs bg-primary/20 hover:bg-primary/40 text-primary px-2 py-0.5 rounded mt-1 transition-colors">
+                        تجديد الاشتراك
+                      </Link>
+                    )}
+            </div>
         </div>
         <nav className="px-2 py-2 space-y-1 flex-1 overflow-y-auto scrollbar-hide">
           {visibleNavItems.map((item) => (

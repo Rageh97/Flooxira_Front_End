@@ -18,6 +18,7 @@ import {
   createCoupon,
   updateCoupon,
   deleteCoupon,
+  deleteExhaustedCoupons,
   generateCoupons,
   type Plan,
   type Coupon 
@@ -291,6 +292,21 @@ export default function CouponsAdminPage() {
     }
   };
 
+  const handleDeleteExhausted = async () => {
+    if (!confirm('هل أنت متأكد من حذف جميع القسائم المستنفذة؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+
+    try {
+      setLoading(true);
+      const res = await deleteExhaustedCoupons(token);
+      showSuccess(`تم حذف ${res.count} قسيمة مستنفذة بنجاح`);
+      loadData();
+    } catch (e: any) {
+      showError(e.message || 'فشل في حذف القسائم المستنفذة');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openEditModal = (coupon: Coupon) => {
     setSelectedCoupon(coupon);
     setEditCoupon({
@@ -371,6 +387,14 @@ export default function CouponsAdminPage() {
           >
             <Download className="h-4 w-4 mr-2" />
             تصدير باقة الأعمال
+          </Button>
+          <Button
+            onClick={handleDeleteExhausted}
+            variant="destructive"
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+             حذف المستنفذ
           </Button>
           <Button
             onClick={() => setGenerateModalOpen(true)}
