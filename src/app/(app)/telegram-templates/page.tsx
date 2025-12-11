@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/components/ui/toast-provider";
 import Link from 'next/link';
 import Loader from '@/components/Loader';
+import { FileVideoCamera, MessageSquareText, Vote, Upload, Plus, Trash2, Loader2, X } from 'lucide-react';
 
 export default function TelegramTemplatesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -131,7 +132,7 @@ export default function TelegramTemplatesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen  flex items-center justify-center">
        <Loader  text="جاري تحميل القوالب..." size="lg" variant="warning" showDots fullScreen />
       </div>
     );
@@ -342,11 +343,11 @@ function TemplateCard({
 }) {
   const getTemplateTypeIcon = (type: string) => {
     switch (type) {
-      case 'text': return '📝';
-      case 'media': return '🎬';
-      case 'poll': return '📊';
+      case 'text': return <MessageSquareText />;
+      case 'media': return <FileVideoCamera />;
+      case 'poll': return <Vote />;
       case 'quiz': return '🧠';
-      default: return '📱';
+      default: return '';
     }
   };
 
@@ -361,12 +362,12 @@ function TemplateCard({
   };
 
   return (
-    <div className="gradient-border rounded-2xl overflow-hidden shadow-xl hover:shadow-emerald-500/20 transition-all duration-300 hover:scale-[1.02] border">
+    <div className="gradient-border rounded-2xl overflow-hidden shadow-xl hover:shadow-emerald-500/20 transition-all duration-300  border">
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">{getTemplateTypeIcon(template.templateType)}</span>
+            <div className="  rounded-xl flex items-center justify-center">
+              <span className="text-4xl text-primary">{getTemplateTypeIcon(template.templateType)}</span>
             </div>
             <div>
               <h3 className="text-lg font-bold text-white">{template.name}</h3>
@@ -559,11 +560,14 @@ function TemplateModal({
     templateType: template?.templateType || 'text',
     mediaType: template?.mediaType || '',
     mediaUrl: template?.mediaUrl || '',
-    pollOptions: template?.pollOptions?.join(', ') || '',
+    pollOptions: (template?.pollOptions || []) as string[],
     pollType: template?.pollType || 'regular',
     correctAnswer: template?.correctAnswer || 0,
     explanation: template?.explanation || ''
   });
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [newPollOption, setNewPollOption] = useState('');
 
   const [variables, setVariables] = useState(template?.variables || []);
   const [showVariableForm, setShowVariableForm] = useState(false);
@@ -575,7 +579,7 @@ function TemplateModal({
       ...formData,
       triggerKeywords: formData.triggerKeywords.split(',').map(k => k.trim()).filter(k => k),
       mediaType: (formData.mediaType || undefined) as 'photo' | 'video' | 'document' | 'audio' | 'voice' | undefined,
-      pollOptions: formData.pollOptions ? formData.pollOptions.split(',').map((o: string) => o.trim()).filter((o: string) => o) : undefined,
+      pollOptions: Array.isArray(formData.pollOptions) ? formData.pollOptions.filter(o => o.trim()) : [],
       variables: variables
     };
     onSave(data);
@@ -645,7 +649,7 @@ function TemplateModal({
               </div>
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">الوصف</label>
               <textarea
                 className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -653,7 +657,7 @@ function TemplateModal({
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
-            </div>
+            </div> */}
 
             {/* Template Content */}
             <div className="space-y-4">
@@ -710,31 +714,84 @@ function TemplateModal({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">رابط الوسائط</label>
-                  <input
-                    type="url"
-                    className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={formData.mediaUrl}
-                    onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
-                  />
-                  <div className="text-xs text-gray-500 mt-2">أو قم برفع ملف</div>
-                  <input
-                    type="file"
-                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const { API_URL } = await import('@/lib/api');
-                        const token = localStorage.getItem('auth_token') || '';
-                        const fd = new FormData();
-                        fd.append('file', file);
-                        const resp = await fetch(`${API_URL}/api/uploads`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
-                        const data = await resp.json();
-                        if (data?.url) setFormData({ ...formData, mediaUrl: data.url });
-                      } catch {}
-                    }}
-                    className="mt-2"
-                  />
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder="رابط الملف..."
+                      className="w-full pl-10 pr-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={formData.mediaUrl}
+                    />
+                    {isUploading && (
+                      <div className="absolute left-2 top-2.5">
+                        <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <label className={`
+                      flex items-center justify-center gap-2 px-4 py-2 
+                      bg-fixed-40 border-primary  text-white rounded-lg 
+                      cursor-pointer transition-colors w-full border  border-dashed
+                      ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
+                    `}>
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>جاري الرفع...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5" />
+                          <span>رفع ملف جديد</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        className="hidden"
+                        disabled={isUploading}
+                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          setIsUploading(true);
+                          try {
+                            const { API_URL } = await import('@/lib/api');
+                            const token = localStorage.getItem('auth_token') || '';
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            
+                            const resp = await fetch(`${API_URL}/api/uploads`, { 
+                              method: 'POST', 
+                              headers: { Authorization: `Bearer ${token}` }, 
+                              body: fd 
+                            });
+                            
+                            const data = await resp.json();
+                            if (data?.url) {
+                              setFormData({ ...formData, mediaUrl: data.url });
+                            }
+                          } catch (error) {
+                            console.error('Upload failed:', error);
+                          } finally {
+                            setIsUploading(false);
+                          }
+                        }}
+                      />
+                    </label>
+                    {formData.mediaUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, mediaUrl: '' })}
+                        className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                        title="حذف الرابط"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -743,14 +800,71 @@ function TemplateModal({
             {(formData.templateType === 'poll' || formData.templateType === 'quiz') && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">خيارات الاستطلاع (مفصولة بفاصلة)</label>
-                  <textarea
-                    className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    value={formData.pollOptions}
-                    onChange={(e) => setFormData({ ...formData, pollOptions: e.target.value })}
-                    placeholder="الخيار الأول, الخيار الثاني, الخيار الثالث"
-                  />
+                  <label className="block text-sm font-medium text-gray-300 mb-2">خيارات الاستطلاع</label>
+                  
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newPollOption}
+                        onChange={(e) => setNewPollOption(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newPollOption.trim()) {
+                              setFormData({
+                                ...formData,
+                                pollOptions: [...(formData.pollOptions as string[]), newPollOption.trim()]
+                              });
+                              setNewPollOption('');
+                            }
+                          }
+                        }}
+                        placeholder="أدخل خياراً جديداً..."
+                        className="flex-1 px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (newPollOption.trim()) {
+                            setFormData({
+                              ...formData,
+                              pollOptions: [...(formData.pollOptions as string[]), newPollOption.trim()]
+                            });
+                            setNewPollOption('');
+                          }
+                        }}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors flex items-center gap-2"
+                      >
+                        <Plus className="w-5 h-5" />
+                        إضافة
+                      </button>
+                    </div>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                      {(formData.pollOptions as string[]).map((option, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-800/50 p-3 rounded-lg border border-gray-700 group">
+                          <span className="text-gray-200">{option}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newOptions = [...(formData.pollOptions as string[])];
+                              newOptions.splice(index, 1);
+                              setFormData({ ...formData, pollOptions: newOptions });
+                            }}
+                            className="text-red-400  transition-opacity hover:bg-red-500/20 p-1.5 rounded"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {(formData.pollOptions as string[]).length === 0 && (
+                        <div className="text-center text-gray-500 py-4 text-sm border border-dashed border-gray-700 rounded-lg">
+                          لا توجد خيارات مضافة بعد
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
                 {formData.templateType === 'quiz' && (
@@ -835,7 +949,7 @@ function TemplateModal({
                   placeholder="مرحبا, أهلا, مرحب"
                 />
               </div>
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">ترتيب العرض</label>
                 <input
                   type="number"
@@ -843,7 +957,7 @@ function TemplateModal({
                   value={formData.displayOrder}
                   onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
                 />
-              </div>
+              </div> */}
               <div className="flex items-center">
                 <label className="flex items-center">
                   <input

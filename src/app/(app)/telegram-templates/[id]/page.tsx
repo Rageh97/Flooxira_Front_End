@@ -12,6 +12,7 @@ import {
   type TelegramTemplate,
   type TelegramTemplateButton,
 } from "@/lib/telegramTemplateApi";
+import { CircleAlert, CircleCheckBig, Upload, Loader2, X, CircleCheck } from "lucide-react";
 
 export default function ManageTemplateButtonsPage() {
   const params = useParams();
@@ -175,7 +176,7 @@ export default function ManageTemplateButtonsPage() {
             <li key={b.id} className={`bg-card rounded-xl p-4 hover:border-emerald-500/40 transition-all duration-300 ${level > 0 ? 'mr-4' : ''}`}>
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 text-xs rounded-lg bg-light-custom text-black font-bold">{b.id}</span>
+                  <span className="px-3 py-1 text-xs rounded-lg   font-bold"> <CircleCheck className="text-emerald-500" /></span>
                   <span className="font-bold text-white text-lg">{b.text || '(بدون نص)'}</span>
                   <span className="text-xs text-primary bg-secondry px-3 py-1 rounded-full">{b.buttonType || 'N/A'}</span>
                   {level > 0 && (
@@ -229,7 +230,7 @@ export default function ManageTemplateButtonsPage() {
       <div className="min-h-screen p-6">
         <div className="max-w-5xl mx-auto">
           <div className="mb-4">
-            <Link href="/telegram-templates" className="text-primary hover:text-emerald-300 font-semibold flex items-center gap-2">
+            <Link href="/telegram-templates" className="text-primary  font-semibold flex items-center gap-2">
               <span>←</span> الرجوع إلى القوالب
             </Link>
           </div>
@@ -247,11 +248,11 @@ export default function ManageTemplateButtonsPage() {
       <div className="w-full mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-            <Link href="/telegram-templates" className="text-primary hover:text-emerald-300 font-semibold flex items-center gap-2 mb-3">
+            <Link href="/telegram-templates" className="text-primary  font-semibold flex items-center gap-2 mb-3">
               <span>←</span> الرجوع إلى القوالب
             </Link>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text text-transparent flex items-center gap-3">
-              <span className="text-3xl">🔘</span>
+            <h1 className="text-3xl text-white font-bold  flex items-center gap-3">
+              <span className="text-3xl text-primary"> <CircleCheckBig /></span>
               إدارة أزرار: {template.name}
             </h1>
             </div>
@@ -259,9 +260,9 @@ export default function ManageTemplateButtonsPage() {
             <button onClick={() => handleAddButton(undefined)} className="primary-button  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105 flex items-center gap-2" disabled={saving}>
               إضافة زر رئيسي
             </button>
-            <button onClick={() => router.refresh()} className="primary-button after:bg-emerald-500/30  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105 flex items-center gap-2" disabled={saving}>
+            {/* <button onClick={() => router.refresh()} className="primary-button after:bg-emerald-500/30  transition-all duration-300 font-bold text-center shadow-lg hover:scale-105 flex items-center gap-2" disabled={saving}>
              تحديث
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -277,8 +278,8 @@ export default function ManageTemplateButtonsPage() {
             </div>
           ) : template.buttons.length === 0 ? (
             <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-green-600/20 rounded-full mb-4">
-                <span className="text-5xl">🔘</span>
+              <div className="inline-flex items-center justify-center w-20 h-20  rounded-full mb-4">
+                <span className="text-5xl"> <CircleAlert size={70} color="orange"/></span>
               </div>
               <p className="text-gray-300 text-lg font-semibold">لا توجد أزرار بعد</p>
               <p className="text-gray-400 mt-2">ابدأ بإضافة زر رئيسي للقالب</p>
@@ -620,46 +621,94 @@ function ButtonModal({
             {/* Media URL or Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">وسائط (اختياري)</label>
-              <input
-                type="url"
-                placeholder="رابط وسائط (صورة/فيديو/مستند/صوت)"
-                className="w-full px-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={formData.mediaUrl}
-                onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
-              />
-              <div className="mt-2 flex items-center gap-2">
+              
+              <div className="relative group mb-2">
                 <input
-                  type="file"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      setUploading(true);
-                      const fd = new FormData();
-                      fd.append('file', file);
-                      const base = process.env.NEXT_PUBLIC_API_URL || '';
-                      const resp = await fetch(`${base}/api/uploads`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
-                      const data = await resp.json();
-                      if (!resp.ok || !data?.url) throw new Error(data?.message || 'Upload failed');
-                      const lower = String(file.name).toLowerCase();
-                      let mediaType: any = 'document';
-                      if (/\.(jpg|jpeg|png|gif|webp)$/.test(lower)) mediaType = 'photo';
-                      else if (/\.(mp4|mov|m4v)$/.test(lower)) mediaType = 'video';
-                      else if (/\.(mp3|wav|aac|ogg)$/.test(lower)) mediaType = 'audio';
-                      setFormData((prev) => ({ ...prev, mediaUrl: data.url, mediaType }));
-                    } catch (err) {
-                      // swallow; outer page shows errors elsewhere
-                    } finally {
-                      setUploading(false);
-                    }
-                  }}
+                  type="text"
+                  readOnly
+                  placeholder="رابط الملف..."
+                  className="w-full pl-10 pr-3 py-2 bg-[#01191040] text-gray-300 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.mediaUrl}
                 />
-                {uploading && <span className="text-xs text-gray-600">...جاري الرفع</span>}
+                {uploading && (
+                  <div className="absolute left-2 top-2.5">
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className={`
+                  flex items-center justify-center gap-2 px-4 py-2 
+                  bg-fixed-40 border-primary text-white rounded-lg 
+                  cursor-pointer transition-colors w-full border border-dashed
+                  ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}>
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>جاري الرفع...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-5 h-5" />
+                      <span>رفع ملف جديد</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    className="hidden"
+                    disabled={uploading}
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      try {
+                        setUploading(true);
+                        const { API_URL } = await import('@/lib/api');
+                        const fd = new FormData();
+                        fd.append('file', file);
+                        
+                        const resp = await fetch(`${API_URL}/api/uploads`, { 
+                          method: 'POST', 
+                          headers: { Authorization: `Bearer ${token}` }, 
+                          body: fd 
+                        });
+                        
+                        const data = await resp.json();
+                        if (!resp.ok || !data?.url) throw new Error(data?.message || 'Upload failed');
+                        
+                        const lower = String(file.name).toLowerCase();
+                        let mediaType: any = 'document';
+                        if (/\.(jpg|jpeg|png|gif|webp)$/.test(lower)) mediaType = 'photo';
+                        else if (/\.(mp4|mov|m4v)$/.test(lower)) mediaType = 'video';
+                        else if (/\.(mp3|wav|aac|ogg)$/.test(lower)) mediaType = 'audio';
+                        
+                        setFormData((prev) => ({ ...prev, mediaUrl: data.url, mediaType }));
+                      } catch (err) {
+                        console.error('Upload failed:', err);
+                      } finally {
+                        setUploading(false);
+                      }
+                    }}
+                  />
+                </label>
+                {formData.mediaUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, mediaUrl: '', mediaType: '' })}
+                    className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+                    title="حذف الرابط"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">ترتيب العرض</label>
                 <input
                   type="number"
@@ -667,7 +716,7 @@ function ButtonModal({
                   value={formData.displayOrder}
                   onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 0 })}
                 />
-              </div>
+              </div> */}
               <div className="flex items-center">
                 <label className="flex items-center">
                   <input
@@ -681,7 +730,7 @@ function ButtonModal({
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end gap-4">
               <button
                 type="button"
                 onClick={onClose}

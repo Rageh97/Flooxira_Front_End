@@ -45,6 +45,7 @@ import {
   Eye,
   Database,
   Image,
+  RotateCcw,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
@@ -113,6 +114,8 @@ interface KnowledgeBase {
   updatedAt: string;
 }
 
+const DEFAULT_WIDGET_ICON = "https://i.ibb.co/9HzxNrwg/1.gif";
+
 export default function TicketsPage() {
   const [token, setToken] = useState("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -147,6 +150,7 @@ export default function TicketsPage() {
     instagramUrl: "",
     twitterUrl: "",
     widgetIconUrl: "",
+    widgetPosition: "right",
   });
   const [widgetIconPreview, setWidgetIconPreview] = useState<string>("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -647,8 +651,11 @@ export default function TicketsPage() {
           instagramUrl: data.settings.instagramUrl || "",
           twitterUrl: data.settings.twitterUrl || "",
           widgetIconUrl: data.settings.widgetIconUrl || "",
+          widgetPosition: data.settings.widgetPosition || "right",
         });
-        setWidgetIconPreview(data.settings.widgetIconUrl || "");
+        // إضافة timestamp للأيقونة لتجنب مشكلة التخزين المؤقت
+        const iconUrl = data.settings.widgetIconUrl || "";
+        setWidgetIconPreview(iconUrl ? `${iconUrl}?t=${Date.now()}` : "");
       }
     } catch (error: any) {
       console.error("Failed to load widget settings:", error);
@@ -693,9 +700,11 @@ export default function TicketsPage() {
     try {
       setUploadingIcon(true);
       const url = await uploadWidgetIcon(file);
+      // إضافة timestamp لتجنب مشكلة التخزين المؤقت (cache)
+      const urlWithTimestamp = `${url}?t=${Date.now()}`;
       const nextSettings = { ...widgetSettings, widgetIconUrl: url };
       setWidgetSettings(nextSettings);
-      setWidgetIconPreview(url);
+      setWidgetIconPreview(urlWithTimestamp);
       // حفظ تلقائي بعد رفع الأيقونة لضمان تسجيل الرابط في قاعدة البيانات
       await saveWidgetSettings(nextSettings);
       showSuccess("تم رفع الأيقونة بنجاح!");
@@ -704,6 +713,29 @@ export default function TicketsPage() {
     } finally {
       setUploadingIcon(false);
       e.target.value = "";
+    }
+  };
+
+  const handleResetWidgetIcon = async () => {
+    try {
+      const nextSettings = { ...widgetSettings, widgetIconUrl: "" };
+      setWidgetSettings(nextSettings);
+      setWidgetIconPreview("");
+      await saveWidgetSettings(nextSettings);
+      showSuccess("تم استعادة الأيقونة الافتراضية");
+    } catch (error: any) {
+      showError("خطأ", error.message || "فشل استعادة الأيقونة");
+    }
+  };
+
+  const handleWidgetPositionChange = async (position: string) => {
+    try {
+      const nextSettings = { ...widgetSettings, widgetPosition: position };
+      setWidgetSettings(nextSettings);
+      await saveWidgetSettings(nextSettings);
+      showSuccess("تم تغيير اتجاه الويدجت بنجاح!");
+    } catch (error: any) {
+      showError("خطأ", error.message || "فشل تغيير اتجاه الويدجت");
     }
   };
 
@@ -1589,7 +1621,8 @@ export default function TicketsPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={widgetIconPreview} alt="Widget Icon" className="w-full h-full object-contain" />
                 ) : (
-                  <span className="text-xs text-gray-400 text-center px-2">لا توجد أيقونة</span>
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={DEFAULT_WIDGET_ICON} alt="Default Widget Icon" className="w-full h-full object-contain opacity-70" />
                 )}
               </div>
               <div>
@@ -1606,9 +1639,37 @@ export default function TicketsPage() {
                 className="bg-fixed-40 border-primary cursor-pointer"
               />
               <Button disabled={uploadingIcon} className="primary-button">
-                {uploadingIcon ? <Loader2 className="h-4 w-4 animate-spin" /> : "رفع الأيقونة"}
+                {uploadingIcon ? <Loader2 className="h-4 w-4 animate-spin" /> : "رفع "}
               </Button>
+              {widgetIconPreview && (
+                <Button 
+                  variant="destructive" 
+                  onClick={handleResetWidgetIcon}
+                  disabled={uploadingIcon || savingSettings}
+                  title="استعادة الافتراضي"
+                  className="h-10 w-10 p-0"
+                >
+                  حذف {/* <RotateCcw className="h-4 w-4" />  */}
+                </Button>
+              )}
             </div>
+          </div>
+
+          <div className="space-y-2 mb-4">
+            <label className="text-sm text-gray-300">اتجاه الويدجت</label>
+            <Select
+              value={widgetSettings.widgetPosition || "right"}
+              onValueChange={handleWidgetPositionChange}
+            >
+              <SelectTrigger className="bg-fixed-40 border-primary text-white">
+                <SelectValue placeholder="اختر الاتجاه" />
+              </SelectTrigger>
+              <SelectContent className="bg-fixed-40 border-primary text-white">
+                <SelectItem value="right">يمين (افتراضي)</SelectItem>
+                <SelectItem value="left">يسار</SelectItem>
+                <SelectItem value="auto">تلقائي (حسب لغة الموقع)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <div className="space-y-4 grid grid-cols-2 lg:grid-cols-4 gap-2">
