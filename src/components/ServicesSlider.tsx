@@ -323,7 +323,7 @@ export default function ServicesSlider() {
                         </div>
 
                         {/* Purchase Button */}
-                        <button
+                        {/* <button
                           onClick={() => handleServiceClick(service)}
                           disabled={!service.purchaseLink}
                           className="relative w-full h-10 active:scale-95 transistion overflow-hidden rounded-lg p-[1px] focus:outline-none "
@@ -350,6 +350,18 @@ export default function ServicesSlider() {
                               ></path>
                             </svg>
                           </span>
+                        </button> */}
+                        <button onClick={() => handleServiceClick(service)} className="super-button">
+  <span>عرض الخدمة</span>
+  <svg fill="none" viewBox="0 0 24 24" className="arrow">
+    <path
+      strokeLinejoin="round"  
+      strokeLinecap="round"
+      strokeWidth="2"
+      stroke="currentColor"
+      d="M5 12h14M13 6l6 6-6 6"
+    ></path>
+  </svg>
                         </button>
                       </div>
                     </div>

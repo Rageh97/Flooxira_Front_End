@@ -754,6 +754,9 @@ export default function WhatsAppPage() {
               <Button className="w-1/2 primary-button after:bg-[#01191080] before:bg-[#01191080]" onClick={checkStatus} disabled={loading} variant="secondary">
                 تحديث
               </Button>
+
+
+
               {status?.status === 'disconnected' || !status ? (
                 <button className="w-1/2 primary-button after:bg-[#131240] relative overflow-hidden" onClick={startSession} disabled={loading}>
                   {loading ? (

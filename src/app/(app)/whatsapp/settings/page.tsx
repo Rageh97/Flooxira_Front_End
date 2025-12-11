@@ -50,7 +50,7 @@ export default function WhatsAppSettingsPage() {
     workingHoursStart: '09:00',
     workingHoursEnd: '17:00',
     workingDays: [1, 2, 3, 4, 5],
-    timezone: 'Asia/Riyadh',
+    timezone: '',
     outsideWorkingHoursMessage: 'نعتذر، نحن خارج أوقات العمل. سنرد عليك في أقرب وقت ممكن.'
   });
 
@@ -145,7 +145,7 @@ export default function WhatsAppSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-1">
       <div className="flex items-center justify-between">
         {/* <h1 className="text-2xl font-bold text-white">إعدادات بوت الواتساب</h1> */}
       </div>
@@ -163,21 +163,10 @@ export default function WhatsAppSettingsPage() {
       )}
 
       <Card className="gradient-border">
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-white">أوقات العمل</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center flex-col gap-2">
-            {/* <Switch
-              id="working-hours-enabled"
-              checked={settings.workingHoursEnabled}
-              onCheckedChange={(checked) => 
-                setSettings(prev => ({ ...prev, workingHoursEnabled: checked }))
-              }
-            />
-            <Label htmlFor="working-hours-enabled" className="text-white">
-              تفعيل أوقات العمل
-            </Label> */}
+           <div className="flex items-center  gap-2">
+          
 <h1 className="text-white">تفعيل أوقات العمل</h1>
 <label className="relative inline-flex items-center cursor-pointer">
   <input  id="working-hours-enabled"
@@ -197,6 +186,9 @@ export default function WhatsAppSettingsPage() {
   </div>
 </label>
           </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+         
 
           {settings.workingHoursEnabled && (
             <>
@@ -229,9 +221,9 @@ export default function WhatsAppSettingsPage() {
 
               <div>
                 <Label className="text-white mb-3 block">أيام العمل</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-7 gap-2">
                   {DAYS_OF_WEEK.map((day) => (
-                    <div key={day.value} className="flex items-center space-x-2">
+                    <div key={day.value} className="flex items-center gap-2 bg-fixed-40 p-2 w-55 justify-between  ">
                       <Checkbox
                         id={`day-${day.value}`}
                         checked={settings.workingDays.includes(day.value)}
@@ -247,26 +239,7 @@ export default function WhatsAppSettingsPage() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="timezone" className="text-white">المنطقة الزمنية</Label>
-                <Select
-                  value={settings.timezone}
-                  onValueChange={(value) => 
-                    setSettings(prev => ({ ...prev, timezone: value }))
-                  }
-                >
-                  <SelectTrigger className="bg-[#011910] text-white border-gray-500">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIMEZONES.map((tz) => (
-                      <SelectItem key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            
 
               <div>
                 <Label htmlFor="outside-message" className="text-white">رسالة خارج أوقات العمل</Label>
@@ -284,7 +257,35 @@ export default function WhatsAppSettingsPage() {
             </>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end items-center gap-5">
+            
+            <div>
+                {/* <Label htmlFor="timezone" className="text-white">المنطقة الزمنية</Label> */}
+                <Select
+               
+                  value={settings.timezone}
+                  onValueChange={(value) => 
+                    setSettings(prev => ({ ...prev, timezone: value }))
+                  }
+                >
+                  <SelectTrigger placeholder="المنطقة الزمنية" className="bg-[#01191040] text-white border-gray-500">
+                  <SelectValue asChild>
+    <span className={settings.timezone ? "text-white" : "text-gray-500"}>
+      { "المنطقة الزمنية"}
+    </span>
+  </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                  
+                    {TIMEZONES.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             <Button 
               onClick={saveSettings}
               disabled={saving}

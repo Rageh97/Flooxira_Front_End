@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
@@ -1656,20 +1657,48 @@ export default function TicketsPage() {
           </div>
 
           <div className="space-y-2 mb-4">
-            <label className="text-sm text-gray-300">اتجاه الويدجت</label>
-            <Select
-              value={widgetSettings.widgetPosition || "right"}
-              onValueChange={handleWidgetPositionChange}
-            >
-              <SelectTrigger className="bg-fixed-40 border-primary text-white">
-                <SelectValue placeholder="اختر الاتجاه" />
-              </SelectTrigger>
-              <SelectContent className="bg-fixed-40 border-primary text-white">
-                <SelectItem value="right">يمين (افتراضي)</SelectItem>
-                <SelectItem value="left">يسار</SelectItem>
-                <SelectItem value="auto">تلقائي (حسب لغة الموقع)</SelectItem>
-              </SelectContent>
-            </Select>
+            <label className="text-sm text-primary mb-5 font-bold ">اتجاه الويدجت</label>
+            <div className=" flex items-center gap-5">
+              <div className="flex items-center gap-3 ">
+                <Checkbox
+                  id="position-right"
+                  checked={widgetSettings.widgetPosition === "right"}
+                  onCheckedChange={() => handleWidgetPositionChange("right")}
+                />
+                <label
+                  htmlFor="position-right"
+                  className="text-sm text-gray-300 cursor-pointer"
+                >
+                  يمين (افتراضي)
+                </label>
+              </div>
+              <div className="flex items-center gap-3 ">
+                <Checkbox
+                  id="position-left"
+                  checked={widgetSettings.widgetPosition === "left"}
+                  onCheckedChange={() => handleWidgetPositionChange("left")}
+                />
+                <label
+                  htmlFor="position-left"
+                  className="text-sm text-gray-300 cursor-pointer"
+                >
+                  يسار
+                </label>
+              </div>
+              <div className="flex items-center gap-3 ">
+                <Checkbox
+                  id="position-auto"
+                  checked={widgetSettings.widgetPosition === "auto"}
+                  onCheckedChange={() => handleWidgetPositionChange("auto")}
+                />
+                <label
+                  htmlFor="position-auto"
+                  className="text-sm text-gray-300 cursor-pointer "
+                >
+                  تلقائي (حسب لغة الموقع)
+                </label>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-4 grid grid-cols-2 lg:grid-cols-4 gap-2">

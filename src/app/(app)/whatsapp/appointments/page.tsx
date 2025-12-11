@@ -270,7 +270,7 @@ export default function AppointmentsPage() {
 
   return (
     <div className="w-full mx-auto">
-      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-6">
+      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-white">إدارة المواعيد</h1>
         <div className="flex gap-4">
           <button
@@ -290,14 +290,14 @@ export default function AppointmentsPage() {
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+        <div className="mb-2 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
           {successMessage}
         </div>
       )}
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-2">
           <card className="gradient-border flex flex-col items-center justify-center p-4">
             <h3 className="text-lg font-semibold text-white mb-2">إجمالي المواعيد</h3>
             <p className="text-3xl font-bold text-blue-500">{stats.total}</p>
@@ -318,7 +318,7 @@ export default function AppointmentsPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-[#01191040] p-6 rounded-lg mb-6">
+      <div className="bg-[#01191040] p-6 rounded-lg mb-2">
         <h3 className="text-lg font-semibold text-white mb-4">فلترة المواعيد</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 gradient-border p-4">
           <div>
@@ -577,7 +577,7 @@ export default function AppointmentsPage() {
         <div className="fixed inset-0 z-50 backdrop-blur-lg flex items-center justify-center bg-black/80">
           <div className="gradient-border rounded-lg shadow-lg w-full max-w-md p-6">
             <h3 className="text-xl font-semibold text-white mb-4">تأكيد الحذف</h3>
-            <p className="text-white/80 mb-6">هل أنت متأكد أنك تريد حذف هذا الموعد؟ هذا الإجراء لا يمكن التراجع عنه.</p>
+            <p className="text-white/80 mb-2">هل أنت متأكد أنك تريد حذف هذا الموعد؟ هذا الإجراء لا يمكن التراجع عنه.</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={cancelDelete}

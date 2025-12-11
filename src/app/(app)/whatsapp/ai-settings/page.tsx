@@ -221,7 +221,7 @@ export default function AISettingsPage() {
             <div className="flex space-x-1 px-1 sm:px-2">
               {[
                 { id: 'general', label: 'عام' },
-                { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
+                // { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
                 { id: 'personality', label: 'الشخصية' },
                 { id: 'business', label: 'الأعمال' },
                 { id: 'prompts', label: 'الرسائل المخصصة' },
@@ -576,7 +576,7 @@ export default function AISettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">رسالة النظام</label>
+              <label className="block text-sm font-medium mb-2"> بروميت الذكاء الاصطناعي</label>
               <textarea
                 value={settings.systemPrompt || ''}
                 onChange={(e) => setSettings({...settings, systemPrompt: e.target.value})}
@@ -585,7 +585,7 @@ export default function AISettingsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">رسالة التحية</label>
                 <textarea
@@ -605,9 +605,9 @@ export default function AISettingsPage() {
                   placeholder="كيف يجب أن يودع البوت العملاء"
                 />
               </div>
-            </div>
+            </div> */}
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium mb-2">رسالة المبيعات</label>
               <textarea
                 value={settings.salesPrompt || ''}
@@ -625,7 +625,7 @@ export default function AISettingsPage() {
                 className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
                 placeholder="كيف يجب أن يتعامل البوت مع اعتراضات العملاء"
               />
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       )}
@@ -813,29 +813,9 @@ export default function AISettingsPage() {
             <CardTitle>الإعدادات المتقدمة</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={settings.enableContextMemory}
-                  onChange={(e) => setSettings({...settings, enableContextMemory: e.target.checked})}
-                  className="mx-2"
-                />
-                تفعيل ذاكرة السياق
-              </label>
-              
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={settings.enableFallback}
-                  onChange={(e) => setSettings({...settings, enableFallback: e.target.checked})}
-                  className="mx-2"
-                />
-                تفعيل الردود الاحتياطية
-              </label>
-            </div>
+            
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium mb-2">نافذة السياق (الرسائل)</label>
               <input
                 type="number"
@@ -845,7 +825,7 @@ export default function AISettingsPage() {
                 onChange={(e) => setSettings({...settings, contextWindow: parseInt(e.target.value)})}
                 className="w-full p-2 border-1 border-blue-300 rounded-md bg-[#01191040]"
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="block text-sm font-medium mb-2">رسالة احتياطية</label>
@@ -857,7 +837,7 @@ export default function AISettingsPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <label className="flex items-center">
                 <input
                   type="checkbox"
@@ -877,6 +857,27 @@ export default function AISettingsPage() {
                 />
                 تتبع الأداء
               </label>
+             
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.enableContextMemory}
+                  onChange={(e) => setSettings({...settings, enableContextMemory: e.target.checked})}
+                  className="mx-2"
+                />
+                تفعيل ذاكرة السياق
+              </label>
+              
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.enableFallback}
+                  onChange={(e) => setSettings({...settings, enableFallback: e.target.checked})}
+                  className="mx-2"
+                />
+                تفعيل الردود الاحتياطية
+              </label>
+           
             </div>
           </CardContent>
         </Card>

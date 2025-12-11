@@ -558,11 +558,11 @@ function ButtonModal({
                 value={formData.buttonType}
                 onChange={(e) => setFormData({ ...formData, buttonType: e.target.value as any })}
               >
-                <option value="callback">استجابة</option>
+                <option value="callback">بيانات الاستجابة</option>
                 <option value="url">رابط</option>
-                <option value="web_app">تطبيق ويب</option>
-                <option value="switch_inline">تبديل داخلي</option>
-                <option value="switch_inline_current">تبديل داخلي حالي</option>
+                <option value="web_app"> رابط الموقع</option>
+                <option value="switch_inline"> مشاركة مع جهات الاتصال</option>
+                <option value="switch_inline_current">@ تاج للبوت  </option>
               </select>
             </div>
 
