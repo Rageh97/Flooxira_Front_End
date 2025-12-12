@@ -37,6 +37,7 @@ import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen, Download } from "lucide-react";
 import Image from "next/image";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 const PLATFORMS = {
   facebook: { name: "Facebook", icon: <img className="w-12 h-12" src="/facebook.gif" alt="" />, connectUrl: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/auth/facebook`,href: "https://business.facebook.com/business/loginpage" },
@@ -107,7 +108,8 @@ function SettingsContent() {
       setSelectedTutorial(platformTutorial);
       incrementViews(platformTutorial.id);
     } else {
-      const platformName = PLATFORMS[platformKey as keyof typeof PLATFORMS]?.name || platformKey;
+      const platform = PLATFORMS[platformKey as keyof typeof PLATFORMS];
+      const platformName = typeof platform?.name === 'string' ? platform.name : (typeof platformKey === 'string' ? platformKey : 'المنصة');
       showError(`لم يتم العثور على شرح خاص بـ ${platformName}`);
     }
   };
@@ -606,15 +608,7 @@ useEffect(() => {
                       </span>
                     )}
                     
-                    <Button 
-                      onClick={() => handleShowTutorial(key)} 
-                      variant="secondary"
-                      className="flex items-center gap-2 primary-button">
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4" />
-                        <p>شرح كيفية انشاء تطبيق</p>
-                      </div>
-                    </Button>
+                    <AnimatedTutorialButton onClick={() => handleShowTutorial(key)} text1="شرح الميزة" text2="شاهد" />
  
                    
 

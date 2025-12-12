@@ -62,6 +62,7 @@ import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen } from "lucide-react";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 interface Employee {
   id: number;
@@ -413,15 +414,7 @@ export default function EmployeesPage() {
           <p className="text-gray-300 mt-2">إدارة موظفيك وصلاحياتهم</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button 
-            onClick={handleShowTutorial} 
-            variant="secondary"
-            className="flex items-center gap-2 primary-button">
-            <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              <p>شرح الميزة</p>
-            </div>
-          </Button>
+        <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button 

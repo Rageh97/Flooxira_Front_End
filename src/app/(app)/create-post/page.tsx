@@ -17,6 +17,7 @@ import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen } from "lucide-react";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 // Platform configuration with icons and supported content types
 const PLATFORMS = {
@@ -877,15 +878,7 @@ export default function CreatePostPage() {
         {/* Post Usage Counter */}
         {postUsageStats && (
           <div className="flex items-center gap-3">
-              <Button 
-              onClick={handleShowTutorial} 
-              variant="secondary"
-              className="flex items-center gap-2 primary-button">
-              <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              <p> شرح الميزة</p>
-              </div>
-            </Button>
+     <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
             <div className={`p-3 rounded-2xl flex  shadow-lg border-2 transition-all ${
               postUsageStats.isAtLimit 
                 ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300 ' 
@@ -1462,45 +1455,73 @@ export default function CreatePostPage() {
               position="bottom"
             />
           </div>
-          
-          {/* Content Type Selection for Articles */}
-          {contentType === 'articles' && (
-            <div>
-              <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
-                
-                نوع المحتوى
-              </label>
-              <select
-                className="h-12 w-full px-3 rounded-xl bg-fixed-40 border-primary appearance-none text-white"
-                value={type}
-                onChange={(e) => setType(e.target.value as 'text' | 'link' | 'photo' | 'video')}
-              >
-                <option  value="text"> نص فقط</option>
-                {/* <option value="link">🔗 رابط</option> */}
-                <option value="photo"> صورة</option>
-                <option value="video"> فيديو</option>
-              </select>
-            </div>
-          )}
-          
-          {/* Content Type Selection for Stories */}
-          {contentType === 'stories' && (
-            <div>
-              <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
-           
-                نوع الستوري
-              </label>
-              <select
-                className="h-12 w-full px-3 rounded-xl bg-fixed-40 border-primary appearance-none text-white"
-                value={type}
-                onChange={(e) => setType(e.target.value as 'photo' | 'video')}
-              >
-                <option value="photo"> صورة</option>
-                <option value="video"> فيديو</option>
-              </select>
-            </div>
-          )}
+          <div className="flex items-center lg:flex-row flex-col gap-5 w-full">
+          <div className="w-full lg:w-1/2">
+            <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
+              {/* <span className="text-xl">
+                {contentType === 'reels' ? '🎬' : contentType === 'stories' ? '📸' : '🖼️'}
+              </span> */}
+              {contentType === 'reels' ? 'فيديو الريلز (مطلوب)' : 
+               contentType === 'stories' ? 'صورة أو فيديو (مطلوب)' :
+               'وسائط (اختياري)'}
+            </label>
 
+            <div className="container">
+              <div className="header"> 
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                  <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg> 
+                <p className="text-white text-sm font-medium">اختر الوسائط</p>
+              </div> 
+              <label htmlFor="postMediaUpload" className="footer"> 
+                <svg fill="#ffffff" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z" fill="white"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z" fill="white"></path></g></svg> 
+                <p className="text-white text-sm font-medium">{image ? image.name : "لا يوجد ملف محدد"}</p> 
+                {image && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setImage(null);
+                      const fileInput = document.getElementById('postMediaUpload') as HTMLInputElement;
+                      if (fileInput) fileInput.value = '';
+                    }}
+                    className="cursor-pointer hover:opacity-80 flex items-center justify-center"
+                    style={{ background: 'none', border: 'none', padding: 0 }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white', height: '130%', fill: 'royalblue', backgroundColor: 'rgba(70, 66, 66, 0.103)', borderRadius: '50%', padding: '2px', cursor: 'pointer', boxShadow: '0 2px 30px rgba(0, 0, 0, 0.205)' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="white" strokeWidth="2"></path> <path d="M19.5 5H4.5" stroke="white" strokeWidth="2" strokeLinecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="white" strokeWidth="2"></path> </g></svg>
+                  </button>
+                )}
+              </label> 
+              <input 
+                id="postMediaUpload"
+                type="file"
+                accept={contentType === 'reels' ? 'video/*' : 
+                        contentType === 'stories' ? 'image/*,video/*' :
+                        'image/*,video/*'}
+                className="hidden"
+                onChange={(e) => setImage(e.target.files?.[0] || null)}
+              />
+            </div>
+
+            {image && (
+              <div className="mt-2 space-y-1">
+                <p className="text-sm text-green-400 font-semibold flex items-center gap-2">
+                  <span>✓</span>
+                  تم اختيار: {image.name}
+                </p>
+                <p className="text-xs text-gray-400">
+                  الحجم: {Math.round(image.size / 1024)} KB | النوع: {image.type || 'غير معروف'}
+                </p>
+              </div>
+            )}
+            {contentType === 'reels' && (
+              <p className="mt-2 text-xs text-gray-400">الريلز تتطلب ملف فيديو</p>
+            )}
+            {contentType === 'stories' && (
+              <p className="mt-2 text-xs text-gray-400">الستوري يتطلب صورة أو فيديو</p>
+            )}
+          </div>
+         
           {/* Pinterest Board Selection */}
           {/* {platforms.includes('pinterest') && (
             <div>
@@ -1549,44 +1570,46 @@ export default function CreatePostPage() {
           )}
            */}
           {/* Media and Schedule */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <div>
+          <div className="flex flex-col items-center w-full lg:w-1/2">
+          {/* Content Type Selection for Articles */}
+          {contentType === 'articles' && (
+            <div className="w-full">
               <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
-                {/* <span className="text-xl">
-                  {contentType === 'reels' ? '🎬' : contentType === 'stories' ? '📸' : '🖼️'}
-                </span> */}
-                {contentType === 'reels' ? 'فيديو الريلز (مطلوب)' : 
-                 contentType === 'stories' ? 'صورة أو فيديو (مطلوب)' :
-                 'وسائط (اختياري)'}
+                
+                نوع المحتوى
               </label>
-              <Input
-                type="file"
-                accept={contentType === 'reels' ? 'video/*' : 
-                        contentType === 'stories' ? 'image/*,video/*' :
-                        'image/*,video/*'}
-                onChange={(e) => setImage(e.target.files?.[0] || null)}
-                className="h-12 w-full px-3 rounded-xl bg-[#011910] border appearance-none text-white"
-              />
-              {image && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-sm text-green-400 font-semibold flex items-center gap-2">
-                    <span>✓</span>
-                    تم اختيار: {image.name}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    الحجم: {Math.round(image.size / 1024)} KB | النوع: {image.type || 'غير معروف'}
-                  </p>
-                </div>
-              )}
-              {contentType === 'reels' && (
-                <p className="mt-2 text-xs text-gray-400">الريلز تتطلب ملف فيديو</p>
-              )}
-              {contentType === 'stories' && (
-                <p className="mt-2 text-xs text-gray-400">الستوري يتطلب صورة أو فيديو</p>
-              )}
+              <select
+                className="h-12 w-full px-3 rounded-xl bg-fixed-40 border-primary appearance-none text-white"
+                value={type}
+                onChange={(e) => setType(e.target.value as 'text' | 'link' | 'photo' | 'video')}
+              >
+                <option  value="text"> نص فقط</option>
+                {/* <option value="link">🔗 رابط</option> */}
+                <option value="photo"> صورة</option>
+                <option value="video"> فيديو</option>
+              </select>
             </div>
+          )}
+          
+          {/* Content Type Selection for Stories */}
+          {contentType === 'stories' && (
+            <div className="w-full">
+              <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
+           
+                نوع الستوري
+              </label>
+              <select
+                className="h-12 w-full px-3 rounded-xl bg-fixed-40 border-primary appearance-none text-white"
+                value={type}
+                onChange={(e) => setType(e.target.value as 'photo' | 'video')}
+              >
+                <option value="photo"> صورة</option>
+                <option value="video"> فيديو</option>
+              </select>
+            </div>
+          )}
             
-            <div>
+            <div className="w-full">
               <label className="block text-sm font-bold mb-3 text-white flex items-center gap-2">
            
                 الجدولة (اختياري)
@@ -1612,7 +1635,7 @@ export default function CreatePostPage() {
               )}
             </div>
           </div>
-          
+          </div>
           {/* Action Buttons */}
           <div className="flex gap-4 pt-4">
             <Button 

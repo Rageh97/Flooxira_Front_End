@@ -14,6 +14,7 @@ import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 export default function SallaEventsPage() {
   const { user, loading } = useAuth();
   const { canSallaIntegration, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -291,15 +292,7 @@ const { showSuccess, showError } = useToast();
     <div className="space-y-4 text-white">
 <div className="flex items-center justify-between">
   <h1 className="text-xl font-semibold">سلة ويب هوك</h1>
-  <Button 
-    onClick={handleShowTutorial} 
-    variant="secondary"
-    className="flex items-center gap-2 primary-button">
-    <div className="flex items-center gap-2">
-    <BookOpen className="w-4 h-4" />
-    <p> شرح الميزة</p>
-    </div>
-  </Button>
+  <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
 </div>
       <div className="p-4 gradient-border rounded-md space-y-2">
         <div className="text-sm">الرابط:</div>

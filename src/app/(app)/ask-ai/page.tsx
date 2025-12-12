@@ -361,8 +361,11 @@ export default function AskAIPage() {
             <div className="flex-1 custom-scrollbar overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
               {messages.length === 0 ? (
                 <div className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <Sparkles className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                  <div className="flex flex-col items-center">
+                    {/* <Sparkles className="h-16 w-16 text-green-600 mx-auto mb-4" /> */}
+                    <div class="spinner">
+    <div class="spinner1"></div>
+</div>
                     <h3 className="text-xl font-semibold text-white mb-2">
                       كيف يمكنني مساعدتك اليوم؟
                     </h3>
@@ -459,7 +462,7 @@ export default function AskAIPage() {
                 >
                   إيقاف
                 </Button>
-                <Textarea
+                <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -497,7 +500,10 @@ export default function AskAIPage() {
                   <ArrowRight className="h-5 w-5 text-gray-400" />
                 </Button>
             <div className="flex flex-col items-center">
-              <img src="/Bot.gif" alt="" className="w-40 h-40 mb-4" />
+              {/* <img src="/Bot.gif" alt="" className="w-40 h-40 mb-4" /> */}
+              <div className="spinner">
+    <div className="spinner1"></div>
+</div>
               <h3 className="text-xl font-semibold text-white mb-2">
                 اختر محادثة أو ابدأ محادثة جديدة
               </h3>

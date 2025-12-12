@@ -55,6 +55,7 @@ import { usePermissions } from "@/lib/permissions";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { io, Socket } from "socket.io-client";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -1132,16 +1133,7 @@ export default function TicketsPage() {
            <span className="text-sm">{showWidgetCode ? "إخفاء" : "عرض"} كود التضمين</span>
            </div>
           </Button>
-           <Button 
-             
-           onClick={handleShowTutorial} 
-           variant="secondary"
-           className="flex items-center gap-2 primary-button">
-          <div className="flex items-center gap-2">
-          <BookOpen className="w-4 h-4" />
-          <p> شرح الميزة</p>
-          </div>
-         </Button>
+          <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
         </div>
          </>  )}
       </div>
@@ -1199,7 +1191,7 @@ export default function TicketsPage() {
             </div>
             <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
               <p className="text-sm text-blue-300">
-                <strong> نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <code className="bg-gray-800 px-1 rounded">&lt;/body&gt;</code> في صفحة HTML الخاصة بك
+                <strong> نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <bdi className="bg-gray-800 px-1 rounded">&lt;/body&gt;</bdi> في صفحة HTML الخاصة بك
               </p>
             </div>
             <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
@@ -1348,10 +1340,10 @@ export default function TicketsPage() {
           {selectedTicket ? (
             <CardContent className="p-4 flex-1 flex flex-col min-h-0 border-none">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4  ">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">
+                <div className="flex items-center gap-10">
+                  {/* <h2 className="text-xl font-semibold text-white">
                     {selectedTicket.visitorName || `عميل جديد`}
-                  </h2>
+                  </h2> */}
                   <p className="text-sm text-primary mt-1">
                     رقم التذكرة: {selectedTicket.ticketNumber || `#${selectedTicket.id}`}
                   </p>
@@ -1486,7 +1478,7 @@ export default function TicketsPage() {
                     </div>
                   </div>
                 )}
-                <div className="flex flex-col sm:flex-row items-center gap-2 p-4 pt-2">
+                <div className="flex flex-col sm:flex-row items-center gap-2 p-1 ">
                   <input
                     type="file"
                     ref={imageInputRef}
@@ -1519,7 +1511,7 @@ export default function TicketsPage() {
                     }}
                     placeholder="اكتب رسالتك..."
                     className="flex-1 w-full"
-                    disabled={sending || uploadingImage}
+                    // disabled={sending || uploadingImage}
                   />
                   <Button
                     onClick={() => sendMessage()}

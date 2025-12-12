@@ -35,6 +35,7 @@ import { Calendar } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 export default function TelegramBotPage() {
   const { canManageTelegram, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -67,6 +68,7 @@ export default function TelegramBotPage() {
   const campaignWhenInputRef = useRef<HTMLInputElement>(null);
   const [campaignThrottle, setCampaignThrottle] = useState<number>(1500);
   const [campaignMediaUrl, setCampaignMediaUrl] = useState<string>("");
+  const [campaignMediaName, setCampaignMediaName] = useState<string>("");
   const [availableTags, setAvailableTags] = useState<any[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   // Auto-reply & templates admin
@@ -637,16 +639,7 @@ export default function TelegramBotPage() {
                 </Button>
               </div>
               )}
-                  <Button 
-                onClick={handleShowTutorial} 
-                variant="secondary"
-                className="flex items-center gap-2 primary-button"
-              >
-                <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                <p> شرح الميزة</p>
-                </div>
-              </Button>
+                 <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
                
               </div>
           
@@ -1118,28 +1111,59 @@ export default function TelegramBotPage() {
               </div> */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-white">رفع الوسائط (اختياري)</label>
-                <div className="mt-2">
-                  <Input 
+                <div className="container">
+                  <div className="header"> 
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                      <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg> 
+                    <p className="text-white text-sm font-medium">اختر الوسائط</p>
+                  </div> 
+                  <label htmlFor="telegramMediaUpload" className="footer"> 
+                    <svg fill="#ffffff" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z" fill="white"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z" fill="white"></path></g></svg> 
+                    <p className="text-white text-sm font-medium">
+                      {campaignMediaName ? campaignMediaName : "لا يوجد ملف محدد"}
+                    </p> 
+                    {campaignMediaName && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setCampaignMediaName("");
+                          setCampaignMediaUrl("");
+                          const fileInput = document.getElementById('telegramMediaUpload') as HTMLInputElement;
+                          if (fileInput) fileInput.value = '';
+                        }}
+                        className="cursor-pointer hover:opacity-80 flex items-center justify-center"
+                        style={{ background: 'none', border: 'none', padding: 0 }}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white', height: '130%', fill: 'royalblue', backgroundColor: 'rgba(70, 66, 66, 0.103)', borderRadius: '50%', padding: '2px', cursor: 'pointer', boxShadow: '0 2px 30px rgba(0, 0, 0, 0.205)' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="white" strokeWidth="2"></path> <path d="M19.5 5H4.5" stroke="white" strokeWidth="2" strokeLinecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="white" strokeWidth="2"></path> </g></svg>
+                      </button>
+                    )}
+                  </label> 
+                  <input 
+                    id="telegramMediaUpload"
                     type="file" 
                     accept="image/*,video/*,.pdf,.doc,.docx"
+                    className="hidden"
                     onChange={async (e)=> {
                       const file = e.target.files?.[0];
                       if (!file) return;
+                      setCampaignMediaName(file.name);
                       
                       try {
                         setUploadingMedia(true);
-                      const form = new FormData();
+                        const form = new FormData();
                         form.append('file', file);
                         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/uploads`, { 
                           method: 'POST', 
                           headers: { Authorization: `Bearer ${token}` }, 
                           body: form 
                         });
-                      const data = await res.json();
-                      if (data?.url) {
-                        setCampaignMediaUrl(data.url);
+                        const data = await res.json();
+                        if (data?.url) {
+                          setCampaignMediaUrl(data.url);
                           showSuccess('تم رفع الوسائط بنجاح');
-                      } else {
+                        } else {
                           showError('فشل في رفع الوسائط');
                         }
                       } catch (e:any) { 
@@ -1148,32 +1172,37 @@ export default function TelegramBotPage() {
                         setUploadingMedia(false); 
                       }
                     }} 
-                    className="text-sm text-gray-300 bg-[#011910] border border-gray-700 rounded-lg p-2 w-full" 
                   />
-                  <p className="text-xs text-gray-400 mt-1">اختر صورة أو فيديو أو ملف ليتم رفعه تلقائياً</p>
-                  
-                  {uploadingMedia && (
-                    <div className="mt-2 p-2 bg-blue-900/20 border border-blue-700 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-xs text-blue-400">جاري رفع الوسائط...</p>
                 </div>
+
+                <p className="text-xs text-gray-400 mt-2">اختر صورة أو فيديو أو ملف ليتم رفعه تلقائياً</p>
+                
+                {uploadingMedia && (
+                  <div className="mt-2 p-2 bg-blue-900/20 border border-blue-700 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-xs text-blue-400">جاري رفع الوسائط...</p>
+                    </div>
+                  </div>
+                )}
+                
+                {campaignMediaUrl && !uploadingMedia && (
+                  <div className="mt-2 p-2 bg-green-900/20 border border-green-700 rounded-lg">
+                    <p className="text-xs text-green-400">✅ تم رفع الوسائط بنجاح</p>
+                    <button 
+                      onClick={() => {
+                        setCampaignMediaUrl('');
+                        setCampaignMediaName('');
+                        const fileInput = document.getElementById('telegramMediaUpload') as HTMLInputElement;
+                        if (fileInput) fileInput.value = '';
+                      }}
+                      className="text-xs text-red-400 hover:text-red-300 mt-1"
+                    >
+                      إزالة الوسائط
+                    </button>
+                  </div>
+                )}
               </div>
-                  )}
-                  
-                  {campaignMediaUrl && !uploadingMedia && (
-                    <div className="mt-2 p-2 bg-green-900/20 border border-green-700 rounded-lg">
-                      <p className="text-xs text-green-400">✅ تم رفع الوسائط بنجاح</p>
-                      <button 
-                        onClick={() => setCampaignMediaUrl('')}
-                        className="text-xs text-red-400 hover:text-red-300 mt-1"
-                      >
-                        إزالة الوسائط
-                      </button>
-                </div>
-                  )}
-              </div>
-      </div>
       </div>
             <div className="flex gap-3 pt-4">
               <Button 

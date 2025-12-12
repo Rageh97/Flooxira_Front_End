@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 import { 
   getWhatsAppStatus, 
   sendWhatsAppMessage,
@@ -76,6 +77,13 @@ export default function WhatsAppPage() {
       checkStatus();
     }
   }, [token]);
+
+  // Auto-hide success messages after 3 seconds
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => setSuccess(""), 3000);
+    return () => clearTimeout(timer);
+  }, [success]);
 
   // ✅ Socket.IO: Listen for QR code events
   useEffect(() => {
@@ -712,7 +720,7 @@ export default function WhatsAppPage() {
           {success}
         </div>
       )}
-              <Button 
+              {/* <Button 
              
                 onClick={handleShowTutorial} 
                 variant="secondary"
@@ -721,7 +729,13 @@ export default function WhatsAppPage() {
                <BookOpen className="w-4 h-4" />
                <p> شرح الميزة</p>
                </div>
-              </Button>
+              </Button> */}
+{/* <button  onClick={handleShowTutorial}  className="border-1 border-[#cd201f] overflow-hidden relative h-[35px] w-[130px] rounded-[30px] bg-white"> 
+  <span className="icon"><svg fill="none" height="33" viewBox="0 0 120 120" width="33" xmlns="http://www.w3.org/2000/svg"><path d="m120 60c0 33.1371-26.8629 60-60 60s-60-26.8629-60-60 26.8629-60 60-60 60 26.8629 60 60z" fill="#cd201f"></path><path d="m25 49c0-7.732 6.268-14 14-14h42c7.732 0 14 6.268 14 14v22c0 7.732-6.268 14-14 14h-42c-7.732 0-14-6.268-14-14z" fill="#fff"></path><path d="m74 59.5-21 10.8253v-21.6506z" fill="#cd201f"></path></svg></span>
+  <span className="text1">شرح الميزة</span>
+  <span className="text2 text-center">شاهد</span> 
+</button> */}
+<AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
 <div className="flex flex-col lg:flex-row  w-full gap-3">
              
       {/* Usage Statistics */}

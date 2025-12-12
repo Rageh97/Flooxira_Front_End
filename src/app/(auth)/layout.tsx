@@ -1,3 +1,5 @@
+import { BorderBeam } from "@/components/ui/border-beam";
+import { Card } from "@/components/ui/card";
 import Image from "next/image";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -6,18 +8,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* <div>
         <Image src="/Logo.gif" alt="logo" width={400} height={100} />
       </div> */}
-      <div className="w-full max-w-md rounded-[60px] gradient-border p-6">
-        {children}
-      </div>
+      <Card className="w-full max-w-md  gradient-border p-6">
+       
+          
+            {children}
+        
+            <BorderBeam duration={8} size={100} />
+      </Card>
     </main>
   );
 }
-
-
-
-
-
-
-
-
-

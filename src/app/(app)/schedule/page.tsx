@@ -23,6 +23,7 @@ import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen } from "lucide-react";
 import Image from "next/image";
+import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 export default function SchedulePage() {
   const { showError } = useToast();
@@ -375,15 +376,7 @@ export default function SchedulePage() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">ادارة وجدولة المحتوى</h1>
           {/* <p className="text-gray-300">إدارة رسائل واتساب المجدولة ومنشورات المنصات</p> */}
-          <Button 
-            onClick={handleShowTutorial} 
-            variant="secondary"
-            className="flex items-center gap-2 primary-button">
-            <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            <p> شرح الميزة</p>
-            </div>
-          </Button>
+          <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
           </div>
       </div>
 

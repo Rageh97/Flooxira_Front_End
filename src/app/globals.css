@@ -1297,7 +1297,7 @@
   display: none;
 }
 /* ..................................................... */
-/* From Uiverse.io by jawad_8494 */ 
+
 .super-button {
   position: relative;
   display: inline-flex;
@@ -1362,6 +1362,154 @@
     transform: rotate(0deg);
   }
   100% {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 768px) {
+  .super-button {
+    padding: 7px 10px;
+    font-size: 12px;
+    gap: 8px;
+  }
+  .text1 {
+    font-size: 10px;
+    margin-left: 15%;
+  }
+  .text2 {
+    font-size: 10px;
+    margin-left: 15%;
+  }
+}
+/* ........................................ */
+.text1 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-left: 22%;
+  color: black;
+}
+
+.text2 {
+  position: absolute;
+  top: 25%;
+  left: -50px;
+  font-weight: 700;
+  font-size: 14px;
+  color: white;
+}
+
+.icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: transform 0.5s;
+}
+
+.icon::before {
+  position: absolute;
+  left: -100px;
+  top: 0;
+  z-index: -1;
+  content: '';
+  width: 130px;
+  height: 33px;
+  border-radius: 30px;
+  background-color: #cd201f;
+}
+
+button:hover .icon {
+  transform: translateX(96px);
+  transition: transform 0.5s;
+}
+
+button:hover .text2 {
+  transform: translateX(85px);
+  transition: transform 0.6s;
+}
+
+button:active {
+  transform: scale(1.03);
+}
+/* .................................................. */
+/* .gradient-border-auth {
+  --form-width: 315px;
+  --aspect-ratio: 1.33;
+  --login-box-color: #272727;
+  --input-color: #3a3a3a;
+  --button-color: #373737;
+  --footer-color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--login-box-color);
+  border-radius: 24px;
+  width: calc(var(--form-width) + 1px);
+  height: calc(var(--form-width) * var(--aspect-ratio) + 1px);
+  z-index: 8;
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    0 0 8px rgba(255, 255, 255, 0.1),
+    0 0 16px rgba(255, 255, 255, 0.08);
+}
+
+.gradient-border-auth::before {
+  content: "";
+  position: absolute;
+  inset: -50px;
+  z-index: -2;
+  background: conic-gradient(
+    from 45deg,
+    transparent 75%,
+    #fff,
+    transparent 100%
+  );
+  animation: spin 4s ease-in-out infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}.login-box {
+  background: var(--login-box-color);
+  border-radius: 24px;
+  padding: 28px;
+  width: var(--form-width);
+  height: calc(var(--form-width) * var(--aspect-ratio));
+  position: absolute;
+  z-index: 10;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  box-shadow:
+    inset 0 40px 60px -8px rgba(255, 255, 255, 0.12),
+    inset 4px 0 12px -6px rgba(255, 255, 255, 0.12),
+    inset 0 0 12px -4px rgba(255, 255, 255, 0.12);
+} */
+/* From Uiverse.io by xXJollyHAKERXx */ 
+.spinner {
+  background-image: linear-gradient(rgb(186, 66, 255) 35%,rgb(0, 225, 255));
+  width: 100px;
+  height: 100px;
+  animation: spinning82341 1.7s linear infinite;
+  text-align: center;
+  border-radius: 50px;
+  filter: blur(1px);
+  margin-bottom: 20px;
+  /* box-shadow: 0px -5px 20px 0px rgb(186, 66, 255), 0px 5px 20px 0px rgb(0, 225, 255); */
+}
+
+.spinner1 {
+  background-color: rgb(0, 46, 77);
+  width: 100px;
+  height: 100px;
+  border-radius: 50px;
+  filter: blur(10px);
+}
+
+@keyframes spinning82341 {
+  to {
     transform: rotate(360deg);
   }
 }
