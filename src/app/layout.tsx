@@ -28,10 +28,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={` antialiased`}>
         <Providers>{children}</Providers>
         <script>
-  window.WIDGET_API_URL = 'http://localhost:4000';
-  window.WIDGET_SOCKET_URL = 'http://localhost:4000';
+  window.WIDGET_API_URL = 'https://api.flooxira.com';
+  window.WIDGET_SOCKET_URL = 'https://api.flooxira.com';
 </script>
-<script src="http://localhost:4000/widget.js" data-store-id="b81b845f-fd75-41b9-872b-aa413098b8ac"></script>
+<script src="https://api.flooxira.com/widget.js" data-store-id="728a0211-a7ae-4279-b045-39dc52e8599b"></script>
       </body>
     </html>
   );
