@@ -557,7 +557,7 @@ export default function AskAIPage() {
         )}
 
         {/* Conversations List */}
-        <div className="flex-1 overflow-y-auto px-2">
+        <div className="flex-1 custom-scrollbar overflow-y-auto px-2">
           {conversations.length === 0 ? (
             <div className="text-center py-8 px-4">
               <MessageSquare className="h-12 w-12 text-yellow-600 mx-auto mb-2" />

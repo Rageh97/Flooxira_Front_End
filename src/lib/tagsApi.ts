@@ -41,8 +41,31 @@ export async function listContactsByTag(tagId: number) {
   return res.json();
 }
 
-export async function sendCampaignToTag(payload: { tagId: number; messageTemplate: string; throttleMs?: number }) {
-  const res = await fetch(`${API_BASE}/api/campaigns/send-to-tag`, { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
+export async function sendCampaignToTag(payload: { tagId: number; messageTemplate: string; throttleMs?: number; media?: File | null }) {
+  const isFormData = !!payload.media;
+  let body: BodyInit;
+  let headers: HeadersInit = authHeaders();
+
+  if (isFormData) {
+    const form = new FormData();
+    form.append('tagId', String(payload.tagId));
+    form.append('messageTemplate', payload.messageTemplate);
+    if (payload.throttleMs) form.append('throttleMs', String(payload.throttleMs));
+    if (payload.media) form.append('media', payload.media);
+    
+    // Remove Content-Type header to let browser set boundary
+    const { 'Content-Type': contentType, ...restHeaders } = headers as any;
+    headers = restHeaders;
+    body = form;
+  } else {
+    body = JSON.stringify(payload);
+  }
+
+  const res = await fetch(`${API_BASE}/api/campaigns/send-to-tag`, { 
+    method: 'POST', 
+    headers,
+    body 
+  });
   return res.json();
 }
 

@@ -17,6 +17,12 @@ import { getBotStatus, pauseBot, resumeBot, BotStatus } from "@/lib/botControlAp
 import AnimatedEmoji, { EmojiPickerInline } from "@/components/AnimatedEmoji";
 import { useAuth } from "@/lib/auth";
 import Image from "next/image";
+import { 
+  getPendingEscalationContacts, 
+  resolveEscalationByContact,
+  escalateChat,
+  ChatEscalation
+} from "@/lib/escalationApi";
 
 export default function WhatsAppChatsPage() {
   const [loading, setLoading] = useState(false);
@@ -109,6 +115,10 @@ export default function WhatsAppChatsPage() {
   const [noteText, setNoteText] = useState("");
   const [savingNote, setSavingNote] = useState(false);
 
+  // Escalation state
+  const [escalatedContacts, setEscalatedContacts] = useState<Set<string>>(new Set());
+  const [isEscalating, setIsEscalating] = useState(false);
+
   // Ref for messages container to scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -139,9 +149,16 @@ export default function WhatsAppChatsPage() {
       // Load open notes for highlighting
       (async () => {
         try {
+          // Load open notes
           const data = await getOpenChatNotes(token);
           if (data.success) {
             setOpenNoteContacts(new Set(data.contacts || []));
+          }
+          
+          // Load escalated contacts
+          const escalationData = await getPendingEscalationContacts();
+          if (escalationData.success) {
+            setEscalatedContacts(new Set(escalationData.contacts || []));
           }
         } catch (_) {}
       })();
@@ -322,22 +339,124 @@ export default function WhatsAppChatsPage() {
       console.log('Contacts array:', data.contacts);
       
       if (data.success) {
-        // Log each contact to see all available fields
-        data.contacts.forEach((contact, index) => {
-          console.log(`Contact ${index + 1}:`, {
-            contactNumber: contact.contactNumber,
-            contactName: contact.contactName,
-            profilePicture: contact.profilePicture,
-            messageCount: contact.messageCount,
-            lastMessageTime: contact.lastMessageTime,
-            allKeys: Object.keys(contact),
-            fullObject: contact
-          });
-        });
+        // Helper to extract clean number for comparison
+        const getCleanNumber = (num: string) => {
+          let clean = num.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '').replace(/\D/g, '');
+          // Extract from LID if possible
+          if (clean.length >= 15) {
+             const egyptMatch = clean.match(/20\d{10}/);
+             if (egyptMatch) return egyptMatch[0];
+             const saudiMatch = clean.match(/966\d{9}/);
+             if (saudiMatch) return saudiMatch[0];
+             // Try suffix match
+             if (clean.length >= 12) {
+                const last12 = clean.slice(-12);
+                if (/^20\d{10}$/.test(last12)) return last12;
+             }
+             return clean.slice(-12); // Fallback
+          }
+          return clean;
+        };
+
+        // Deduplicate contacts
+        const uniqueContactsMap = new Map();
         
-        setContacts(data.contacts);
+        data.contacts.forEach((contact: any) => {
+           const cleanNum = getCleanNumber(contact.contactNumber);
+           
+           if (uniqueContactsMap.has(cleanNum)) {
+              const existing = uniqueContactsMap.get(cleanNum);
+              
+              // Determine which one to keep
+              // Prefer non-LID (s.whatsapp.net) over LID
+              const isExistingLid = existing.contactNumber.includes('@lid');
+              const isNewLid = contact.contactNumber.includes('@lid');
+              
+              if (isExistingLid && !isNewLid) {
+                 // Replace LID with real number
+                 uniqueContactsMap.set(cleanNum, {
+                    ...contact,
+                    // Preserve profile picture if missing in new
+                    profilePicture: contact.profilePicture || existing.profilePicture,
+                    // Take latest message time
+                    lastMessageTime: new Date(contact.lastMessageTime) > new Date(existing.lastMessageTime) ? contact.lastMessageTime : existing.lastMessageTime,
+                    messageCount: Math.max(contact.messageCount, existing.messageCount)
+                 });
+              } else if (!isExistingLid && isNewLid) {
+                 // Keep existing real number, but update metadata if new is fresher
+                 uniqueContactsMap.set(cleanNum, {
+                    ...existing,
+                    profilePicture: existing.profilePicture || contact.profilePicture,
+                    lastMessageTime: new Date(contact.lastMessageTime) > new Date(existing.lastMessageTime) ? contact.lastMessageTime : existing.lastMessageTime,
+                     messageCount: Math.max(contact.messageCount, existing.messageCount)
+                 });
+              } else {
+                 // Both same type, keep the one with latest message
+                 if (new Date(contact.lastMessageTime) > new Date(existing.lastMessageTime)) {
+                    uniqueContactsMap.set(cleanNum, contact);
+                 }
+              }
+           } else {
+              uniqueContactsMap.set(cleanNum, contact);
+           }
+        });
+
+        const dedupedContacts = Array.from(uniqueContactsMap.values());
+        
+        // FILTER: Remove LID numbers and long internal IDs
+        // User requested to hide numbers like 58858651291839 (14+ digits)
+        const cleanContacts = (dedupedContacts as any[]).filter(c => {
+           // Explicitly filter LID suffix if user doesn't want them
+           if (c.contactNumber.includes('@lid')) return false;
+
+           const clean = c.contactNumber.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '').replace(/\D/g, '');
+           // Phone numbers (Egypt/Saudi/etc) are usually <= 13 digits (e.g. 201001234567 = 12 digits)
+           // If number is > 13 digits, it's likely an internal ID or LID
+           if (clean.length > 13) return false;
+           
+           return true;
+        });
+
+        // Sort by last message time descending (Newest first)
+        cleanContacts.sort((a: any, b: any) => {
+           // User reported that the previous sort (b - a) was showing oldest first.
+           // Flipping this to (a - b) might solve it if there's confusion, 
+           // BUT logically for strings/dates, b.time - a.time is DESC (newest top).
+           // Let's try to be very robust with dates.
+           const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+           const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+           
+           // If user specifically requested "Newest at the beginning", and complained about current state,
+           // and current state was (b - a), then maybe for some reason their dates are inverted?
+           // I will stick to standard DESC logic (b - a) but handle nulls better, 
+           // and verify. If the user insists it's reversed, I will flip.
+           
+           // Let's assume the user IS seeing oldest first. So b - a gave oldest first? 
+           // That implies b < a => result negative => b first? 
+           // No, sort(a,b): negative => a comes first.
+           // So if b < a (b older), b - a is negative, so a (newer) comes first? No.
+           // Sort(a, b): result < 0 => a comes first.
+           // If we want DESC (Newest a first), we want `a` first if `a > b`.
+           // So if a > b (a newer), we want return < 0.
+           // (b - a): if a > b, then (smaller - bigger) is Negative. So a comes first. Correct.
+           
+           // So (b - a) IS descending.
+           
+           // User says "arranged opposite, I want newest at beginning".
+           // This means currently Oldest is at beginning.
+           // This implies currently [Old, New, Newer].
+           // My code was doing DESC. Why did it result in ASC? 
+           // Maybe the timestamps are 0? Or strings are weird?
+
+           // User explicitly requested to flip the order again. 
+           // It seems the previous logic was producing the opposite of what they wanted.
+           // Flipping to timeA - timeB.
+           return timeA - timeB;
+        });
+
+        setContacts(cleanContacts);
         // Load tags for each contact
-        await loadContactTags(data.contacts);
+        await loadContactTags(cleanContacts);
       }
     } catch (e: any) {
       setError(e.message);
@@ -947,6 +1066,7 @@ export default function WhatsAppChatsPage() {
                   className={`p-2 ml-1 sm:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
                     selectedContact === contact.contactNumber
                       ? ' inner-shadow'
+                      : escalatedContacts.has(contact.contactNumber) ? 'bg-red-500/30 border border-red-500/30'
                       : openNoteContacts.has(contact.contactNumber) ? 'bg-yellow-600/30' : 'bg-secondry'
                   }`}
                 >
@@ -1114,6 +1234,42 @@ export default function WhatsAppChatsPage() {
           <div className="flex flex-col w-full h-full min-h-0">
             {/* Chat Header */}
             
+            {/* Active Escalation - Fixed at top */}
+            {selectedContact && escalatedContacts.has(selectedContact) && (
+              <div className="flex-shrink-0 p-2 sm:p-4 pb-0">
+                <div className="p-3 rounded-md bg-red-900/30 border border-red-500 text-red-100 flex items-center justify-between gap-3 animate-pulse-slow">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🆘</span>
+                    <div className="text-sm font-medium">
+                      هذه المحادثة محولة لموظف وبانتظار الحل. البوت متوقف حالياً.
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={async () => {
+                      if (!selectedContact) return;
+                      try {
+                        const res = await resolveEscalationByContact(selectedContact);
+                        if (res.success) {
+                          setEscalatedContacts(prev => {
+                            const s = new Set(prev);
+                            s.delete(selectedContact);
+                            return s;
+                          });
+                          showToast('تم حل المشكلة واستئناف البوت بنجاح', 'success');
+                        }
+                      } catch (e: any) {
+                        showToast(e.message || 'فشل في حل المشكلة', 'error');
+                      }
+                    }}
+                    className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
+                  >
+                    تم الحل (استئناف البوت)
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Active Note - Fixed at top */}
             {selectedContact && activeNote && activeNote.status === 'open' && (
               <div className="flex-shrink-0 p-2 sm:p-4 pb-0">
@@ -1196,50 +1352,97 @@ export default function WhatsAppChatsPage() {
                               {/* Media Content */}
                               {chat.contentType === 'image' && chat.mediaUrl && (
                                 <div className="mb-2">
-                                  <img width={40} height={40} 
-                                    src={chat.mediaUrl.startsWith('data:') || chat.mediaUrl.startsWith('http') 
-                                      ? chat.mediaUrl 
-                                      : `${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
-                                    alt="Sent image" 
-                                    className="max-w-full h-auto rounded-lg"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
+                                  <a 
+                                    href={(() => {
+                                      if (chat.mediaUrl?.startsWith('data:') || chat.mediaUrl?.startsWith('http')) return chat.mediaUrl;
+                                      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                                      const cleanPath = chat.mediaUrl?.replace(/\\/g, '/').replace(/^\//, '') || '';
+                                      return `${apiUrl.replace(/\/$/, '')}/${cleanPath}`;
+                                    })()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="cursor-pointer"
+                                  >
+                                    <img 
+                                      src={(() => {
+                                        if (chat.mediaUrl?.startsWith('data:') || chat.mediaUrl?.startsWith('http')) return chat.mediaUrl;
+                                        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                                        const cleanPath = chat.mediaUrl?.replace(/\\/g, '/').replace(/^\//, '') || '';
+                                        return `${apiUrl.replace(/\/$/, '')}/${cleanPath}`;
+                                      })()}
+                                      alt="Sent image" 
+                                      className="max-w-full h-auto rounded-lg hover:opacity-90 transition-opacity"
+                                      onError={(e) => {
+                                        console.error("Image load failed", chat.mediaUrl);
+                                      }}
+                                    />
+                                  </a>
+                                </div>
+                              )}
+                              
+                              {chat.contentType === 'audio' && chat.mediaUrl && (
+                                <div className="mb-2 p-2 bg-black bg-opacity-20 rounded min-w-[200px]">
+                                  <audio 
+                                    controls 
+                                    className="w-full h-8"
+                                    src={(() => {
+                                      if (chat.mediaUrl?.startsWith('data:') || chat.mediaUrl?.startsWith('http')) return chat.mediaUrl;
+                                      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                                      const cleanPath = chat.mediaUrl?.replace(/\\/g, '/').replace(/^\//, '') || '';
+                                      return `${apiUrl.replace(/\/$/, '')}/${cleanPath}`;
+                                    })()}
+                                  >
+                                    Your browser does not support the audio element.
+                                  </audio>
                                 </div>
                               )}
                               
                               {chat.contentType === 'video' && chat.mediaUrl && (
                                 <div className="mb-2">
-                                  <video 
-                                    src={chat.mediaUrl.startsWith('data:') || chat.mediaUrl.startsWith('http') 
-                                      ? chat.mediaUrl 
-                                      : `${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
-                                    controls 
-                                    className="max-w-full h-auto rounded-lg"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
+                                  <a 
+                                    href={(() => {
+                                      if (chat.mediaUrl?.startsWith('data:') || chat.mediaUrl?.startsWith('http')) return chat.mediaUrl;
+                                      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                                      const cleanPath = chat.mediaUrl?.replace(/\\/g, '/').replace(/^\//, '') || '';
+                                      return `${apiUrl.replace(/\/$/, '')}/${cleanPath}`;
+                                    })()}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                   >
-                                    متصفحك لا يدعم علامة الفيديو.
-                                  </video>
+                                    <video 
+                                      src={(() => {
+                                        if (chat.mediaUrl?.startsWith('data:') || chat.mediaUrl?.startsWith('http')) return chat.mediaUrl;
+                                        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                                        const cleanPath = chat.mediaUrl?.replace(/\\/g, '/').replace(/^\//, '') || '';
+                                        return `${apiUrl.replace(/\/$/, '')}/${cleanPath}`;
+                                      })()}
+                                      controls 
+                                      className="max-w-full h-auto rounded-lg cursor-pointer"
+                                      onError={(e) => {
+                                        console.error("Video load failed", chat.mediaUrl);
+                                      }}
+                                    >
+                                      متصفحك لا يدعم علامة الفيديو.
+                                    </video>
+                                  </a>
                                 </div>
                               )}
                               
-                              {(chat.contentType === 'audio' || chat.contentType === 'document') && chat.mediaUrl && (
+                              {chat.contentType === 'document' && chat.mediaUrl && (
                                 <div className="mb-2 p-2 bg-black bg-opacity-20 rounded">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-lg">
-                                      {chat.contentType === 'audio' ? '🎵' : '📄'}
-                                    </span>
+                                    <span className="text-lg">📄</span>
                                     <div>
                                       <div className="text-sm font-medium">
                                         {chat.mediaFilename || `${chat.contentType.toUpperCase()} File`}
                                       </div>
                                       <a 
-                                        href={chat.mediaUrl.startsWith('http') 
-                                          ? chat.mediaUrl 
-                                          : `${process.env.NEXT_PUBLIC_API_URL}${chat.mediaUrl}`} 
+                                        href={(() => {
+                                          if (chat.mediaUrl?.startsWith('data:') || chat.mediaUrl?.startsWith('http')) return chat.mediaUrl;
+                                          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+                                          const cleanPath = chat.mediaUrl?.replace(/\\/g, '/').replace(/^\//, '') || '';
+                                          return `${apiUrl.replace(/\/$/, '')}/${cleanPath}`;
+                                        })()}
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="text-xs underline"

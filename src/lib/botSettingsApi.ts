@@ -52,6 +52,10 @@ export interface BotSettings {
   trackConversations: boolean;
   trackPerformance: boolean;
   isActive: boolean;
+  // Escalation settings
+  escalationNotificationNumber?: string;
+  escalationMessage?: string;
+  escalationEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }

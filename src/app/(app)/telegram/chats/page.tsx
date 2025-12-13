@@ -365,7 +365,7 @@ export default function TelegramChatsPage() {
           
           <div className="flex gap-1">
             {/* Media upload button */}
-            <label className="flex items-center justify-centerrounded-lg cursor-pointer transition-colors">
+            <label className="flex items-center justify-center rounded-lg cursor-pointer transition-colors">
               <input
                 type="file"
                 accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"

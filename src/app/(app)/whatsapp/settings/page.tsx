@@ -16,6 +16,10 @@ interface BotSettings {
   workingDays: number[];
   timezone: string;
   outsideWorkingHoursMessage: string;
+  // Escalation settings
+  escalationEnabled?: boolean;
+  escalationNotificationNumber?: string;
+  escalationMessage?: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -51,7 +55,10 @@ export default function WhatsAppSettingsPage() {
     workingHoursEnd: '17:00',
     workingDays: [1, 2, 3, 4, 5],
     timezone: '',
-    outsideWorkingHoursMessage: 'نعتذر، نحن خارج أوقات العمل. سنرد عليك في أقرب وقت ممكن.'
+    outsideWorkingHoursMessage: 'نعتذر، نحن خارج أوقات العمل. سنرد عليك في أقرب وقت ممكن.',
+    escalationEnabled: true,
+    escalationNotificationNumber: '',
+    escalationMessage: 'شكراً لتواصلك معنا! سيتواصل معك أحد المسؤولين في أقرب وقت ممكن. 🙏'
   });
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
@@ -81,10 +88,14 @@ export default function WhatsAppSettingsPage() {
             workingHoursEnd: data.data.workingHoursEnd || '17:00',
             workingDays: data.data.workingDays || [1, 2, 3, 4, 5],
             timezone: data.data.timezone || 'Asia/Riyadh',
-            outsideWorkingHoursMessage: data.data.outsideWorkingHoursMessage || 'نعتذر، نحن خارج أوقات العمل. سنرد عليك في أقرب وقت ممكن.'
+            outsideWorkingHoursMessage: data.data.outsideWorkingHoursMessage || 'نعتذر، نحن خارج أوقات العمل. سنرد عليك في أقرب وقت ممكن.',
+            escalationEnabled: data.data.escalationEnabled !== false,
+            escalationNotificationNumber: data.data.escalationNotificationNumber || '',
+            escalationMessage: data.data.escalationMessage || 'شكراً لتواصلك معنا! سيتواصل معك أحد المسؤولين في أقرب وقت ممكن. 🙏'
           });
         }
       }
+
     } catch (error) {
       console.error('Error loading settings:', error);
       setError('فشل في تحميل الإعدادات');
@@ -268,7 +279,7 @@ export default function WhatsAppSettingsPage() {
                     setSettings(prev => ({ ...prev, timezone: value }))
                   }
                 >
-                  <SelectTrigger placeholder="المنطقة الزمنية" className="bg-[#01191040] text-white border-gray-500">
+                  <SelectTrigger className="bg-[#01191040] text-white border-gray-500">
                   <SelectValue asChild>
     <span className={settings.timezone ? "text-white" : "text-gray-500"}>
       { "المنطقة الزمنية"}
@@ -286,6 +297,78 @@ export default function WhatsAppSettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
+            <Button 
+              onClick={saveSettings}
+              disabled={saving}
+              className="primary-button"
+            >
+              {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="gradient-border mt-6">
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle className="text-white">إعدادات الموظف البشري</CardTitle>
+          <div className="flex items-center gap-2">
+            <h1 className="text-white">تفعيل التحويل التلقائي</h1>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                id="escalation-enabled"
+                checked={settings.escalationEnabled !== false}
+                onChange={(e) => 
+                  setSettings(prev => ({ ...prev, escalationEnabled: e.target.checked }))
+                } 
+                type="checkbox" 
+                className="sr-only peer"
+              />
+              <div className="group peer ring-0 bg-rose-400 rounded-full outline-none duration-300 after:duration-300 w-24 h-12 shadow-md peer-checked:bg-emerald-500 peer-focus:outline-none after:content-[''] after:rounded-full after:absolute after:bg-gray-50 after:outline-none after:h-10 after:w-10 after:top-1 after:left-1 after:flex after:justify-center after:items-center peer-checked:after:translate-x-12 peer-hover:after:scale-95">
+                <svg className="absolute top-1 left-12 stroke-gray-900 w-10 h-10" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" x="0" xmlns="http://www.w3.org/2000/svg" y="0">
+                  <path className="svg-fill-primary" d="M50,18A19.9,19.9,0,0,0,30,38v8a8,8,0,0,0-8,8V74a8,8,0,0,0,8,8H70a8,8,0,0,0,8-8V54a8,8,0,0,0-8-8H38V38a12,12,0,0,1,23.6-3,4,4,0,1,0,7.8-2A20.1,20.1,0,0,0,50,18Z"></path>
+                </svg>
+                <svg className="absolute top-1 left-1 stroke-gray-900 w-10 h-10" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" x="0" xmlns="http://www.w3.org/2000/svg" y="0">
+                  <path d="M30,46V38a20,20,0,0,1,40,0v8a8,8,0,0,1,8,8V74a8,8,0,0,1-8,8H30a8,8,0,0,1-8-8V54A8,8,0,0,1,30,46Zm32-8v8H38V38a12,12,0,0,1,24,0Z" fillRule="evenodd"></path>
+                </svg>
+              </div>
+            </label>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {settings.escalationEnabled !== false && (
+            <>
+              <div>
+                <Label htmlFor="escalation-number" className="text-white">رقم الواتساب لإشعارات الموظف</Label>
+                <Input
+                  id="escalation-number"
+                  type="text"
+                  placeholder="مثال: 01xxxxxxxxx"
+                  value={settings.escalationNotificationNumber || ''}
+                  onChange={(e) => 
+                    setSettings(prev => ({ ...prev, escalationNotificationNumber: e.target.value }))
+                  }
+                  className="bg-[#011910] text-white border-gray-500"
+                />
+                <p className="text-xs text-gray-400 mt-1">سيتم إرسال رسالة لهذا الرقم عندما يطلب عميل التحدث مع موظف</p>
+              </div>
+
+              <div>
+                <Label htmlFor="escalation-message" className="text-white">رسالة الرد التلقائي عند التحويل</Label>
+                <Textarea
+                  id="escalation-message"
+                  value={settings.escalationMessage || ''}
+                  onChange={(e) => 
+                    setSettings(prev => ({ ...prev, escalationMessage: e.target.value }))
+                  }
+                  className="bg-[#011910] text-white border-gray-500"
+                  rows={3}
+                  placeholder="أدخل الرسالة التي ستصل للعميل عند تحويله للموظف..."
+                />
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end items-center gap-5">
             <Button 
               onClick={saveSettings}
               disabled={saving}
