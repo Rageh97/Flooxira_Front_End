@@ -196,6 +196,19 @@ export default function WhatsAppChatsPage() {
     return () => clearInterval(interval);
   }, [selectedContact, botStatus?.isPaused]);
 
+  // Auto-refresh chat list (contacts)
+  useEffect(() => {
+    if (!token) return;
+    
+    // Refresh contacts list every 15 seconds to keep order updated
+    const interval = setInterval(() => {
+      // Don't reload if user is searching or interacting (can be improved later)
+      loadChatContacts();
+    }, 15000);
+    
+    return () => clearInterval(interval);
+  }, [token]);
+
   // Scroll to bottom when chats are loaded or updated
   useEffect(() => {
     if (chats.length > 0 && messagesContainerRef.current) {
@@ -419,39 +432,11 @@ export default function WhatsAppChatsPage() {
 
         // Sort by last message time descending (Newest first)
         cleanContacts.sort((a: any, b: any) => {
-           // User reported that the previous sort (b - a) was showing oldest first.
-           // Flipping this to (a - b) might solve it if there's confusion, 
-           // BUT logically for strings/dates, b.time - a.time is DESC (newest top).
-           // Let's try to be very robust with dates.
            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-           
-           // If user specifically requested "Newest at the beginning", and complained about current state,
-           // and current state was (b - a), then maybe for some reason their dates are inverted?
-           // I will stick to standard DESC logic (b - a) but handle nulls better, 
-           // and verify. If the user insists it's reversed, I will flip.
-           
-           // Let's assume the user IS seeing oldest first. So b - a gave oldest first? 
-           // That implies b < a => result negative => b first? 
-           // No, sort(a,b): negative => a comes first.
-           // So if b < a (b older), b - a is negative, so a (newer) comes first? No.
-           // Sort(a, b): result < 0 => a comes first.
-           // If we want DESC (Newest a first), we want `a` first if `a > b`.
-           // So if a > b (a newer), we want return < 0.
-           // (b - a): if a > b, then (smaller - bigger) is Negative. So a comes first. Correct.
-           
-           // So (b - a) IS descending.
-           
-           // User says "arranged opposite, I want newest at beginning".
-           // This means currently Oldest is at beginning.
-           // This implies currently [Old, New, Newer].
-           // My code was doing DESC. Why did it result in ASC? 
-           // Maybe the timestamps are 0? Or strings are weird?
-
-           // User explicitly requested to flip the order again. 
-           // It seems the previous logic was producing the opposite of what they wanted.
-           // Flipping to timeA - timeB.
-           return timeA - timeB;
+           // Debug logging
+           // console.log(`Sorting: ${a.contactNumber} (${timeA}) vs ${b.contactNumber} (${timeB}) -> ${timeB - timeA}`);
+           return timeB - timeA;
         });
 
         setContacts(cleanContacts);
@@ -637,6 +622,8 @@ export default function WhatsAppChatsPage() {
           setTimeout(() => {
             console.log(`[WhatsApp Frontend] Refreshing chat history to sync with backend`);
             loadChatHistory(selectedContact);
+            // Refresh contacts too to update order (move to top)
+            loadChatContacts();
             }, 500);
           }
         }
@@ -1074,7 +1061,7 @@ export default function WhatsAppChatsPage() {
                    {contact.profilePicture ? (
                     <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
                   ) : contact.messageCount > 0 ? (
-                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/belll.gif" alt="" />
+                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
                   ) : (
                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
                       {/* {contact.contactName 

@@ -12,7 +12,8 @@ import { clsx } from "clsx";
 import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import RippleGrid from '@/components/RippleGrid';
-import { X, Megaphone, Menu } from "lucide-react";
+import { X, Megaphone, Menu, Home, MessageCircle, Send, LogOut, MessageSquare, Link as LinkIcon, Users as UsersIcon, Settings as SettingsIcon, Bot, LayoutGrid, TagIcon, ChartNoAxesColumn } from "lucide-react";
+
 
 
 const navItems = [
@@ -45,6 +46,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const { permissions } = usePermissions();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [whatsappMenuOpen, setWhatsappMenuOpen] = useState(false);
   const [planName, setPlanName] = useState<string>("");
   const [subscriptionStatus, setSubscriptionStatus] = useState<{ daysRemaining: number | null, colorClass: string }>({ daysRemaining: null, colorClass: '' });
   const [newsBarClosed, setNewsBarClosed] = useState(false);
@@ -520,9 +522,122 @@ export default function AppLayout({ children }: PropsWithChildren) {
           </div>
         )}
         
-        <main className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-3">
+        <main className="flex-1 overflow-y-auto scrollbar-hide p-4 md:p-3 pb-24 md:pb-3">
           {children}
         </main>
+        
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+            {/* WhatsApp Popup Menu */}
+            <div className={clsx(
+              "absolute bottom-full left-0 right-0 bg-[#0f111a]/95 backdrop-blur-lg  transition-all duration-300 ease-in-out overflow-hidden shadow-[0_-8px_30px_rgba(0,0,0,0.3)]",
+              whatsappMenuOpen ? "max-h-[400px] opacity-100 py-4" : "max-h-0 opacity-0 py-0"
+            )}>
+              <div className="grid grid-cols-3 gap-4 px-4">
+                 {[
+                   { name: "الاتصال", href: "/whatsapp/connection", icon: <LinkIcon size={20} /> },
+                   { name: "المحادثات", href: "/whatsapp/chats", icon: <MessageCircle size={20} /> },
+                   { name: "المجموعات", href: "/whatsapp/groups", icon: <UsersIcon size={20} /> },
+                   { name: "الحملات", href: "/whatsapp/campaigns", icon: <Megaphone size={20} /> },
+                   { name: "محتوى البوت", href: "/whatsapp/bot-content", icon: <Bot size={20} /> },
+                   { name: "اعدادات الذكاء الاصطناعي", href: "/whatsapp/ai-settings", icon: <MessageCircle size={20} /> },
+                   { name: "اوقات العمل", href: "/whatsapp/settings", icon: <SettingsIcon size={20} /> },
+                   { name: "الاحصائيات", href: "/whatsapp/stats", icon: <ChartNoAxesColumn size={20} /> },
+                   { name: "التصنيفات", href: "/whatsapp/tags", icon: <TagIcon size={20} /> },
+                 ].map((item) => (
+                   <Link 
+                     key={item.href} 
+                     href={item.href} 
+                     onClick={() => setWhatsappMenuOpen(false)}
+                     className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white/5 active:scale-95 transition-all"
+                   >
+                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08c47d] to-[#059669] flex items-center justify-center text-white shadow-lg">
+                       {item.icon}
+                     </div>
+                     <span className="text-[10px] font-medium text-gray-300 mx-auto">{item.name}</span>
+                   </Link>
+                 ))}
+              </div>
+            </div>
+
+            {/* Bottom Tabs with Shine Effect */}
+            <div className="bg-[#0f111a]/95 backdrop-blur-lg border-t border-primary pb-safe rounded-t-xl nav-shine-effect">
+                <div className="flex justify-around items-center h-16 px-2">
+                  <Link 
+                    href="/dashboard" 
+                    className={clsx(
+                      "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
+                      pathname === '/dashboard' ? "text-primary" : "text-gray-400 hover:text-white"
+                    )}
+                  >
+                    <div className="relative">
+                      <Home size={22} className={pathname === '/dashboard' ? "fill-[#08c47d]/20" : ""} />
+                      {pathname === '/dashboard' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
+                    </div>
+                    <span className="text-[10px] font-medium">الرئيسية</span>
+                  </Link>
+
+                  <button 
+                    onClick={() => setWhatsappMenuOpen(!whatsappMenuOpen)}
+                    className={clsx(
+                      "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
+                      whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "text-primary" : "text-gray-400 hover:text-white"
+                    )}
+                  >
+                    <div className="relative">
+                      <MessageCircle size={22} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
+                      {(whatsappMenuOpen || pathname.startsWith('/whatsapp')) && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
+                    </div>
+                    <span className="text-[10px] font-medium">واتساب</span>
+                  </button>
+
+                  <Link 
+                    href="/telegram" 
+                    className={clsx(
+                      "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
+                      pathname === '/telegram' ? "text-primary" : "text-gray-400 hover:text-white"
+                    )}
+                  >
+                    <div className="relative">
+                      <Send size={22} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} />
+                      {pathname === '/telegram' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
+                    </div>
+                    <span className="text-[10px] font-medium">تليجرام</span>
+                  </Link>
+
+                  <Link 
+                    href="/tickets" 
+                    className={clsx(
+                      "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
+                      pathname === '/tickets' ? "text-primary" : "text-gray-400 hover:text-white"
+                    )}
+                  >
+                    <div className="relative">
+                      <div className="relative">
+                        <div className="relative">
+                            <MessageSquare size={22} className={pathname === '/tickets' ? "fill-[#08c47d]/20" : ""} />
+                            {pendingTicketsCount > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
+                                {pendingTicketsCount}
+                              </span>
+                            )}
+                        </div>
+                      </div>
+                      {pathname === '/tickets' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
+                    </div>
+                    <span className="text-[10px] font-medium">لايف شات</span>
+                  </Link>
+
+                  <button 
+                    onClick={() => { signOut(); router.push('/sign-in'); }}
+                    className="flex flex-col items-center justify-center gap-1 w-14 h-full text-red-500 hover:text-red-400 transition-colors"
+                  >
+                    <LogOut size={22} />
+                    <span className="text-[10px] font-medium">خروج</span>
+                  </button>
+                </div>
+            </div>
+        </div>
       </div>
     </div>
     </AuthGuard>
