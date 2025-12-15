@@ -141,14 +141,20 @@ export default function BotContentPage() {
       console.log('Fields from API:', fieldsRes.fields);
       console.log('Rows from API:', rowsRes.rows);
       
-      // ✅ CRITICAL: Sort fields by createdAt to ensure consistent order
+      // ✅ CRITICAL: Sort fields by displayOrder to ensure same order as Excel file
+      // Fallback to createdAt for backwards compatibility with old data
       if (fieldsRes.fields) {
         const sortedFields = [...fieldsRes.fields].sort((a, b) => {
+          // Primary sort by displayOrder
+          if (a.displayOrder !== undefined && b.displayOrder !== undefined) {
+            return a.displayOrder - b.displayOrder;
+          }
+          // Fallback to createdAt for backwards compatibility
           const dateA = new Date(a.createdAt).getTime();
           const dateB = new Date(b.createdAt).getTime();
           return dateA - dateB; // Ascending order (oldest first)
         });
-        console.log('Sorted fields:', sortedFields.map(f => f.fieldName));
+        console.log('Sorted fields by displayOrder:', sortedFields.map(f => `${f.fieldName}(${f.displayOrder})`));
         setFields(sortedFields);
       }
       

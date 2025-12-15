@@ -530,7 +530,7 @@ export async function listContentItems(token: string, categoryId: number) {
 }
 
 // ===== Bot Content (Dynamic fields + data) =====
-export type BotField = { id: number; userId: number; fieldName: string; fieldType: 'string' | 'number' | 'boolean' | 'date' | 'text'; createdAt: string; updatedAt: string };
+export type BotField = { id: number; userId: number; fieldName: string; fieldType: 'string' | 'number' | 'boolean' | 'date' | 'text'; displayOrder: number; createdAt: string; updatedAt: string };
 export type BotDataRow = { id: number; userId: number; data: Record<string, any>; createdAt: string; updatedAt: string };
 
 export async function botAddField(token: string, payload: { fieldName: string; fieldType?: BotField['fieldType'] }) {

@@ -530,7 +530,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
             {/* WhatsApp Popup Menu */}
             <div className={clsx(
-              "absolute bottom-full left-0 right-0 bg-[#0f111a]/95 backdrop-blur-lg  transition-all duration-300 ease-in-out overflow-hidden shadow-[0_-8px_30px_rgba(0,0,0,0.3)]",
+              "absolute bottom-full left-0 right-0 bg-[#0f111a]/95 rounded-t-[30px] backdrop-blur-lg  transition-all duration-300 ease-in-out overflow-hidden shadow-[0_-8px_30px_rgba(0,0,0,0.3)]",
               whatsappMenuOpen ? "max-h-[400px] opacity-100 py-4" : "max-h-0 opacity-0 py-0"
             )}>
               <div className="grid grid-cols-3 gap-4 px-4">
@@ -551,7 +551,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                      onClick={() => setWhatsappMenuOpen(false)}
                      className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white/5 active:scale-95 transition-all"
                    >
-                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#08c47d] to-[#059669] flex items-center justify-center text-white shadow-lg">
+                     <div className="w-10 h-10 rounded-full inner-shadow flex items-center justify-center text-white shadow-lg">
                        {item.icon}
                      </div>
                      <span className="text-[10px] font-medium text-gray-300 mx-auto">{item.name}</span>
@@ -561,7 +561,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             </div>
 
             {/* Bottom Tabs with Shine Effect */}
-            <div className="bg-[#0f111a]/95 backdrop-blur-lg border-t border-primary pb-safe rounded-t-xl nav-shine-effect">
+            <div className="bg-fixed-40 backdrop-blur-lg inner-shadow pb-safe rounded-t-[30px] nav-shine-effect">
                 <div className="flex justify-around items-center h-16 px-2">
                   <Link 
                     href="/dashboard" 
@@ -571,10 +571,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     )}
                   >
                     <div className="relative">
-                      <Home size={22} className={pathname === '/dashboard' ? "fill-[#08c47d]/20" : ""} />
+                      {/* <Home size={22} className={pathname === '/dashboard' ? "fill-[#08c47d]/20" : ""} /> */}
+                    <Image src="/home-mobile.png" alt="Home" width={40} height={40} className={pathname === '/dashboard' ? "fill-[#08c47d]/20" : ""} />
                       {pathname === '/dashboard' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
                     </div>
-                    <span className="text-[10px] font-medium">الرئيسية</span>
+                    {/* <span className="text-[10px] font-medium">الرئيسية</span> */}
                   </Link>
 
                   <button 
@@ -585,10 +586,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     )}
                   >
                     <div className="relative">
-                      <MessageCircle size={22} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
-                      {(whatsappMenuOpen || pathname.startsWith('/whatsapp')) && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
+                      {/* <MessageCircle size={30} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} /> */}
+                      <Image src="/wts-mobile.png" alt="WhatsApp" width={40} height={40} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
+                      {/* {(whatsappMenuOpen || pathname.startsWith('/whatsapp')) && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" /> } */}
                     </div>
-                    <span className="text-[10px] font-medium">واتساب</span>
+                    {/* <span className="text-[10px] font-medium">واتساب</span> */}
                   </button>
 
                   <Link 
@@ -599,10 +601,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     )}
                   >
                     <div className="relative">
-                      <Send size={22} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} />
+                      {/* <Send size={30} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} /> */}
+                      <Image src="/tele-mobile.png" alt="Telegram" width={40} height={40} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} />
                       {pathname === '/telegram' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
                     </div>
-                    <span className="text-[10px] font-medium">تليجرام</span>
+                    {/* <span className="text-[10px] font-medium">تليجرام</span> */}
                   </Link>
 
                   <Link 
@@ -615,7 +618,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     <div className="relative">
                       <div className="relative">
                         <div className="relative">
-                            <MessageSquare size={22} className={pathname === '/tickets' ? "fill-[#08c47d]/20" : ""} />
+                            {/* <MessageSquare size={30} className={pathname === '/tickets' ? "fill-[#08c47d]/20" : ""} /> */}
+                           <Image src="/live-mobile.png" alt="Tickets" width={40} height={40} className={pathname === '/tickets' ? "fill-[#08c47d]/20" : ""} />
                             {pendingTicketsCount > 0 && (
                               <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
                                 {pendingTicketsCount}
@@ -625,15 +629,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
                       </div>
                       {pathname === '/tickets' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
                     </div>
-                    <span className="text-[10px] font-medium">لايف شات</span>
+                    {/* <span className="text-[10px] font-medium">لايف شات</span> */}
                   </Link>
 
                   <button 
                     onClick={() => { signOut(); router.push('/sign-in'); }}
                     className="flex flex-col items-center justify-center gap-1 w-14 h-full text-red-500 hover:text-red-400 transition-colors"
                   >
-                    <LogOut size={22} />
-                    <span className="text-[10px] font-medium">خروج</span>
+                    {/* <LogOut size={30} /> */}
+                    <Image src="/logout-mobile.png" alt="Logout" width={40} height={40} />
+                    {/* <span className="text-[10px] font-medium">خروج</span> */}
                   </button>
                 </div>
             </div>

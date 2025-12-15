@@ -84,14 +84,17 @@ export default function WhatsAppCampaignsPage() {
 
   async function handleLoadCampaignSchedules() {
     try {
-      setIsLoadingSchedules(true);
+      // Only show loader on initial load (when campaignSchedules is empty)
+      if (campaignSchedules.length === 0) setIsLoadingSchedules(true);
+      
       const res = await listWhatsAppSchedules(token);
       if (res.success && Array.isArray(res.schedules)) {
         const filtered = res.schedules
           .filter(s => s.type === 'campaign')
           .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
         setCampaignSchedules(filtered);
-        setCampaignSchedulePage(1);
+        // Only reset page on first load if needed, avoiding resetting on every poll
+        // setCampaignSchedulePage(1); 
       }
     } catch (e: any) {
       console.error('[Campaigns] Failed to load schedules:', e.message);
@@ -99,6 +102,60 @@ export default function WhatsAppCampaignsPage() {
       setIsLoadingSchedules(false);
     }
   }
+
+  // Poll for updates and track status changes
+  const prevSchedulesRef = useRef<Record<number, string>>({});
+
+  useEffect(() => {
+    if (!token) return;
+
+    // Initial load
+    handleLoadCampaignSchedules();
+
+    const interval = setInterval(async () => {
+      // Don't trigger loading state for background polling to avoid UI flickering
+      try {
+        const res = await listWhatsAppSchedules(token);
+        if (res.success && Array.isArray(res.schedules)) {
+          const filtered = res.schedules
+            .filter((s: any) => s.type === 'campaign')
+            .sort((a: any, b: any) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+          
+          setCampaignSchedules(prev => {
+            // Check for status changes inside the update to have access to latest data if needed
+            // But better to use the effect on campaignSchedules change
+            return filtered;
+          });
+        }
+      } catch (e) {
+        // Silent error for polling
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [token]);
+
+  // Monitor status changes for toasts
+  useEffect(() => {
+    campaignSchedules.forEach(s => {
+      const prevStatus = prevSchedulesRef.current[s.id];
+      
+      // If status changed from 'running' or 'pending' to 'completed'
+      if ((prevStatus === 'running' || prevStatus === 'pending') && s.status === 'completed') {
+        showSuccess("اكتملت الحملة", `تم إرسال الحملة #${s.id} بنجاح لجميع الأرقام`);
+        
+        // Play notification sound if desired
+        try {
+          const audio = new Audio('/notification.mp3');
+          audio.play().catch(() => {});
+        } catch {}
+      }
+      
+      // Update ref
+      prevSchedulesRef.current[s.id] = s.status;
+    });
+  }, [campaignSchedules]);
+
 
   async function handleCancelCampaignSchedule(id: number) {
     try {
@@ -175,6 +232,10 @@ export default function WhatsAppCampaignsPage() {
         } else {
           showSuccess("تم بدء الحملة بنجاح!", warningMsg || "جاري إرسال الرسائل...");
         }
+        
+        // Refresh the list immediately
+        await handleLoadCampaignSchedules();
+
         setCampaignFile(null);
         setCampaignTemplate("مرحبا {{name}} …");
         setCampaignThrottle(5);
