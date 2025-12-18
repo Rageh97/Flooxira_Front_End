@@ -107,7 +107,9 @@ export default function PlansAdminPage() {
       canUseAI: false,
       aiCredits: 0,
       canUseLiveChat: false,
-      liveChatAiResponses: 0
+      liveChatAiResponses: 0,
+      canUseEventsPlugin: false,
+      eventsPerMonth: 0
     }
   });
 
@@ -139,7 +141,9 @@ export default function PlansAdminPage() {
       canUseAI: false,
       aiCredits: 0,
       canUseLiveChat: false,
-      liveChatAiResponses: 0
+      liveChatAiResponses: 0,
+      canUseEventsPlugin: false,
+      eventsPerMonth: 0
     }
   });
 
@@ -282,7 +286,9 @@ export default function PlansAdminPage() {
         canUseAI: (plan.permissions as any)?.canUseAI || false,
         aiCredits: (plan.permissions as any)?.aiCredits || 0,
         canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false,
-        liveChatAiResponses: (plan.permissions as any)?.liveChatAiResponses ?? 0
+        liveChatAiResponses: (plan.permissions as any)?.liveChatAiResponses ?? 0,
+        canUseEventsPlugin: (plan.permissions as any)?.canUseEventsPlugin || false,
+        eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0
       }
     });
     setEditModalOpen(true);
@@ -656,6 +662,33 @@ export default function PlansAdminPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Events Plugin */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">تكامل الأحداث (Events):</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canUseEventsPlugin ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                          {((permissions as any).eventsPerMonth ?? 0) > 0 ? (
+                            <span className="text-xs text-gray-500">
+                              ({(permissions as any).eventsPerMonth} حدث/شهر)
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500">
+                              (غير محدود)
+                            </span>
+                          )}
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -1011,6 +1044,50 @@ export default function PlansAdminPage() {
                     />
                     <p className="text-xs text-gray-500">
                       يتحكم هذا العدد في مرات ردود الذكاء الاصطناعي على محادثات العملاء شهرياً. اختر 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Events Plugin Integration */}
+            <div>
+              <Label>تكامل الأحداث (Events Plugin)</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={newPlan.permissions.canUseEventsPlugin}
+                    onChange={(e) => setNewPlan({
+                      ...newPlan,
+                      permissions: { ...newPlan.permissions, canUseEventsPlugin: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل تكامل الأحداث مع المنصات الخارجية</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  يسمح للمستخدمين باستقبال الأحداث من المنصات الخارجية (متاجر، اشتراكات)
+                </p>
+                {newPlan.permissions.canUseEventsPlugin && (
+                  <div className="space-y-2 mt-4">
+                    <Label>عدد الأحداث الشهرية</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0 = غير محدود"
+                      value={newPlan.permissions.eventsPerMonth ?? 0}
+                      onChange={(e) =>
+                        setNewPlan({
+                          ...newPlan,
+                          permissions: {
+                            ...newPlan.permissions,
+                            eventsPerMonth: parseLocalizedNumber(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                    <p className="text-xs text-gray-500">
+                      عدد الأحداث المسموح باستقبالها شهرياً. اختر 0 لغير محدود.
                     </p>
                   </div>
                 )}
@@ -1451,6 +1528,50 @@ export default function PlansAdminPage() {
                     />
                     <p className="text-xs text-gray-500">
                       يتحكم هذا العدد في مرات ردود الذكاء الاصطناعي على محادثات العملاء شهرياً. اختر 0 لغير محدود.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Events Plugin Integration */}
+            <div>
+              <Label>تكامل الأحداث (Events Plugin)</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={editPlan.permissions.canUseEventsPlugin}
+                    onChange={(e) => setEditPlan({
+                      ...editPlan,
+                      permissions: { ...editPlan.permissions, canUseEventsPlugin: e.target.checked }
+                    })}
+                  />
+                  <span>تفعيل تكامل الأحداث مع المنصات الخارجية</span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  يسمح للمستخدمين باستقبال الأحداث من المنصات الخارجية (متاجر، اشتراكات)
+                </p>
+                {editPlan.permissions.canUseEventsPlugin && (
+                  <div className="space-y-2 mt-4">
+                    <Label>عدد الأحداث الشهرية</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0 = غير محدود"
+                      value={editPlan.permissions.eventsPerMonth ?? 0}
+                      onChange={(e) =>
+                        setEditPlan({
+                          ...editPlan,
+                          permissions: {
+                            ...editPlan.permissions,
+                            eventsPerMonth: parseLocalizedNumber(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                    <p className="text-xs text-gray-500">
+                      عدد الأحداث المسموح باستقبالها شهرياً. اختر 0 لغير محدود.
                     </p>
                   </div>
                 )}

@@ -175,10 +175,10 @@ export default function WhatsAppSettingsPage() {
 
       <Card className="gradient-border">
         <CardHeader className="flex items-center justify-between">
-          <CardTitle className="text-white">أوقات العمل</CardTitle>
+          <CardTitle className="text-white text-xs md:text-xl lg:text-lg xl:text-2xl">أوقات العمل</CardTitle>
            <div className="flex items-center  gap-2">
           
-<h1 className="text-white">تفعيل أوقات العمل</h1>
+<h1 className="text-white text-xs md:text-xl">تفعيل أوقات العمل</h1>
 <label className="relative inline-flex items-center cursor-pointer">
   <input  id="working-hours-enabled"
               checked={settings.workingHoursEnabled}
@@ -232,7 +232,7 @@ export default function WhatsAppSettingsPage() {
 
               <div>
                 <Label className="text-white mb-3 block">أيام العمل</Label>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-2">
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day.value} className="flex items-center gap-2 bg-fixed-40 p-2 w-55 justify-between  ">
                       <Checkbox
@@ -310,9 +310,9 @@ export default function WhatsAppSettingsPage() {
 
       <Card className="gradient-border mt-6">
         <CardHeader className="flex items-center justify-between">
-          <CardTitle className="text-white">إعدادات الموظف البشري</CardTitle>
+          <CardTitle className="text-white text-xs md:text-xl">إعدادات الموظف البشري</CardTitle>
           <div className="flex items-center gap-2">
-            <h1 className="text-white">تفعيل التحويل التلقائي</h1>
+            <h1 className="text-white text-xs md:text-xl">تفعيل التحويل التلقائي</h1>
             <label className="relative inline-flex items-center cursor-pointer">
               <input 
                 id="escalation-enabled"

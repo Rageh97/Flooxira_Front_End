@@ -860,6 +860,7 @@ export default function WhatsAppChatsPage() {
           <CardHeader className="border-text-primary/50 text-primary flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
 
           <div className="flex items-center gap-1 flex-wrap">
+          <div className={`flex items-center gap-1 flex-wrap ${selectedContact ? 'hidden sm:flex' : 'flex'}`}>
           <h3 className="text-xs sm:text-sm font-medium text-white p-1 rounded-md inner-shadow">جهات الاتصال {contacts.length}</h3>
               <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
               <span className="text-xs sm:text-sm text-white">
@@ -871,7 +872,16 @@ export default function WhatsAppChatsPage() {
                 </span>
               )}  
             </div>
-          <div className="flex items-center gap-2 sm:gap-3 sm:ml-70 flex-wrap">
+            </div>
+          <div className={`flex items-center gap-2 sm:gap-3 sm:ml-70 flex-wrap ${!selectedContact ? 'hidden sm:flex' : 'w-full sm:w-auto justify-between sm:justify-start'}`}>
+            <button 
+              onClick={() => setSelectedContact(null)} 
+              className="sm:hidden p-1 mr-1 text-white hover:bg-white/10 rounded-full transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 rtl:rotate-180">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+            </button>
            
            
            <div className="flex items-center gap-2">
@@ -1039,8 +1049,8 @@ export default function WhatsAppChatsPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className=" overflow-y-auto h-full w-full flex flex-col sm:flex-row">
-            <div className="space-y-2 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-l border-text-primary/50 max-h-[300px] sm:max-h-none overflow-y-auto custom-scrollbar">
+          <CardContent className=" overflow-y-auto h-full w-full flex flex-col sm:flex-row p-0 sm:p-6">
+            <div className={`space-y-2 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-l border-text-primary/50 h-full sm:h-auto overflow-y-auto custom-scrollbar ${selectedContact ? 'hidden sm:block' : 'block'}`}>
               {contacts.map((contact, index) => (
                 <div
                   key={contact.contactNumber || `contact-${index}`}
@@ -1218,7 +1228,7 @@ export default function WhatsAppChatsPage() {
               ))}
             </div>
             {/* Chat Messages */}
-          <div className="flex flex-col w-full h-full min-h-0">
+          <div className={`flex flex-col w-full h-full min-h-0 ${selectedContact ? 'flex' : 'hidden sm:flex'}`}>
             {/* Chat Header */}
             
             {/* Active Escalation - Fixed at top */}

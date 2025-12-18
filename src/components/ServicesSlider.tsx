@@ -94,9 +94,9 @@ export default function ServicesSlider() {
 
   if (loading) {
     return (
-      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-center py-8">
+      <Card className="bg-fixed-40">
+        <CardContent className="pt-6 bg-none">
+          <div className="flex items-center justify-center py-8 ">
             <p className="text-gray-600">جاري تحميل الخدمات...</p>
           </div>
         </CardContent>
@@ -109,25 +109,25 @@ export default function ServicesSlider() {
   }
 
   return (
-    <div className=" border-none ">
-      <CardHeader className="flex flex-col gap-4 gradient-border rounded-lg mb-1 border-none">
-        <div className="flex flex-col lg:flex-row items-center justify-between w-full">
+    <div className=" border-none">
+      <div className="flex flex-col p-2 gap-4 gradient-border rounded-lg mb-1 border-none">
+        <div className="flex  items-center justify-between w-full">
           <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
             <Package className="h-5 w-5 " />
-            <h3 className="text-white text-xl font-bold"> خدمات التجار</h3>
+            <h3 className="text-white text-lg font-bold"> خدمات التجار</h3>
           </CardTitle>
          
-          <div className="relative flex items-center gap-2">
+          <div className="relative flex items-center  gap-2">
              {/* Categories Filter */}
         {categories.length > 0 && (
           <div className="relative">
             <select
               value={selectedCategory || ""}
               onChange={(e) => setSelectedCategory(e.target.value || null)}
-              className="appearance-none rounded-lg bg-fixed-40 text-white font-semibold px-6 py-1 pr-10 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer focus:outline-none  min-w-[150px]"
+              className="appearance-none rounded-lg bg-fixed-40 text-xs text-white font-semibold px-6 py-1 pr-5 lg:pr-10 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer focus:outline-none min-w-[120px] lg:min-w-[150px]"
               
             >
-              <option value="" className="bg-secondry text-white rounded-lg">
+              <option value="" className="bg-secondry text-xs text-white rounded-lg">
                 الكل ({allServices.length})
               </option>
               {categories.map((category) => {
@@ -136,7 +136,7 @@ export default function ServicesSlider() {
                   <option 
                     key={category} 
                     value={category}
-                    className="bg-secondry text-white rounded-lg"
+                    className="bg-secondry  text-white rounded-lg"
                   >
                     {category} ({count})
                   </option>
@@ -199,7 +199,7 @@ export default function ServicesSlider() {
         </div>
 
       
-      </CardHeader>
+      </div>
       <div className="space-y-4 bg-none ">
         {/* Search and Filter Section */}
         <div className="space-y-3">
@@ -310,7 +310,7 @@ export default function ServicesSlider() {
                           </h3>
                           <div className="flex flex-col justify-center items-center">
                             <span className="text-2xl font-bold text-primary">
-                              {service.price} <span className="text-[9px] text-white">{service.currency}</span> 
+                              {service.price } <span className="text-[9px] text-white">{service.currency}</span> 
                             </span>
                           </div>
                         </div>
@@ -318,7 +318,7 @@ export default function ServicesSlider() {
                         {/* Price and Stats */}
                         <div className="flex items-center justify-around text-xs">
                           <div className="text-[10px] flex items-center gap-1 text-yellow-500 text-left">
-                            <Eye className="w-4 h-4" /> {service.clicksCount || 0}
+                            <Eye className="w-4 h-4" /> {service.clicksCount* 36 || 0}
                           </div>
                         </div>
 

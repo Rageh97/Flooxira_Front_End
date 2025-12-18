@@ -437,31 +437,8 @@ export default function AskAIPage() {
 
             {/* Input Area */}
             <div className="border-t border-gray-700 p-4">
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={
-                    !hasActiveSubscription ||
-                    !inputMessage.trim() ||
-                    sending ||
-                    isOutOfCredits
-                  }
-                  className="min-h-[60px] self-end border"
-                >
-                  {sending ? (
-                    <Loader2 className="h-10 w-10 animate-spin" />
-                  ) : (
-                    <img src="/telegram.gif" alt="" className="w-10 h-10" />
-                  )}
-                </Button>
-                <Button
-                  onClick={() => { streamRef.current?.cancel(); }}
-                  disabled={!sending}
-                  variant="destructive"
-                  className="min-h-[60px] self-end"
-                >
-                  إيقاف
-                </Button>
+              <div className="flex items-center flex-col md:flex-row gap-2">
+               
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
@@ -475,7 +452,32 @@ export default function AskAIPage() {
                   className="flex-1 min-h-[60px] max-h-[200px]  border-gray-700 text-white resize-none"
                   disabled={!hasActiveSubscription || sending || isOutOfCredits}
                 />
-               
+               <div className="flex gap-2 ">
+                 <Button
+                  onClick={handleSendMessage}
+                  disabled={
+                    !hasActiveSubscription ||
+                    !inputMessage.trim() ||
+                    sending ||
+                    isOutOfCredits
+                  }
+                  className="min-h-[30px] md:min-h-[60px] self-end border"
+                >
+                  {sending ? (
+                    <Loader2 className="h-10 w-10 animate-spin" />
+                  ) : (
+                    <img src="/telegram.gif" alt="" className="w-6 md:w-10 h-6 md:h-10" />
+                  )}
+                </Button>
+                <Button
+                  onClick={() => { streamRef.current?.cancel(); }}
+                  disabled={!sending}
+                  variant="destructive"
+                  className="min-h-[30px] md:min-h-[60px] self-end"
+                >
+                  إيقاف
+                </Button>
+               </div>
               </div>
               {isOutOfCredits && (
                 <p className="text-xs text-red-400 mt-2">

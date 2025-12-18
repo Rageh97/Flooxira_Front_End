@@ -230,7 +230,7 @@ export default function DashboardPage() {
       </div> */}
 
       {/* Main Stats Grid */}
-      <div className="grid gap-2 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-2 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 ">
         <Card className="gradient-border card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between  pb-2">
             <div className="flex items-center  gap-2">
@@ -245,7 +245,7 @@ export default function DashboardPage() {
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="text-lg text-gray-300 mt-1">
+            <div className="text-xs md:text-md text-gray-300 mt-1">
               المحتوى المنشور
             </div>
           </div>
@@ -269,7 +269,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between  pb-2">
             <div className="flex items-center  gap-2">
               <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <h3 className="text-sm font-medium text-white"> المنشورات المجدولة</h3>
+            <h3 className="text-xs md:text-sm font-medium text-white"> المنشورات المجدولة</h3>
             </div>
             <img src="/hour.gif" className="w-6 h-6"/>
           </CardHeader>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="text-lg text-gray-300 mt-1">
+            <div className="text-xs md:text-md text-gray-300 mt-1">
               العدد المجدول
             </div>
           </div>
@@ -289,8 +289,8 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xl  font-bold text-primary">{stats?.scheduled || 0}</div>
-            <div className=" text-xs text-primary">
+           <div className="text-xs md:text-xl  font-bold text-primary">{stats?.scheduled || 0}</div>
+            <div className=" text-[9px] md:text-xs text-primary">
               شهر ({currentMonthName})
             </div>
            </div>
@@ -334,7 +334,7 @@ export default function DashboardPage() {
 
 
           <div className="flex  items-center justify-center gap-1 font-bold">
-          <div className="text-lg text-gray-300 mt-1">
+          <div className="text-xs md:text-md text-gray-300 mt-1">
              الاشتراكات الفعالة
           </div>
           <div>
@@ -366,7 +366,7 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between  pb-2">
             <div className="flex items-center  gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="text-sm font-medium text-white"> عدد رسائل الواتساب </h3>
+            <h3 className="text-xs md:text-sm font-medium text-white"> عدد رسائل الواتساب </h3>
             </div>
             <div className="text-primary">{whatsappStats?.messagesLimit || 0}</div>
           </CardHeader>
@@ -376,7 +376,7 @@ export default function DashboardPage() {
 
 
           <div className="flex items-center justify-center gap-1 font-bold">
-          <div className="text-xl text-gray-300 mt-1">
+          <div className="text-xs md:text-md text-gray-300 mt-1">
              الرسائل    المتبقية
           </div>
           <div>
@@ -439,7 +439,7 @@ export default function DashboardPage() {
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <div className="text-xl text-gray-300 mt-1">
+          <div className="text-xs md:text-md text-gray-300 mt-1">
              اجمالي الربح
           </div>
           <div>
@@ -454,7 +454,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xl  font-bold text-primary">{customerStats?.financial?.netProfit || 0} ر.س</div>
+           <div className="text-xs md:text-xl  font-bold text-primary">{customerStats?.financial?.netProfit || 0} ر.س</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -464,7 +464,53 @@ export default function DashboardPage() {
           </div>
           
           </CardContent>
-   </Card>
+        </Card>
+        {/* .................... */}
+
+         <Card className="gradient-border card-hover-effect">
+          <CardHeader className="flex flex-row items-center justify-between  pb-2">
+            <div className="flex items-center  gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h3 className="text-sm font-medium text-white"> المحادثات المعلقة </h3>
+            </div>
+            <img src="/Live.png" className="w-6 h-6"/>
+          </CardHeader>
+          <CardContent className="px-4">
+          
+          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
+
+
+          <div className="flex flex-col items-center justify-center gap-1 font-bold">
+          <div className="text-xs md:text-md text-gray-300 mt-1">
+              المحادثات 
+          </div>
+          <div>
+            {/* <div className="text-xl text-gray-300 mt-1">
+              
+            </div> */}
+          </div>
+          </div>
+
+
+          <div className="w-0.5 h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
+
+          
+          <div className="flex flex-col items-center justify-center ">
+           <div className="text-xs md:text-xl  font-bold text-primary">{customerStats?.financial?.netProfit || 0} ر.س</div>
+            {/* <div className=" text-xs text-green-300">
+              +12% معدل النمو
+            </div> */}
+           </div>
+
+        
+          </div>
+          
+          </CardContent>
+        </Card>
+      </div>
+      {/* ............... */}
+      <div className="lg:hidden">
+      <ServicesSlider />
       </div>
 
 
@@ -515,6 +561,18 @@ export default function DashboardPage() {
                   <span className="text-lg font-bold text-blue-400">{stats?.linkedinPosts || 0}</span>
                 </div>
               </div>
+
+               <div className="lg:hidden flex items-center justify-between px-3 h-10 bg-blue-600/20 rounded-lg border border-blue-500/30">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6  ">
+                  <img src="/telegram.gif" alt="" />
+                </div>
+                <span className="text-sm font-medium text-white">تليجرام</span>
+              </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-blue-400">{tgUsage?.used ?? 0}</span>
+                </div>
+              </div>
             </div>
 
             {/* الصف الثاني - 3 منصات */}
@@ -543,7 +601,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              <div className="flex items-center justify-between px-3 h-10 bg-blue-600/20 rounded-lg border border-blue-500/30">
+              <div className="lg:flex hidden items-center justify-between px-3 h-10 bg-blue-600/20 rounded-lg border border-blue-500/30">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6  ">
                   <img src="/telegram.gif" alt="" />
@@ -591,7 +649,7 @@ export default function DashboardPage() {
                  
                   <img className="w-6 h-6 lg:w-10 lg:h-10" src="/plus.gif" alt="" />
                 
-                  <div className="font-medium text-sm lg:text-xl ">إنشاء منشور جديد</div>
+                  <div className="font-medium text-sm lg:text-lg ">إنشاء منشور جديد</div>
                 </div>
               </Button>
             </Link>
@@ -600,7 +658,7 @@ export default function DashboardPage() {
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-6 h-6 lg:w-10 lg:h-10" src="/hour.gif" alt="" />
-                  <div className="font-medium text-sm lg:text-xl"> المنشورات المجدولة</div>
+                  <div className="font-medium text-xs lg:text-lg"> المنشورات المجدولة</div>
                 </div>
               </Button>
             </Link>
@@ -611,7 +669,7 @@ export default function DashboardPage() {
                 <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                   <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-6 h-6 lg:w-10 lg:h-10" src="/setting.gif" alt="" />
-                  <div className="font-medium text-sm lg:text-xl">إدارة الحسابات</div>
+                  <div className="font-medium text-sm lg:text-lg">إدارة الحسابات</div>
                 </div>
               </Button>
             </Link>
@@ -620,7 +678,7 @@ export default function DashboardPage() {
               <Button className="w-full h-full gradient-border border border-text-primary text-white p-4 h-auto">
                 <div className="flex items-center flex-col md:flex-row  w-full">
                 <img className="w-6 h-6 lg:w-10 lg:h-10" src="/clients.gif" alt="" />
-                  <div className="font-medium text-sm lg:text-xl">ادارة العملاء </div>
+                  <div className="font-medium text-sm lg:text-lg">ادارة العملاء </div>
                 </div>
               </Button>
             </Link>
@@ -633,7 +691,9 @@ export default function DashboardPage() {
 
 
       {/* Services Slider */}
+      <div className="hidden lg:block">
       <ServicesSlider />
+      </div>
       {/* Company Info Section */}
       {/*       <Card className="card-gradient-green-forest card-hover-effect">
         <CardHeader>

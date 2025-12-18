@@ -819,7 +819,7 @@ export default function ContentHomePage() {
         {/* Header */}
         <div className="mb-2">
          <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">ادارة وجدولة المحتوى </h1>
+          <h1 className="text-xl md:text-2xl font-bold text-white">ادارة وجدولة المحتوى </h1>
           {/* <p className="text-gray-300 text-lg">إدارة المحتوى الاحترافية للمنصات الاجتماعية</p> */}
 
           <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />

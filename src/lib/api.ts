@@ -156,6 +156,8 @@ export type Plan = {
     aiCredits: number;
     canUseLiveChat: boolean;
     liveChatAiResponses?: number;
+    canUseEventsPlugin?: boolean;
+    eventsPerMonth?: number;
   };
   isActive: boolean;
   paymentLink?: string | null;
@@ -2726,3 +2728,116 @@ export async function checkAppointmentAvailability(token: string, params: {
   });
 }
 
+
+
+// ==================== Events Plugin API ====================
+
+export type EventsPluginConfig = {
+  id: number;
+  apiKey: string;
+  secretKey: string;
+  isActive: boolean;
+  enabledEvents: Record<string, boolean>;
+  webhookUrl?: string;
+  platform?: 'woocommerce' | 'salla' | 'zid' | 'shopify' | 'custom' | 'other';
+  platformName?: string;
+  totalEventsReceived: number;
+  lastEventAt?: string;
+  notes?: string;
+  createdAt: string;
+};
+
+export type EventLog = {
+  id: number;
+  userId: number;
+  configId: number;
+  eventType: string;
+  payload: any;
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  orderId?: string;
+  orderAmount?: number;
+  subscriptionId?: string;
+  status: 'received' | 'processed' | 'failed';
+  processedAt?: string;
+  errorMessage?: string;
+  ipAddress?: string;
+  sentAt?: string;
+  createdAt: string;
+};
+
+export async function getEventsPluginConfig(token: string) {
+  return apiFetch<{
+    config: EventsPluginConfig;
+    stats: Record<string, number>;
+    recentEvents: EventLog[];
+    permissions: any;
+  }>("/api/events-plugin/config", { authToken: token });
+}
+
+export async function updateEventsPluginConfig(token: string, data: Partial<EventsPluginConfig>) {
+  return apiFetch<{ success: boolean; config: EventsPluginConfig }>("/api/events-plugin/config", {
+    method: "PUT",
+    body: JSON.stringify(data),
+    authToken: token,
+  });
+}
+
+export async function regenerateEventsPluginKeys(token: string) {
+  return apiFetch<{ success: boolean; apiKey: string; secretKey: string }>("/api/events-plugin/regenerate-keys", {
+    method: "POST",
+    authToken: token,
+  });
+}
+
+export async function getEventsPluginLogs(token: string, params?: {
+  page?: number;
+  limit?: number;
+  eventType?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.limit) searchParams.set('limit', params.limit.toString());
+  if (params?.eventType) searchParams.set('eventType', params.eventType);
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.startDate) searchParams.set('startDate', params.startDate);
+  if (params?.endDate) searchParams.set('endDate', params.endDate);
+  
+  return apiFetch<{
+    events: EventLog[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }>(`/api/events-plugin/events?${searchParams.toString()}`, { authToken: token });
+}
+
+export async function getEventsPluginStats(token: string, period?: '7d' | '30d' | '90d') {
+  const params = period ? `?period=${period}` : '';
+  return apiFetch<{
+    period: string;
+    totalEvents: number;
+    totalAmount: number;
+    byEventType: Record<string, number>;
+    byStatus: Record<string, number>;
+  }>(`/api/events-plugin/stats${params}`, { authToken: token });
+}
+
+export async function testEventsPluginConnection(token: string) {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    config: {
+      apiKey: string;
+      isActive: boolean;
+      totalEventsReceived: number;
+    };
+  }>("/api/events-plugin/test", { authToken: token });
+}
