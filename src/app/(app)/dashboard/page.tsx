@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const [waUsage, setWaUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const [tgUsage, setTgUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
   const currentMonthName = new Date().toLocaleString('ar-EG', { month: 'long' });
+  const [pendingTicketsCount, setPendingTicketsCount] = useState<number>(0);
 
   // Animated banners data
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -192,7 +193,40 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
+  // Load pending tickets count
+  useEffect(() => {
+    const loadPendingTicketsCount = async () => {
+      try {
+        const token = localStorage.getItem('auth_token') || '';
+        if (!token) return;
+        
+        const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+        const response = await fetch(
+          `${API_BASE_URL}/api/dashboard/tickets/stats`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
+        if (response.ok) {
+          const data = await response.json();
+          setPendingTicketsCount(data.stats?.pending || 0);
+        }
+      } catch (error) {
+        console.error('Failed to load pending tickets count:', error);
+      }
+    };
+
+    if (user && !loading) {
+      loadPendingTicketsCount();
+      
+      // Refresh count every 30 seconds
+      const interval = setInterval(loadPendingTicketsCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, loading]);
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -473,7 +507,7 @@ export default function DashboardPage() {
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             <h3 className="text-sm font-medium text-white"> المحادثات المعلقة </h3>
             </div>
-            <img src="/Live.png" className="w-6 h-6"/>
+            <img src="/live.png" className="w-6 h-6"/>
           </CardHeader>
           <CardContent className="px-4">
           
@@ -496,7 +530,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xs md:text-xl  font-bold text-primary">{customerStats?.financial?.netProfit || 0} ر.س</div>
+           <div className="text-xs md:text-xl  font-bold text-primary">{pendingTicketsCount}</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
