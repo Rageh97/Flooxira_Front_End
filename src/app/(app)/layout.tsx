@@ -528,7 +528,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </main>
         
         {/* Mobile Bottom Navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 ">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-2 ">
             {/* WhatsApp Popup Menu */}
             <div className={clsx(
               "absolute bottom-full left-0 right-0 bg-[#0f111a]/95 rounded-[30px] backdrop-blur-lg  transition-all duration-300 ease-in-out overflow-hidden shadow-[0_-8px_30px_rgba(0,0,0,0.3)]",
