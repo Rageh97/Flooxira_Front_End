@@ -437,47 +437,52 @@ export default function AskAIPage() {
 
             {/* Input Area */}
             <div className="border-t border-gray-700 p-4">
-              <div className="flex items-center flex-col md:flex-row gap-2">
+              <div className="relative flex items-center flex-row gap-2">
                
-                <Input
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder="اكتب رسالتك هنا... (Enter للإرسال)"
-                  className="flex-1 min-h-[60px] max-h-[200px]  border-gray-700 text-white resize-none"
-                  disabled={!hasActiveSubscription || sending || isOutOfCredits}
-                />
-               <div className="flex gap-2 ">
-                 <Button
-                  onClick={handleSendMessage}
-                  disabled={
-                    !hasActiveSubscription ||
-                    !inputMessage.trim() ||
-                    sending ||
-                    isOutOfCredits
-                  }
-                  className="min-h-[30px] md:min-h-[60px] self-end border"
-                >
-                  {sending ? (
+                <div className="w-full relative">
+                  <Textarea
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder="اكتب رسالتك هنا... (Enter للإرسال)"
+                    className="w-full min-h-[60px] max-h-[200px] bg-[#01191040] border-gray-700 text-white resize-none pl-24 pr-4 py-4 rounded-xl focus:border-blue-500 transition-all scrollbar-hide"
+                    disabled={!hasActiveSubscription || sending || isOutOfCredits}
+                  />
+                  <div className="flex gap-2 absolute left-0 bottom-0 ">
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={
+                        !hasActiveSubscription ||
+                        !inputMessage.trim() ||
+                        sending ||
+                        isOutOfCredits
+                      }
+                      className="min-h-[60px] self-end bg-none"
+                    >
+                      {sending ? (
                     <Loader2 className="h-10 w-10 animate-spin" />
-                  ) : (
-                    <img src="/telegram.gif" alt="" className="w-6 md:w-10 h-6 md:h-10" />
-                  )}
-                </Button>
-                <Button
-                  onClick={() => { streamRef.current?.cancel(); }}
-                  disabled={!sending}
-                  variant="destructive"
-                  className="min-h-[30px] md:min-h-[60px] self-end"
-                >
-                  إيقاف
-                </Button>
-               </div>
+                      ) : (
+                    <img src="/telegram.gif" alt="" className="w-10 h-10" />
+                      )}
+                    </Button>
+                    {sending && (
+                      <Button
+                        onClick={() => { streamRef.current?.cancel(); }}
+                        disabled={!sending}
+                        variant="destructive"
+                        size="sm"
+                        className="min-h-[60px] self-end"
+                      >
+                        إيقاف
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
               {isOutOfCredits && (
                 <p className="text-xs text-red-400 mt-2">

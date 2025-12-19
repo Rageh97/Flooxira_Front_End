@@ -357,7 +357,7 @@ export default function WhatsAppConnectionPage() {
       )}
 
       {/* WhatsApp Connection */}
-      <Card className="bg-card border-none">
+      {/* <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">WhatsApp Connection</CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
@@ -403,7 +403,7 @@ export default function WhatsAppConnectionPage() {
             </div>
           </div>
           
-          {/* QR Code Display */}
+          
           {qrCode && status?.status !== 'CONNECTED' && (
             <div className="text-center space-y-4">
               <p className="text-sm text-primary mb-4">
@@ -427,7 +427,6 @@ export default function WhatsAppConnectionPage() {
             </div>
           )}
           
-          {/* Show loading message while waiting for QR */}
           {isWaitingForQR && !qrCode && status?.status !== 'CONNECTED' && (
             <div className="text-center space-y-2">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
@@ -440,10 +439,10 @@ export default function WhatsAppConnectionPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* Send Test Message */}
-      <Card className="bg-card border-none">
+      {/* <Card className="bg-card border-none">
         <CardHeader className="border-text-primary/50 text-primary">Send Test Message</CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -476,7 +475,7 @@ export default function WhatsAppConnectionPage() {
             {loading ? 'Sending...' : 'Send Message'}
           </Button>
         </CardContent>
-      </Card>
+      </Card> */}
 
      
     </div>

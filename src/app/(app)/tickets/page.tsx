@@ -47,6 +47,7 @@ import {
   Database,
   Image,
   RotateCcw,
+  ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
@@ -1258,7 +1259,18 @@ export default function TicketsPage() {
 
       {/* Tickets Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 items-start">
-        <Card className="gradient-border border-none h-[640px] flex flex-col overflow-hidden">
+       <Button
+                    variant="ghost"
+                    size="sm"
+                    className="lg:hidden p-0 h-auto hover:bg-transparent"
+                    onClick={() => setSelectedTicket(null)}
+                  >
+                    <div className="flex items-center justify-between gap-5">
+                      الرجوع لاختيار تذكرة
+                    <ArrowRight className="h-6 w-6 text-primary" />
+                    </div>
+                  </Button>
+        <Card className={`gradient-border border-none h-[640px] flex flex-col overflow-hidden ${selectedTicket ? 'hidden lg:flex' : 'flex'}`}>
           <CardHeader className="space-y-4">
             <div>
               <CardTitle className="text-white">قائمة التذاكر</CardTitle>
@@ -1336,11 +1348,12 @@ export default function TicketsPage() {
           </CardContent>
         </Card>
 
-        <Card className="gradient-border border-none h-[640px] flex flex-col overflow-hidden">
+        <Card className={`gradient-border border-none h-[640px] flex flex-col overflow-hidden ${!selectedTicket ? 'hidden lg:flex' : 'flex'}`}>
           {selectedTicket ? (
             <CardContent className="p-4 flex-1 flex flex-col min-h-0 border-none">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4  ">
                 <div className="flex items-center gap-10">
+                 
                   {/* <h2 className="text-xl font-semibold text-white">
                     {selectedTicket.visitorName || `عميل جديد`}
                   </h2> */}
@@ -1351,8 +1364,17 @@ export default function TicketsPage() {
                     تم الإنشاء في {new Date(selectedTicket.createdAt).toLocaleString("en-US")}
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <Button
+                <div className="flex items-center justify-between gap-3">
+                 <div className="flex items-center gap-2">
+                         <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteTicket(selectedTicket.id)}
+                    title="حذف التذكرة"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                   <Button
                     variant="secondary"
                     className="primary-button after:bg-red-500"
                     size="sm"
@@ -1365,11 +1387,14 @@ export default function TicketsPage() {
                   >
                     {selectedTicket.status === "closed" ? "إعادة فتح" : "إغلاق"} التذكرة
                   </Button>
+                 </div>
+                 
+                
                   <Select
                     value={selectedTicket.status}
                     onValueChange={(value) => updateTicketStatus(selectedTicket.id, value)}
                   >
-                    <SelectTrigger className="w-full sm:w-[180px] bg-fixed-40 border-primary text-white">
+                    <SelectTrigger className="w-[120px] sm:w-[180px] bg-fixed-40 border-primary text-white">
                       <SelectValue placeholder="حالة التذكرة" />
                     </SelectTrigger>
                     <SelectContent className="bg-fixed-40 border-primary text-white">
@@ -1378,14 +1403,7 @@ export default function TicketsPage() {
                       <SelectItem value="closed">مغلقة</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteTicket(selectedTicket.id)}
-                    title="حذف التذكرة"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  
                 </div>
               </div>
 
@@ -1478,7 +1496,7 @@ export default function TicketsPage() {
                     </div>
                   </div>
                 )}
-                <div className="flex flex-col sm:flex-row items-center gap-2 p-1 ">
+                <div className="flex flex-row items-center gap-2 p-1 ">
                   <input
                     type="file"
                     ref={imageInputRef}
@@ -1516,7 +1534,7 @@ export default function TicketsPage() {
                   <Button
                     onClick={() => sendMessage()}
                     disabled={(!inputMessage.trim() && !selectedImage) || sending || uploadingImage}
-                    className="w-full sm:w-auto"
+                    className=" sm:w-auto"
                   >
                     {sending || uploadingImage ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1608,7 +1626,7 @@ export default function TicketsPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 p-3 border border-gray-700 rounded-lg bg-fixed-40">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center w-full md:w-auto gap-3">
               <div className="w-16 h-16 rounded-full  bg-gray-800 border border-gray-700 overflow-hidden flex items-center justify-center">
                 {widgetIconPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element

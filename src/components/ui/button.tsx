@@ -11,7 +11,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "md", ...props }, ref) => {
     const base = "inline-flex items-center cursor-pointer justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
     const variants: Record<string, string> = {
-      default: "bg-black text-white hover:bg-black/90",
+      default: "bg-none text-white hover:bg-black/90",
       secondary: "bg-gray-200  text-gray-900",
       none: "",
       ghost: "bg-blue-900 text-white",
