@@ -135,6 +135,7 @@
     background-image: url('/ooo.png');
     background-size: cover;
     background-position: center;
+    background-color: #131240;
     background-repeat: no-repeat;
     background-attachment: fixed;
     backdrop-filter: blur(30px);
@@ -142,6 +143,13 @@
     font-family: Almarai, sans-serif;
 
   }
+}
+/* حل مشكلة الفراغ في الهواتف الحديثة (مثل آيفون) */
+@supports (padding: env(safe-area-inset-top)) {
+    body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
 }
 
 @layer utilities {
