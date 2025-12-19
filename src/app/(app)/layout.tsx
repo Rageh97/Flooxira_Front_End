@@ -207,7 +207,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   return (
     <AuthGuard>
-    <div className="flex  h-screen overflow-hidden">
+    <div className="flex  h-dvh overflow-hidden">
   
       {/* Mobile sidebar + overlay */}
       <div className={clsx("fixed inset-0 z-40 md:hidden", sidebarOpen ? "block" : "hidden")}> 
@@ -324,7 +324,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       </div>
 
       {/* Desktop sidebar - fixed position */}
-      <aside className="hidden  md:flex w-[240px] h-screen bg- border-l  border-gray-600 text-white flex-col overflow-hidden flex-shrink-0">
+      <aside className="hidden  md:flex w-[240px] h-dvh bg- border-l  border-gray-600 text-white flex-col overflow-hidden flex-shrink-0">
         <div className="px-4 py-1 w-full flex justify-center">
           <Image src="/Logo.gif" alt="logo" width={180} height={110} />
         </div>
@@ -447,7 +447,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
           
       </aside>
       {/* Content area - independent scrolling */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-dvh overflow-hidden">
         {/* Mobile menu button */}
         <div className="md:hidden fixed top-0 left-4 z-30">
           <button
@@ -528,7 +528,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </main>
         
         {/* Mobile Bottom Navigation */}
-        <div className="md:hidden fixed bottom-5 left-0 right-0 z-50">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-5 pb-safe">
             {/* WhatsApp Popup Menu */}
             <div className={clsx(
               "absolute bottom-full left-0 right-0 bg-[#0f111a]/95 rounded-[30px] backdrop-blur-lg  transition-all duration-300 ease-in-out overflow-hidden shadow-[0_-8px_30px_rgba(0,0,0,0.3)]",
@@ -562,7 +562,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             </div>
 
             {/* Bottom Tabs with Shine Effect */}
-            <div className="bg-fixed-40 backdrop-blur-lg inner-shadow pb-safe rounded-[30px] nav-shine-effect">
+            <div className="bg-fixed-40 backdrop-blur-lg inner-shadow rounded-[30px] nav-shine-effect">
                 <div className="flex justify-around items-center h-16 px-2">
                   <Link 
                     href="/dashboard" 
