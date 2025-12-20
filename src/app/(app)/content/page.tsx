@@ -1174,7 +1174,7 @@ export default function ContentHomePage() {
 
         {/* Create Item Modal */}
         {showCreateItem && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-lg flex items-start justify-center overflow-y-auto scrollbar-hide z-50">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-lg flex items-start justify-center overflow-y-auto scrollbar-hide z-999">
             <div className="gradient-border rounded-lg p-6 max-w-2xl w-full mx-4 my-8 max-h-full overflow-y-auto scrollbar-hide">
               <h3 className="text-lg font-semibold text-white mb-4">إضافة عنصر جديد</h3>
               <div className="space-y-4">

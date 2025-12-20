@@ -11,6 +11,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { EmojiPickerModal } from "@/components/AnimatedEmoji";
 import { ArrowLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type Contact = {
   chatId: string;
@@ -76,10 +77,10 @@ export default function TelegramChatsPage() {
   }, [token, activeChatId]);
 
   useEffect(() => {
-    if (listEndRef.current) {
-      listEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (!loadingHistory && listEndRef.current) {
+      listEndRef.current.scrollIntoView({ behavior: "auto" });
     }
-  }, [history, activeChatId]);
+  }, [history, activeChatId, loadingHistory]);
 
   async function handleSend() {
     if (!token || !activeChatId || (!messageText.trim() && !selectedMedia)) return;
@@ -397,7 +398,7 @@ export default function TelegramChatsPage() {
                 <img src="/telegram.gif" alt="" className="w-10 h-10" />
               )}
           </button>
-          <input
+          <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={(e) => {
@@ -407,7 +408,7 @@ export default function TelegramChatsPage() {
               }
             }}
             placeholder="اكتب رسالة..."
-              className="flex-1 bg-fixed-40 border-primary rounded-2xl text-white placeholder-white/50 px-1"
+              className="flex-1 bg-fixed-40 text-[16px] sm:text-base border-primary rounded-2xl text-white placeholder-white/50 px-1"
           />
        
           </div>

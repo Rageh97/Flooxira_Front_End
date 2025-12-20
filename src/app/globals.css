@@ -152,6 +152,24 @@
     }
 }
 
+/* حل مشكلة الزووم في الأيفون (iOS Input Zoom Fix) */
+@supports (-webkit-touch-callout: none) {
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* تحسين استجابة اللمس لتجربة أكثر احترافية */
+button, a {
+  touch-action: manipulation;
+}
+
 @layer utilities {
   .bg-gradient-custom {
     /* background: #141414; */

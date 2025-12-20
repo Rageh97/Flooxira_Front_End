@@ -23,6 +23,7 @@ import {
   escalateChat,
   ChatEscalation
 } from "@/lib/escalationApi";
+import { Input } from "@/components/ui/input";
 
 export default function WhatsAppChatsPage() {
   const [loading, setLoading] = useState(false);
@@ -1606,12 +1607,12 @@ export default function WhatsAppChatsPage() {
                     <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />
                   </button>
                  
-                  <input
+                  <Input
                     type="text"
                     placeholder="اكتب رسالتك..."
                     value={testMessage}
                     onChange={(e) => setTestMessage(e.target.value)}
-                    className="flex-1 px-2 sm:px-3 bg-[#01191040] py-2 sm:py-4 border border-blue-300 rounded-2xl text-sm sm:text-base text-white placeholder-white/50 min-w-0"
+                    className="flex-1 px-2 sm:px-3 bg-[#01191040] py-2 sm:py-4 border border-blue-300 rounded-2xl text-[16px] sm:text-base text-white placeholder-white/50 min-w-0"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
                         handleSendMessage(selectedContact, testMessage);
