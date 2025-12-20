@@ -589,11 +589,11 @@ export default function TelegramBotPage() {
       {/* Bot Connection Status */}
       <Card className="gradient-border">
         <CardHeader className="border-text-primary/50 text-primary">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-3">
+          <div className="flex flex-col lg:flex-row items-start md:items-center justify-between gap-3">
          
            
            
-                <div className="flex items-center gap-3">
+                <div className="flex items-center  gap-3">
             <img className="w-14 h-14" src="/Bot.gif" alt="" />
              <div className="flex flex-col gap-1">
              <h3 className="text-lg font-semibold text-white">حالة البوت</h3>
@@ -936,7 +936,7 @@ export default function TelegramBotPage() {
             <div className="flex items-center justify-between gap-3">
               
               <div>
-                <h3 className="text-lg font-semibold text-white">إنشاء حملة إعلانية</h3>
+                <h3 className="text-xs md:text-lg font-semibold text-white">إنشاء حملة إعلانية</h3>
               </div>
               <div className="flex gap-2">
                   <Button 

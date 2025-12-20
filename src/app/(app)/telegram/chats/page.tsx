@@ -188,15 +188,18 @@ export default function TelegramChatsPage() {
   }
 
   const groupedByDay = useMemo(() => {
+    const sortedHistory = [...history].sort((a, b) => 
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
     const groups: Record<string, ChatItem[]> = {};
-    for (const m of history) {
+    for (const m of sortedHistory) {
       const dayKey = new Date(m.timestamp).toDateString();
       if (!groups[dayKey]) groups[dayKey] = [];
       groups[dayKey].push(m);
     }
     const entries = Object.entries(groups).map(([k, v]) => ({ key: k, items: v }));
-    // history is newest-first; keep that order for groups too
-    entries.sort((a, b) => new Date(b.items[0].timestamp).getTime() - new Date(a.items[0].timestamp).getTime());
+    entries.sort((a, b) => new Date(a.items[0].timestamp).getTime() - new Date(b.items[0].timestamp).getTime());
     return entries;
   }, [history]);
 
@@ -269,8 +272,7 @@ export default function TelegramChatsPage() {
           </button>
           <div className="font-semibold text-white truncate flex-1">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
         </div>
-        <div className="flex-1 overflow-auto px-4 py-3 flex flex-col-reverse">
-          <div ref={listEndRef} />
+        <div className="flex-1 overflow-auto px-4 py-3 flex flex-col">
           {loadingHistory ? (
             <div className="text-sm text-gray-600">جاري تحميل الرسائل...</div>
           ) : history.length === 0 ? (
@@ -286,8 +288,6 @@ export default function TelegramChatsPage() {
                   </div>
                   <ul className="space-y-3">
                     {g.items
-                      .slice()
-                      .reverse()
                       .map((m) => (
                       <li key={m.id} className={`flex ${m.messageType === "outgoing" ? "justify-end" : "justify-start"}`}>
                         <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm text-white shadow-sm ${m.messageType === "outgoing" ? "bg-card inner-shadow text-white rounded-tr-sm" : "bg-none inner-shadow rounded-tl-sm"}`}>
@@ -336,6 +336,7 @@ export default function TelegramChatsPage() {
                   </ul>
                 </div>
               ))}
+              <div ref={listEndRef} />
             </div>
           )}
         </div>

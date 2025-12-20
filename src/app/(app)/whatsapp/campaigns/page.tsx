@@ -527,7 +527,7 @@ export default function WhatsAppCampaignsPage() {
             )}
           </div>
             </div>
-          <div className="w-50">
+          <div className="w-full lg:w-50 ">
             <button 
               className=" w-full lg:h-18 h-12 primary-button text-white text-2xl font-bold" 
               onClick={handleStartCampaign} 

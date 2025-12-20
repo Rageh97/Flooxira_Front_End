@@ -1260,12 +1260,12 @@ export default function TicketsPage() {
       {/* Tickets Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 items-start">
        <Button
-                    variant="ghost"
+                    variant="default"
                     size="sm"
-                    className="lg:hidden p-0 h-auto hover:bg-transparent"
+                    className="lg:hidden p-0 h-auto hover:bg-transparent py-3 bg-fixed-40 text-white w-full flex items-center justify-start"
                     onClick={() => setSelectedTicket(null)}
                   >
-                    <div className="flex items-center justify-between gap-5">
+                    <div className="flex items-center w-full justify-end gap-2">
                       الرجوع لاختيار تذكرة
                     <ArrowRight className="h-6 w-6 text-primary" />
                     </div>

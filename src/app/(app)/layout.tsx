@@ -12,7 +12,7 @@ import { clsx } from "clsx";
 import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import RippleGrid from '@/components/RippleGrid';
-import { X, Megaphone, Menu, Home, MessageCircle, Send, LogOut, MessageSquare, Link as LinkIcon, Users as UsersIcon, Settings as SettingsIcon, Bot, LayoutGrid, TagIcon, ChartNoAxesColumn } from "lucide-react";
+import { X, Megaphone, Menu, Home, MessageCircle, Send, LogOut, MessageSquare, Link as LinkIcon, Users as UsersIcon, Settings as SettingsIcon, Bot, LayoutGrid, TagIcon, ChartNoAxesColumn, User } from "lucide-react";
 
 
 
@@ -449,7 +449,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       {/* Content area - independent scrolling */}
       <div className="flex-1 flex flex-col h-dvh overflow-hidden">
         {/* Mobile menu button */}
-        <div className="md:hidden fixed top-0 left-4 z-30">
+        {/* <div className="md:hidden fixed top-0 left-4 z-30">
           <button
             className="inline-flex h-9 w-9 items-center justify-center rounded-md "
             aria-label="Open sidebar"
@@ -457,15 +457,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
           >
             <Menu className="text-primary" size={24}/>
           </button>
-        </div>
+        </div> */}
         
         {/* News Bar - Fixed at top */}
         {!newsBarClosed && (
-          <div className="w-full bg-card text-white px-4 py-2 shadow-lg z-20 flex items-center justify-between gap-4 overflow-hidden">
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <Megaphone className="w-5 h-5 flex-shrink-0 animate-pulse text-yellow-200" />
-            </div>
-            <div className="flex-1 min-w-0 overflow-hidden relative">
+          <div className="w-full bg-card text-white px-4 py-1 md:py-2 shadow-lg z-20 flex items-center justify-between gap-4 overflow-hidden">
+           
+            <div className="flex-1 min-w-0 overflow-hidden relative" dir="ltr">
               <div 
                 className="whitespace-nowrap"
                 style={{
@@ -513,6 +511,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 )}
               </div>
             </div>
+             <div className="flex items-center gap-3 flex-shrink-0">
+              <Megaphone className="w-5 h-5 flex-shrink-0 animate-pulse text-yellow-200" />
+            </div>
             {/* <button
               onClick={() => setNewsBarClosed(true)}
               className=" cursor-pointer  rounded-full p-1.5 transition-colors active:scale-95 "
@@ -522,6 +523,37 @@ export default function AppLayout({ children }: PropsWithChildren) {
             </button> */}
           </div>
         )}
+        {/* header in mobile */}
+        <div className="flex md:hidden items-center justify-between px-2  mt-2 mb-2 bg-fixed-40 inner-shadow ">
+           
+             <div className="md:hidden  ">
+          <button
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md "
+            aria-label="Open sidebar"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="text-primary" size={24}/>
+          </button>
+             </div>
+             <img src="/logo.gif" className="mr-21" alt="logo" width={130} height={100} />
+              <Link className="flex items-center gap-1" href="/profile">
+              
+                 {planName && (
+                  <div className="flex flex-col items-start ml-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-primary gradient-border text-center p-1">{planName} {subscriptionStatus.daysRemaining !== null && (
+                        <span className={`text-[9px] font-bold ${subscriptionStatus.colorClass}  `}>
+                          {subscriptionStatus.daysRemaining}D
+                        </span>
+                      )} </span>
+                    </div>
+                  
+                  </div>
+                )}
+                  <User size={25} className="text-primary"/>
+              </Link>
+
+        </div>
         <div className="flex flex-col h-dvh w-full overflow-hidden ">
         <main className="flex-1 overflow-y-auto scrollbar-hide p-1 md:p-3 pb-24 md:pb-3">
           {children}

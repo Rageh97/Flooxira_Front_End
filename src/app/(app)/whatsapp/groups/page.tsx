@@ -558,7 +558,8 @@ export default function WhatsAppGroupsPage() {
                   )}
                 </div>
               </div>
-            <div className="w-50">
+            <div className="flex items-center gap-2">
+              <div className="w-50">
               <button 
                 className="w-full lg:h-18 h-12 primary-button text-white text-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-70" 
                 onClick={handleSendToGroup} 
@@ -605,6 +606,7 @@ export default function WhatsAppGroupsPage() {
             </button>
           </div>
           
+            </div>
           </div>
 
 
