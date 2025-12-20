@@ -535,7 +535,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             <Menu className="text-primary" size={24}/>
           </button>
              </div>
-             <img src="/logo.gif" className="mr-21" alt="logo" width={130} height={100} />
+             <img src="/Logo.gif" className="mr-21" alt="logo" width={130} height={100} />
               <Link className="flex items-center gap-1" href="/profile">
               
                  {planName && (
