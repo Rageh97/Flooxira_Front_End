@@ -19,6 +19,7 @@ export interface Banner {
   title: string;
   description?: string;
   image?: string;
+  mobileImage?: string;
   link?: string;
   buttonText?: string;
   backgroundColor: string;

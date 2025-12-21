@@ -117,6 +117,7 @@ export default function SettingsPage() {
     title: "",
     description: "",
     image: "",
+    mobileImage: "",
     link: "",
     buttonText: "",
     backgroundColor: "#000000",
@@ -420,6 +421,7 @@ export default function SettingsPage() {
         title: banner.title,
         description: banner.description || "",
         image: banner.image || "",
+        mobileImage: banner.mobileImage || "",
         link: banner.link || "",
         buttonText: banner.buttonText || "",
         backgroundColor: banner.backgroundColor,
@@ -434,6 +436,7 @@ export default function SettingsPage() {
         title: "",
         description: "",
         image: "",
+        mobileImage: "",
         link: "",
         buttonText: "",
         backgroundColor: "#000000",
@@ -446,7 +449,7 @@ export default function SettingsPage() {
     setIsBannerDialogOpen(true);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'desktop' | 'mobile' = 'desktop') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -456,7 +459,11 @@ export default function SettingsPage() {
       if (!token) return;
       const res = await uploadFile(token, file);
       if (res.url) {
-        setBannerFormData(prev => ({ ...prev, image: res.url }));
+        if (type === 'mobile') {
+          setBannerFormData(prev => ({ ...prev, mobileImage: res.url }));
+        } else {
+          setBannerFormData(prev => ({ ...prev, image: res.url }));
+        }
         toast.success("تم رفع الصورة بنجاح");
       }
     } catch (error: any) {
@@ -948,22 +955,40 @@ export default function SettingsPage() {
               <Input value={bannerFormData.title} onChange={(e) => setBannerFormData({ ...bannerFormData, title: e.target.value })} required className="bg-[#01191040] border-blue-300" />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2 text-white">الصورة</label>
-              <div className="flex gap-2">
-                <Input value={bannerFormData.image} onChange={(e) => setBannerFormData({ ...bannerFormData, image: e.target.value })} className="bg-[#01191040] border-blue-300" placeholder="رابط الصورة" />
-                <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white p-2 rounded flex items-center justify-center">
-                  <Upload className="w-4 h-4" />
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} />
-                </label>
-              </div>
-              {uploadingImage && <p className="text-xs text-blue-300 mt-1">جاري الرفع...</p>}
-              {bannerFormData.image && (
-                <div className="mt-2 h-20 bg-gray-800 rounded overflow-hidden">
-                  <img src={bannerFormData.image} alt="Preview" className="h-full w-full object-cover" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">صورة الشاشات الكبيرة</label>
+                <div className="flex gap-2">
+                  <Input value={bannerFormData.image} onChange={(e) => setBannerFormData({ ...bannerFormData, image: e.target.value })} className="bg-[#01191040] border-blue-300" placeholder="رابط الصورة" />
+                  <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white p-2 rounded flex items-center justify-center">
+                    <Upload className="w-4 h-4" />
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'desktop')} disabled={uploadingImage} />
+                  </label>
                 </div>
-              )}
+                {bannerFormData.image && (
+                  <div className="mt-2 h-20 bg-gray-800 rounded overflow-hidden">
+                    <img src={bannerFormData.image} alt="Desktop Preview" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">صورة الشاشات الصغيرة</label>
+                <div className="flex gap-2">
+                  <Input value={bannerFormData.mobileImage} onChange={(e) => setBannerFormData({ ...bannerFormData, mobileImage: e.target.value })} className="bg-[#01191040] border-blue-300" placeholder="رابط الصورة" />
+                  <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white p-2 rounded flex items-center justify-center">
+                    <Upload className="w-4 h-4" />
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, 'mobile')} disabled={uploadingImage} />
+                  </label>
+                </div>
+                {bannerFormData.mobileImage && (
+                  <div className="mt-2 h-20 bg-gray-800 rounded overflow-hidden">
+                    <img src={bannerFormData.mobileImage} alt="Mobile Preview" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
             </div>
+            {uploadingImage && <p className="text-xs text-blue-300 mt-1">جاري الرفع...</p>}
             <div>
               <label className="block text-sm font-medium mb-2 text-white">الرابط</label>
               <Input value={bannerFormData.link} onChange={(e) => setBannerFormData({ ...bannerFormData, link: e.target.value })} className="bg-[#01191040] border-blue-300" placeholder="https://..." />

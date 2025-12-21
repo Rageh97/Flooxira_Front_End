@@ -23,7 +23,9 @@ import {
   escalateChat,
   ChatEscalation
 } from "@/lib/escalationApi";
+
 import { Input } from "@/components/ui/input";
+import { Search, Filter } from "lucide-react";
 
 export default function WhatsAppChatsPage() {
   const [loading, setLoading] = useState(false);
@@ -109,6 +111,11 @@ export default function WhatsAppChatsPage() {
 
   // Tags state
   const [contactTags, setContactTags] = useState<{[key: string]: string[]}>({});
+  const [availableTags, setAvailableTags] = useState<Array<{ id: number; name: string }>>([]);
+  const [filterTagId, setFilterTagId] = useState<string>("");
+  const [contactsInSelectedFilter, setContactsInSelectedFilter] = useState<Set<string> | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  
   // Notes state
   const [openNoteContacts, setOpenNoteContacts] = useState<Set<string>>(new Set());
   const [activeNote, setActiveNote] = useState<{ id: number; contactNumber: string; note: string; status: 'open' | 'resolved' } | null>(null);
@@ -160,6 +167,12 @@ export default function WhatsAppChatsPage() {
           const escalationData = await getPendingEscalationContacts();
           if (escalationData.success) {
             setEscalatedContacts(new Set(escalationData.contacts || []));
+          }
+          
+          // Load available tags for filter
+          const tagsRes = await listTags();
+          if (tagsRes.success) {
+            setAvailableTags(tagsRes.data || []);
           }
         } catch (_) {}
       })();
@@ -537,6 +550,48 @@ export default function WhatsAppChatsPage() {
     }
   }
 
+  // Fetch contacts for selected tag filter
+  useEffect(() => {
+    async function loadFilterContacts() {
+      if (!filterTagId) {
+        setContactsInSelectedFilter(null);
+        return;
+      }
+      
+      try {
+        const res = await listContactsByTag(parseInt(filterTagId));
+        if (res.success && res.data) {
+          setContactsInSelectedFilter(new Set((res.data as any[]).map((c: any) => c.contactNumber)));
+        } else {
+          setContactsInSelectedFilter(new Set());
+        }
+      } catch (e) {
+        console.error("Failed to filter by tag", e);
+        setContactsInSelectedFilter(new Set());
+      }
+    }
+    
+    loadFilterContacts();
+  }, [filterTagId]);
+
+  // Filter contacts based on search and tag
+  const filteredContacts = contacts.filter(contact => {
+    const searchLower = searchTerm.toLowerCase();
+    const contactName = (contact.contactName || '').toLowerCase();
+    const contactNumber = (contact.contactNumber || '').toLowerCase();
+    
+    // Search filter
+    const matchesSearch = !searchTerm || 
+      contactName.includes(searchLower) || 
+      contactNumber.includes(searchLower);
+      
+    // Tag filter
+    const matchesTag = !filterTagId || 
+      (contactsInSelectedFilter && contactsInSelectedFilter.has(contact.contactNumber));
+
+    return matchesSearch && matchesTag;
+  });
+
   async function handleSendMessage(phoneNumber?: string, message?: string) {
     const targetPhone = phoneNumber;
     const targetMessage = message || testMessage;
@@ -853,154 +908,56 @@ export default function WhatsAppChatsPage() {
   return (
     <>
       <div className={`space-y-6 ${showTagModal ? 'blur-sm' : ''}`}>
-        <div className="w-full h-[calc(100vh-8rem)] sm:h-[calc(100vh-8rem)]">
+        <div className="w-full h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)]">
           {/* Main Chat Container */}
-          <Card  className=" border-none  flex flex-col sm:flex-row h-full gradient-border">
+          <Card  className=" border-none  flex flex-col lg:flex-row h-full gradient-border">
           {/* Contacts List */}
-          <div className="flex flex-col w-full sm:w-full h-full">
-          <CardHeader className="border-text-primary/50 text-primary flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-
-          <div className="flex items-center gap-1 flex-wrap">
-          <div className={`flex items-center gap-1 flex-wrap ${selectedContact ? 'hidden sm:flex' : 'flex'}`}>
-          <h3 className="text-xs sm:text-sm font-medium text-white p-1 rounded-md inner-shadow">جهات الاتصال {contacts.length}</h3>
-              <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
-              <span className="text-xs sm:text-sm text-white">
-                {botStatus?.isPaused ? 'البوت متوقف' : 'البوت نشط'}
-              </span>
-              {botStatus?.isPaused && botStatus.timeRemaining > 0 && (
-                <span className="text-xs text-yellow-500">
-                  ({botStatus.timeRemaining} دقيقة متبقية)
-                </span>
-              )}  
-            </div>
-            </div>
-          <div className={`flex items-center gap-2 sm:gap-3 sm:ml-70 flex-wrap ${!selectedContact ? 'hidden sm:flex' : 'w-full sm:w-auto justify-between sm:justify-start'}`}>
-            <button 
-              onClick={() => setSelectedContact(null)} 
-              className="sm:hidden p-1 mr-1 text-white hover:bg-white/10 rounded-full transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 rtl:rotate-180">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            </button>
-           
-           
-           <div className="flex items-center gap-2">
-                  {selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />}
-                  <div className="flex flex-col">
-                  {/* <span className="text-white text-xs sm:text-sm">
-                      {selectedContact ? (() => {
-                        const found = contacts.find(c => c.contactNumber === selectedContact);
-                        return found?.contactName || '';
-                      })() : ''}
-                    </span> */}
-           <span className="text-white font-medium text-xs sm:text-sm p-1 rounded-md truncate max-w-[150px] sm:max-w-none">
-                    {selectedContact ? (() => {
-                      // Prefer real contact name if available
-                      const found = contacts.find(c => c.contactNumber === selectedContact);
-                      if (found && found.contactNumber) return found.contactNumber;
-
-                      // Fallback: format number as before
-                      let num = selectedContact.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '');
-                      let cleanNum = num.replace(/\D/g, '');
-                      
-                      // Egypt numbers
-                      if (cleanNum.startsWith('20') && cleanNum.length === 12) {
-                        const localNum = '0' + cleanNum.substring(2);
-                        if (localNum.length === 11 && localNum.startsWith('01')) {
-                          return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                        }
-                        return localNum;
-                      } else if (cleanNum.startsWith('0') && cleanNum.length === 11) {
-                        if (cleanNum.startsWith('01') || cleanNum.startsWith('02') || cleanNum.startsWith('03')) {
-                          return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                        }
-                        return cleanNum;
-                      }
-                      
-                      // Saudi numbers
-                      if (cleanNum.startsWith('966') && cleanNum.length === 12) {
-                        const localNum = '0' + cleanNum.substring(3);
-                        if (localNum.length === 10 && localNum.startsWith('05')) {
-                          return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
-                        }
-                        return localNum;
-                      } else if (cleanNum.startsWith('05') && cleanNum.length === 10) {
-                        return cleanNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
-                      }
-                      
-                      // LID numbers - try to extract real phone
-                      if (cleanNum.length >= 15) {
-                        const egyptMatch = cleanNum.match(/20\d{10}/);
-                        if (egyptMatch) {
-                          const egyptNum = egyptMatch[0];
-                          const localNum = '0' + egyptNum.substring(2);
-                          if (localNum.length === 11) {
-                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                          }
-                        }
-                        
-                        const saudiMatch = cleanNum.match(/966\d{9}/);
-                        if (saudiMatch) {
-                          const saudiNum = saudiMatch[0];
-                          const localNum = '0' + saudiNum.substring(3);
-                          if (localNum.length === 10) {
-                            return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
-                          }
-                        }
-                        
-                        // Try last digits
-                        if (cleanNum.length >= 12) {
-                          const last12 = cleanNum.slice(-12);
-                          if (last12.startsWith('20') && /^20\d{10}$/.test(last12)) {
-                            const localNum = '0' + last12.substring(2);
-                            if (localNum.length === 11) {
-                              return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                            }
-                          }
-                        }
-                        
-                        return cleanNum.length > 15 ? cleanNum.slice(-12) : cleanNum;
-                      }
-                      
-                      return cleanNum || selectedContact;
-                    })() : 'اختر جهة اتصال لعرض الرسائل'}
+          <div className="flex flex-col w-full lg:w-full h-full">
+          <CardHeader className="border-text-primary/50 text-primary flex flex-col gap-2 p-3 lg:p-4">
+            
+            {/* Header Top Row: Title, Bot Status, and Controls */}
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-2 w-full">
+              <div className="flex items-center gap-1 flex-wrap">
+                <div className={`flex items-center gap-1 flex-wrap ${selectedContact ? 'hidden lg:flex' : 'flex'}`}>
+                  <h3 className="text-xs lg:text-sm font-medium text-white p-1 rounded-md inner-shadow">
+                    جهات الاتصال {filteredContacts.length}
+                  </h3>
+                  <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                  <span className="text-xs sm:text-sm text-white">
+                    {botStatus?.isPaused ? 'البوت متوقف' : 'البوت نشط'}
                   </span>
-                   
-                  </div>
-           </div>
-           
-          </div>
-          <div className="mt-2 text-xs text-gray-500">
-            {/* {botStatus?.isPaused 
-              ? "Bot will not respond to incoming messages. Resume manually or wait for auto-resume."
-              : "Bot is actively responding to incoming messages. Pause when you want to take over conversations."
-            } */}
-          </div>
-      
-          <div className="gap-2 sm:gap-3 flex-shrink-0">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
-                <div className="flex items-center gap-2">
-                  
-                  {/* {isAutoRefreshing && (
-                    <div className="flex items-center gap-1 text-xs text-green-400">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span>تحديث تلقائي</span>
-                    </div>
-                  )} */}
+                  {botStatus?.isPaused && botStatus.timeRemaining > 0 && (
+                    <span className="text-xs text-yellow-500">
+                      ({botStatus.timeRemaining} دقيقة متبقية)
+                    </span>
+                  )}  
                 </div>
+              </div>
+
+              {/* Bot Controls & Refresh - Visible when needed */}
+              <div className="flex items-center gap-2">
+                 {/* Only show refresh/controls if not on mobile active chat view or if we want them always accessble */}
+                 {/* ... existing controls ... */}
+              </div>
+            </div>
+
+           
+
+            {/* Selected Contact Header (Mobile View mostly) */}
+            <div className={`flex items-center gap-2 lg:gap-3 lg:ml-70 flex-wrap ${!selectedContact ? 'hidden lg:flex' : 'w-full lg:w-auto justify-between lg:justify-start hidden'}`}>
+            {/* existing selected contact header code... keeping hidden for now as we redesigned structure or keeping purely for logic preservation if needed. 
+                Actually, the original layout had this mixed. Let's simplify. 
+                We will keep the original "Selected Contact" view logic below in the main content area or adjusting here.
+            */}
+            </div>
+            
+            {/* Original Bot Controls were here, let's keep them accessible */}
+            <div className="gap-2 lg:gap-3 flex-shrink-0 flex-col lg:flex-row w-full flex  justify-end">
+              <div className="flex flex-col lg:flex-row  items-start lg:items-center justify-between gap-2 lg:gap-3 w-full">
+                <div className="flex items-center gap-2"></div>
                 {selectedContact && (
-                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                    {/* <Button 
-                      size="sm" 
-                      variant="secondary" 
-                      onClick={() => loadChatHistory(selectedContact)}
-                      className="text-xs"
-                      disabled={isAutoRefreshing}
-                    >
-                      {isAutoRefreshing ? 'جاري التحديث...' : 'Refresh'}
-                    </Button> */}
-                     <div className="flex gap-1 sm:gap-2 flex-wrap">
+                  <div className="flex items-center gap-1 lg:gap-2 flex-wrap justify-end w-full">
+                     <div className="flex gap-1 lg:gap-2 flex-wrap">
               {botStatus?.isPaused ? (
                 <Button 
                   size="sm" 
@@ -1030,7 +987,7 @@ export default function WhatsAppChatsPage() {
                   </Button>
                 </div>
               )}
-            </div>
+                  </div>
                     <Button 
                       size="sm" 
                       onClick={openTagModal}
@@ -1048,175 +1005,72 @@ export default function WhatsAppChatsPage() {
                   </div>
                 )}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className=" overflow-y-auto h-full w-full flex flex-col sm:flex-row p-0 sm:p-6">
-            <div className={`space-y-2 w-full sm:w-1/3 border-b sm:border-b-0 sm:border-l border-text-primary/50 h-full sm:h-auto overflow-y-auto custom-scrollbar ${selectedContact ? 'hidden sm:block' : 'block'}`}>
-              {contacts.map((contact, index) => (
-                <div
-                  key={contact.contactNumber || `contact-${index}`}
-                  onClick={() => {
-                    if (contact.contactNumber) {
-                      setSelectedContact(contact.contactNumber);
-                      loadChatHistory(contact.contactNumber);
-                    }
-                  }}
-                  className={`p-2 ml-1 sm:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
-                    selectedContact === contact.contactNumber
-                      ? ' inner-shadow'
-                      : escalatedContacts.has(contact.contactNumber) ? 'bg-red-500/30 border border-red-500/30'
-                      : openNoteContacts.has(contact.contactNumber) ? 'bg-yellow-600/30' : 'bg-secondry'
-                  }`}
+               {/* Search and Filter Row - Only visible in contacts list view or desktop */}
+            <div className={`w-full flex flex-col lg:flex-row gap-2 ${selectedContact ? 'hidden lg:flex' : 'flex '}`}>
+              <div className="relative flex-1">
+                <Search className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="بحث بالاسم أو الرقم..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-8 h-9 text-xs bg-[#01191040] border-text-primary/30"
+                />
+              </div>
+              <div className="relative w-full lg:w-1/3">
+                <Filter className="absolute right-2 top-2.5 h-4 w-4 text-primary" />
+                <select
+                  value={filterTagId}
+                  onChange={(e) => setFilterTagId(e.target.value)}
+                  className="w-full h-9 pr-8 pl-2 text-xs bg-[#01191040] border border-text-primary/30 rounded-md text-white appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                   <div className="flex items-center gap-2">
-                   {contact.profilePicture ? (
-                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
-                  ) : contact.messageCount > 0 ? (
-                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
-                  ) : (
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
-                      {/* {contact.contactName 
-                        ? contact.contactName.charAt(0).toUpperCase() 
-                        : (contact.contactNumber && contact.contactNumber.length > 0)
-                          ? contact.contactNumber.charAt(0).toUpperCase()
-                          : '?'} */}
+                  <option value="">كل التصنيفات</option>
+                  {availableTags.map(tag => (
+                    <option key={tag.id} value={tag.id}>{tag.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            </div>
+            
+          </CardHeader>
+          <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-6">
+            <div className={`space-y-2 w-full lg:w-1/3 border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto custom-scrollbar ${selectedContact ? 'hidden lg:block' : 'block'}`}>
+              {filteredContacts.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">لا توجد جهات اتصال مطابقة</div>
+              ) : (
+                filteredContacts.map((contact, index) => (
+                  <div
+                    key={contact.contactNumber || `contact-${index}`}
+                    onClick={() => {
+                      if (contact.contactNumber) {
+                        setSelectedContact(contact.contactNumber);
+                        loadChatHistory(contact.contactNumber);
+                      }
+                    }}
+                    className={`p-2 ml-1 lg:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
+                      selectedContact === contact.contactNumber
+                        ? ' inner-shadow'
+                        : escalatedContacts.has(contact.contactNumber) ? 'bg-red-500/30 border border-red-500/30'
+                        : openNoteContacts.has(contact.contactNumber) ? 'bg-yellow-600/30' : 'bg-secondry'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {contact.profilePicture ? (
+                        <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
+                      ) : contact.messageCount > 0 ? (
+                        <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
+                      ) : (
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
                           <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-col">
+                        <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
+                      </div>
                     </div>
-                  )}
-                   <div className="flex flex-col">
-                   <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
-                    {/* <div className="font-medium text-sm text-white">
-                      {(() => {
-                        // Check if contactNumber exists
-                        if (!contact.contactNumber) {
-                          return 'رقم غير متاح';
-                        }
-                        
-                        // Remove WhatsApp suffixes
-                        let num = contact.contactNumber.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '');
-                        // Remove all non-digits to get clean number
-                        let cleanNum = num.replace(/\D/g, '');
-                        
-                        // ✅ Egypt numbers - International format: 201234567890
-                        if (cleanNum.startsWith('20') && cleanNum.length === 12) {
-                          const localNum = '0' + cleanNum.substring(2);
-                          // Format: 01XX XXX XXXX (Egypt mobile format)
-                          if (localNum.length === 11 && localNum.startsWith('01')) {
-                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                          }
-                          // Format: 02XX XXX XXXX (Egypt landline format)
-                          else if (localNum.length === 11 && localNum.startsWith('02')) {
-                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                          }
-                          // Format: 03XX XXX XXXX (Egypt mobile format)
-                          else if (localNum.length === 11 && localNum.startsWith('03')) {
-                            return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                          }
-                          // Return formatted local number
-                          return localNum;
-                        }
-                        // ✅ Egypt local format: 01234567890 or 02XXXXXXXXX
-                        else if (cleanNum.startsWith('0') && cleanNum.length === 11) {
-                          // Format: 01XX XXX XXXX (mobile)
-                          if (cleanNum.startsWith('01')) {
-                            return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                          }
-                          // Format: 02XX XXX XXXX (landline)
-                          else if (cleanNum.startsWith('02')) {
-                            return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                          }
-                          // Format: 03XX XXX XXXX (mobile)
-                          else if (cleanNum.startsWith('03')) {
-                            return cleanNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                          }
-                          // Other Egypt formats
-                          return cleanNum;
-                        }
-                        // ✅ Saudi - International format: 966501234567
-                        else if (cleanNum.startsWith('966') && cleanNum.length === 12) {
-                          const localNum = '0' + cleanNum.substring(3);
-                          // Format: 05X XXX XXXX (Saudi mobile format)
-                          if (localNum.length === 10 && localNum.startsWith('05')) {
-                            return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
-                          }
-                          return localNum;
-                        }
-                        // ✅ Saudi local format: 0501234567
-                        else if (cleanNum.startsWith('05') && cleanNum.length === 10) {
-                          return cleanNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
-                        }
-                        // ✅ Check if it's a LID number (15+ digits) - try to extract real phone
-                        else if (cleanNum.length >= 15) {
-                          // This is likely a LID - try to extract real phone from it
-                          // Sometimes LID contains the real phone number embedded
-                          // Try to find a valid phone pattern within the LID
-                          
-                          // Try Egypt format: 20XXXXXXXXXX (12 digits)
-                          const egyptMatch = cleanNum.match(/20\d{10}/);
-                          if (egyptMatch) {
-                            const egyptNum = egyptMatch[0];
-                            const localNum = '0' + egyptNum.substring(2);
-                            if (localNum.length === 11 && localNum.startsWith('01')) {
-                              return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                            }
-                            return localNum;
-                          }
-                          
-                          // Try Saudi format: 966XXXXXXXXXX (12 digits)
-                          const saudiMatch = cleanNum.match(/966\d{9}/);
-                          if (saudiMatch) {
-                            const saudiNum = saudiMatch[0];
-                            const localNum = '0' + saudiNum.substring(3);
-                            if (localNum.length === 10 && localNum.startsWith('05')) {
-                              return localNum.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
-                            }
-                            return localNum;
-                          }
-                          
-                          // Try to find any 10-12 digit sequence that looks like a phone number
-                          // Check if LID ends with a valid phone number pattern
-                          if (cleanNum.length >= 12) {
-                            // Try last 12 digits (Egypt international)
-                            const last12 = cleanNum.slice(-12);
-                            if (last12.startsWith('20') && /^20\d{10}$/.test(last12)) {
-                              const localNum = '0' + last12.substring(2);
-                              if (localNum.length === 11) {
-                                return localNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                              }
-                            }
-                            
-                            // Try last 11 digits (Egypt local)
-                            const last11 = cleanNum.slice(-11);
-                            if (last11.startsWith('0') && /^0\d{10}$/.test(last11)) {
-                              if (last11.startsWith('01') || last11.startsWith('02') || last11.startsWith('03')) {
-                                return last11.replace(/^(\d{2})(\d{3})(\d{3})(\d{3})$/, '$1 $2 $3 $4');
-                              }
-                            }
-                            
-                            // Try last 10 digits (Saudi local)
-                            const last10 = cleanNum.slice(-10);
-                            if (last10.startsWith('05') && /^05\d{8}$/.test(last10)) {
-                              return last10.replace(/^(\d{3})(\d{3})(\d{4})$/, '$1 $2 $3');
-                            }
-                          }
-                          
-                          // If we can't extract a real phone, show a shortened version
-                          return cleanNum.length > 15 ? cleanNum.slice(-12) : cleanNum;
-                        }
-                        // ✅ Other numbers: Return as stored (preserve original format)
-                        else {
-                          return cleanNum || contact.contactNumber;
-                        }
-                      })()}
-                    </div> */}
-                    
-                   </div>
-                  {/* <div className="text-xs text-orange-300">
-                    {contact.messageCount} رسالة • {new Date(contact.lastMessageTime).toLocaleDateString()}
-                  </div> */}
-                  </div>
-                 
-                  {contact.contactNumber && contactTags[contact.contactNumber] && contactTags[contact.contactNumber].length > 0 && (
+                  
+                    {contact.contactNumber && contactTags[contact.contactNumber] && contactTags[contact.contactNumber].length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {contactTags[contact.contactNumber].map((tag, index) => (
                           <span key={index} className="text-xs bg-secondry border-1 border-blue-300 text-white px-2 py-1 rounded-full">
@@ -1225,11 +1079,106 @@ export default function WhatsAppChatsPage() {
                         ))}
                       </div>
                     )}
-                </div>
-              ))}
+                  </div>
+                ))
+              )}
+
             </div>
             {/* Chat Messages */}
-          <div className={`flex flex-col w-full h-full min-h-0 ${selectedContact ? 'flex' : 'hidden sm:flex'}`}>
+          <div className={`flex flex-col w-full h-full min-h-0 ${selectedContact ? 'fixed inset-0 z-999 bg-dark-custom lg:relative lg:inset-auto lg:z-auto lg:!bg-transparent flex' : 'hidden lg:flex'}`}>
+            {/* Mobile Header (Back button, Contact Info, and Actions) */}
+            <div className="lg:hidden flex flex-col border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
+              {/* Top Row: Navigation and Info */}
+              <div className="flex items-center justify-between p-3">
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setSelectedContact(null)} 
+                    className="p-1 text-white hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 rtl:rotate-180">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                    </svg>
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? 
+                      <img width={40} height={40} className="w-10 h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : 
+                      <img width={40} height={40} className="w-10 h-10 rounded-full" src="/user.gif" alt="" />
+                    }
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-white font-medium text-xs truncate max-w-[120px]">
+                        {(() => {
+                          const found = contacts.find(c => c.contactNumber === selectedContact);
+                          return found?.contactName || (selectedContact ? selectedContact.replace(/\D/g, '').slice(-11) : '');
+                        })()}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <div className={`w-1.5 h-1.5 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                        <span className="text-[9px] text-gray-400">{botStatus?.isPaused ? 'البوت متوقف' : 'البوت متصل الآن'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Compact Refresh Button */}
+                {/* <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => selectedContact && loadChatHistory(selectedContact)}
+                  className="p-1 h-auto text-white/70"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
+                </Button> */}
+              </div>
+
+              {/* Bottom Row: Actions Scrollable */}
+              <div className="grid grid-cols-4 gap-2 px-3 pb-3 overflow-x-auto scrollbar-hide">
+                {botStatus?.isPaused ? (
+                  <Button 
+                    size="sm" 
+                    onClick={handleResumeBot}
+                    disabled={botControlLoading}
+                    className="bg-green-500 hover:bg-green-600 text-[10px] h-8 whitespace-nowrap"
+                  >
+                    استئناف البوت
+                  </Button>
+                ) : (
+                  <>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handlePauseBot(30)}
+                      disabled={botControlLoading}
+                      className="bg-transparent text-white border border-text-primary/50 inner-shadow text-[10px] h-8 whitespace-nowrap"
+                    >
+                      إيقاف 30 د
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={() => handlePauseBot(60)}
+                      disabled={botControlLoading}
+                      className="bg-transparent text-white border border-text-primary/50 inner-shadow text-[10px] h-8 whitespace-nowrap"
+                    >
+                      إيقاف ساعة
+                    </Button>
+                  </>
+                )}
+                <Button 
+                  size="sm" 
+                  onClick={openTagModal}
+                  className="text-[10px] h-8 whitespace-nowrap primary-button"
+                >
+                  + تصنيف
+                </Button>
+                <Button 
+                  size="sm"
+                   onClick={() => { setNoteText(""); setShowNoteModal(true); }}
+                  className="text-[10px] h-8 whitespace-nowrap bg-transparent text-white border border-text-primary/50 inner-shadow"
+                >
+                  أضف ملاحظة
+                </Button>
+              </div>
+            </div>
             {/* Chat Header */}
             
             {/* Active Escalation - Fixed at top */}
@@ -1641,7 +1590,7 @@ export default function WhatsAppChatsPage() {
 
           {/* Note Modal */}
           {showNoteModal && (
-            <div className="fixed inset-0 z-50 backdrop-blur-sm flex items-center justify-center bg-black/80 p-4">
+            <div className="fixed inset-0 z-[1000] backdrop-blur-sm flex items-center justify-center bg-black/80 p-4">
               <div className="w-full max-w-lg gradient-border rounded-lg p-4 border border-text-primary/50">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-white text-lg font-semibold">إضافة ملاحظة على الشات</h3>
@@ -1695,7 +1644,7 @@ export default function WhatsAppChatsPage() {
       
       {/* Tag Modal */}
       {showTagModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70" onClick={() => setShowTagModal(false)} />
           <div className="relative z-10 w-full max-w-xl gradient-border rounded p-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-white text-lg font-medium mb-3">إضافة إلى تصنيف</h3>

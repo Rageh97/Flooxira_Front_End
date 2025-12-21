@@ -53,6 +53,7 @@
   --color-bg-card: #00000060;
   --color-bg-fixed:#011910
   --color-bg-fixed-40:#01191040
+  --color-bg-chat:#011910
 }
 /* #131240
 #74e2ff
@@ -195,6 +196,10 @@ button, a {
   
   .bg-dark-custom {
     background-color: var(--color-bg-dark);
+  }
+  
+  .bg-chat {
+    background-color: var(--color-bg-chat);
   }
   
   .bg-semidark-custom {

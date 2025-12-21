@@ -1,360 +1,448 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/lib/auth';
-import { listTags, createTag, updateTag, deleteTag, addContactToTag, removeContactFromTag, listContactsByTag, getAllContacts } from '@/lib/tagsApi';
-import { Trash2Icon, Edit2Icon, XIcon, CheckIcon } from 'lucide-react';
+import { listTags, createTag, updateTag, deleteTag, addContactToTag, removeContactFromTag, listContactsByTag } from '@/lib/tagsApi';
+import { getChatContacts } from '@/lib/api';
+import { Trash2, Edit2, X, Check, Search, Plus, UserPlus, Users } from 'lucide-react';
 import { useToast } from '@/components/ui/toast-provider';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 type Tag = { id: number; name: string; color?: string };
 type ContactTag = { id: number; contactNumber: string; contactName?: string };
+type ContactOption = { contactNumber: string; contactName?: string | null; profilePicture?: string | null };
 
 export default function TagsPage() {
   const { user, loading: authLoading } = useAuth();
   const { showSuccess, showError } = useToast();
+  
   const [tags, setTags] = useState<Tag[]>([]);
-  const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('');
+  const [contactsInTag, setContactsInTag] = useState<ContactTag[]>([]);
+  const [allContacts, setAllContacts] = useState<ContactOption[]>([]);
+  
   const [selectedTag, setSelectedTag] = useState<number | null>(null);
-  const [contacts, setContacts] = useState<ContactTag[]>([]);
-  const [contactNumber, setContactNumber] = useState('');
-  const [contactName, setContactName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [allContacts, setAllContacts] = useState<string[]>([]);
-  const [loadingContacts, setLoadingContacts] = useState(false);
+  
+  // Create Tag State
+  const [newName, setNewName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  // Edit Tag State
   const [editingTagId, setEditingTagId] = useState<number | null>(null);
   const [editingTagName, setEditingTagName] = useState('');
-  const [deleteTagDialogOpen, setDeleteTagDialogOpen] = useState(false);
-  const [tagToDelete, setTagToDelete] = useState<number | null>(null);
-  const [deleteContactDialogOpen, setDeleteContactDialogOpen] = useState(false);
-  const [contactToDelete, setContactToDelete] = useState<string | null>(null);
+
+  // Add Contact State
+  const [contactSearch, setContactSearch] = useState('');
+  const [selectedContactToAdd, setSelectedContactToAdd] = useState<string>('');
+  const [isAddingContact, setIsAddingContact] = useState(false);
+
+  // Loading States
+  const [loading, setLoading] = useState(true);
+  const [loadingContacts, setLoadingContacts] = useState(false);
+
+  // Dialogs
+  const [deleteTagId, setDeleteTagId] = useState<number | null>(null);
+  const [deleteContactId, setDeleteContactId] = useState<string | null>(null); // contactNumber to delete
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      window.location.href = '/sign-in';
-      return;
-    }
-    load();
+    loadInitialData();
   }, [user, authLoading]);
 
-  async function load() {
+  async function loadInitialData() {
     setLoading(true);
     try {
       const [tagsRes, contactsRes] = await Promise.all([
         listTags(),
-        getAllContacts()
+        getChatContacts(localStorage.getItem('auth_token') || '')
       ]);
-      if (tagsRes.success) setTags(tagsRes.data);
-      if (contactsRes.success) setAllContacts(contactsRes.data);
-    } finally { setLoading(false); }
-  }
-
-  async function onCreate() {
-    if (!newName.trim()) {
-      showError('خطأ', 'اسم التصنيف مطلوب');
-      return;
-    }
-    const res = await createTag({ name: newName.trim(), color: newColor || undefined });
-    if (res.success) {
-      showSuccess('نجح', 'تم إنشاء التصنيف بنجاح');
-      setNewName(''); setNewColor('');
-      await load();
-    } else {
-      showError('خطأ', res.message || 'فشل في إنشاء التصنيف');
+      
+      if (tagsRes.success) setTags(tagsRes.data || []);
+      if (contactsRes.success) setAllContacts(contactsRes.contacts || []);
+    } catch (e) {
+      console.error(e);
+      showError('خطأ', 'فشل في تحميل البيانات');
+    } finally {
+      setLoading(false);
     }
   }
 
-  function handleDeleteClick(id: number) {
-    setTagToDelete(id);
-    setDeleteTagDialogOpen(true);
-  }
-
-  async function onDelete() {
-    if (!tagToDelete) return;
-    const res = await deleteTag(tagToDelete);
-    if (res.success) {
-      showSuccess('نجح', 'تم حذف التصنيف بنجاح');
-      if (selectedTag === tagToDelete) setSelectedTag(null);
-      setDeleteTagDialogOpen(false);
-      setTagToDelete(null);
-      await load();
-    } else {
-      showError('خطأ', res.message || 'فشل في حذف التصنيف');
-    }
-  }
-
-  async function onStartEdit(tag: Tag) {
-    setEditingTagId(tag.id);
-    setEditingTagName(tag.name);
-  }
-
-  async function onCancelEdit() {
-    setEditingTagId(null);
-    setEditingTagName('');
-  }
-
-  async function onSaveEdit(id: number) {
-    if (!editingTagName.trim()) {
-      showError('خطأ', 'اسم التصنيف مطلوب');
-      return;
-    }
-    const res = await updateTag(id, { name: editingTagName.trim() });
-    if (res.success) {
-      showSuccess('نجح', 'تم تحديث التصنيف بنجاح');
-      setEditingTagId(null);
-      setEditingTagName('');
-      await load();
-      // If this was the selected tag, refresh contacts
-      if (selectedTag === id) {
-        await onSelectTag(id);
+  async function handleCreateTag() {
+    if (!newName.trim()) return;
+    setIsCreating(true);
+    try {
+      const res = await createTag({ name: newName.trim() });
+      if (res.success) {
+        setNewName('');
+        const list = await listTags();
+        if (list.success) setTags(list.data || []);
+        showSuccess('نجح', 'تم إنشاء التصنيف');
+      } else {
+        showError('خطأ', res.message);
       }
-    } else {
-      showError('خطأ', res.message || 'فشل في تحديث التصنيف');
+    } catch (e: any) {
+      showError('خطأ', e.message);
+    } finally {
+      setIsCreating(false);
     }
   }
 
-  function handleRemoveContactClick(contactNumber: string) {
-    if (!selectedTag) return;
-    setContactToDelete(contactNumber);
-    setDeleteContactDialogOpen(true);
-  }
-
-  async function onRemoveContact() {
-    if (!selectedTag || !contactToDelete) return;
-    const res = await removeContactFromTag(selectedTag, { contactNumber: contactToDelete });
-    if (res.success) {
-      showSuccess('نجح', 'تم حذف جهة الاتصال من التصنيف بنجاح');
-      setDeleteContactDialogOpen(false);
-      setContactToDelete(null);
-      await onSelectTag(selectedTag);
-    } else {
-      showError('خطأ', res.message || 'فشل في حذف جهة الاتصال');
+  async function handleUpdateTag(id: number) {
+    if (!editingTagName.trim()) return;
+    try {
+      const res = await updateTag(id, { name: editingTagName.trim() });
+      if (res.success) {
+        setTags(prev => prev.map(t => t.id === id ? { ...t, name: editingTagName.trim() } : t));
+        setEditingTagId(null);
+        showSuccess('نجح', 'تم تحديث التصنيف');
+      } else {
+        showError('خطأ', res.message);
+      }
+    } catch (e: any) {
+      showError('خطأ', e.message);
     }
   }
 
-  async function onSelectTag(id: number) {
-    setSelectedTag(id);
-    const res = await listContactsByTag(id);
-    if (res.success) setContacts(res.data);
-  }
-
-  async function onAddContact() {
-    if (!selectedTag || !contactNumber.trim()) return;
-    const res = await addContactToTag(selectedTag, { contactNumber: contactNumber.trim(), contactName: contactName || undefined });
-    if (res.success) {
-      showSuccess('نجح', 'تم إضافة جهة الاتصال إلى التصنيف بنجاح');
-      setContactNumber(''); setContactName('');
-      await onSelectTag(selectedTag);
-    } else {
-      showError('خطأ', res.message || 'فشل في إضافة جهة الاتصال');
+  async function handleDeleteTag() {
+    if (!deleteTagId) return;
+    try {
+      const res = await deleteTag(deleteTagId);
+      if (res.success) {
+        setTags(prev => prev.filter(t => t.id !== deleteTagId));
+        if (selectedTag === deleteTagId) {
+          setSelectedTag(null);
+          setContactsInTag([]);
+        }
+        setDeleteTagId(null);
+        showSuccess('نجح', 'تم حذف التصنيف');
+      }
+    } catch (e: any) {
+      showError('خطأ', e.message);
     }
   }
 
-  async function refreshContacts() {
+  async function handleSelectTag(tagId: number) {
+    setSelectedTag(tagId);
     setLoadingContacts(true);
     try {
-      const res = await getAllContacts();
-      if (res.success) setAllContacts(res.data);
+      const res = await listContactsByTag(tagId);
+      if (res.success) {
+        setContactsInTag(res.data || []);
+      }
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoadingContacts(false);
     }
   }
 
+  async function handleAddContactToTag() {
+    if (!selectedTag || !selectedContactToAdd) return;
+    setIsAddingContact(true);
+    try {
+      const contactObj = allContacts.find(c => c.contactNumber === selectedContactToAdd);
+      const res = await addContactToTag(selectedTag, { 
+        contactNumber: selectedContactToAdd,
+        contactName: contactObj?.contactName || undefined 
+      });
+      
+      if (res.success) {
+        showSuccess('نجح', 'تم إضافة جهة الاتصال');
+        setContactSearch('');
+        setSelectedContactToAdd('');
+        handleSelectTag(selectedTag); // Refresh list
+      } else {
+        showError('خطأ', res.message);
+      }
+    } catch (e: any) {
+      showError('خطأ', e.message);
+    } finally {
+      setIsAddingContact(false);
+    }
+  }
+
+  async function handleRemoveContact() {
+    if (!selectedTag || !deleteContactId) return;
+    try {
+      const res = await removeContactFromTag(selectedTag, { contactNumber: deleteContactId });
+      if (res.success) {
+        setContactsInTag(prev => prev.filter(c => c.contactNumber !== deleteContactId));
+        setDeleteContactId(null);
+        showSuccess('نجح', 'تم حذف جهة الاتصال من التصنيف');
+      }
+    } catch (e: any) {
+      showError('خطأ', e.message);
+    }
+  }
+
+  // Filter contacts for dropdown
+  const filteredContactsForAdd = useMemo(() => {
+    if (!contactSearch) return allContacts.slice(0, 50); // Show first 50 if no search
+    const lower = contactSearch.toLowerCase();
+    return allContacts.filter(c => 
+      (c.contactName || '').toLowerCase().includes(lower) || 
+      c.contactNumber.includes(lower)
+    ).slice(0, 50);
+  }, [allContacts, contactSearch]);
+
+  const selectedTagName = tags.find(t => t.id === selectedTag)?.name;
+
   return (
-    <div className="w-full mx-auto">
-      {/* <h1 className="text-2xl font-semibold mb-4 text-white">Tags</h1> */}
+    <div className="w-full mx-auto p-4 md:p-6 space-y-6">
+      
+      {/* Create Tag Section */}
+      <Card className="gradient-border border-none shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Plus className="w-5 h-5 text-blue-400" />
+            إنشاء تصنيف جديد
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <Input 
+              className="bg-[#01191040] border-text-primary/30 text-white placeholder-gray-400"
+              placeholder="اسم التصنيف"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+            />
+            <Button 
+              onClick={handleCreateTag} 
+              disabled={!newName.trim() || isCreating}
+              className="primary-button whitespace-nowrap min-w-[120px]"
+            >
+              {isCreating ? 'جاري الإنشاء...' : 'إنشاء تصنيف'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="gradient-border rounded-lg p-4 mb-6">
-        <div className="flex gap-2">
-          <input className="w-3/4 bg-[#01191040] border-1 border-blue-300 rounded-lg px-3 py-4 text-white placeholder-white outline-none" placeholder="ادخل اسم التصنيف" value={newName} onChange={e => setNewName(e.target.value)} />
-          {/* <input className="w-40 bg-[#01191040] border-1 border-blue-300 rounded-lg-lg px-3 py-4 text-white placeholder-white outline-none" placeholder="#اللون" value={newColor} onChange={e => setNewColor(e.target.value)} /> */}
-          <button onClick={onCreate} className="primary-button text-white rounded-lg-lg px-4 w-1/4">إنشاء</button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="gradient-border rounded-lg p-4">
-          <h2 className="text-lg font-medium text-white mb-3">تصنيفاتك</h2>
-          {loading ? (
-            <div className="text-gray-300">جاري التحميل...</div>
-          ) : (
-            <ul className="space-y-2 cursor-pointer grid grid-cols-2 lg:grid-cols-3  gap-2">
-              {tags.map(t => (
-                <li key={t.id} className="flex items-center justify-between bg-secondry rounded-lg px-3 py-2">
-                  {editingTagId === t.id ? (
-                    <div className="flex items-center gap-2 flex-1">
-                      <input
-                        className="flex-1 bg-dark-custom border border-gray-600 rounded-lg px-2 py-1 text-white text-sm"
-                        value={editingTagName}
-                        onChange={e => setEditingTagName(e.target.value)}
-                        onClick={e => e.stopPropagation()}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') onSaveEdit(t.id);
-                          if (e.key === 'Escape') onCancelEdit();
-                        }}
-                        autoFocus
-                      />
-                      <button 
-                        className="text-green-400 hover:text-green-300" 
-                        onClick={e => { e.stopPropagation(); onSaveEdit(t.id); }}
-                        title="حفظ"
-                      >
-                        <CheckIcon className="w-4 h-4" />
-                      </button>
-                      <button 
-                        className="text-gray-400 hover:text-gray-300" 
-                        onClick={e => { e.stopPropagation(); onCancelEdit(); }}
-                        title="إلغاء"
-                      >
-                        <XIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <button 
-                        className="text-white flex-1 text-left" 
-                        onClick={() => onSelectTag(t.id)}
-                      >
-                        {t.name}
-                      </button>
-                      <div className="flex items-center gap-2">
-                        {t.color && <span className="inline-block w-4 h-4 rounded-lg" style={{ background: t.color }} />}
-                        <button 
-                          className="text-blue-400 hover:text-blue-300" 
-                          onClick={e => { e.stopPropagation(); onStartEdit(t); }}
-                          title="تعديل"
-                        >
-                          <Edit2Icon className="w-4 h-4" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        
+        {/* Tags List */}
+        <Card className="gradient-border border-none shadow-lg h-full flex flex-col">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-purple-400" />
+              التصنيفات المتاحة
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar">
+            {loading ? (
+              <div className="text-center text-gray-400 py-10">جاري التحميل...</div>
+            ) : tags.length === 0 ? (
+              <div className="text-center text-gray-400 py-10">لا توجد تصنيفات بعد</div>
+            ) : (
+              <div className="space-y-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tags.map(tag => (
+                  <div 
+                    key={tag.id} 
+                    onClick={() => handleSelectTag(tag.id)}
+                    className={`
+                      p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all border
+                      ${selectedTag === tag.id 
+                        ? 'bg-blue-600/20 border-blue-500 shadow-md transform scale-[1.02]' 
+                        : 'bg-black/20 border-transparent hover:bg-black/40 hover:border-text-primary/30'}
+                    `}
+                  >
+                    {editingTagId === tag.id ? (
+                      <div className="flex items-center gap-2 flex-1 animate-in fade-in">
+                        <Input
+                          value={editingTagName}
+                          onChange={e => setEditingTagName(e.target.value)}
+                          className="h-8 bg-black/40 text-white border-blue-500"
+                          autoFocus
+                          onClick={e => e.stopPropagation()}
+                        />
+                        <button   className="h-8 w-8 p-0 text-green-400 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleUpdateTag(tag.id); }}>
+                          <Check className="w-4 h-4" />
                         </button>
-                        <button 
-                          className="text-red-400 hover:text-red-300" 
-                          onClick={e => { e.stopPropagation(); handleDeleteClick(t.id); }}
-                          title="حذف"
-                        >
-                          <Trash2Icon className="w-4 h-4" />
+                        <button   className="h-8 w-8 p-0 text-red-400 cursor-pointer" onClick={(e) => { e.stopPropagation(); setEditingTagId(null); }}>
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="gradient-border rounded-lg p-4">
-          <h2 className="text-lg font-medium text-white mb-3">جهات الاتصال في التصنيف المحدد</h2>
-          {selectedTag ? (
-            <>
-              <div className="space-y-3 mb-3">
-                <div className="flex gap-2">
-                  <select 
-                    className="flex-1 bg-dark-custom border border-gray-600 rounded-lg px-3 py-2 text-white appearance-none" 
-                    value={contactNumber} 
-                    onChange={e => setContactNumber(e.target.value)}
-                  >
-                    <option value="">اختر رقم جهة اتصال</option>
-                    {allContacts.map(contact => (
-                      <option key={contact} value={contact}>{contact}</option>
-                    ))}
-                  </select>
-                
-                </div>
-                <div className="flex gap-2">
-                  <input 
-                    className="flex-1 bg-dark-custom border border-gray-600 rounded-lg px-3 py-2 text-white" 
-                    placeholder="الاسم (اختياري)" 
-                    value={contactName} 
-                    onChange={e => setContactName(e.target.value)} 
-                  />
-                  <button 
-                    onClick={onAddContact} 
-                    className="bg-[#08c47d] text-white rounded-lg px-4"
-                    disabled={!contactNumber.trim()}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              </div>
-              <ul className="space-y-2">
-                {contacts.map(c => (
-                  <li key={c.id} className="bg-dark-custom rounded-lg px-3 py-2 text-white flex items-center justify-between">
-                    <span className="flex-1">
-                      {c.contactNumber}
-                      {c.contactName && <span className="text-gray-400 ml-2">{c.contactName}</span>}
-                    </span>
-                    <button 
-                      className="text-red-400 hover:text-red-300 ml-2" 
-                      onClick={() => handleRemoveContactClick(c.contactNumber)}
-                      title="حذف من التصنيف"
-                    >
-                      <Trash2Icon className="w-4 h-4" />
-                    </button>
-                  </li>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.5)]"></span>
+                          <span className="font-medium text-white">{tag.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button 
+                             
+                            className="h-8 w-8 p-0 text-gray-400  cursor-pointer" 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setEditingTagId(tag.id); 
+                              setEditingTagName(tag.name); 
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4 text-blue-400" />
+                          </button>
+                          <button 
+                             
+                            className="h-8 w-8 p-0 text-gray-400 cursor-pointer" 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setDeleteTagId(tag.id); 
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 ))}
-                {contacts.length === 0 && <div className="text-gray-300">لا توجد جهات اتصال بعد</div>}
-              </ul>
-            </>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Contacts in Selected Tag */}
+        <Card className="gradient-border border-none shadow-lg h-full flex flex-col relative overflow-hidden">
+          {!selectedTag ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-gray-400 z-10 bg-black/20 backdrop-blur-sm">
+              <Users className="w-16 h-16 mb-4 opacity-50" />
+              <p>اختر تصنيفاً من القائمة لعرض وإدارة جهات الاتصال الخاصة به</p>
+            </div>
           ) : (
-            <div className="text-gray-300">اختر تصنيفاً لإدارة جهات الاتصال الخاصة به</div>
+             <>
+                <CardHeader className="border-b border-white/10 pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white flex items-center gap-2 text-base md:text-lg">
+                      <UserPlus className="w-5 h-5 text-green-400" />
+                      جهات الاتصال في: <span className="text-blue-400 font-bold">{selectedTagName}</span>
+                    </CardTitle>
+                    <span className="text-sm text-gray-400 bg-white/5 py-1 px-3 rounded-full">
+                      {contactsInTag.length} جهة اتصال
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-col h-full space-y-4 pt-4">
+                  {/* Add Contact Section */}
+                  <div className="bg-black/20 p-3 rounded-lg border border-white/10 space-y-3">
+                    <label className="text-xs text-gray-400 font-medium">إضافة جهة اتصال لهذا التصنيف</label>
+                    <div className="space-y-2">
+                       <div className="relative">
+                        <Search className="absolute right-3 top-3 w-4 h-4 text-gray-500" />
+                        <Input 
+                          className="bg-[#01191040] border-text-primary/30 text-white pr-10"
+                          placeholder="ابحث لفلترة القائمة..."
+                          value={contactSearch}
+                          onChange={e => setContactSearch(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="relative">
+                        <select
+                          className="w-full h-10 px-3 bg-[#01191040] border border-text-primary/30 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
+                          value={selectedContactToAdd}
+                          onChange={(e) => setSelectedContactToAdd(e.target.value)}
+                        >
+                          <option value="">-- اختر جهة اتصال --</option>
+                          {filteredContactsForAdd.length === 0 ? (
+                             <option disabled className="text-gray-500">لا توجد نتائج</option>
+                          ) : (
+                            filteredContactsForAdd.map((c) => (
+                              <option key={c.contactNumber} value={c.contactNumber} className="text-black">
+                                {c.contactName ? `${c.contactName} (${c.contactNumber})` : c.contactNumber}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                           <Users className="w-4 h-4 text-gray-500" />
+                        </div>
+                      </div>
+                    </div>
+                    {selectedContactToAdd && (
+                       <Button 
+                        onClick={handleAddContactToTag} 
+                        disabled={isAddingContact}
+                        className="w-full primary-button"
+                      >
+                         {isAddingContact ? 'جاري الإضافة...' : 'تأكيد الإضافة'}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* List of Contacts */}
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pt-2 pr-1">
+                    {loadingContacts ? (
+                      <div className="text-center py-8 text-gray-400">جاري تحميل جهات الاتصال...</div>
+                    ) : contactsInTag.length === 0 ? (
+                      <div className="text-center py-8 text-gray-400 flex flex-col items-center">
+                        <Users className="w-10 h-10 mb-2 text-primary" />
+                        <p>لا توجد جهات اتصال في هذا التصنيف</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {contactsInTag.map(contact => (
+                          <div 
+                            key={contact.id} 
+                            className="flex items-center justify-between p-3 rounded-lg bg-secondry/50 border border-white/5 hover:bg-secondry transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                                {contact.contactName ? contact.contactName[0].toUpperCase() : '#'}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium text-white">{contact.contactName || 'بدون اسم'}</span>
+                                <span className="text-xs text-gray-400 font-mono" dir="ltr">{contact.contactNumber}</span>
+                              </div>
+                            </div>
+                            <Button
+                              
+                              variant="ghost"
+                              className="w-8 h-8 text-gray-500 hover:text-red-400 hover:bg-red-900/20"
+                              onClick={() => setDeleteContactId(contact.contactNumber)}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+             </>
           )}
-        </div>
+        </Card>
       </div>
 
-      {/* Delete Tag Confirmation Dialog */}
-      <Dialog open={deleteTagDialogOpen} onOpenChange={setDeleteTagDialogOpen}>
-        <DialogContent>
+       {/* Delete Tag Confirmation Dialog */}
+       <Dialog open={!!deleteTagId} onOpenChange={(open) => !open && setDeleteTagId(null)}>
+        <DialogContent className="bg-[#1e1e1e] border-gray-700">
           <DialogHeader>
-            <DialogTitle>تأكيد الحذف</DialogTitle>
-            <DialogDescription className="text-white">
-              هل أنت متأكد من حذف هذا التصنيف؟ هذا الإجراء لا يمكن التراجع عنه.
+            <DialogTitle className="text-white">حذف التصنيف</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              هل أنت متأكد من حذف هذا التصنيف؟ لن يتم حذف جهات الاتصال، فقط إزالتها من هذا التصنيف.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex gap-2">
-            <Button 
-              variant="secondary"
-              onClick={() => setDeleteTagDialogOpen(false)}
-            >
-              إلغاء
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={onDelete}
-            >
-              حذف
-            </Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => setDeleteTagId(null)}>إلغاء</Button>
+            <Button variant="destructive" onClick={handleDeleteTag}>حذف المهمة</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+       </Dialog>
 
-      {/* Delete Contact Confirmation Dialog */}
-      <Dialog open={deleteContactDialogOpen} onOpenChange={setDeleteContactDialogOpen}>
-        <DialogContent>
+       {/* Remove Contact Confirmation Dialog */}
+       <Dialog open={!!deleteContactId} onOpenChange={(open) => !open && setDeleteContactId(null)}>
+        <DialogContent className="bg-[#1e1e1e] border-gray-700">
           <DialogHeader>
-            <DialogTitle>تأكيد الحذف</DialogTitle>
-            <DialogDescription className="text-white">
-              هل أنت متأكد من حذف جهة الاتصال "{contactToDelete}" من هذا التصنيف؟
+            <DialogTitle className="text-white">إزالة جهة الاتصال</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              هل أنت متأكد من إزالة هذا الرقم من التصنيف؟
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex gap-2">
-            <Button 
-              variant="secondary"
-              onClick={() => setDeleteContactDialogOpen(false)}
-            >
-              إلغاء
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={onRemoveContact}
-            >
-              حذف
-            </Button>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => setDeleteContactId(null)}>إلغاء</Button>
+            <Button variant="destructive" onClick={handleRemoveContact}>إزالة</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+       </Dialog>
     </div>
   );
 }
-

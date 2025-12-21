@@ -263,14 +263,33 @@ export default function TelegramChatsPage() {
         </div>
       </aside>
 
-      <section className={`w-full md:flex-1 inner-shadow rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'flex' : 'hidden md:flex'}`}>
-        <div className="px-4 py-2 border-b flex items-center gap-2">
+      <section className={`w-full md:flex-1 inner-shadow md:rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'fixed inset-0 z-[100] bg-dark-custom md:relative md:inset-auto md:z-auto md:!bg-transparent flex' : 'hidden md:flex'}`}>
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center gap-3 p-3 border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
           <button 
             onClick={() => setIsMobileChatOpen(false)}
-            className="md:hidden p-1 hover:bg-white/10 rounded-full text-white"
+            className="p-1 text-white hover:bg-white/10 rounded-full transition-colors"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={24} className="rtl:rotate-180" />
           </button>
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+              {getInitials(contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "")}
+            </div>
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-white font-medium text-sm truncate max-w-[180px]">
+                {contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "مادثة"}
+              </span>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                <span className="text-[10px] text-gray-400">متصل الآن</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:flex px-4 py-2 border-b items-center gap-2">
           <div className="font-semibold text-white truncate flex-1">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
         </div>
         <div className="flex-1 overflow-auto px-4 py-3 flex flex-col">

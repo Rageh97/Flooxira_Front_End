@@ -218,11 +218,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
         />
         <aside className="relative bg-secondry z-50 h-full w-72  border-r border-[#08c47d50] text-white  shadow-xl flex flex-col">
           <div className="px-4 py-4 flex items-center justify-between border-b border-gray-600">
-            <div className="w-full ">
+            <div className="w-full flex items-center justify-center">
               <Image src="/Logo.gif" alt="logo" width={150} height={100} />
             </div>
             <button
-              className="inline-flex h-9 w-9  cursor-pointer items-center justify-center rounded-md  "
+              className="flex h-9 w-9 bg-red-500 rounded-full cursor-pointer items-center justify-center  "
               aria-label="Close sidebar"
               onClick={() => setSidebarOpen(false)}
             >

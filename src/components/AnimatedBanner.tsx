@@ -13,6 +13,7 @@ interface Banner {
   title: string;
   description?: string;
   image?: string;
+  mobileImage?: string;
   link?: string;
   buttonText?: string;
   backgroundColor: string;
@@ -53,7 +54,9 @@ const AnimatedBanner: React.FC<AnimatedBannerProps> = ({
       swiper.on('slideChange', updateDelay);
       
       return () => {
-        swiper.off('slideChange', updateDelay);
+        if (swiper) {
+          swiper.off('slideChange', updateDelay);
+        }
       };
     }
   }, [banners, autoPlay]);
@@ -84,14 +87,17 @@ const AnimatedBanner: React.FC<AnimatedBannerProps> = ({
              
               onClick={() => banner.link && window.open(banner.link, '_blank')}
             >
-              {/* Background Image */}
-              {banner.image && (
+              {/* Responsive Image */}
+              <picture className="w-full h-full">
+                {banner.mobileImage && (
+                  <source media="(max-width: 768px)" srcSet={banner.mobileImage} />
+                )}
                 <img
-                  src={banner.image}
+                  src={banner.image || banner.mobileImage}
                   alt={banner.title}
-                  className="w-full h-full"
+                  className="w-full h-full object-cover"
                 />
-              )}
+              </picture>
             </div>
           </SwiperSlide>
         ))}
