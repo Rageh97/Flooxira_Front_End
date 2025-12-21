@@ -1086,7 +1086,7 @@ export default function WhatsAppChatsPage() {
             </div>
             {/* Chat Messages */}
           <div 
-            className={`flex flex-col w-full min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom' : 'hidden lg:flex h-full'}`}
+            className={`flex flex-col w-full min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent' : 'hidden lg:flex h-full'}`}
           >
             {/* Mobile Header (Back button, Contact Info, and Actions) */}
             <div className="lg:hidden flex flex-col border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
