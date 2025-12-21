@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { PropsWithChildren, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
@@ -682,6 +683,15 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </div>
       </div>
     </div>
+    <Script id="widget-config" strategy="beforeInteractive">
+      {`window.WIDGET_API_URL = 'https://api.flooxira.com';
+       window.WIDGET_SOCKET_URL = 'https://api.flooxira.com';`}
+    </Script>
+    <Script 
+      src="https://api.flooxira.com/widget.js" 
+      data-store-id="728a0211-a7ae-4279-b045-39dc52e8599b"
+      strategy="afterInteractive"
+    />
     </AuthGuard>
   );
 }

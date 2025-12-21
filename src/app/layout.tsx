@@ -25,13 +25,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html dir="rtl" lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </head>
       <body className={` antialiased`}>
         <Providers>{children}</Providers>
-<script>
-  window.WIDGET_API_URL = 'https://api.flooxira.com';
-  window.WIDGET_SOCKET_URL = 'https://api.flooxira.com';
-</script>
-<script src="https://api.flooxira.com/widget.js" data-store-id="728a0211-a7ae-4279-b045-39dc52e8599b"></script>
+
       </body>
     </html>
   );
