@@ -153,14 +153,12 @@
     }
 }
 
-/* Full-screen mobile chat fix */
+/* Full-screen mobile chat fix for iPhone Safari - Only on mobile */
 @media (max-width: 1023px) {
-  html, body {
-    /* منع الارتداد المزعج في iOS وتثبيت الارتفاع */
-    height: 100%;
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
+  /* التقنية الذكية: إذا وُجد عنصر الدردشة الكاملة، أخفِ الهيدر والناف بار السفلي */
+  body:has(.mobile-fullscreen-chat) .md\:hidden.items-center.justify-between, 
+  body:has(.mobile-fullscreen-chat) .md\:hidden.fixed.bottom-0 {
+    display: none !important;
   }
 
   .mobile-fullscreen-chat {
@@ -168,19 +166,15 @@
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: 0 !important; /* هذا أهم من الـ height في Safari */
-    
-    /* استخدام dvh كأولوية للمتصفحات الحديثة */
-    height: 100dvh !important; 
-    
+    bottom: 0 !important;
     width: 100vw !important;
-    z-index: 9999 !important;
-    display: flex;
-    flex-direction: column;
-    
-    /* التعامل مع المساحة الآمنة في الأسفل */
-    padding-bottom: env(safe-area-inset-bottom) !important;
-    background-color: #0d1117; /* تأكد من وضع لون الخلفية هنا */
+    height: 100dvh !important;
+    height: -webkit-fill-available !important;
+    z-index: 999999 !important;
+    background-color: #0f1827 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    margin: 0 !important;
+    border: none !important;
   }
 }
 
