@@ -1085,7 +1085,9 @@ export default function WhatsAppChatsPage() {
 
             </div>
             {/* Chat Messages */}
-          <div className={`flex flex-col w-full h-full min-h-0 ${selectedContact ? 'fixed inset-0 z-999 bg-dark-custom lg:relative lg:inset-auto lg:z-auto lg:!bg-transparent flex' : 'hidden lg:flex'}`}>
+          <div 
+            className={`flex flex-col w-full min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom lg:relative lg:inset-auto lg:z-auto lg:!bg-transparent lg:!position-static lg:!h-full lg:!min-h-0 lg:!w-full lg:!p-0 flex' : 'hidden lg:flex h-full'}`}
+          >
             {/* Mobile Header (Back button, Contact Info, and Actions) */}
             <div className="lg:hidden flex flex-col border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
               {/* Top Row: Navigation and Info */}

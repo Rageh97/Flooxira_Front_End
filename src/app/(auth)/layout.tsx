@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* <div>
         <Image src="/Logo.gif" alt="logo" width={400} height={100} />
       </div> */}
-      <Card className="w-full max-w-md  gradient-border p-6">
+      <Card className="w-full max-w-md  gradient-border p-6 mb-30">
        
           
             {children}

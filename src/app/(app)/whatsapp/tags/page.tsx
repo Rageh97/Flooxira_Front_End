@@ -240,7 +240,7 @@ export default function TagsPage() {
                     key={tag.id} 
                     onClick={() => handleSelectTag(tag.id)}
                     className={`
-                      p-3 rounded-lg flex items-center justify-between cursor-pointer transition-all border
+                      p-1 rounded-lg flex items-center justify-between cursor-pointer transition-all border
                       ${selectedTag === tag.id 
                         ? 'bg-blue-600/20 border-blue-500 shadow-md transform scale-[1.02]' 
                         : 'bg-black/20 border-transparent hover:bg-black/40 hover:border-text-primary/30'}
@@ -379,30 +379,39 @@ export default function TagsPage() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {contactsInTag.map(contact => (
+                        {contactsInTag.map(contact => {
+                          // Get full contact info from allContacts
+                          const fullContact = allContacts.find(c => c.contactNumber === contact.contactNumber);
+                          const displayName = fullContact?.contactName || contact.contactName || 'بدون اسم';
+                          const profilePic = fullContact?.profilePicture;
+                          
+                          return (
                           <div 
                             key={contact.id} 
                             className="flex items-center justify-between p-3 rounded-lg bg-secondry/50 border border-white/5 hover:bg-secondry transition-colors"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                                {contact.contactName ? contact.contactName[0].toUpperCase() : '#'}
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                                {profilePic ? (
+                                  <img src={profilePic} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  displayName[0]?.toUpperCase() || '#'
+                                )}
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">{contact.contactName || 'بدون اسم'}</span>
+                                <span className="text-sm font-medium text-white">{displayName}</span>
                                 <span className="text-xs text-gray-400 font-mono" dir="ltr">{contact.contactNumber}</span>
                               </div>
                             </div>
-                            <Button
-                              
-                              variant="ghost"
-                              className="w-8 h-8 text-gray-500 hover:text-red-400 hover:bg-red-900/20"
+                            <button
+                              className="w-8 h-8 text-gray-500 bg-black/20 rounded-full flex items-center justify-center"
                               onClick={() => setDeleteContactId(contact.contactNumber)}
                             >
-                              <X className="w-4 h-4" />
-                            </Button>
+                              <X className="w-4 h-4 text-red-500" />
+                            </button>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -414,7 +423,7 @@ export default function TagsPage() {
 
        {/* Delete Tag Confirmation Dialog */}
        <Dialog open={!!deleteTagId} onOpenChange={(open) => !open && setDeleteTagId(null)}>
-        <DialogContent className="bg-[#1e1e1e] border-gray-700">
+        <DialogContent className="">
           <DialogHeader>
             <DialogTitle className="text-white">حذف التصنيف</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -430,7 +439,7 @@ export default function TagsPage() {
 
        {/* Remove Contact Confirmation Dialog */}
        <Dialog open={!!deleteContactId} onOpenChange={(open) => !open && setDeleteContactId(null)}>
-        <DialogContent className="bg-[#1e1e1e] border-gray-700">
+        <DialogContent className="">
           <DialogHeader>
             <DialogTitle className="text-white">إزالة جهة الاتصال</DialogTitle>
             <DialogDescription className="text-gray-400">
