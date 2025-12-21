@@ -263,7 +263,7 @@ export default function TelegramChatsPage() {
         </div>
       </aside>
 
-      <section className={`w-full md:flex-1 inner-shadow md:rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'fixed inset-0 z-[100] bg-dark-custom md:relative md:inset-auto md:z-auto md:!bg-transparent flex' : 'hidden md:flex'}`}>
+      <section className={`w-full md:flex-1 inner-shadow md:rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent' : 'hidden md:flex'}`}>
         {/* Mobile Header */}
         <div className="md:hidden flex items-center gap-3 p-3 border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
           <button 
