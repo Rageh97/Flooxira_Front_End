@@ -292,7 +292,7 @@ export default function TelegramChatsPage() {
         <div className="hidden md:flex px-4 py-2 border-b items-center gap-2">
           <div className="font-semibold text-white truncate flex-1">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
         </div>
-        <div className="flex-1 overflow-auto px-4 py-3 flex flex-col">
+        <div className="flex-1 overflow-auto  px-4 py-3 flex flex-col">
           {loadingHistory ? (
             <div className="text-sm text-gray-600">جاري تحميل الرسائل...</div>
           ) : history.length === 0 ? (

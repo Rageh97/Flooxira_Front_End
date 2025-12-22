@@ -127,6 +127,16 @@ export default function WhatsAppChatsPage() {
   const [escalatedContacts, setEscalatedContacts] = useState<Set<string>>(new Set());
   const [isEscalating, setIsEscalating] = useState(false);
 
+  // Mobile detection for full-screen chat
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Ref for messages container to scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -1086,7 +1096,18 @@ export default function WhatsAppChatsPage() {
             </div>
             {/* Chat Messages */}
           <div 
-            className={`flex flex-col w-full min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent' : 'hidden lg:flex h-full'}`}
+            className={`flex flex-col w-full min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent lg:!static lg:!inset-auto lg:!z-auto lg:!h-full lg:w-full' : 'hidden lg:flex h-full'}`}
+            style={selectedContact && isMobile ? { 
+              position: 'fixed', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0, 
+              zIndex: 2147483647,
+              width: '100vw',
+              height: '100dvh',
+              backgroundColor: '#0f1827'
+            } : undefined}
           >
             {/* Mobile Header (Back button, Contact Info, and Actions) */}
             <div className="lg:hidden flex flex-col border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
