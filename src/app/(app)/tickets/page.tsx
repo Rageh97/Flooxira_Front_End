@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
@@ -48,6 +49,7 @@ import {
   Image,
   RotateCcw,
   ArrowRight,
+  Star,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
@@ -77,6 +79,9 @@ interface Ticket {
     name: string;
     email: string;
   };
+  rating?: number;
+  ratingComment?: string;
+  closedByAgentName?: string;
 }
 
 interface TicketMessage {
@@ -168,6 +173,17 @@ export default function TicketsPage() {
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState<string | null>(null);
   const [refreshUsageTrigger, setRefreshUsageTrigger] = useState(0);
+  // AI Settings State
+  const [aiSettings, setAiSettings] = useState({
+    liveChatAiEnabled: true,
+    welcomeMessageCustom: "",
+    widgetWelcomeTitle: "هلا والله كيف اقدر اساعدك؟",
+    whatsappNotifyEnabled: false,
+    whatsappNotifyGroupId: "",
+  });
+  const [savingAiSettings, setSavingAiSettings] = useState(false);
+  const [whatsappGroups, setWhatsappGroups] = useState<{id: string, name: string}[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const { showSuccess, showError } = useToast();
   const { user } = useAuth();
   const { canUseLiveChat, hasActiveSubscription, loading: permissionsLoading, permissions } = usePermissions();
@@ -272,10 +288,18 @@ export default function TicketsPage() {
       loadStats();
       loadWidgetSettings();
       loadLiveChatUsage();
+      loadAiSettings();
     } else if (activeTab === "knowledge") {
       loadKnowledgeBases();
     }
   }, [token, statusFilter, activeTab, permissions]);
+
+  // Load WhatsApp groups when notifications are enabled
+  useEffect(() => {
+    if (aiSettings.whatsappNotifyEnabled && token) {
+      loadWhatsappGroups();
+    }
+  }, [aiSettings.whatsappNotifyEnabled, token]);
 
   useEffect(() => {
     if (!token || activeTab !== "tickets") return;
@@ -739,6 +763,86 @@ export default function TicketsPage() {
       showSuccess("تم تغيير اتجاه الويدجت بنجاح!");
     } catch (error: any) {
       showError("خطأ", error.message || "فشل تغيير اتجاه الويدجت");
+    }
+  };
+
+  const loadAiSettings = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/dashboard/tickets/ai-settings`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.settings) {
+          setAiSettings({
+            liveChatAiEnabled: data.settings.liveChatAiEnabled === true,
+            welcomeMessageCustom: data.settings.welcomeMessageCustom || "",
+            widgetWelcomeTitle: data.settings.widgetWelcomeTitle || "هلا والله كيف اقدر اساعدك؟",
+            whatsappNotifyEnabled: data.settings.whatsappNotifyEnabled === true,
+            whatsappNotifyGroupId: data.settings.whatsappNotifyGroupId || "",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load AI settings:", error);
+    }
+  };
+
+  const saveAiSettings = async () => {
+    setSavingAiSettings(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/dashboard/tickets/ai-settings`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(aiSettings),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("فشل في حفظ إعدادات الذكاء الاصطناعي");
+      }
+      showSuccess("تم حفظ إعدادات الذكاء الاصطناعي بنجاح!");
+    } catch (error: any) {
+      showError("خطأ", error.message);
+    } finally {
+      setSavingAiSettings(false);
+    }
+  };
+
+  const loadWhatsappGroups = async () => {
+    if (!token) return;
+    setLoadingGroups(true);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/whatsapp/groups`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.groups) {
+          setWhatsappGroups(data.groups.map((g: any) => ({
+            id: g.id,
+            name: g.name || 'مجموعة بدون اسم'
+          })));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load WhatsApp groups:", error);
+    } finally {
+      setLoadingGroups(false);
     }
   };
 
@@ -1320,21 +1424,42 @@ export default function TicketsPage() {
                     >
                       <div className="flex items-start gap-3">
                         <div className="mt-1">{getStatusIcon(ticket.status)}</div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <h3 className="font-semibold text-white truncate">
-                              {ticket.visitorName || `عميل جديد `}
-                            </h3>
-                            <span className="text-xs text-gray-400 whitespace-nowrap">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <h3 className="font-semibold text-white truncate">
+                                {ticket.visitorName || `عميل جديد `}
+                              </h3>
+                              {ticket.rating && (
+                                <div className="flex items-center gap-0.5 bg-yellow-400/20 px-1.5 py-0.5 rounded text-[10px] text-yellow-400 font-bold shrink-0">
+                                  {ticket.rating}<Star className="h-2.5 w-2.5 fill-yellow-400" />
+                                </div>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-500 whitespace-nowrap">
                               {new Date(ticket.createdAt).toLocaleDateString("en-US")}
-                              {/* {ticket.ticketNumber} */}
                             </span>
                           </div>
-                          <p className="text-xs text-yellow-400 mt-1">
-                          {getStatusText(ticket.status)}
-                          </p>
+                          
+                          <div className="flex items-center justify-between mt-1 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <p className="text-[11px] text-yellow-500 font-medium shrink-0">
+                                {getStatusText(ticket.status)}
+                              </p>
+                              {(ticket.assignedAgent?.name || ticket.closedByAgentName) && (
+                                <div className="flex items-center gap-1 opacity-80 min-w-0">
+                                  <span className="text-gray-600">•</span>
+                                  <User className="h-3 w-3 text-primary shrink-0" />
+                                  <p className="text-[10px] text-primary truncate">
+                                    {ticket.assignedAgent?.name || ticket.closedByAgentName}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
                           {ticket.visitorEmail && (
-                            <p className="text-xs text-gray-500 truncate mt-1">
+                            <p className="text-[11px] text-gray-600 truncate mt-0.5">
                               {ticket.visitorEmail}
                             </p>
                           )}
@@ -1366,14 +1491,6 @@ export default function TicketsPage() {
                 </div>
                 <div className="flex items-center justify-between gap-3">
                  <div className="flex items-center gap-2">
-                         <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteTicket(selectedTicket.id)}
-                    title="حذف التذكرة"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                    <Button
                     variant="secondary"
                     className="primary-button after:bg-red-500"
@@ -1612,6 +1729,122 @@ export default function TicketsPage() {
           </CardContent>
         </Card>
       )}
+      {/* AI & Notification Settings Section */}
+      <Card className="gradient-border border-none bg-fixed-40 mb-6 mt-6">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary" />
+            إعدادات الذكاء الاصطناعي والتنبيهات
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between p-4 border border-primary/20 rounded-xl bg-secondry/30">
+            <div className="space-y-1">
+              <h4 className="text-white font-medium">تفعيل الرد الآلي بالذكاء الاصطناعي</h4>
+              <p className="text-xs text-gray-400">عند التعطيل سيتم تحويل جميع المحادثات للموظفين مباشرة</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${aiSettings.liveChatAiEnabled ? 'text-primary' : 'text-gray-200'}`}>
+                {aiSettings.liveChatAiEnabled ? 'مفعل' : 'معطل'}
+              </span>
+              <Switch 
+                checked={aiSettings.liveChatAiEnabled}
+                onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, liveChatAiEnabled: checked }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">عنوان الترحيب الرئيسي</label>
+              <Input 
+                value={aiSettings.widgetWelcomeTitle}
+                onChange={(e) => setAiSettings(prev => ({ ...prev, widgetWelcomeTitle: e.target.value }))}
+                placeholder="مثلاً: هلا والله كيف اقدر اساعدك؟"
+                className="text-white"
+              />
+              <p className="text-[10px] text-yellow-500">هذا العنوان يظهر في الصفحة الرئيسية للويدجت</p>
+            </div>
+
+            {!aiSettings.liveChatAiEnabled && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">رسالة ترحيب مخصصة (عند تعطيل AI)</label>
+                <textarea 
+                  rows={1}
+                  value={aiSettings.welcomeMessageCustom}
+                  onChange={(e) => setAiSettings(prev => ({ ...prev, welcomeMessageCustom: e.target.value }))}
+                  placeholder="سيقوم أحد موظفينا بالرد عليك قريباً..."
+                  className="w-full bg-fixed-40 border-primary text-white p-3 rounded-md text-sm outline-none focus:border-primary"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-primary/10 pt-6">
+            <h4 className="text-white font-medium mb-4 flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-green-500" />
+              تنبيهات جروب واتساب
+            </h4>
+            <div className="flex items-center flex-wrap gap-6">
+              {/* <div className="flex items-center gap-4 p-4 border border-green-500/20 rounded-xl bg-green-500/5"> */}
+                <Switch 
+                  id="notify-enabled"
+                  checked={aiSettings.whatsappNotifyEnabled}
+                  onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappNotifyEnabled: checked }))}
+                />
+                <label htmlFor="notify-enabled" className="text-sm text-gray-300 cursor-pointer">
+                  تفعيل إشعارات الواتساب للتذاكر الجديدة المعلقة
+                </label>
+              {/* </div> */}
+
+              {aiSettings.whatsappNotifyEnabled && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">اختر جروب الواتساب</label>
+                  {loadingGroups ? (
+                    <div className="flex items-center gap-2 text-gray-400 w-full">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      جاري تحميل الجروبات...
+                    </div>
+                  ) : whatsappGroups.length > 0 ? (
+                    <Select
+                      value={aiSettings.whatsappNotifyGroupId}
+                      onValueChange={(value) => setAiSettings(prev => ({ ...prev, whatsappNotifyGroupId: value }))}
+                    >
+                      <SelectTrigger className="bg-secondry border-green-500/30 text-white w-full">
+                        <SelectValue placeholder="اختر جروب..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-secondry border-primary/20">
+                        {whatsappGroups.map((group) => (
+                          <SelectItem key={group.id} value={group.id} className="text-white hover:bg-primary/20">
+                            {group.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="text-sm text-yellow-500 p-3 bg-yellow-500/10 rounded-lg">
+                      ⚠️ لا توجد جروبات متاحة. تأكد من اتصالك بالواتساب.
+                    </div>
+                  )}
+                  <p className="text-[10px] text-yellow-500">سيتم إرسال تنبيه لهذا الجروب عند الحاجة لتدخل بشري</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button 
+              onClick={saveAiSettings}
+              disabled={savingAiSettings}
+              className="primary-button min-w-[150px]"
+            >
+              {savingAiSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              حفظ الإعدادات
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
  {/* Widget Settings Section */}
       <Card className="gradient-border border-none">
         <CardHeader>

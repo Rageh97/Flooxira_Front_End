@@ -53,6 +53,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<{ daysRemaining: number | null, colorClass: string }>({ daysRemaining: null, colorClass: '' });
   const [newsBarClosed, setNewsBarClosed] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState<number>(0);
+  const [whatsappPendingCount, setWhatsappPendingCount] = useState<number>(0);
   const [newsItems, setNewsItems] = useState<NewsTicker[]>([]);
 
   useEffect(() => {
@@ -171,37 +172,44 @@ export default function AppLayout({ children }: PropsWithChildren) {
     }
   }, [user, loading]);
 
-  // Load pending tickets count
+  // Load pending counts (Tickets and WhatsApp Escalations)
   useEffect(() => {
-    const loadPendingTicketsCount = async () => {
+    const loadPendingCounts = async () => {
       try {
         const token = localStorage.getItem('auth_token') || '';
         if (!token) return;
         
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-        const response = await fetch(
+        
+        // Load pending tickets count (Live Chat)
+        const ticketRes = await fetch(
           `${API_BASE_URL}/api/dashboard/tickets/stats`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-
-        if (response.ok) {
-          const data = await response.json();
+        if (ticketRes.ok) {
+          const data = await ticketRes.json();
           setPendingTicketsCount(data.stats?.pending || 0);
         }
+
+        // Load pending whatsapp escalations count
+        const whatsappRes = await fetch(
+          `${API_BASE_URL}/api/escalation/stats`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (whatsappRes.ok) {
+          const data = await whatsappRes.json();
+          setWhatsappPendingCount(data.data?.pending || 0);
+        }
       } catch (error) {
-        console.error('Failed to load pending tickets count:', error);
+        console.error('Failed to load pending counts:', error);
       }
     };
 
     if (user && !loading) {
-      loadPendingTicketsCount();
+      loadPendingCounts();
       
-      // Refresh count every 30 seconds
-      const interval = setInterval(loadPendingTicketsCount, 30000);
+      // Refresh counts every 30 seconds
+      const interval = setInterval(loadPendingCounts, 30000);
       return () => clearInterval(interval);
     }
   }, [user, loading]);
@@ -246,6 +254,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   {item.href === "/tickets" && pendingTicketsCount > 0 && (
                     <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                       {pendingTicketsCount}
+                    </span>
+                  )}
+                  {item.href === "/whatsapp" && whatsappPendingCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      {whatsappPendingCount}
                     </span>
                   )}
                 </div>
@@ -378,6 +391,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
               {item.href === "/tickets" && pendingTicketsCount > 0 && (
                 <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   {pendingTicketsCount}
+                </span>
+              )}
+              {item.href === "/whatsapp" && whatsappPendingCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {whatsappPendingCount}
                 </span>
               )}
             </Link>
@@ -623,6 +641,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     <div className="relative">
                       {/* <MessageCircle size={30} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} /> */}
                       <Image src="data:image/webp;base64,UklGRlgEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSDEBAAABkGvb1rE957dt276Cv7Nt27bZOk6Z0raNS7Bt/T7RoxO1ETEB8D+qHZbZMjTSlhWhQ8Kk9PISMpevV5ipsptfRMGlTfYqNFsWUeJip6Y0m0so+ZqdJI+nKP2VnxSv96jwk48Em2eo9KWtkMZpVHxTS6QJlbcK2HxVt2jDN40EZ7mMFiksmvAUIclinnM0LnJofaXxVYsVgEQDWClUklk1VOpY3VR6We1UelhlVGpYiVQSWW5UfFnwmcZnTY4jNE4BZxqNLB6DzxS+6PPAKIUp4LYm8MmML5JAKfDPqDsOgreU3TcVsFpX9doZBHNQ8QMXEN2p6Lg5CL9V8qEAxAPxl+t3t8cOfxD5PGoCElsQ8dmONEsAAL3U/R9ZH46k6ILUul3FzsDtFFvU1FwW5Q7/pQBWUDggAAMAABARAJ0BKjAAMAA+FQiDQSEGq1WqBABRLUATplhH4vL/MEqv9m+8HFplo5G9Lv8zbynzRdDv/TeaB1kvoAeWp+zPwjYfv4Y/gGizn626juItwczP/oead6as9FGOPcmI9Ljmjee5txLeQKUIaY/qJkMrsPQ0FLjaAW9GaCglJ+VhfJTh8htJ9R9zxszqqBmrwIAA/v9Cmb/5uANcFreUIV/8phr8ESOxIdmNcZ8Krf3aVm5h7XCnAzc5VkKZn/M8FVc++/NV4fZVTW5diKiYUzerL2ZSBrJCbN6WamAiSDSkfRDK74xp/Njf8cgjsdr/M+vkCgF7RVGNUwpFik2s3/PXvSL7n5MYyGBVC/+JRTMamw8j4BftS6t847V16f//wcS9WBg2bYEpVDgKd3R3JM4h7l/X+TDkP35a9TDKUpR77Sty8qpHgXlMk4qQAchsKR81n/lfsEkiV9apaKQ8ONNSl4KeRWfoW+aTYvv75yT3yEXzsspzF68m8rTbqTSP+sodqIO1UeMyhGuy9ztJOu15FfoyeIv+FZ/tugjg+a8ehhP9fOeBSGFvZhUZBDEP3vN32by90hgQkHO/H0XDinzzwp5b6CEv90vPgTmwfKLSMAfxWXu+9FaCp5r++lHsYKykGIECSU2GPEtzf5wtmW+fXwG/EMNC8FgT/Fm1jMJbvQqlmy3n3rXoGgsfzqSnnMDsjpWCKPplslUisCHh8QTECXTFunWcvqf5SAdg2OKpHNqiqBEMA3bB1njoh53zOgzNOKXuJsOIA8qKzbD9BnWmqHAhnFkN6FHpo3Us5Z3NBXxToyfuaPXYQ6hVnHNA9gIceB1exx1fM1bZY2Wlt602Kczu9KCXS1Qsga8cRsGhqQJdkpivXulf6kUjKhGzkGtms0viTaEhp37cDi3rFMiivKWQOeBbDXNFugGxRJJYWdgb1r0mAeAQPoIEzhod+MJSNr6J2LFNx377IaXIr/+RnDXxXC94Nt3rvpMI9pt8Hp1LWgWFglFkTVsPw/gAAA==" alt="WhatsApp" width={40} height={40} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
+                      {whatsappPendingCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
+                          {whatsappPendingCount}
+                        </span>
+                      )}
                       {/* {(whatsappMenuOpen || pathname.startsWith('/whatsapp')) && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" /> } */}
                     </div>
                     {/* <span className="text-[10px] font-medium">واتساب</span> */}
@@ -683,15 +706,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </div>
       </div>
     </div>
-    <Script id="widget-config" strategy="beforeInteractive">
-      {`window.WIDGET_API_URL = 'https://api.flooxira.com';
-       window.WIDGET_SOCKET_URL = 'https://api.flooxira.com';`}
+   <Script >
+      {`window.WIDGET_API_URL = 'http://localhost:4000';
+      window.WIDGET_SOCKET_URL = 'http://localhost:4000';`}
     </Script>
-    <Script 
-      src="https://api.flooxira.com/widget.js" 
-      data-store-id="728a0211-a7ae-4279-b045-39dc52e8599b"
-      strategy="afterInteractive"
-    />
+    <Script  src="http://localhost:4000/widget.js" data-store-id="9b78752d-4935-4a05-bc10-f283a3602c4b"></Script>
     </AuthGuard>
   );
 }

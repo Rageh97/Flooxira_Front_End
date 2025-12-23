@@ -20,6 +20,14 @@ interface BotSettings {
   escalationEnabled?: boolean;
   escalationNotificationNumber?: string;
   escalationMessage?: string;
+  // Notification settings
+  whatsappNotifyEnabled?: boolean;
+  whatsappNotifyGroupId?: string;
+}
+
+interface WhatsAppGroup {
+  id: string;
+  name: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -58,16 +66,39 @@ export default function WhatsAppSettingsPage() {
     outsideWorkingHoursMessage: 'نعتذر، نحن خارج أوقات العمل. سنرد عليك في أقرب وقت ممكن.',
     escalationEnabled: true,
     escalationNotificationNumber: '',
-    escalationMessage: 'شكراً لتواصلك معنا! سيتواصل معك أحد المسؤولين في أقرب وقت ممكن. 🙏'
+    escalationMessage: 'شكراً لتواصلك معنا! سيتواصل معك أحد المسؤولين في أقرب وقت ممكن. 🙏',
+    whatsappNotifyEnabled: false,
+    whatsappNotifyGroupId: ''
   });
+
+  const [groups, setGroups] = useState<WhatsAppGroup[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
     if (token) {
       loadSettings();
+      loadGroups();
     }
   }, [token]);
+
+  const loadGroups = async () => {
+    try {
+      setGroupsLoading(true);
+      const res = await fetch('/api/whatsapp/groups', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGroups(data.groups || []);
+      }
+    } catch (err) {
+      console.error('Error loading groups:', err);
+    } finally {
+      setGroupsLoading(false);
+    }
+  };
 
   const loadSettings = async () => {
     try {
@@ -91,7 +122,9 @@ export default function WhatsAppSettingsPage() {
             outsideWorkingHoursMessage: data.data.outsideWorkingHoursMessage || 'نعتذر، نحن خارج أوقات العمل. سنرد عليك في أقرب وقت ممكن.',
             escalationEnabled: data.data.escalationEnabled !== false,
             escalationNotificationNumber: data.data.escalationNotificationNumber || '',
-            escalationMessage: data.data.escalationMessage || 'شكراً لتواصلك معنا! سيتواصل معك أحد المسؤولين في أقرب وقت ممكن. 🙏'
+            escalationMessage: data.data.escalationMessage || 'شكراً لتواصلك معنا! سيتواصل معك أحد المسؤولين في أقرب وقت ممكن. 🙏',
+            whatsappNotifyEnabled: data.data.whatsappNotifyEnabled || false,
+            whatsappNotifyGroupId: data.data.whatsappNotifyGroupId || ''
           });
         }
       }
@@ -364,6 +397,71 @@ export default function WhatsAppSettingsPage() {
                   rows={3}
                   placeholder="أدخل الرسالة التي ستصل للعميل عند تحويله للموظف..."
                 />
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end items-center gap-5">
+            <Button 
+              onClick={saveSettings}
+              disabled={saving}
+              className="primary-button"
+            >
+              {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="gradient-border mt-6">
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle className="text-white text-xs md:text-xl">إشعارات الجروبات (إدارية)</CardTitle>
+          <div className="flex items-center gap-2">
+            <h1 className="text-white text-xs md:text-xl">تفعيل الإشعارات للجروب</h1>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                id="whatsapp-notify-enabled"
+                checked={settings.whatsappNotifyEnabled || false}
+                onChange={(e) => 
+                  setSettings(prev => ({ ...prev, whatsappNotifyEnabled: e.target.checked }))
+                } 
+                type="checkbox" 
+                className="sr-only peer"
+              />
+              <div className="group peer ring-0 bg-rose-400 rounded-full outline-none duration-300 after:duration-300 w-24 h-12 shadow-md peer-checked:bg-emerald-500 peer-focus:outline-none after:content-[''] after:rounded-full after:absolute after:bg-gray-50 after:outline-none after:h-10 after:w-10 after:top-1 after:left-1 after:flex after:justify-center after:items-center peer-checked:after:translate-x-12 peer-hover:after:scale-95">
+                <svg className="absolute top-1 left-12 stroke-gray-900 w-10 h-10" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" x="0" xmlns="http://www.w3.org/2000/svg" y="0">
+                  <path className="svg-fill-primary" d="M50,18A19.9,19.9,0,0,0,30,38v8a8,8,0,0,0-8,8V74a8,8,0,0,0,8,8H70a8,8,0,0,0,8-8V54a8,8,0,0,0-8-8H38V38a12,12,0,0,1,23.6-3,4,4,0,1,0,7.8-2A20.1,20.1,0,0,0,50,18Z"></path>
+                </svg>
+                <svg className="absolute top-1 left-1 stroke-gray-900 w-10 h-10" height="100" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100" width="100" x="0" xmlns="http://www.w3.org/2000/svg" y="0">
+                  <path d="M30,46V38a20,20,0,0,1,40,0v8a8,8,0,0,1,8,8V74a8,8,0,0,1-8,8H30a8,8,0,0,1-8-8V54A8,8,0,0,1,30,46Zm32-8v8H38V38a12,12,0,0,1,24,0Z" fillRule="evenodd"></path>
+                </svg>
+              </div>
+            </label>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {settings.whatsappNotifyEnabled && (
+            <>
+              <div>
+                <Label htmlFor="notify-group" className="text-white">اختر الجروب لاستقبال الإشعارات</Label>
+                <Select
+                  value={settings.whatsappNotifyGroupId || ''}
+                  onValueChange={(value) => 
+                    setSettings(prev => ({ ...prev, whatsappNotifyGroupId: value }))
+                  }
+                >
+                  <SelectTrigger className="bg-secondry text-white border-gray-500 min-w-[200px]">
+                    <SelectValue placeholder={groupsLoading ? "جاري تحميل الجروبات..." : "اختر الجروب"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-yellow-500 mt-1">سيتم إرسال إشعارات عندما يتم تحويل محادثة أو إضافة ملاحظة.</p>
               </div>
             </>
           )}

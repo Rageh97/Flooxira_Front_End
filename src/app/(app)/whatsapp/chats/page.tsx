@@ -917,13 +917,13 @@ export default function WhatsAppChatsPage() {
 
   return (
     <>
-      <div className={`space-y-6 ${showTagModal ? 'blur-sm' : ''}`}>
-        <div className="w-full h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)]">
+      <div className={`space-y-6 ${showTagModal ? 'blur-sm' : ''} ${selectedContact && isMobile ? 'relative z-0' : ''}`}>
+        <div className={`w-full h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)] ${selectedContact && isMobile ? '!h-screen !static' : ''}`}>
           {/* Main Chat Container */}
-          <Card  className=" border-none  flex flex-col lg:flex-row h-full gradient-border">
+          <Card  className={`border-none flex flex-col lg:flex-row h-full gradient-border ${selectedContact && isMobile ? '!static !bg-transparent !border-none' : ''}`}>
           {/* Contacts List */}
           <div className="flex flex-col w-full lg:w-full h-full">
-          <CardHeader className="border-text-primary/50 text-primary flex flex-col gap-2 p-3 lg:p-4">
+          <CardHeader className={`border-text-primary/50 text-primary flex flex-col gap-2 p-3 lg:p-4 ${selectedContact && isMobile ? 'hidden lg:flex' : 'flex'}`}>
             
             {/* Header Top Row: Title, Bot Status, and Controls */}
             <div className="flex flex-col lg:flex-row items-center justify-between gap-2 w-full">
@@ -1043,7 +1043,7 @@ export default function WhatsAppChatsPage() {
             </div>
             
           </CardHeader>
-          <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-6">
+          <CardContent className={`overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-6 ${selectedContact && isMobile ? '!static !overflow-visible' : ''}`}>
             <div className={`space-y-2 w-full lg:w-1/3 border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto custom-scrollbar ${selectedContact ? 'hidden lg:block' : 'block'}`}>
               {filteredContacts.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">لا توجد جهات اتصال مطابقة</div>
