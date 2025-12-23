@@ -482,11 +482,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
         {!newsBarClosed && (
           <div className="w-full bg-card text-white px-4 py-1 md:py-2 shadow-lg z-20 flex items-center justify-between gap-4 overflow-hidden">
            
-            <div className="flex-1 min-w-0 overflow-hidden relative" dir="ltr">
+            <div className="flex-1 min-w-0 overflow-hidden relative">
               <div 
-                className="whitespace-nowrap"
+                className="whitespace-nowrap hover-pause cursor-default"
+                dir="rtl"
                 style={{
-                  animation: 'scroll-text 30s linear infinite',
+                  animation: 'scroll-text-right 40s linear infinite',
                   display: 'inline-block',
                   willChange: 'transform'
                 }}

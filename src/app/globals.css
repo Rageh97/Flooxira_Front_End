@@ -357,6 +357,19 @@ button, a {
     }
   }
 
+  @keyframes scroll-text-right {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .hover-pause:hover {
+    animation-play-state: paused !important;
+  }
+
   /* WhatsApp Emoji Styles */
   .whatsapp-emoji {
     font-size: 1.2em;
