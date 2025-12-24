@@ -89,6 +89,7 @@ export default function TelegramBotPage() {
   const [telegramAiEnabled, setTelegramAiEnabled] = useState<boolean>(false);
   const [telegramNotifyEnabled, setTelegramNotifyEnabled] = useState<boolean>(false);
   const [telegramNotifyGroupId, setTelegramNotifyGroupId] = useState<string>("");
+  const [telegramEscalationGroupId, setTelegramEscalationGroupId] = useState<string>("");
   const [telegramGroups, setTelegramGroups] = useState<Array<{ chatId: string; name: string }>>([]);
   const [isSyncingGroups, setIsSyncingGroups] = useState(false);
   const [buttonColorDefault, setButtonColorDefault] = useState<string>("");
@@ -283,6 +284,7 @@ export default function TelegramBotPage() {
         setTelegramAiEnabled(!!s.telegramAiEnabled);
         setTelegramNotifyEnabled(!!s.telegramNotifyEnabled);
         setTelegramNotifyGroupId(s.telegramNotifyGroupId || "");
+        setTelegramEscalationGroupId(s.telegramEscalationGroupId || "");
         setButtonColorDefault(s.buttonColorDefault || "");
       }
       
@@ -306,6 +308,7 @@ export default function TelegramBotPage() {
         telegramAiEnabled,
         telegramNotifyEnabled,
         telegramNotifyGroupId: telegramNotifyGroupId || null,
+        telegramEscalationGroupId: telegramEscalationGroupId || null,
         buttonColorDefault: buttonColorDefault || null,
       });
       showSuccess("تم حفظ الإعدادات");
@@ -888,51 +891,86 @@ export default function TelegramBotPage() {
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
-                            {telegramNotifyEnabled && (
-                      <div className="space-y-4 pt-4 border-t border-text-primary/10">
-                        <div className="space-y-2">
-                          {/* <label className="text-sm font-medium text-text-primary/80">Support Group (Forwarding)</label> */}
-                          <div className="flex gap-2">
-                            <div className="flex-1">
-                              <Select 
-                                value={telegramNotifyGroupId} 
-                                onValueChange={setTelegramNotifyGroupId}
-                              >
-                                <SelectTrigger className="w-full bg-secondry border-text-primary/20 text-white">
-                                  <SelectValue placeholder="إختر مجموعة الدعم" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-secondry border-text-primary/20 text-white">
-                                  {telegramGroups.map((group) => (
-                                    <SelectItem key={group.chatId} value={group.chatId}>
-                                      {group.name}
-                                    </SelectItem>
-                                  ))}
-                                  {telegramGroups.length === 0 && (
-                                    <SelectItem value="none" disabled>
-                                      لا توجد مجموعات (إضغط مزامنة)
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <Button
-                              variant="default"
-                              size="icon"
-                              onClick={handleSyncGroups}
-                              disabled={isSyncingGroups}
-                              title="Sync Groups"
-                              className="border-text-primary/20 hover:bg-text-primary/10"
-                            >
-                              <RefreshCw className={`w-4 h-4 ${isSyncingGroups ? 'animate-spin' : ''}`} />
-                            </Button>
-                          </div>
-                          <p className="text-xs text-gray-400">
-                                  اختر المجموعة التي تريد توجيه الرسائل إليها
-                          </p>
-                        </div>
-                      </div>
-                    )}
-            </div>
+            {telegramNotifyEnabled && (
+              <div className="space-y-4 pt-4 border-t border-text-primary/10">
+                
+                {/* General Support Group (Forward All Messages) */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">مجموعة المراسلات العامة (توجيه الكل)</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Select 
+                        value={telegramNotifyGroupId} 
+                        onValueChange={setTelegramNotifyGroupId}
+                      >
+                        <SelectTrigger className="w-full bg-secondry border-text-primary/20 text-white">
+                          <SelectValue placeholder="إختر مجموعة الدعم العامة" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-secondry border-text-primary/20 text-white direction-rtl">
+                          {telegramGroups.map((group) => (
+                            <SelectItem key={group.chatId} value={group.chatId}>
+                              {group.name}
+                            </SelectItem>
+                          ))}
+                          {telegramGroups.length === 0 && (
+                            <SelectItem value="none" disabled>
+                              لا توجد مجموعات (إضغط مزامنة)
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="icon"
+                      onClick={handleSyncGroups}
+                      disabled={isSyncingGroups}
+                      title="Sync Groups"
+                      className="border-text-primary/20 hover:bg-text-primary/10"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isSyncingGroups ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    سيتم توجيه جميع رسائل العملاء إلى هذه المجموعة.
+                  </p>
+                </div>
+
+                {/* Escalation Notification Group */}
+                <div className="space-y-2 pt-2">
+                  <label className="text-sm font-medium text-gray-300">مجموعة إشعارات التحويل (Human Handoff)</label>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Select 
+                        value={telegramEscalationGroupId} 
+                        onValueChange={setTelegramEscalationGroupId}
+                      >
+                        <SelectTrigger className="w-full bg-secondry border-text-primary/20 text-white">
+                          <SelectValue placeholder="إختر مجموعة التنبيهات" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-secondry border-text-primary/20 text-white direction-rtl">
+                          {telegramGroups.map((group) => (
+                            <SelectItem key={`esc_${group.chatId}`} value={group.chatId}>
+                              {group.name}
+                            </SelectItem>
+                          ))}
+                          {telegramGroups.length === 0 && (
+                            <SelectItem value="none" disabled>
+                              لا توجد مجموعات (إضغط مزامنة)
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    سيتم إرسال تنبيهات "طلب موظف" إلى هذه المجموعة تحديداً.
+                  </p>
+                </div>
+
+              </div>
+            )}
+          </div>
 
             <div className="pt-4 flex justify-end">
               <Button 
