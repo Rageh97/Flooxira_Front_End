@@ -1122,11 +1122,41 @@ export default function TelegramBotPage() {
                       size="sm" 
                       className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors" 
                       onClick={() => {
-                      if (!selectedTargets.includes(c.chatId)) setSelectedTargets((prev: string[]) => [...prev, c.chatId]);
+                        if (!selectedTargets.includes(c.chatId)) setSelectedTargets((prev: string[]) => [...prev, c.chatId]);
                       }}
                     >
                       إضافة
                     </Button>
+                    
+                    {/* Resolve Escalation Button */}
+                    {c.isEscalated && (
+                      <Button 
+                        size="sm" 
+                        variant="destructive"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!confirm('هل أنت متأكد من حل هذه المشكلة واستئناف البوت؟')) return;
+                          try {
+                            const res = await fetch(`/api/escalation/resolve-contact/${c.chatId}?platform=telegram`, {
+                              method: 'PUT',
+                              headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                              showSuccess('تم استئناف البوت بنجاح');
+                              loadContacts(); // Refresh list to remove yellow status
+                            } else {
+                              showError(data.message);
+                            }
+                          } catch (err: any) {
+                            showError(err.message || 'فشل في حل المشكلة');
+                          }
+                        }}
+                      >
+                         إنهاء (استئناف البوت)
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
