@@ -91,7 +91,7 @@ export default function TelegramBotPage() {
   const [telegramForwardingEnabled, setTelegramForwardingEnabled] = useState<boolean>(false);
   const [telegramNotifyGroupId, setTelegramNotifyGroupId] = useState<string>("");
   const [telegramEscalationGroupId, setTelegramEscalationGroupId] = useState<string>("");
-  const [telegramGroups, setTelegramGroups] = useState<Array<{ chatId: string; name: string }>>([]);
+  const [telegramGroups, setTelegramGroups] = useState<Array<{ chatId: string; name: string; type?: string }>>([]);
   const [isSyncingGroups, setIsSyncingGroups] = useState(false);
   const [buttonColorDefault, setButtonColorDefault] = useState<string>("");
   const [activeTemplates, setActiveTemplates] = useState<any[]>([]);
@@ -908,7 +908,7 @@ export default function TelegramBotPage() {
                           <SelectContent className="bg-secondry border-text-primary/20 text-white direction-rtl">
                             {telegramGroups.map((group) => (
                               <SelectItem key={`fwd_${group.chatId}`} value={group.chatId}>
-                                {group.name}
+                                {group.name} {group.type === 'channel' ? '(قناة)' : '(مجموعة)'}
                               </SelectItem>
                             ))}
                             {telegramGroups.length === 0 && (
@@ -921,7 +921,7 @@ export default function TelegramBotPage() {
                       </div>
                       <Button
                         variant="default"
-                        size="icon"
+                        size="sm"
                         onClick={handleSyncGroups}
                         disabled={isSyncingGroups}
                         title="Sync Groups"
@@ -971,7 +971,7 @@ export default function TelegramBotPage() {
                           <SelectContent className="bg-secondry border-text-primary/20 text-white direction-rtl">
                             {telegramGroups.map((group) => (
                               <SelectItem key={`esc_${group.chatId}`} value={group.chatId}>
-                                {group.name}
+                                {group.name} {group.type === 'channel' ? '(قناة)' : '(مجموعة)'}
                               </SelectItem>
                             ))}
                             {telegramGroups.length === 0 && (
@@ -984,7 +984,7 @@ export default function TelegramBotPage() {
                       </div>
                       <Button
                         variant="default"
-                        size="icon"
+                        size="sm"
                         onClick={handleSyncGroups}
                         disabled={isSyncingGroups}
                         title="Sync Groups"

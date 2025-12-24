@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth";
 import { EmojiPickerModal } from "@/components/AnimatedEmoji";
 import { ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/toast-provider";
 
 type Contact = {
   chatId: string;
@@ -38,6 +39,7 @@ type ChatItem = {
 
 export default function TelegramChatsPage() {
   const { user, loading } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [activeChatId, setActiveChatId] = useState<string>("");
@@ -75,11 +77,63 @@ export default function TelegramChatsPage() {
 
   useEffect(() => {
     if (!token || !activeChatId) return;
+    
+    // Initial load
     setLoadingHistory(true);
-    telegramBotGetChatHistory(token, activeChatId, 100, 0)
-      .then((res) => setHistory((res.chats || []) as ChatItem[]))
+    telegramBotGetChatHistory(token, activeChatId, 50, 0)
+      .then((res) => {
+        if (res.success && res.chats) {
+          setHistory(res.chats as ChatItem[]);
+        }
+      })
       .finally(() => setLoadingHistory(false));
+
+    // Polling for updates
+    const interval = setInterval(() => {
+      telegramBotGetChatHistory(token, activeChatId, 20, 0)
+        .then((res) => {
+          if (res.success && res.chats) {
+            setHistory(prev => {
+              const serverChats = res.chats as ChatItem[];
+              // Filter out optimistic local messages if their server counterparts are now present
+              const optimistic = prev.filter(p => (p as any).isOptimistic);
+              const nonOptimistic = prev.filter(p => !(p as any).isOptimistic);
+              
+              const newServerChats = serverChats.filter(sc => 
+                !nonOptimistic.some(nc => nc.id === sc.id)
+              );
+              
+              if (newServerChats.length === 0) return prev;
+              
+              // Remove optimistic messages that match any server message content/timestamp
+              const remainingOptimistic = optimistic.filter(opt => 
+                !serverChats.some(sc => 
+                  sc.messageContent === opt.messageContent && 
+                  sc.messageType === opt.messageType &&
+                  Math.abs(new Date(sc.timestamp).getTime() - new Date(opt.timestamp).getTime()) < 30000
+                )
+              );
+              
+              return [...nonOptimistic, ...newServerChats, ...remainingOptimistic];
+            });
+          }
+        });
+    }, 10000); // 10 seconds poll
+
+    return () => clearInterval(interval);
   }, [token, activeChatId]);
+
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(() => {
+      telegramBotGetContacts(token).then(res => {
+        if (res.success && res.contacts) {
+          setContacts(res.contacts as Contact[]);
+        }
+      });
+    }, 30000); // Refresh contacts list every 30s
+    return () => clearInterval(interval);
+  }, [token]);
 
   useEffect(() => {
     if (!loadingHistory && listEndRef.current) {
@@ -89,7 +143,6 @@ export default function TelegramChatsPage() {
 
   async function handleResolve() {
     if (!token || !activeChatId) return;
-    if (!confirm('هل أنت متأكد من حل هذه المشكلة واستئناف البوت؟')) return;
     try {
       const res = await fetch(`/api/escalation/resolve-contact/${activeChatId}?platform=telegram`, {
         method: 'PUT',
@@ -97,12 +150,13 @@ export default function TelegramChatsPage() {
       });
       const data = await res.json();
       if (data.success) {
+        showSuccess('تم استئناف البوت بنجاح');
         loadContacts(); // Refresh sidebar to remove yellow status
       } else {
-        alert(data.message);
+        showError(data.message || 'فشل في حل المشكلة');
       }
     } catch (err: any) {
-      alert(err.message || 'فشل في حل المشكلة');
+      showError(err.message || 'فشل في حل المشكلة');
     }
   }
 
@@ -135,7 +189,8 @@ export default function TelegramChatsPage() {
             timestamp: new Date().toISOString(),
             mediaType: mediaType,
             mediaUrl: URL.createObjectURL(selectedMedia),
-          },
+            isOptimistic: true
+          } as any,
         ]);
         
         setSelectedMedia(null);
@@ -145,19 +200,20 @@ export default function TelegramChatsPage() {
       await telegramBotSendMessage(token, activeChatId, messageText.trim());
         
         // Optimistic append for text
-      setHistory((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          userId: user?.id || 0,
-          chatId: activeChatId,
-          chatType: "private",
-          chatTitle: contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "",
-          messageType: "outgoing",
-          messageContent: messageText.trim(),
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+        setHistory((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            userId: user?.id || 0,
+            chatId: activeChatId,
+            chatType: "private",
+            chatTitle: contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "",
+            messageType: "outgoing",
+            messageContent: messageText.trim(),
+            timestamp: new Date().toISOString(),
+            isOptimistic: true // Flag to identify local messages
+          } as any,
+        ]);
       }
       
       setMessageText("");
