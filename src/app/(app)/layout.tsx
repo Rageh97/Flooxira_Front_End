@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { PropsWithChildren, useEffect, useState, useMemo } from "react";
+import React, { PropsWithChildren, useEffect, useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
 import { getPostUsageStats, getMySubscription } from "@/lib/api";
@@ -482,52 +482,39 @@ export default function AppLayout({ children }: PropsWithChildren) {
         {!newsBarClosed && (
           <div className="w-full bg-card text-white px-4 py-1 md:py-2 shadow-lg z-20 flex items-center justify-between gap-4 overflow-hidden">
            
-            <div className="flex-1 min-w-0 overflow-hidden relative">
+            <div className="flex-1 overflow-hidden relative" dir="ltr">
               <div 
-                className="whitespace-nowrap hover-pause cursor-default"
-                dir="rtl"
+                className="flex whitespace-nowrap hover-pause cursor-default w-max"
                 style={{
                   animation: 'scroll-text-right 40s linear infinite',
-                  display: 'inline-block',
+                  display: 'flex',
                   willChange: 'transform'
                 }}
               >
                 {newsItems.length > 0 ? (
                   <>
-                    {newsItems.map((item, index) => (
-                      <span key={`news-${item.id}-${index}`} className="text-sm font-semibold inline-block mr-12">
-                        {item.content}
-                      </span>
-                    ))}
-                    {/* Duplicate for seamless loop */}
-                    {newsItems.map((item, index) => (
-                      <span key={`news-dup-${item.id}-${index}`} className="text-sm font-semibold inline-block mr-12">
+                    {[...newsItems, ...newsItems, ...newsItems].map((item, index) => (
+                      <span key={`news-${item.id}-${index}`} className="text-sm font-semibold px-8 whitespace-nowrap" dir="rtl">
                         {item.content}
                       </span>
                     ))}
                   </>
                 ) : (
-                  <>
-                    <span className="text-sm font-semibold inline-block mr-12">
-                      مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
-                    </span>
-                    <span className="text-sm font-semibold inline-block mr-12">
-                      • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
-                    </span>
-                    <span className="text-sm font-semibold inline-block mr-12">
-                      • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
-                    </span>
-                    {/* Duplicate for seamless loop */}
-                    <span className="text-sm font-semibold inline-block mr-12">
-                      مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
-                    </span>
-                    <span className="text-sm font-semibold inline-block mr-12">
-                      • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
-                    </span>
-                    <span className="text-sm font-semibold inline-block mr-12">
-                      • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
-                    </span>
-                  </>
+                  <div className="flex">
+                    {[1, 2, 3].map((i) => (
+                      <React.Fragment key={i}>
+                        <span className="text-sm font-semibold px-8 whitespace-nowrap" dir="rtl">
+                          مرحباً بك في منصة Flooxira - ابدأ الآن في إدارة حساباتك الاجتماعية بسهولة
+                        </span>
+                        <span className="text-sm font-semibold px-8 whitespace-nowrap" dir="rtl">
+                          • احصل على أفضل تجربة إدارة لوسائل التواصل الاجتماعي
+                        </span>
+                        <span className="text-sm font-semibold px-8 whitespace-nowrap" dir="rtl">
+                          • أنشئ ونشر المحتوى بسهولة • إدارة العملاء والمواعيد بكفاءة
+                        </span>
+                      </React.Fragment>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

@@ -26,8 +26,20 @@ import {
   telegramBotGetContacts,
   telegramBotCreateCampaign,
   telegramBotListCampaigns,
-  telegramBotDisconnect
+  telegramBotDisconnect,
+  getTelegramGroups,
+  syncTelegramGroups,
+  getBotSettings,
+  updateBotSettings
 } from "@/lib/api";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { RefreshCw } from "lucide-react";
 import { listTags } from "@/lib/tagsApi";
 import { usePermissions } from "@/lib/permissions";
 import Loader from "@/components/Loader";
@@ -74,6 +86,11 @@ export default function TelegramBotPage() {
   // Auto-reply & templates admin
   const [autoReplyEnabled, setAutoReplyEnabled] = useState<boolean>(false);
   const [autoReplyTemplateId, setAutoReplyTemplateId] = useState<string>("");
+  const [telegramAiEnabled, setTelegramAiEnabled] = useState<boolean>(false);
+  const [telegramNotifyEnabled, setTelegramNotifyEnabled] = useState<boolean>(false);
+  const [telegramNotifyGroupId, setTelegramNotifyGroupId] = useState<string>("");
+  const [telegramGroups, setTelegramGroups] = useState<Array<{ chatId: string; name: string }>>([]);
+  const [isSyncingGroups, setIsSyncingGroups] = useState(false);
   const [buttonColorDefault, setButtonColorDefault] = useState<string>("");
   const [activeTemplates, setActiveTemplates] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -257,27 +274,39 @@ export default function TelegramBotPage() {
 
   async function loadBotSettingsUI() {
     try {
-      const res = await fetch(`/api/bot-settings`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json().catch(()=>({}));
-      const s = data?.data || data;
-      if (s) {
+      setLoading(true);
+      const data = await getBotSettings(token);
+      if (data && data.data) {
+        const s = data.data;
         setAutoReplyEnabled(!!s.autoReplyEnabled);
         setAutoReplyTemplateId(s.autoReplyTemplateId ? String(s.autoReplyTemplateId) : "");
+        setTelegramAiEnabled(!!s.telegramAiEnabled);
+        setTelegramNotifyEnabled(!!s.telegramNotifyEnabled);
+        setTelegramNotifyGroupId(s.telegramNotifyGroupId || "");
         setButtonColorDefault(s.buttonColorDefault || "");
       }
-    } catch {}
+      
+      // Load telegram groups
+      const groupsData = await getTelegramGroups(token);
+      if (groupsData.success && groupsData.groups) {
+        setTelegramGroups(groupsData.groups);
+      }
+    } catch (e: any) {
+      showError(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function saveBotSettingsUI() {
     try {
-      await fetch(`/api/bot-settings`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          autoReplyEnabled,
-          autoReplyTemplateId: autoReplyTemplateId ? Number(autoReplyTemplateId) : null,
-          buttonColorDefault: buttonColorDefault || null,
-        })
+      await updateBotSettings(token, {
+        autoReplyEnabled,
+        autoReplyTemplateId: autoReplyTemplateId ? Number(autoReplyTemplateId) : null,
+        telegramAiEnabled,
+        telegramNotifyEnabled,
+        telegramNotifyGroupId: telegramNotifyGroupId || null,
+        buttonColorDefault: buttonColorDefault || null,
       });
       showSuccess("تم حفظ الإعدادات");
     } catch (e:any) {
@@ -488,6 +517,25 @@ export default function TelegramBotPage() {
       setLoading(false);
     }
   }
+
+  const handleSyncGroups = async () => {
+    try {
+      setIsSyncingGroups(true);
+      const res = await syncTelegramGroups(token);
+      if (res.success) {
+        showSuccess(res.message);
+        // Reload groups
+        const groupsData = await getTelegramGroups(token);
+        if (groupsData.success && groupsData.groups) {
+          setTelegramGroups(groupsData.groups);
+        }
+      }
+    } catch (e: any) {
+      showError(e.message);
+    } finally {
+      setIsSyncingGroups(false);
+    }
+  };
 
   async function handleDeleteEntry(id: number) {
     try {
@@ -786,9 +834,116 @@ export default function TelegramBotPage() {
           </div>
             </div>
             
-            
+            {/* AI Assistant Setting */}
+            <div className="bg-[#01191060] rounded-lg p-6 border border-gray-700 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {/* <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center text-xl">
+                    🧠
+                  </div> */}
+                  <div>
+                    <div className="text-white font-semibold">مساعد الذكاء الاصطناعي (AI)</div>
+                    <div className="text-gray-400 text-sm">تفعيل الرد التلقائي باستخدام الذكاء الاصطناعي</div>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={telegramAiEnabled}
+                    onChange={(e) => setTelegramAiEnabled(e.target.checked)}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+              
+              {telegramAiEnabled && (
+                <div className="pt-4 border-t border-gray-700">
+                  <p className="text-xs text-purple-300 bg-purple-900/20 p-3 rounded-lg border border-purple-500/20">
+                     سيستخدم البوت قاعدة المعرفة وإعدادات الشخصية المكونة في واتساب للرد على الرسائل التي لا تطابق أي قالب.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Support Group Forwarding Setting */}
+            <div className="bg-[#01191060] rounded-lg p-6 border border-gray-700 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {/* <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-xl">
+                    📢
+                  </div> */}
+                  <div>
+                    <div className="text-white font-semibold">توجيه الرسائل لمجموعة الدعم</div>
+                    <div className="text-gray-400 text-sm">توجيه جميع الرسائل الواردة لمجموعة تليجرام خاصة</div>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={telegramNotifyEnabled}
+                    onChange={(e) => setTelegramNotifyEnabled(e.target.checked)}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+                            {telegramNotifyEnabled && (
+                      <div className="space-y-4 pt-4 border-t border-text-primary/10">
+                        <div className="space-y-2">
+                          {/* <label className="text-sm font-medium text-text-primary/80">Support Group (Forwarding)</label> */}
+                          <div className="flex gap-2">
+                            <div className="flex-1">
+                              <Select 
+                                value={telegramNotifyGroupId} 
+                                onValueChange={setTelegramNotifyGroupId}
+                              >
+                                <SelectTrigger className="w-full bg-secondry border-text-primary/20 text-white">
+                                  <SelectValue placeholder="إختر مجموعة الدعم" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-secondry border-text-primary/20 text-white">
+                                  {telegramGroups.map((group) => (
+                                    <SelectItem key={group.chatId} value={group.chatId}>
+                                      {group.name}
+                                    </SelectItem>
+                                  ))}
+                                  {telegramGroups.length === 0 && (
+                                    <SelectItem value="none" disabled>
+                                      لا توجد مجموعات (إضغط مزامنة)
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <Button
+                              variant="default"
+                              size="icon"
+                              onClick={handleSyncGroups}
+                              disabled={isSyncingGroups}
+                              title="Sync Groups"
+                              className="border-text-primary/20 hover:bg-text-primary/10"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${isSyncingGroups ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-gray-400">
+                                  اختر المجموعة التي تريد توجيه الرسائل إليها
+                          </p>
+                        </div>
+                      </div>
+                    )}
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <Button 
+                onClick={saveBotSettingsUI}
+                className="primary-button px-10"
+              >
+                حفظ الإعدادات الفنية
+              </Button>
+            </div>
           </CardContent>
-      </Card>
+        </Card>
       </div>
       {/* Tutorial Video Modal */}
       <TutorialVideoModal

@@ -574,6 +574,19 @@ export async function botDeleteRow(token: string, id: number) {
   return apiFetch<{ ok: boolean }>(`/api/bot/data/${id}`, { method: 'DELETE', authToken: token });
 }
 
+// ===== Bot Settings API =====
+export async function getBotSettings(token: string) {
+  return apiFetch<{ success: boolean; data: any }>("/api/bot-settings", { authToken: token });
+}
+
+export async function updateBotSettings(token: string, updates: any) {
+  return apiFetch<{ success: boolean; data: any; message: string }>("/api/bot-settings", {
+    method: "PUT",
+    authToken: token,
+    body: JSON.stringify(updates)
+  });
+}
+
 export async function botExportData(token: string): Promise<Blob> {
   const response = await fetch(`${API_URL}/api/bot/export`, {
     method: 'GET',
@@ -1439,6 +1452,18 @@ export async function telegramBotGetChatHistory(token: string, chatId?: string, 
 
 export async function telegramBotGetStats(token: string) {
   return apiFetch<{ success: boolean; stats?: any }>("/api/telegram-bot/stats", { authToken: token });
+}
+
+// ===== Telegram Groups & Sync =====
+export async function getTelegramGroups(token: string) {
+  return apiFetch<{ success: boolean; groups: Array<{ id: number; chatId: string; name: string; type: string; botIsAdmin: boolean }> }>("/api/telegram/groups", { authToken: token });
+}
+
+export async function syncTelegramGroups(token: string) {
+  return apiFetch<{ success: boolean; message: string; groups: any[] }>("/api/telegram/sync-groups", {
+    method: 'POST',
+    authToken: token
+  });
 }
 
 export async function telegramBotGetContacts(token: string) {
