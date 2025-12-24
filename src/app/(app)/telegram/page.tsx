@@ -763,7 +763,7 @@ export default function TelegramBotPage() {
                         // Prefetch chats/groups after successful connection
                         try { await loadBotChats(); } catch {}
                         // Navigate to campaigns to allow selecting groups quickly
-                        setActiveTab('campaigns');
+                        // setActiveTab('campaigns'); // Keep user on connection page
                       } else {
                         showError(res.message || "فشل في ربط البوت");
                       }
@@ -1083,15 +1083,25 @@ export default function TelegramBotPage() {
           {contacts.length > 0 && (
             <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
               {contacts.map((c:any, i:number) => (
-                <div key={i} className="p-4 bg-gray-800/50 rounded-lg border border-gray-700 flex items-center justify-between hover:bg-gray-800/70 transition-colors">
+                <div key={i} className={`p-4 rounded-lg border flex items-center justify-between transition-colors ${c.isEscalated ? 'bg-yellow-900/20 border-yellow-700/50' : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800/70'}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">
-                        {(c.chatTitle || 'User').charAt(0).toUpperCase()}
-                      </span>
+                    <div className="relative">
+                      <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">
+                          {(c.chatTitle || 'User').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      {c.isEscalated && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center animate-pulse" title="محادثة قيد الانتظار">
+                          <span className="text-black text-[10px] font-bold">!</span>
+                        </div>
+                      )}
                     </div>
                     <div>
-                      <div className="text-white font-medium">{c.chatTitle || 'User'}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-white font-medium">{c.chatTitle || 'User'}</div>
+                        {c.isEscalated && <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">تحويل لموظف</span>}
+                      </div>
                     <div className="text-gray-400 text-xs">{c.chatType} • {c.chatId}</div>
                   </div>
                   </div>
@@ -1157,7 +1167,7 @@ export default function TelegramBotPage() {
               <div>
                 <h3 className="text-xs md:text-lg font-semibold text-white">إنشاء حملة إعلانية</h3>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-col md:flex-row">
                   <Button 
                     size="sm" 
                     onClick={loadBotChats} 

@@ -87,6 +87,7 @@ interface Ticket {
 interface TicketMessage {
   id: number;
   ticketId: number;
+  name: string;
   senderType: "visitor" | "bot" | "agent";
   senderId?: number;
   content: string;
@@ -1529,10 +1530,23 @@ export default function TicketsPage() {
                 className="flex-1 custom-scrollbar overflow-y-auto space-y-4 p-4 rounded-lg mt-4 bg-gray-900 min-h-0"
               >
                 {messages.map((message) => {
-                  const agentDisplayName =
-                    message.senderAgent?.name ||
-                    message.metadata?.senderName ||
-                    message.metadata?.agentName ||
+                  let agentDisplayName = message.name || message.senderAgent?.name;
+
+                  // 1. If name is missing, check if it's the current user
+                  if (!agentDisplayName && user && (message.senderId === user.id || (!message.senderId && message.senderType === 'agent'))) {
+                    agentDisplayName = user.name || user.email;
+                  }
+                  
+                  // 2. If still missing, check if it's the assigned agent for this ticket
+                  if (!agentDisplayName && selectedTicket?.assignedAgent?.id && message.senderId === selectedTicket.assignedAgent.id) {
+                    agentDisplayName = selectedTicket.assignedAgent.name;
+                  }
+
+                  // 3. Fallback to metadata or generic name
+                  agentDisplayName = 
+                    agentDisplayName || 
+                    message.metadata?.senderName || 
+                    message.metadata?.agentName || 
                     "عضو الفريق";
                   return (
                     <div
