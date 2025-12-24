@@ -54,6 +54,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const [newsBarClosed, setNewsBarClosed] = useState(false);
   const [pendingTicketsCount, setPendingTicketsCount] = useState<number>(0);
   const [whatsappPendingCount, setWhatsappPendingCount] = useState<number>(0);
+  const [telegramPendingCount, setTelegramPendingCount] = useState<number>(0);
   const [newsItems, setNewsItems] = useState<NewsTicker[]>([]);
 
   useEffect(() => {
@@ -198,7 +199,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
         );
         if (whatsappRes.ok) {
           const data = await whatsappRes.json();
-          setWhatsappPendingCount(data.data?.pending || 0);
+          setWhatsappPendingCount(data.data?.whatsappPending || 0);
+          setTelegramPendingCount(data.data?.telegramPending || 0);
         }
       } catch (error) {
         console.error('Failed to load pending counts:', error);
@@ -259,6 +261,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   {item.href === "/whatsapp" && whatsappPendingCount > 0 && (
                     <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                       {whatsappPendingCount}
+                    </span>
+                  )}
+                  {item.href === "/telegram" && telegramPendingCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      {telegramPendingCount}
                     </span>
                   )}
                 </div>
@@ -396,6 +403,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
               {item.href === "/whatsapp" && whatsappPendingCount > 0 && (
                 <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   {whatsappPendingCount}
+                </span>
+              )}
+              {item.href === "/telegram" && telegramPendingCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {telegramPendingCount}
                 </span>
               )}
             </Link>

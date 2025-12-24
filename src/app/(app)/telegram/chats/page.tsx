@@ -19,6 +19,7 @@ type Contact = {
   chatTitle: string;
   messageCount: number | string;
   lastMessageTime: string;
+  isEscalated?: boolean;
 };
 
 type ChatItem = {
@@ -54,18 +55,22 @@ export default function TelegramChatsPage() {
 
   const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : ""), []);
 
-  useEffect(() => {
+  const loadContacts = () => {
     if (!token) return;
     setLoadingContacts(true);
     telegramBotGetContacts(token)
       .then((res) => {
         const items = (res.contacts || []) as Contact[];
         setContacts(items);
-        if (items.length > 0) {
+        if (items.length > 0 && !activeChatId) {
           setActiveChatId(items[0].chatId.toString());
         }
       })
       .finally(() => setLoadingContacts(false));
+  };
+
+  useEffect(() => {
+    loadContacts();
   }, [token]);
 
   useEffect(() => {
@@ -81,6 +86,25 @@ export default function TelegramChatsPage() {
       listEndRef.current.scrollIntoView({ behavior: "auto" });
     }
   }, [history, activeChatId, loadingHistory]);
+
+  async function handleResolve() {
+    if (!token || !activeChatId) return;
+    if (!confirm('هل أنت متأكد من حل هذه المشكلة واستئناف البوت؟')) return;
+    try {
+      const res = await fetch(`/api/escalation/resolve-contact/${activeChatId}?platform=telegram`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadContacts(); // Refresh sidebar to remove yellow status
+      } else {
+        alert(data.message);
+      }
+    } catch (err: any) {
+      alert(err.message || 'فشل في حل المشكلة');
+    }
+  }
 
   async function handleSend() {
     if (!token || !activeChatId || (!messageText.trim() && !selectedMedia)) return;
@@ -99,6 +123,7 @@ export default function TelegramChatsPage() {
         
         // Optimistic append for media
         setHistory((prev) => [
+          ...prev,
           {
             id: Date.now(),
             userId: user?.id || 0,
@@ -111,7 +136,6 @@ export default function TelegramChatsPage() {
             mediaType: mediaType,
             mediaUrl: URL.createObjectURL(selectedMedia),
           },
-          ...prev,
         ]);
         
         setSelectedMedia(null);
@@ -122,6 +146,7 @@ export default function TelegramChatsPage() {
         
         // Optimistic append for text
       setHistory((prev) => [
+        ...prev,
         {
           id: Date.now(),
           userId: user?.id || 0,
@@ -132,7 +157,6 @@ export default function TelegramChatsPage() {
           messageContent: messageText.trim(),
           timestamp: new Date().toISOString(),
         },
-        ...prev,
       ]);
       }
       
@@ -238,20 +262,30 @@ export default function TelegramChatsPage() {
                 return (
                   <li
                     key={c.chatId}
-                    className={`px-3 py-2 cursor-pointer flex items-center gap-3 ${isActive ? "bg-fixed-40 inner-shadow" : "bg-secondry"}`}
+                    className={`px-3 py-2 cursor-pointer flex items-center gap-3 ${isActive ? "bg-fixed-40 inner-shadow" : c.isEscalated ? "bg-yellow-900/40" : "bg-secondry"}`}
                     onClick={() => {
                       setActiveChatId(c.chatId.toString());
                       setIsMobileChatOpen(true);
                     }}
                     title={String(title)}
                   >
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">
-                      {getInitials(String(title))}
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">
+                        {getInitials(String(title))}
+                      </div>
+                      {c.isEscalated && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full flex items-center justify-center animate-pulse">
+                          <span className="text-black text-[8px] font-bold">!</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate text-white">{title}</div>
-                      <div className="text-[11px] text-white flex justify-between gap-2">
-                        <span className="capitalize text-green-500">{c.chatType}</span>
+                      <div className="text-sm font-medium truncate text-white flex items-center justify-between gap-2">
+                        <span>{title}</span>
+                        {c.isEscalated && <span className="text-[9px] bg-yellow-500/20 text-yellow-300 px-1 rounded">تحويل</span>}
+                      </div>
+                      <div className="text-[11px] text-white flex justify-between gap-2 opacity-70">
+                        <span className="capitalize">{c.chatType}</span>
                         <span>{new Date(c.lastMessageTime).toLocaleString()}</span>
                       </div>
                     </div>
@@ -265,32 +299,52 @@ export default function TelegramChatsPage() {
 
       <section className={`w-full md:flex-1 inner-shadow md:rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent' : 'hidden md:flex'}`}>
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center gap-3 p-3 border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
-          <button 
-            onClick={() => setIsMobileChatOpen(false)}
-            className="p-1 text-white hover:bg-white/10 rounded-full transition-colors"
-          >
-            <ArrowLeft size={24} className="rtl:rotate-180" />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-              {getInitials(contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "")}
-            </div>
-            <div className="flex flex-col overflow-hidden">
-              <span className="text-white font-medium text-sm truncate max-w-[180px]">
-                {contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "مادثة"}
-              </span>
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                <span className="text-[10px] text-gray-400">متصل الآن</span>
+        <div className="md:hidden flex items-center justify-between p-3 border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsMobileChatOpen(false)}
+              className="p-1 text-white hover:bg-white/10 rounded-full transition-colors"
+            >
+              <ArrowLeft size={24} className="rtl:rotate-180" />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                {getInitials(contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "")}
+              </div>
+              <div className="flex flex-col overflow-hidden">
+                <span className="text-white font-medium text-sm truncate max-w-[150px]">
+                  {contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || "محادثة"}
+                </span>
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                  <span className="text-[10px] text-gray-400">متصل الآن</span>
+                </div>
               </div>
             </div>
           </div>
+          
+          {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
+            <button 
+              onClick={handleResolve}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
+            >
+              علامة كمحلول
+            </button>
+          )}
         </div>
 
         {/* Desktop Header */}
-        <div className="hidden md:flex px-4 py-2 border-b items-center gap-2">
+        <div className="hidden md:flex px-4 py-2 border-b items-center justify-between gap-2">
           <div className="font-semibold text-white truncate flex-1">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
+          
+          {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
+            <button 
+              onClick={handleResolve}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+            >
+              تم حل المشكلة (استئناف البوت)
+            </button>
+          )}
         </div>
         <div className="flex-1 overflow-auto  px-4 py-3 flex flex-col">
           {loadingHistory ? (
