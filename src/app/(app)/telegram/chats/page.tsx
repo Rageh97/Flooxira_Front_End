@@ -161,7 +161,7 @@ export default function TelegramChatsPage() {
   }
 
   async function handleSend() {
-    if (!token || !activeChatId || (!messageText.trim() && !selectedMedia)) return;
+    if (sending || !token || !activeChatId || (!messageText.trim() && !selectedMedia)) return;
     
     try {
       setSending(true);
