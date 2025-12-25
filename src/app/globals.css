@@ -391,6 +391,24 @@ button, a {
   .telegram-emoji:hover {
     transform: scale(1.15) rotate(5deg);
   }
+
+  /* Fix toast notifications on mobile - prevent page movement */
+  [data-sonner-toaster] {
+    position: fixed !important;
+    z-index: 9999 !important;
+    pointer-events: none !important;
+  }
+
+  [data-sonner-toast] {
+    pointer-events: auto !important;
+  }
+
+  /* Prevent viewport shifts on mobile */
+  @media (max-width: 768px) {
+    [data-sonner-toaster] {
+      max-width: calc(100vw - 32px) !important;
+    }
+  }
 }
 
 
