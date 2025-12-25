@@ -80,48 +80,62 @@ export default function TelegramChatsPage() {
     
     // Initial load
     setLoadingHistory(true);
-    telegramBotGetChatHistory(token, activeChatId, 50, 0)
+    telegramBotGetChatHistory(token, activeChatId, 100, 0)
       .then((res) => {
         if (res.success && res.chats) {
-          setHistory(res.chats as ChatItem[]);
+          // Filter out empty messages and sort by timestamp ascending
+          const filtered = (res.chats as ChatItem[])
+            .filter(m => m.messageContent && m.messageContent.trim() !== '')
+            .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+          setHistory(filtered);
         }
       })
       .finally(() => setLoadingHistory(false));
 
-    // Polling for updates
+    // Polling for updates - simple replacement strategy
     const interval = setInterval(() => {
-      telegramBotGetChatHistory(token, activeChatId, 20, 0)
+      telegramBotGetChatHistory(token, activeChatId, 100, 0)
         .then((res) => {
           if (res.success && res.chats) {
             setHistory(prev => {
-              const serverChats = res.chats as ChatItem[];
-              // Filter out optimistic local messages if their server counterparts are now present
+              const serverChats = (res.chats as ChatItem[])
+                .filter(m => m.messageContent && m.messageContent.trim() !== '')
+                .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+              
+              // Keep optimistic messages that haven't been confirmed yet
               const optimistic = prev.filter(p => (p as any).isOptimistic);
-              const nonOptimistic = prev.filter(p => !(p as any).isOptimistic);
               
-              const newServerChats = serverChats.filter(sc => 
-                !nonOptimistic.some(nc => nc.id === sc.id)
-              );
-              
-              if (newServerChats.length === 0) return prev;
-              
-              // Remove optimistic messages that match any server message content/timestamp
+              // Remove optimistic messages that now exist on server (by matching content and approximate time)
               const remainingOptimistic = optimistic.filter(opt => 
                 !serverChats.some(sc => 
                   sc.messageContent === opt.messageContent && 
                   sc.messageType === opt.messageType &&
-                  Math.abs(new Date(sc.timestamp).getTime() - new Date(opt.timestamp).getTime()) < 30000
+                  Math.abs(new Date(sc.timestamp).getTime() - new Date(opt.timestamp).getTime()) < 60000
                 )
               );
               
-              return [...nonOptimistic, ...newServerChats, ...remainingOptimistic];
+              // Combine: server chats + remaining optimistic
+              const combined = [...serverChats, ...remainingOptimistic];
+              
+              // Deduplicate by id (for server messages) and sort
+              const uniqueById = new Map<number | string, ChatItem>();
+              for (const m of combined) {
+                const key = (m as any).isOptimistic ? `opt-${m.timestamp}-${m.messageContent}` : m.id;
+                if (!uniqueById.has(key)) {
+                  uniqueById.set(key, m);
+                }
+              }
+              
+              return Array.from(uniqueById.values())
+                .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
             });
           }
         });
-    }, 10000); // 10 seconds poll
+    }, 5000); // 5 seconds poll
 
     return () => clearInterval(interval);
   }, [token, activeChatId]);
+
 
   useEffect(() => {
     if (!token) return;
@@ -269,7 +283,12 @@ export default function TelegramChatsPage() {
   }
 
   const groupedByDay = useMemo(() => {
-    const sortedHistory = [...history].sort((a, b) => 
+    // Filter out empty messages and ensure proper sorting
+    const validHistory = history.filter(m => 
+      m.messageContent && m.messageContent.trim() !== '' && m.timestamp
+    );
+    
+    const sortedHistory = [...validHistory].sort((a, b) => 
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
