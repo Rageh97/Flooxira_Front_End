@@ -17,6 +17,7 @@ const adminTabs = [
   { href: "/admin/settings", label: "الاعدادات" },
   { href: "/admin/analytics", label: "التحليلات" },
   { href: "/admin/tickets", label: "التذاكر" },
+  { href: "/admin/islamic-quotes", label: "أذكار وأحاديث" },
 ];
 
 export default function AdminLayout({ children }: PropsWithChildren) {

@@ -22,6 +22,8 @@ export const metadata: Metadata = {
 تدعم فلوكسيرا شات مدمج بنموذج GPT-5 لإنتاج المحتوى، كتابة الكابشنات، ابتكار الأفكار، وتوليد الردود بدقة عالية وبلهجات عربية متعددة. المنصة مخصصة لأصحاب المشاريع والمتاجر الإلكترونية في جميع الدول العربية، وتساعدهم على رفع الكفاءة التشغيلية، تسريع العمل، وتحسين تجربة العملاء بأعلى مستوى.`,
 };
 
+import { Toaster } from 'sonner';
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html dir="rtl" lang="en">
@@ -31,7 +33,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className={` antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+            {children}
+            <Toaster position="top-right" dir="rtl" />
+        </Providers>
 
       </body>
     </html>

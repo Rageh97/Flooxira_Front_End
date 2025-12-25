@@ -156,9 +156,10 @@ export type Plan = {
     aiCredits: number;
     canUseLiveChat: boolean;
     liveChatAiResponses?: number;
-    canUseEventsPlugin?: boolean;
-    eventsPerMonth?: number;
-  };
+      canUseEventsPlugin?: boolean;
+      eventsPerMonth?: number;
+      canUseTelegramAI?: boolean;
+    };
   isActive: boolean;
   paymentLink?: string | null;
 };

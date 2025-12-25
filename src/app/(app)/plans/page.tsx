@@ -295,6 +295,30 @@ export default function PlansPage() {
                           )
                         },
                         {
+                          enabled: (permissions as any).canUseTelegramAI,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canUseTelegramAI ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200">الذكاء الاصطناعي لتليجرام</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white line-through font-medium">الذكاء الاصطناعي لتليجرام</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
                           enabled: (permissions as any).canSallaIntegration,
                           render: () => (
                             <div className="flex items-center gap-2">

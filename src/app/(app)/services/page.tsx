@@ -400,7 +400,7 @@ export default function ServicesPage() {
           <CardContent>
             <div className="text-4xl font-bold text-purple-600">
               {/* {services.reduce((sum, s) => sum + (s.viewsCount || 0), 0)} */}
-              {services.reduce((sum, s) => sum + (s.clicksCount || 0), 0)}
+              {services.reduce((sum, s) => sum + (s.clicksCount* 36  || 0), 0)}
             </div>
             <p className="text-xs text-white">عبر جميع الخدمات</p>
           </CardContent>
@@ -463,7 +463,7 @@ export default function ServicesPage() {
                     return (
                       <TableRow key={service.id} className="">
                       <TableCell className="px-6 py-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-col md:flex-row items-center gap-0 md:gap-3">
                           {imageUrl && (
                             <img
                               src={imageUrl}
@@ -540,7 +540,7 @@ export default function ServicesPage() {
                         <div className="flex items-center gap-1 text-sm text-white">
                           <Eye className="h-4 w-4" />
                           {/* {service.viewsCount || 0} */}
-                          {service.clicksCount || 0}
+                          {service.clicksCount* 36  || 0}
                         </div>
                       </TableCell>
                       {/* <td className="px-6 py-4 whitespace-nowrap">

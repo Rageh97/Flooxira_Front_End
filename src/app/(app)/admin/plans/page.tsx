@@ -109,7 +109,8 @@ export default function PlansAdminPage() {
       canUseLiveChat: false,
       liveChatAiResponses: 0,
       canUseEventsPlugin: false,
-      eventsPerMonth: 0
+      eventsPerMonth: 0,
+      canUseTelegramAI: false
     }
   });
 
@@ -143,7 +144,8 @@ export default function PlansAdminPage() {
       canUseLiveChat: false,
       liveChatAiResponses: 0,
       canUseEventsPlugin: false,
-      eventsPerMonth: 0
+      eventsPerMonth: 0,
+      canUseTelegramAI: false
     }
   });
 
@@ -212,7 +214,10 @@ export default function PlansAdminPage() {
           canUseAI: false,
           aiCredits: 0,
           canUseLiveChat: false,
-          liveChatAiResponses: 0
+          liveChatAiResponses: 0,
+          canUseEventsPlugin: false,
+          eventsPerMonth: 0,
+          canUseTelegramAI: false
         }
       });
       loadPlans();
@@ -288,7 +293,8 @@ export default function PlansAdminPage() {
         canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false,
         liveChatAiResponses: (plan.permissions as any)?.liveChatAiResponses ?? 0,
         canUseEventsPlugin: (plan.permissions as any)?.canUseEventsPlugin || false,
-        eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0
+        eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0,
+        canUseTelegramAI: (plan.permissions as any)?.canUseTelegramAI || false
       }
     });
     setEditModalOpen(true);
@@ -485,6 +491,24 @@ export default function PlansAdminPage() {
                       <span className="text-xs font-medium text-gray-700">إدارة التليجرام:</span>
                       <div className="flex items-center gap-1">
                         {permissions.canManageTelegram ? (
+                          <>
+                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <span className="text-xs text-green-600 font-medium">مفعل</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3 w-3 text-red-600" />
+                            <span className="text-xs text-red-600 font-medium">غير مفعل</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Telegram AI */}
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                      <span className="text-xs font-medium text-gray-700">ذكاء اصطناعي تليجرام:</span>
+                      <div className="flex items-center gap-1">
+                        {(permissions as any).canUseTelegramAI ? (
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
@@ -1146,7 +1170,7 @@ export default function PlansAdminPage() {
             {/* Telegram Management */}
             <div>
               <Label>إدارة التليجرام</Label>
-              <div className="mt-2">
+              <div className="mt-2 space-y-2">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -1158,6 +1182,20 @@ export default function PlansAdminPage() {
                   />
                   <span>إدارة التليجرام</span>
                 </label>
+                
+                {newPlan.permissions.canManageTelegram && (
+                  <label className="flex items-center gap-2 mr-6 text-purple-600 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={newPlan.permissions.canUseTelegramAI}
+                      onChange={(e) => setNewPlan({
+                        ...newPlan,
+                        permissions: { ...newPlan.permissions, canUseTelegramAI: e.target.checked }
+                      })}
+                    />
+                    <span>تفعيل الذكاء الاصطناعي لتليجرام</span>
+                  </label>
+                )}
               </div>
             </div>
 
@@ -1630,7 +1668,7 @@ export default function PlansAdminPage() {
             {/* Telegram Management */}
             <div>
               <Label>إدارة التليجرام</Label>
-              <div className="mt-2">
+              <div className="mt-2 space-y-2">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -1642,6 +1680,20 @@ export default function PlansAdminPage() {
                   />
                   <span>إدارة التليجرام</span>
                 </label>
+
+                {editPlan.permissions.canManageTelegram && (
+                  <label className="flex items-center gap-2 mr-6 text-purple-600 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={editPlan.permissions.canUseTelegramAI}
+                      onChange={(e) => setEditPlan({
+                        ...editPlan,
+                        permissions: { ...editPlan.permissions, canUseTelegramAI: e.target.checked }
+                      })}
+                    />
+                    <span>تفعيل الذكاء الاصطناعي لتليجرام</span>
+                  </label>
+                )}
               </div>
             </div>
 

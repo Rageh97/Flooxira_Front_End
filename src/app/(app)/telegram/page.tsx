@@ -50,7 +50,7 @@ import NoActiveSubscription from "@/components/NoActiveSubscription";
 import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 export default function TelegramBotPage() {
-  const { canManageTelegram, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const { canManageTelegram, canUseTelegramAI, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
      const { showSuccess, showError } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -852,21 +852,36 @@ export default function TelegramBotPage() {
                     <div className="text-gray-400 text-sm">تفعيل الرد التلقائي باستخدام الذكاء الاصطناعي</div>
                   </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className={`relative inline-flex items-center ${!canUseTelegramAI() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                   <input 
                     type="checkbox" 
-                    checked={telegramAiEnabled}
-                    onChange={(e) => setTelegramAiEnabled(e.target.checked)}
+                    checked={telegramAiEnabled && canUseTelegramAI()}
+                    onChange={(e) => {
+                      if (!canUseTelegramAI()) {
+                        showError("باقتك الحالية لا تدعم استخدام الذكاء الاصطناعي في تليجرام");
+                        return;
+                      }
+                      setTelegramAiEnabled(e.target.checked);
+                    }}
+                    disabled={!canUseTelegramAI()}
                     className="sr-only peer" 
                   />
                   <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
               
-              {telegramAiEnabled && (
+              {!canUseTelegramAI() && (
+                <div className="pt-2">
+                  <p className="text-xs text-amber-400 bg-amber-900/20 p-3 rounded-lg border border-amber-500/20">
+                    هذه الميزة غير متوفرة في باقتك الحالية. يرجى ترقية الباقة لتفعيل الذكاء الاصطناعي.
+                  </p>
+                </div>
+              )}
+
+              {telegramAiEnabled && canUseTelegramAI() && (
                 <div className="pt-4 border-t border-gray-700">
                   <p className="text-xs text-purple-300 bg-purple-900/20 p-3 rounded-lg border border-purple-500/20">
-                     سيستخدم البوت قاعدة المعرفة وإعدادات الشخصية المكونة في واتساب للرد على الرسائل التي لا تطابق أي قالب.
+                     سيستخدم البوت قاعدة المعرفة وإعدادات الشخصية المكونة في واتساب للرد على الرسائل 
                   </p>
                 </div>
               )}

@@ -979,9 +979,9 @@ useEffect(() => {
       )} */}
       <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-3" : "space-y-3"}>
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-center gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-white">إدارة العملاء</h1>
+      <div className="flex flex-col lg:flex-row justify-between items-start mx-2 md:mx-0 md:items-center gap-3">
+        <div >
+          <h1 className="text-3xl font-bold text-white ">إدارة العملاء</h1>
           <p className="text-gray-300">إدارة قاعدة بيانات العملاء واشتراكاتهم</p>
           <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
         </div>
@@ -1072,7 +1072,7 @@ useEffect(() => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Card className="gradient-border border-none">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
@@ -1080,9 +1080,9 @@ useEffect(() => {
                   <div className="w-12 h-12  rounded-lg flex items-center justify-center">
                     <Users className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-lg font-bold">إجمالي العملاء</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">إجمالي العملاء</p>
                 </div>
-                <p className="text-4xl font-bold text-white">{stats.totalCustomers}</p>
+                <p className="md:text-4xl text-lg font-bold text-white">{stats.totalCustomers}</p>
               </div>
             </CardContent>
           </Card>
@@ -1094,9 +1094,9 @@ useEffect(() => {
                   <div className="w-12 h-12  rounded-lg flex items-center justify-center">
                     <UserCheck className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-lg font-bold">العملاء النشطين</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">العملاء النشطين</p>
                 </div>
-                <p className="text-4xl font-bold text-white">{stats.activeCustomers}</p>
+                <p className="md:text-4xl text-lg font-bold text-white">{stats.activeCustomers}</p>
               </div>
             </CardContent>
           </Card>
@@ -1108,9 +1108,9 @@ useEffect(() => {
                   <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center">
                     <Crown className="w-6 h-6 text-white" />
                   </div>
-                  <p className="text-gray-200 text-lg font-bold">عملاء VIP</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">عملاء VIP</p>
                 </div>
-                <p className="text-4xl font-bold text-white">{stats.vipCustomers}</p>
+                <p className="md:text-4xl text-lg font-bold text-white">{stats.vipCustomers}</p>
               </div>
             </CardContent>
           </Card> */}
@@ -1122,18 +1122,16 @@ useEffect(() => {
                   <div className="w-12 h-12  rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-lg font-bold">معدل النمو</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">معدل النمو</p>
                 </div>
-                <p className="text-4xl font-bold text-white">+12%</p>
+                <p className="md:text-4xl text-lg font-bold text-white">+12%</p>
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
-
-      {/* Financial Stats Cards */}
+          {/* Financial Stats Cards */}
       {stats && (stats as any).financial && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <> 
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> */}
           <Card className="gradient-border border-none">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
@@ -1141,9 +1139,9 @@ useEffect(() => {
                   <div className="w-12 h-12  rounded-lg flex items-center justify-center">
                     <Package className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-lg font-bold">رأس المال الكلي</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">رأس المال الكلي</p>
                 </div>
-                <p className="text-2xl font-bold text-white">{(stats as any).financial.totalCapital} ر.س</p>
+                <p className="md:text-2xl text-lg font-bold text-white">{(stats as any).financial.totalCapital} ر.س</p>
               </div>
             </CardContent>
           </Card>
@@ -1155,9 +1153,9 @@ useEffect(() => {
                   <div className="w-12 h-12  rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-lg font-bold">الإيرادات الكلية</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">الإيرادات الكلية</p>
                 </div>
-                <p className="text-2xl font-bold text-white">{(stats as any).financial.totalRevenue} ر.س</p>
+                <p className="md:text-2xl text-lg font-bold text-white">{(stats as any).financial.totalRevenue} ر.س</p>
               </div>
             </CardContent>
           </Card>
@@ -1169,14 +1167,19 @@ useEffect(() => {
                   <div className="w-12 h-12  rounded-lg flex items-center justify-center">
                     <Crown className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-lg font-bold">صافي الربح</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">صافي الربح</p>
                 </div>
-                <p className="text-2xl font-bold text-white">{(stats as any).financial.netProfit} ر.س</p>
+                <p className="md:text-2xl text-lg font-bold text-white">{(stats as any).financial.netProfit} ر.س</p>
               </div>
             </CardContent>
           </Card>
+        {/* </div> */}
+        </>
+      )}
         </div>
       )}
+
+      
 
       {/* Filters and Search */}
       <Card className='gradient-border'>

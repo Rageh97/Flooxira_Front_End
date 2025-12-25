@@ -282,6 +282,17 @@ export default function TelegramChatsPage() {
     return d.toLocaleDateString();
   }
 
+
+  // Strip HTML tags from message content for clean display
+  function stripHtml(html: string): string {
+    if (!html) return '';
+    // Remove HTML tags
+    let text = html.replace(/<[^>]*>/g, '');
+    // Decode common HTML entities
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+    return text.trim();
+  }
+
   const groupedByDay = useMemo(() => {
     // Filter out empty messages and ensure proper sorting
     const validHistory = history.filter(m => 
@@ -315,7 +326,7 @@ export default function TelegramChatsPage() {
 
   return (
     <div className="flex h-[calc(100vh-140px)] gap-0 md:gap-4">
-      <aside className={`w-full md:w-80 gradient-border inner-shadow rounded-md flex flex-col ${isMobileChatOpen ? 'hidden md:flex' : 'flex'}`}>
+      <aside className={`w-full lg:w-80 gradient-border inner-shadow rounded-md flex flex-col ${isMobileChatOpen ? 'hidden lg:flex' : 'flex'}`}>
         <div className="p-2 border-b">
           <input
             value={query}
@@ -372,9 +383,9 @@ export default function TelegramChatsPage() {
         </div>
       </aside>
 
-      <section className={`w-full md:flex-1 inner-shadow md:rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent' : 'hidden md:flex'}`}>
+      <section className={`w-full custom-scrollbar lg:flex-1 inner-shadow lg:rounded-md flex flex-col gradient-border ${isMobileChatOpen ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent ' : 'hidden lg:flex'}`}>
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center justify-between p-3 border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
+        <div className="lg:hidden flex items-center justify-between p-3 border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsMobileChatOpen(false)}
@@ -409,7 +420,7 @@ export default function TelegramChatsPage() {
         </div>
 
         {/* Desktop Header */}
-        <div className="hidden md:flex px-4 py-2 border-b items-center justify-between gap-2">
+        <div className="hidden  lg:flex px-4 py-2 border-b items-center justify-between gap-2">
           <div className="font-semibold text-white truncate flex-1">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
           
           {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
@@ -421,7 +432,7 @@ export default function TelegramChatsPage() {
             </button>
           )}
         </div>
-        <div className="flex-1 overflow-auto  px-4 py-3 flex flex-col">
+        <div className="flex-1 custom-scrollbar overflow-auto  px-4 py-3 flex flex-col">
           {loadingHistory ? (
             <div className="text-sm text-gray-600">جاري تحميل الرسائل...</div>
           ) : history.length === 0 ? (
@@ -474,7 +485,7 @@ export default function TelegramChatsPage() {
                           )}
                           
                           {/* Message content */}
-                          {m.messageContent && <div>{m.messageContent}</div>}
+                          {m.messageContent && <div>{stripHtml(m.messageContent)}</div>}
                           
                           <div className={`text-[10px] opacity-70 mt-1 ${m.messageType === "outgoing" ? "text-white/80" : "text-white/80"}`}>
                             {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

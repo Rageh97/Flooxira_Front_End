@@ -19,6 +19,7 @@ interface UserPermissions {
   aiCredits: number;
   canUseLiveChat: boolean;
   liveChatAiResponses?: number;
+  canUseTelegramAI?: boolean;
 }
 
 interface Subscription {
@@ -232,6 +233,10 @@ export function usePermissions() {
     return Boolean(permissions?.canUseLiveChat);
   };
 
+  const canUseTelegramAI = (): boolean => {
+    return Boolean(permissions?.canUseTelegramAI);
+  };
+
   const hasActiveSubscription = useMemo((): boolean => {
     // إذا لم يكن هناك subscription object ولكن هناك permissions، فهو موظف
     // الموظف يعتبر لديه اشتراك نشط (موروث من المالك)
@@ -269,6 +274,7 @@ export function usePermissions() {
     canUseAI,
     getAICredits,
     canUseLiveChat,
+    canUseTelegramAI,
     hasActiveSubscription,
     reloadPermissions: loadPermissions
   };

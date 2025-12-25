@@ -504,7 +504,7 @@ export default function SchedulePage() {
                                   : 'bg-blue-600 text-white'
                               }`}
                             >
-                              {schedule.type === 'whatsapp' ? <Image src="/whatsapp.gif" alt="WhatsApp" width={20} height={20} /> : schedule.type === 'telegram' ? <Image src="/telegram.gif" alt="Telegram" width={20} height={20} /> : "post"}
+                              {schedule.type === 'whatsapp' ? <Image className="md:w-5 md:h-5 w-2 h-2" src="/whats.png" alt="WhatsApp" width={20} height={20} /> : schedule.type === 'telegram' ? <Image className="md:w-5 md:h-5 w-2 h-2" src="/tele.png" alt="Telegram" width={20} height={20} /> : "post"}
                             </div>
                           ))}
                           {daySchedules.length > 2 && (

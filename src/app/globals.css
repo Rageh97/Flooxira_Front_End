@@ -156,7 +156,7 @@
 /* Full-screen mobile chat fix for iPhone Safari - Only on mobile */
 @media (max-width: 1023px) {
   /* التقنية الذكية: إخفاء الهيدر، الناف بار، والودجت الخارجي تماماً عند فتح المحادثة */
-  body:has(.mobile-fullscreen-chat) .md\:hidden.items-center.justify-between, 
+  body:has(.mobile-fullscreen-chat) .main-layout-header, 
   body:has(.mobile-fullscreen-chat) .md\:hidden.fixed.bottom-0,
   body:has(.mobile-fullscreen-chat) #chat-widget-container {
     display: none !important;
