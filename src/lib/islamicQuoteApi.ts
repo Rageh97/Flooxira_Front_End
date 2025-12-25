@@ -7,6 +7,7 @@ export interface IslamicQuote {
   content: string;
   type: 'ayah' | 'hadith';
   isActive: boolean;
+  displayInterval: number;
   createdAt: string;
   updatedAt: string;
 }

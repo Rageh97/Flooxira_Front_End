@@ -71,11 +71,18 @@ export default function AppLayout({ children }: PropsWithChildren) {
         console.log("Fetching islamic quotes...");
         const res = await getActiveIslamicQuotes();
         console.log("Islamic quotes response:", res);
+        
+        let nextInterval = 30 * 1000; // Default fallback
+
         if (res.success && res.quotes.length > 0) {
           const randomQuote = res.quotes[Math.floor(Math.random() * res.quotes.length)];
           console.log("Displaying quote:", randomQuote);
+          
+          if (randomQuote.displayInterval) {
+            nextInterval = randomQuote.displayInterval * 1000;
+          }
+
           toast(randomQuote.content, {
-            // description: randomQuote.type === 'ayah' ? 'آية قرآنية' : 'حديث شريف',
             icon: <Stars className="w-5 h-5 text-primary" />,
             duration: 10000,
             style: { direction: 'rtl' }
@@ -83,20 +90,21 @@ export default function AppLayout({ children }: PropsWithChildren) {
         } else {
             console.log("No active quotes found or request failed");
         }
+
+        // Schedule next call dynamically
+        timeoutId = setTimeout(showRandomQuote, nextInterval);
+
       } catch (error) {
         console.error("Failed to fetch islamic quotes", error);
+        timeoutId = setTimeout(showRandomQuote, 30 * 1000);
       }
     };
 
-    // Initial delay of 2 seconds, then every 30 seconds
-    timeoutId = setTimeout(() => {
-      showRandomQuote();
-      intervalId = setInterval(showRandomQuote, 30 * 1000);
-    }, 2000);
+    // Initial delay of 2 seconds
+    timeoutId = setTimeout(showRandomQuote, 2000);
 
     return () => {
-      clearTimeout(timeoutId);
-      if (intervalId) clearInterval(intervalId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 

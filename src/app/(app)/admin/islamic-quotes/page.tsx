@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 export default function IslamicQuotesSettings() {
   const [quotes, setQuotes] = useState<IslamicQuote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newQuote, setNewQuote] = useState({ content: '', type: 'ayah' as 'ayah' | 'hadith', isActive: true });
+  const [newQuote, setNewQuote] = useState({ content: '', type: 'ayah' as 'ayah' | 'hadith', isActive: true, displayInterval: 30 });
 
   const fetchQuotes = async () => {
     try {
@@ -40,7 +40,7 @@ export default function IslamicQuotesSettings() {
       const res = await createIslamicQuote(newQuote);
       if (res.success) {
         toast.success("تمت الإضافة بنجاح");
-        setNewQuote({ content: '', type: 'ayah', isActive: true });
+        setNewQuote({ content: '', type: 'ayah', isActive: true, displayInterval: 30 });
         fetchQuotes();
       }
     } catch (error) {
@@ -86,12 +86,22 @@ export default function IslamicQuotesSettings() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
+            <div className="flex-[2]">
               <Input 
                 value={newQuote.content}
                 onChange={(e) => setNewQuote({ ...newQuote, content: e.target.value })}
                 placeholder="أدخل الآية أو الحديث هنا..."
                 className="bg-fixed-40 border-none text-white h-12"
+              />
+            </div>
+            <div className="w-full md:w-32">
+              <Input 
+                type="number"
+                value={newQuote.displayInterval}
+                onChange={(e) => setNewQuote({ ...newQuote, displayInterval: parseInt(e.target.value) || 30 })}
+                placeholder="الثواني"
+                className="bg-fixed-40 border-none text-white h-12"
+                title="وقت العرض بالثواني"
               />
             </div>
             <div className="w-full md:w-48">
@@ -125,6 +135,7 @@ export default function IslamicQuotesSettings() {
                     {quote.type === 'ayah' ? 'آية' : 'حديث'}
                   </span>
                   <span className="text-[10px] text-gray-500">{new Date(quote.createdAt).toLocaleDateString('ar-SA')}</span>
+                  <span className="text-[10px] text-primary">كل {quote.displayInterval} ثانية</span>
                 </div>
                 <p className="text-white text-sm leading-relaxed">{quote.content}</p>
               </div>
