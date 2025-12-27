@@ -145,6 +145,7 @@ export type Plan = {
     canManageWhatsApp: boolean;
     whatsappMessagesPerMonth: number;
     canManageTelegram: boolean;
+    telegramMessagesPerMonth: number;
     canSallaIntegration: boolean;
     canManageContent: boolean;
     canManageCustomers: boolean;
@@ -159,6 +160,7 @@ export type Plan = {
       canUseEventsPlugin?: boolean;
       eventsPerMonth?: number;
       canUseTelegramAI?: boolean;
+      telegramAiCredits?: number;
     };
   isActive: boolean;
   paymentLink?: string | null;
@@ -620,6 +622,9 @@ export async function getUsageStats(token: string, platform: 'whatsapp' | 'teleg
         isNearLimit: boolean;
         isAtLimit: boolean;
         canSend: boolean;
+        telegramAiCredits?: number;
+        telegramAiCreditsUsed?: number;
+        telegramAiRemaining?: number;
       };
       limits: {
         canManageWhatsApp: boolean;

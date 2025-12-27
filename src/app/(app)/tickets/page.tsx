@@ -2374,7 +2374,7 @@ export default function TicketsPage() {
           </DialogHeader>
           <div className="flex justify-end gap-3 mt-4">
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => setDeletingKB(null)}
               className="text-white border-gray-600 hover:bg-gray-700"
             >

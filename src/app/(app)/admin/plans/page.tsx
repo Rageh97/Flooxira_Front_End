@@ -97,6 +97,7 @@ export default function PlansAdminPage() {
       canManageWhatsApp: false,
       whatsappMessagesPerMonth: 0,
       canManageTelegram: false,
+      telegramMessagesPerMonth: 0,
       canSallaIntegration: false,
       canManageContent: false,
       canManageCustomers: false,
@@ -110,7 +111,8 @@ export default function PlansAdminPage() {
       liveChatAiResponses: 0,
       canUseEventsPlugin: false,
       eventsPerMonth: 0,
-      canUseTelegramAI: false
+      canUseTelegramAI: false,
+      telegramAiCredits: 0
     }
   });
 
@@ -132,6 +134,7 @@ export default function PlansAdminPage() {
       canManageWhatsApp: false,
       whatsappMessagesPerMonth: 0,
       canManageTelegram: false,
+      telegramMessagesPerMonth: 0,
       canSallaIntegration: false,
       canManageContent: false,
       canManageCustomers: false,
@@ -145,7 +148,8 @@ export default function PlansAdminPage() {
       liveChatAiResponses: 0,
       canUseEventsPlugin: false,
       eventsPerMonth: 0,
-      canUseTelegramAI: false
+      canUseTelegramAI: false,
+      telegramAiCredits: 0
     }
   });
 
@@ -204,6 +208,7 @@ export default function PlansAdminPage() {
           canManageWhatsApp: false,
           whatsappMessagesPerMonth: 0,
           canManageTelegram: false,
+          telegramMessagesPerMonth: 0,
           canSallaIntegration: false,
           canManageContent: false,
           canManageCustomers: false,
@@ -217,7 +222,8 @@ export default function PlansAdminPage() {
           liveChatAiResponses: 0,
           canUseEventsPlugin: false,
           eventsPerMonth: 0,
-          canUseTelegramAI: false
+          canUseTelegramAI: false,
+          telegramAiCredits: 0
         }
       });
       loadPlans();
@@ -281,6 +287,7 @@ export default function PlansAdminPage() {
         canManageWhatsApp: plan.permissions?.canManageWhatsApp || false,
         whatsappMessagesPerMonth: plan.permissions?.whatsappMessagesPerMonth || 0,
         canManageTelegram: plan.permissions?.canManageTelegram || false,
+        telegramMessagesPerMonth: plan.permissions?.telegramMessagesPerMonth || 0,
         canSallaIntegration: plan.permissions?.canSallaIntegration || false,
         canManageContent: plan.permissions?.canManageContent || false,
         canManageCustomers: plan.permissions?.canManageCustomers || false,
@@ -294,7 +301,8 @@ export default function PlansAdminPage() {
         liveChatAiResponses: (plan.permissions as any)?.liveChatAiResponses ?? 0,
         canUseEventsPlugin: (plan.permissions as any)?.canUseEventsPlugin || false,
         eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0,
-        canUseTelegramAI: (plan.permissions as any)?.canUseTelegramAI || false
+        canUseTelegramAI: (plan.permissions as any)?.canUseTelegramAI || false,
+        telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0
       }
     });
     setEditModalOpen(true);
@@ -375,6 +383,7 @@ export default function PlansAdminPage() {
               canManageWhatsApp: plan.permissions?.canManageWhatsApp || false,
               whatsappMessagesPerMonth: plan.permissions?.whatsappMessagesPerMonth || 0,
               canManageTelegram: plan.permissions?.canManageTelegram || false,
+              telegramMessagesPerMonth: plan.permissions?.telegramMessagesPerMonth || 0,
               canSallaIntegration: plan.permissions?.canSallaIntegration || false,
               canManageContent: plan.permissions?.canManageContent || false,
               canManageCustomers: plan.permissions?.canManageCustomers || false,
@@ -384,7 +393,9 @@ export default function PlansAdminPage() {
               maxEmployees: plan.permissions?.maxEmployees || 0,
               canUseAI: (plan.permissions as any)?.canUseAI || false,
               aiCredits: (plan.permissions as any)?.aiCredits || 0,
-              canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false
+              canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false,
+              canUseTelegramAI: (plan.permissions as any)?.canUseTelegramAI || false,
+              telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0
             };
             
             return (
@@ -494,6 +505,11 @@ export default function PlansAdminPage() {
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {permissions.telegramMessagesPerMonth > 0 && (
+                              <span className="text-xs text-gray-500">
+                                ({permissions.telegramMessagesPerMonth === -1 ? 'غير محدود' : permissions.telegramMessagesPerMonth}/شهر)
+                              </span>
+                            )}
                           </>
                         ) : (
                           <>
@@ -508,10 +524,15 @@ export default function PlansAdminPage() {
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
                       <span className="text-xs font-medium text-gray-700">ذكاء اصطناعي تليجرام:</span>
                       <div className="flex items-center gap-1">
-                        {(permissions as any).canUseTelegramAI ? (
+                        {permissions.canUseTelegramAI ? (
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {permissions.telegramAiCredits > 0 && (
+                              <span className="text-xs text-purple-600">
+                                ({permissions.telegramAiCredits === -1 ? 'غير محدود' : (permissions.telegramAiCredits || 0) + ' كريديت'}/شهر)
+                              </span>
+                            )}
                           </>
                         ) : (
                           <>
@@ -1184,17 +1205,60 @@ export default function PlansAdminPage() {
                 </label>
                 
                 {newPlan.permissions.canManageTelegram && (
-                  <label className="flex items-center gap-2 mr-6 text-purple-600 font-medium">
-                    <input
-                      type="checkbox"
-                      checked={newPlan.permissions.canUseTelegramAI}
-                      onChange={(e) => setNewPlan({
-                        ...newPlan,
-                        permissions: { ...newPlan.permissions, canUseTelegramAI: e.target.checked }
-                      })}
-                    />
-                    <span>تفعيل الذكاء الاصطناعي لتليجرام</span>
-                  </label>
+                  <div className="mr-6 space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="عدد الرسائل شهرياً"
+                        value={newPlan.permissions.telegramMessagesPerMonth === -1 ? '' : newPlan.permissions.telegramMessagesPerMonth}
+                        onChange={(e) => setNewPlan({
+                          ...newPlan,
+                          permissions: { ...newPlan.permissions, telegramMessagesPerMonth: parseInt(e.target.value) || 0 }
+                        })}
+                        disabled={newPlan.permissions.telegramMessagesPerMonth === -1}
+                      />
+                      <Button
+                        type="button"
+                        variant={newPlan.permissions.telegramMessagesPerMonth === -1 ? "default" : "secondary"}
+                        onClick={() => setNewPlan({
+                          ...newPlan,
+                          permissions: { ...newPlan.permissions, telegramMessagesPerMonth: newPlan.permissions.telegramMessagesPerMonth === -1 ? 0 : -1 }
+                        })}
+                        className="whitespace-nowrap"
+                      >
+                        {newPlan.permissions.telegramMessagesPerMonth === -1 ? 'غير محدود' : 'غير محدود'}
+                      </Button>
+                    </div>
+
+                    <label className="flex items-center gap-2 text-purple-600 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={newPlan.permissions.canUseTelegramAI}
+                        onChange={(e) => setNewPlan({
+                          ...newPlan,
+                          permissions: { ...newPlan.permissions, canUseTelegramAI: e.target.checked }
+                        })}
+                      />
+                      <span>تفعيل الذكاء الاصطناعي لتليجرام</span>
+                    </label>
+
+                    {newPlan.permissions.canUseTelegramAI && (
+                      <div className="space-y-2">
+                        <Label>كريديت AI تليجرام شهرياً</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="عدد الكريديت (0 = غير محدود)"
+                          value={newPlan.permissions.telegramAiCredits || ''}
+                          onChange={(e) => setNewPlan({
+                            ...newPlan,
+                            permissions: { ...newPlan.permissions, telegramAiCredits: parseInt(e.target.value) || 0 }
+                          })}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -1682,17 +1746,60 @@ export default function PlansAdminPage() {
                 </label>
 
                 {editPlan.permissions.canManageTelegram && (
-                  <label className="flex items-center gap-2 mr-6 text-purple-600 font-medium">
-                    <input
-                      type="checkbox"
-                      checked={editPlan.permissions.canUseTelegramAI}
-                      onChange={(e) => setEditPlan({
-                        ...editPlan,
-                        permissions: { ...editPlan.permissions, canUseTelegramAI: e.target.checked }
-                      })}
-                    />
-                    <span>تفعيل الذكاء الاصطناعي لتليجرام</span>
-                  </label>
+                  <div className="mr-6 space-y-4">
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="عدد الرسائل شهرياً"
+                        value={editPlan.permissions.telegramMessagesPerMonth === -1 ? '' : editPlan.permissions.telegramMessagesPerMonth}
+                        onChange={(e) => setEditPlan({
+                          ...editPlan,
+                          permissions: { ...editPlan.permissions, telegramMessagesPerMonth: parseInt(e.target.value) || 0 }
+                        })}
+                        disabled={editPlan.permissions.telegramMessagesPerMonth === -1}
+                      />
+                      <Button
+                        type="button"
+                        variant={editPlan.permissions.telegramMessagesPerMonth === -1 ? "default" : "secondary"}
+                        onClick={() => setEditPlan({
+                          ...editPlan,
+                          permissions: { ...editPlan.permissions, telegramMessagesPerMonth: editPlan.permissions.telegramMessagesPerMonth === -1 ? 0 : -1 }
+                        })}
+                        className="whitespace-nowrap"
+                      >
+                        {editPlan.permissions.telegramMessagesPerMonth === -1 ? 'غير محدود' : 'غير محدود'}
+                      </Button>
+                    </div>
+
+                    <label className="flex items-center gap-2 text-purple-600 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={editPlan.permissions.canUseTelegramAI}
+                        onChange={(e) => setEditPlan({
+                          ...editPlan,
+                          permissions: { ...editPlan.permissions, canUseTelegramAI: e.target.checked }
+                        })}
+                      />
+                      <span>تفعيل الذكاء الاصطناعي لتليجرام</span>
+                    </label>
+
+                    {editPlan.permissions.canUseTelegramAI && (
+                      <div className="space-y-2">
+                        <Label>كريديت AI تليجرام شهرياً</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="عدد الكريديت (0 = غير محدود)"
+                          value={editPlan.permissions.telegramAiCredits || ''}
+                          onChange={(e) => setEditPlan({
+                            ...editPlan,
+                            permissions: { ...editPlan.permissions, telegramAiCredits: parseInt(e.target.value) || 0 }
+                          })}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

@@ -30,7 +30,8 @@ import {
   getTelegramGroups,
   syncTelegramGroups,
   getBotSettings,
-  updateBotSettings
+  updateBotSettings,
+  getUsageStats
 } from "@/lib/api";
 import { 
   Select, 
@@ -116,6 +117,7 @@ export default function TelegramBotPage() {
     can_delete_stories: false,
     can_manage_direct_messages: false
   });
+  const [usageStats, setUsageStats] = useState<any>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
@@ -167,9 +169,19 @@ export default function TelegramBotPage() {
       loadActiveTemplatesList();
       loadBotSettingsUI();
       loadCampaigns(); // Load campaigns on initial load
+      loadUsageStats();
       listTags().then(res=> { if (res?.success) setAvailableTags(res.data || []); }).catch(()=>{});
     }
   }, [token]);
+
+  async function loadUsageStats() {
+    try {
+      const res = await getUsageStats(token, 'telegram');
+      if (res.success) {
+        setUsageStats(res.data.usage);
+      }
+    } catch {}
+  }
 
   // Sync active tab with route path for route-based tabs
   useEffect(() => {
@@ -847,9 +859,22 @@ export default function TelegramBotPage() {
                   {/* <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center text-xl">
                     🧠
                   </div> */}
-                  <div>
+                  <div className="flex items-center gap-5">
                     <div className="text-white font-semibold">مساعد الذكاء الاصطناعي (AI)</div>
                     <div className="text-gray-400 text-sm">تفعيل الرد التلقائي باستخدام الذكاء الاصطناعي</div>
+                    {usageStats && usageStats.telegramAiCredits > 0 && (
+                      <div className="text-xs mt-1 flex flex-col gap-0.5">
+                        <div className="text-green-400 font-medium">
+                          الرصيد المتبقي: {usageStats.telegramAiRemaining === -1 ? 'غير محدود' : usageStats.telegramAiRemaining} من {usageStats.telegramAiCredits} كريديت
+                        </div>
+                        <div className="w-full bg-text-primary h-1 rounded-full overflow-hidden max-w-[200px]">
+                          <div 
+                            className="bg-purple-500 h-full transition-all" 
+                            style={{ width: `${Math.min(100, (usageStats.telegramAiCreditsUsed / usageStats.telegramAiCredits) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <label className={`relative inline-flex items-center ${!canUseTelegramAI() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>

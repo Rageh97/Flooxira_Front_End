@@ -27,6 +27,7 @@ interface UserPermissions {
   canManageWhatsApp: boolean;
   whatsappMessagesPerMonth: number;
   canManageTelegram: boolean;
+  telegramMessagesPerMonth: number;
   
   // تكامل سلة
   canSallaIntegration: boolean;
@@ -48,6 +49,8 @@ interface UserPermissions {
   // ميزات الذكاء الاصطناعي
   canUseAI: boolean;
   aiCredits: number;
+  canUseTelegramAI: boolean;
+  telegramAiCredits: number;
   
   // Live Chat & Tickets
   canUseLiveChat: boolean;
@@ -400,7 +403,37 @@ export default function MySubscriptionPage() {
                     )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
-                    -
+                    {permissions.canManageTelegram ? (
+                      permissions.telegramMessagesPerMonth === -1 ? 'غير محدود' : `${permissions.telegramMessagesPerMonth || 0} رسالة/شهر`
+                    ) : '-'}
+                  </td>
+                </tr>
+
+                {/* Telegram AI */}
+                <tr>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-white">
+                     الذكاء الاصطناعي لتليجرام
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    استخدام الذكاء الاصطناعي في بوت تليجرام
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    {permissions.canUseTelegramAI ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        متاح
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <XCircle className="h-3 w-3 mr-1" />
+                        غير متاح
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-white">
+                    {permissions.canUseTelegramAI ? (
+                      permissions.telegramAiCredits === -1 || permissions.telegramAiCredits === 0 ? 'غير محدود' : `${permissions.telegramAiCredits || 0} كريديت/شهر`
+                    ) : '-'}
                   </td>
                 </tr>
 

@@ -281,6 +281,11 @@ export default function PlansPage() {
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
                                     <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span>
+                                    {(permissions as any).telegramMessagesPerMonth > 0 && (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).telegramMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).telegramMessagesPerMonth} رسالة/شهر)
+                                      </span>
+                                    )}
                                   </>
                                 ) : (
                                   <>
@@ -305,6 +310,11 @@ export default function PlansPage() {
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
                                     <span className="text-xs font-medium text-gray-200">الذكاء الاصطناعي لتليجرام</span>
+                                    {(permissions as any).telegramAiCredits > 0 && (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).telegramAiCredits === -1 ? 'غير محدود' : (permissions as any).telegramAiCredits} كريديت/شهر)
+                                      </span>
+                                    )}
                                   </>
                                 ) : (
                                   <>
