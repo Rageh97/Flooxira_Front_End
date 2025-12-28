@@ -67,6 +67,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
     let intervalId: NodeJS.Timeout;
 
     const showRandomQuote = async () => {
+      // Prevent stacking: if tab is hidden, don't show toast, check again in 5s
+      if (document.hidden) {
+        timeoutId = setTimeout(showRandomQuote, 5000);
+        return;
+      }
+
       try {
         console.log("Fetching islamic quotes...");
         const res = await getActiveIslamicQuotes();
