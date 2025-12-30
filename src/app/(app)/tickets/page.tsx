@@ -160,6 +160,8 @@ export default function TicketsPage() {
     twitterUrl: "",
     widgetIconUrl: "",
     widgetPosition: "right",
+    widgetBottomDesktop: 20,
+    widgetBottomMobile: 20,
   });
   const [widgetIconPreview, setWidgetIconPreview] = useState<string>("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -680,6 +682,8 @@ export default function TicketsPage() {
           twitterUrl: data.settings.twitterUrl || "",
           widgetIconUrl: data.settings.widgetIconUrl || "",
           widgetPosition: data.settings.widgetPosition || "right",
+          widgetBottomDesktop: data.settings.widgetBottomDesktop !== undefined ? data.settings.widgetBottomDesktop : 20,
+          widgetBottomMobile: data.settings.widgetBottomMobile !== undefined ? data.settings.widgetBottomMobile : 20,
         });
         // إضافة timestamp للأيقونة لتجنب مشكلة التخزين المؤقت
         const iconUrl = data.settings.widgetIconUrl || "";
@@ -1956,8 +1960,45 @@ export default function TicketsPage() {
                 </label>
               </div>
             </div>
+            <div className="flex flex-col md:flex-row gap-6 p-4 border border-primary/20 rounded-xl bg-secondry/30">
+              <div className="flex-1 space-y-2">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                   المسافة من الأسفل - PC (بكسل)
+                </label>
+                <Input
+                  type="number"
+                  value={widgetSettings.widgetBottomDesktop}
+                  onChange={(e) =>
+                    setWidgetSettings({
+                      ...widgetSettings,
+                      widgetBottomDesktop: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="bg-fixed-40 border-primary text-white"
+                />
+                <p className="text-[10px] text-primary">القيمة الافتراضية: 20px</p>
+              </div>
+              <div className="flex-1 space-y-2">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                   المسافة من الأسفل - موبايل (بكسل)
+                </label>
+                <Input
+                  type="number"
+                  value={widgetSettings.widgetBottomMobile}
+                  onChange={(e) =>
+                    setWidgetSettings({
+                      ...widgetSettings,
+                      widgetBottomMobile: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="bg-fixed-40 border-primary text-white"
+                />
+                <p className="text-[10px] text-primary">القيمة الافتراضية: 70px</p>
+              </div>
+            </div>
           </div>
           
+      
           <div className="space-y-4 grid grid-cols-2 lg:grid-cols-4 gap-2">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
