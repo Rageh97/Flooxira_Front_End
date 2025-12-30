@@ -162,6 +162,8 @@ export default function TicketsPage() {
     widgetPosition: "right",
     widgetBottomDesktop: 20,
     widgetBottomMobile: 20,
+    widgetPrimaryColor: "#667eea",
+    widgetSecondaryColor: "#764ba2",
   });
   const [widgetIconPreview, setWidgetIconPreview] = useState<string>("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -684,6 +686,8 @@ export default function TicketsPage() {
           widgetPosition: data.settings.widgetPosition || "right",
           widgetBottomDesktop: data.settings.widgetBottomDesktop !== undefined ? data.settings.widgetBottomDesktop : 20,
           widgetBottomMobile: data.settings.widgetBottomMobile !== undefined ? data.settings.widgetBottomMobile : 20,
+          widgetPrimaryColor: data.settings.widgetPrimaryColor || "#667eea",
+          widgetSecondaryColor: data.settings.widgetSecondaryColor || "#764ba2",
         });
         // إضافة timestamp للأيقونة لتجنب مشكلة التخزين المؤقت
         const iconUrl = data.settings.widgetIconUrl || "";
@@ -1994,6 +1998,66 @@ export default function TicketsPage() {
                   className="bg-fixed-40 border-primary text-white"
                 />
                 <p className="text-[10px] text-primary">القيمة الافتراضية: 70px</p>
+              </div>
+            </div>
+            <div className="flex flex-col md:flex-row gap-6 p-4 border border-primary/20 rounded-xl bg-secondry/30">
+              <div className="flex-1 space-y-2">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                   لون الثيم الرئيسي (Gradient Start)
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={widgetSettings.widgetPrimaryColor}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        widgetPrimaryColor: e.target.value,
+                      })
+                    }
+                    className="w-12 h-10 p-1 bg-fixed-40 border-primary"
+                  />
+                  {/* <Input
+                    type="text"
+                    value={widgetSettings.widgetPrimaryColor}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        widgetPrimaryColor: e.target.value,
+                      })
+                    }
+                    className="flex-1 bg-fixed-40 border-primary text-white"
+                  /> */}
+                </div>
+              </div>
+              <div className="flex-1 space-y-2">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                   لون الثيم فرعي (Gradient End)
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    type="color"
+                    value={widgetSettings.widgetSecondaryColor}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        widgetSecondaryColor: e.target.value,
+                      })
+                    }
+                    className="w-12 h-10 p-1 bg-fixed-40 border-primary"
+                  />
+                  {/* <Input
+                    type="text"
+                    value={widgetSettings.widgetSecondaryColor}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        widgetSecondaryColor: e.target.value,
+                      })
+                    }
+                    className="flex-1 bg-fixed-40 border-primary text-white"
+                  /> */}
+                </div>
               </div>
             </div>
           </div>
