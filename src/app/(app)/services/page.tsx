@@ -299,38 +299,32 @@ export default function ServicesPage() {
 
 
 
-  if (hasActiveSubscription && !canMarketServices()) {
-    return (
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-2xl font-semibold text-white">إدارة الخدمات</h1>
-          <p className="text-sm text-green-600">سوّق خدماتك للعملاء</p>
-        </div>
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center gap-3 text-red-800">
-              <XCircle className="h-6 w-6" />
-              <p className="text-lg font-medium">ليس لديك صلاحية لتسويق الخدمات</p>
-            </div>
-            <p className="text-center text-red-600 mt-2">
-              هذه الميزة غير متوفرة في باقتك الحالية. يرجى ترقية باقتك للوصول إلى تسويق الخدمات.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
+  const showBlurOverlay = !hasActiveSubscription;
+  const hasInadequatePlan = hasActiveSubscription && !canMarketServices();
+
+  const handleRestrictedAction = (action: () => void) => {
+    if (hasInadequatePlan) {
+      showError("هذه الميزة غير متاحة في الباقة الحالية، يرجى ترقية الباقة");
+      return;
+    }
+    action();
+  };
 
   return (
-    <div className="space-y-8">
-      {/* {!hasActiveSubscription && (
-        <NoActiveSubscription 
-          heading="إدارة الخدمات"
-          featureName="إدارة الخدمات"
-          className="space-y-8"
-        />
-      )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-8" : "space-y-8"}>
+    <div className="space-y-8 relative">
+      {showBlurOverlay && (
+        <div className="absolute inset-0 z-50 flex items-center justify-start pt-20 flex-col bg-black/5">
+          {/* <NoActiveSubscription 
+            heading=" "
+            featureName="تسويق الخدمات"
+            cardTitle="لا يوجد اشتراك نشط"
+            description="تحتاج إلى اشتراك نشط للوصول إلى إدارة الخدمات."
+            className="w-full max-w-2xl px-4"
+          /> */}
+        </div>
+      )}
+      <div className={showBlurOverlay ? "opacity-60 pointer-events-none select-none grayscale-[0.3] blur-[2px] space-y-8" : "space-y-8"}>
       <div className="flex flex-col lg:flex-row gap-2 items-center justify-between">
         <div>
           <h1 className="text-4xl font-semibold text-white">إدارة الخدمات</h1>
@@ -340,12 +334,12 @@ export default function ServicesPage() {
         <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
         
         <Button
-          onClick={() => {
+          onClick={() => handleRestrictedAction(() => {
             resetForm();
             setCreateModalOpen(true);
-          }}
+          })}
           className="primary-button"
-          disabled={!stats.canCreateMore && stats.maxServices > 0}
+          disabled={!stats.canCreateMore && stats.maxServices > 0 && !hasInadequatePlan}
         >
           {/* <Plus className="h-4 w-4 mr-1" /> */}
           إضافة خدمة جديدة
@@ -422,10 +416,10 @@ export default function ServicesPage() {
               <p className="text-yellow-500 text-lg mb-2">لا توجد خدمات بعد</p>
               <p className="text-primary text-sm mb-4">ابدأ بإضافة خدمتك الأولى!</p>
               <Button
-                onClick={() => {
+                onClick={() => handleRestrictedAction(() => {
                   resetForm();
                   setCreateModalOpen(true);
-                }}
+                })}
                 className="bg-green-600 hover:bg-green-700"
               >
                 <Plus className="h-4 w-4 mr-1" />
@@ -553,7 +547,7 @@ export default function ServicesPage() {
                         <div className="flex gap-2">
                           {service.approvalStatus !== 'approved' && (
                             <Button
-                              onClick={() => openEditModal(service)}
+                              onClick={() => handleRestrictedAction(() => openEditModal(service))}
                               size="sm"
                               className="bg-blue-600 hover:bg-blue-700"
                             >
@@ -561,7 +555,7 @@ export default function ServicesPage() {
                             </Button>
                           )}
                           <Button
-                            onClick={() => handleDeleteService(service.id)}
+                            onClick={() => handleRestrictedAction(() => handleDeleteService(service.id))}
                             size="sm"
                             variant="secondary"
                             className="border-red-300 text-red-600 bg-red-50"

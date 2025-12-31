@@ -266,11 +266,10 @@ const { showSuccess, showError } = useToast();
 
   if (!canSallaIntegration()) {
     return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">تكامل سلة</h1>
+      <div className="space-y-8 bg-fixed-40 border-none">
         <div className="text-center py-12">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية تكامل سلة</h3>
-          <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل تكامل سلة</p>
+          <h3 className="text-lg font-semibold text-white mb-2">ليس لديك صلاحية تكامل سلة</h3>
+          <p className="text-gray-300 mb-4">باقتك الحالية لا تشمل تكامل سلة</p>
           <Button 
             onClick={() => window.location.href = '/plans'}
             className="bg-green-600 hover:bg-green-700"

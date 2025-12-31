@@ -909,75 +909,31 @@ useEffect(() => {
     );
   }
 
-  // Check if user has active subscription
+  const showBlurOverlay = !hasActiveSubscription;
+  const hasInadequatePlan = hasActiveSubscription && (!canManageCustomers() || !hasAccess);
 
-
-  // Check if user has customers management permission
-  if (hasActiveSubscription && !canManageCustomers()) {
-    return (
-      <div className="w-full">
-        <h1 className="text-2xl font-semibold mb-4">إدارة العملاء</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية إدارة العملاء</h3>
-            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل إدارة العملاء</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              ترقية الباقة
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (hasActiveSubscription && !hasAccess) {
-    return (
-      <div className="w-full">
-        <Card className="max-w-2xl mx-auto">
-          <CardContent className="text-center py-12">
-            <div className="mb-6">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-red-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">ليس لديك اشتراك نشط</h2>
-              <p className="text-gray-600 mb-6">
-                تحتاج إلى اشتراك نشط في باقة تدعم ميزة إدارة العملاء للوصول إلى هذه الصفحة
-              </p>
-            </div>
-            <div className="space-y-3">
-              <Button 
-                onClick={() => window.location.href = '/plans'}
-                className="w-full"
-              >
-                عرض الباقات المتاحة
-              </Button>
-              <Button 
-                    variant="secondary"
-                onClick={() => window.location.href = '/dashboard'}
-                className="w-full"
-              >
-                العودة للوحة التحكم
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleRestrictedAction = (action: () => void) => {
+    if (hasInadequatePlan) {
+      showError("هذه الميزة غير متاحة في الباقة الحالية، يرجى ترقية الباقة");
+      return;
+    }
+    action();
+  };
 
   return (
-    <div className="w-full space-y-3">
-      {/* {!hasActiveSubscription && (
-        <NoActiveSubscription 
-          heading="إدارة العملاء"
-          featureName="إدارة العملاء"
-          className="container mx-auto p-6"
-        />
-      )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-3" : "space-y-3"}>
+    <div className="w-full space-y-3 relative">
+      {showBlurOverlay && (
+        <div className="absolute inset-0 z-50 flex items-center justify-start pt-20 flex-col bg-black/5">
+          {/* <NoActiveSubscription 
+            heading=" "
+            featureName="إدارة العملاء"
+            cardTitle="لا يوجد اشتراك نشط"
+            description="تحتاج إلى اشتراك نشط للوصول إلى إدارة العملاء."
+            className="w-full max-w-2xl px-4"
+          /> */}
+        </div>
+      )}
+      <div className={showBlurOverlay ? "opacity-60 pointer-events-none select-none grayscale-[0.3] blur-[2px] space-y-3" : "space-y-3"}>
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start mx-2 md:mx-0 md:items-center gap-3">
         <div >
@@ -986,37 +942,34 @@ useEffect(() => {
           <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); })}>
             أضف تصنيف
           </Button>
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => { setEntityType('store'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(() => { setEntityType('store'); setEntityName(''); setIsAddEntityDialogOpen(true); })}>
             أضف متجر
           </Button>
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => { setEntityType('platform'); setEntityName(''); setIsAddEntityDialogOpen(true); }}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(() => { setEntityType('platform'); setEntityName(''); setIsAddEntityDialogOpen(true); })}>
             أضف منصة
           </Button>
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => window.location.href = '/customers/analytics'}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(() => window.location.href = '/customers/analytics')}>
               
             الإحصائيات
           </Button>
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={handleExportToExcel}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(handleExportToExcel)}>
             
             تصدير Excel
           </Button>
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={handleExportContacts}>
+          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(handleExportContacts)}>
             تصدير جهات الاتصال
           </Button>
-          <Button variant="secondary" className='primary-button after:bg-[#03132c]' onClick={() => setIsCustomFieldsDialogOpen(true)}>
+          <Button variant="secondary" className='primary-button after:bg-[#03132c]' onClick={() => handleRestrictedAction(() => setIsCustomFieldsDialogOpen(true))}>
             
             إدارة الحقول
           </Button>
+          <Button className='primary-button' onClick={() => handleRestrictedAction(() => setIsCreateDialogOpen(true))}>
+            إضافة عميل جديد
+          </Button>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className='primary-button'>
-               
-                إضافة عميل جديد
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 {/* <DialogTitle>إضافة عميل جديد</DialogTitle>
@@ -1671,7 +1624,7 @@ useEffect(() => {
                           <Button 
                             variant="none" 
                             size="sm" 
-                            onClick={() => openEditDialog(customer)}
+                            onClick={() => handleRestrictedAction(() => openEditDialog(customer))}
                             className=" text-green-400"
                           >
                             <Edit className="h-6 w-6" />
@@ -1679,7 +1632,7 @@ useEffect(() => {
                           <Button 
                             variant="none" 
                             size="sm" 
-                            onClick={() => handleDeleteCustomer(customer.id)}
+                            onClick={() => handleRestrictedAction(() => handleDeleteCustomer(customer.id))}
                             className=" text-red-400"
                           >
                             <Trash2 className="h-6 w-6" />

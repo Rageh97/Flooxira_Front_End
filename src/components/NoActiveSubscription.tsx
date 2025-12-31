@@ -10,6 +10,7 @@ interface NoActiveSubscriptionProps {
   description?: string;
   className?: string;
   cardClassName?: string;
+  cardTitle?: string;
 }
 
 export default function NoActiveSubscription({
@@ -18,13 +19,14 @@ export default function NoActiveSubscription({
   description,
   className,
   cardClassName,
+  cardTitle,
 }: NoActiveSubscriptionProps) {
   return (
     <div className={className ? className : "space-y-8"}>
       {heading && <h1 className="text-2xl font-semibold text-white">{heading}</h1>}
       <Card className={cardClassName ? cardClassName : "bg-card border-none"}>
         <CardContent className="text-center py-12">
-          <h3 className="text-lg font-semibold text-white mb-2">لا يوجد اشتراك نشط</h3>
+          <h3 className="text-lg font-semibold text-white mb-2">{cardTitle || "لا يوجد اشتراك نشط"}</h3>
           <p className="text-gray-400 mb-4">
             {description
               ? description
@@ -33,7 +35,7 @@ export default function NoActiveSubscription({
               : "تحتاج إلى اشتراك نشط للوصول إلى هذه الميزة"}
           </p>
           <Button onClick={() => (window.location.href = "/plans")} className="bg-green-600 hover:bg-green-700">
-            تصفح الباقات
+            {cardTitle ? "ترقية الباقة" : "تصفح الباقات"}
           </Button>
         </CardContent>
       </Card>
