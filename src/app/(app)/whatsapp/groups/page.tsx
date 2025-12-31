@@ -377,10 +377,13 @@ export default function WhatsAppGroupsPage() {
           <div className="flex flex-col lg:flex-row gap-4">
 
 
-           <div className="w-full flex flex-col gap-4">
-           <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-white">اختر المجموعات</label>
+           <div className="lg:w-1/3 w-full flex flex-col gap-4 border-l border-white/10 pl-0 lg:pl-4">
+           <div className="h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col">
+                  <label className="block text-sm font-bold text-white uppercase tracking-wider">قائمة المجموعات</label>
+                  <span className="text-[10px] text-white/60">اختر المجموعات المستهدفة</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -390,54 +393,113 @@ export default function WhatsAppGroupsPage() {
                       setSelectedGroupNames(groups.map(g => g.name));
                     }
                   }}
-                  className="text-xs px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+                  className="text-[10px] px-2 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 border border-blue-500/30 rounded transition-all"
                 >
-                  {selectedGroupNames.length === groups.length && groups.length > 0 ? 'إلغاء اختيار الكل' : 'اختيار الكل'}
+                  {selectedGroupNames.length === groups.length && groups.length > 0 ? 'إلغاء الكل' : 'اختيار الكل'}
                 </button>
               </div>
+              
               <div 
-                className="w-full flex flex-wrap gap-3 items-start max-h-55 overflow-y-auto bg-[#01191040] rounded-md border-1 border-blue-300 p-3 space-y-2"
-                style={{ minHeight: '200px' }}
+                className="flex-1 flex flex-col gap-1 overflow-y-auto bg-[#01191040] rounded-xl border border-white/10 p-2 custom-scrollbar"
+                style={{ maxHeight: '450px', minHeight: '300px' }}
               >
                 {groups.length === 0 ? (
-                  <p className="text-white/50 text-sm text-center py-4">لا توجد مجموعات متاحة</p>
+                  <div className="flex flex-col items-center justify-center h-full py-10 opacity-50">
+                    <svg className="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <p className="text-white text-sm">لا توجد مجموعات</p>
+                  </div>
                 ) : (
                   groups.map(g => (
                     <label
                       key={g.id}
-                      className="flex  items-center gap-2 p-2 hover:bg-[#01191060] rounded cursor-pointer transition-colors"
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border ${
+                        selectedGroupNames.includes(g.name) 
+                          ? 'bg-blue-500/10 border-blue-500/30' 
+                          : 'hover:bg-white/5 border-transparent'
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedGroupNames.includes(g.name)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedGroupNames([...selectedGroupNames, g.name]);
-                          } else {
-                            setSelectedGroupNames(selectedGroupNames.filter(name => name !== g.name));
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
-                      />
-                      <span className="text-white text-sm flex-1">
-                        {g.name} <span className="text-primary">({g.participantsCount})</span>
-                      </span>
+                      <div className="relative flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedGroupNames.includes(g.name)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedGroupNames([...selectedGroupNames, g.name]);
+                            } else {
+                              setSelectedGroupNames(selectedGroupNames.filter(name => name !== g.name));
+                            }
+                          }}
+                          className="w-5 h-5 rounded border-white/20 bg-black/20 checked:bg-blue-500 transition-all cursor-pointer"
+                        />
+                      </div>
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        <span className={`text-sm truncate transition-colors ${
+                          selectedGroupNames.includes(g.name) ? 'text-blue-300 font-bold' : 'text-white/80'
+                        }`}>
+                          {g.name}
+                        </span>
+                        <span className="text-[10px] text-primary">
+                          {g.participantsCount} مشارك
+                        </span>
+                      </div>
                     </label>
                   ))
                 )}
               </div>
-              {selectedGroupNames.length > 0 && (
-                <p className="text-xs text-white/60 mt-2">
-                  تم اختيار {selectedGroupNames.length} من {groups.length} مجموعة
-                </p>
-              )}
-              <p className="text-xs text-white/40 mt-1">
-                💡 انقر على المجموعات لاختيارها أو إلغاء اختيارها
-              </p>
-            </div>
 
-            
-            <div className="flex flex-col mt-2.5">
+              <div className="mt-3 p-3 bg-fixed-40 rounded-lg border border-blue-500/10">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] text-primary ">ملخص التحديد:</span>
+                  <span className="text-xs font-bold text-blue-400">{selectedGroupNames.length} / {groups.length}</span>
+                </div>
+                <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+                  <div 
+                    className="bg-blue-500 h-full transition-all duration-500" 
+                    style={{ width: `${(selectedGroupNames.length / Math.max(groups.length, 1)) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+           </div>
+
+
+
+            <div className="lg:w-2/3 w-full flex flex-col gap-4">
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">الرسالة</label>
+                <textarea className="w-full h-15 px-3 py-2 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none" rows={3} placeholder="اكتب رسالتك التسويقية" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
+              </div>
+
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
+                <div className="relative">
+                  <input 
+                    ref={groupScheduleInputRef}
+                    type="datetime-local" 
+                    className="w-full px-3 py-4 pr-10 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none cursor-pointer" 
+                    value={groupScheduleAt} 
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Get user's timezone offset
+                      const timezoneOffset = new Date().getTimezoneOffset();
+                      console.log('User timezone offset:', timezoneOffset, 'minutes');
+                      console.log('Selected time:', value);
+                      setGroupScheduleAt(value);
+                    }}
+                    onClick={() => groupScheduleInputRef.current?.showPicker()}
+                  />
+                  <Calendar 
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
+                  />
+                </div>
+              </div>
+
+              {/* ................. */}
+           <div className="flex flex-col mt-2.5">
               <label className="block text-sm font-medium mb-2 text-white">
                 ارفع (صورة / فيديو) <span className="text-white/50 text-xs">(اختياري)</span>
               </label>
@@ -483,41 +545,6 @@ export default function WhatsAppGroupsPage() {
                 />
               </label>
             </div>
-           </div>
-
-
-
-            <div className="w-full flex flex-col gap-4">
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-white">الرسالة</label>
-                <textarea className="w-full h-15 px-3 py-2 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none" rows={3} placeholder="اكتب رسالتك التسويقية" value={groupMessage} onChange={(e) => setGroupMessage(e.target.value)} />
-              </div>
-
-
-              <div>
-                <label className="block text-sm font-medium mb-2 text-white">الجدولة (اختياري)</label>
-                <div className="relative">
-                  <input 
-                    ref={groupScheduleInputRef}
-                    type="datetime-local" 
-                    className="w-full px-3 py-4 pr-10 bg-[#01191040] rounded-md text-white border-1 border-blue-300 outline-none cursor-pointer" 
-                    value={groupScheduleAt} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Get user's timezone offset
-                      const timezoneOffset = new Date().getTimezoneOffset();
-                      console.log('User timezone offset:', timezoneOffset, 'minutes');
-                      console.log('Selected time:', value);
-                      setGroupScheduleAt(value);
-                    }}
-                    onClick={() => groupScheduleInputRef.current?.showPicker()}
-                  />
-                  <Calendar 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white pointer-events-none z-10"
-                  />
-                </div>
-              </div>
 
             </div>
           </div>

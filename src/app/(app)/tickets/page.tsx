@@ -1445,7 +1445,7 @@ export default function TicketsPage() {
                       key={ticket.id}
                       onClick={() => loadTicket(ticket.id)}
                       className={`w-full text-left rounded-md p-4 transition-colors mb-2 ${
-                        isActive ? "bg-fixed-40 inner-shadow ring-1 ring-primary/50" : ""
+                        isActive ? "bg-fixed-40 border-primary ring-1 ring-primary/50" : ""
                       } ${
                         ticket.status === 'open' ? 'bg-green-500/10 hover:bg-green-500/20' :
                         ticket.status === 'pending' ? 'bg-yellow-500/10 hover:bg-yellow-500/20' :
