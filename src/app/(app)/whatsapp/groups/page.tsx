@@ -396,7 +396,7 @@ export default function WhatsAppGroupsPage() {
                 </button>
               </div>
               <div 
-                className="w-full flex items-start max-h-55 overflow-y-auto bg-[#01191040] rounded-md border-1 border-blue-300 p-3 space-y-2"
+                className="w-full flex flex-wrap gap-3 items-start max-h-55 overflow-y-auto bg-[#01191040] rounded-md border-1 border-blue-300 p-3 space-y-2"
                 style={{ minHeight: '200px' }}
               >
                 {groups.length === 0 ? (
@@ -405,7 +405,7 @@ export default function WhatsAppGroupsPage() {
                   groups.map(g => (
                     <label
                       key={g.id}
-                      className="flex items-center gap-2 p-2 hover:bg-[#01191060] rounded cursor-pointer transition-colors"
+                      className="flex  items-center gap-2 p-2 hover:bg-[#01191060] rounded cursor-pointer transition-colors"
                     >
                       <input
                         type="checkbox"

@@ -212,7 +212,14 @@ export async function startWhatsAppSession(token: string) {
 }
 
 export async function getWhatsAppStatus(token: string) {
-  return apiFetch<{ success: boolean; status: string; message: string; initializing?: boolean }>("/api/whatsapp/status", { authToken: token });
+  return apiFetch<{ success: boolean; status: string; message: string; initializing?: boolean; botPaused?: boolean }>("/api/whatsapp/status", { authToken: token });
+}
+
+export async function toggleWhatsAppBotStatus(token: string) {
+  return apiFetch<{ success: boolean; botPaused: boolean; message: string }>("/api/whatsapp/toggle-bot-status", {
+    method: "POST",
+    authToken: token
+  });
 }
 
 export async function getWhatsAppQRCode(token: string) {

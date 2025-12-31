@@ -9,6 +9,7 @@ import {
   startWhatsAppSession,
   getWhatsAppQRCode,
   stopWhatsAppSession,
+  toggleWhatsAppBotStatus,
 } from "@/lib/api";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
@@ -679,6 +680,21 @@ export default function WhatsAppPage() {
     }
   }
 
+  async function handleToggleBot() {
+    try {
+      setLoading(true);
+      const result = await toggleWhatsAppBotStatus(token);
+      if (result.success) {
+        showSuccess(result.message);
+        await checkStatus();
+      }
+    } catch (e: any) {
+      showError(e.message || "فشل في تغيير حالة البوت");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSendMessage() {
     if (!testPhoneNumber || !testMessage) {
       setError("يرجى إدخال رقم الهاتف والرسالة");
@@ -708,49 +724,26 @@ export default function WhatsAppPage() {
 
   return (
     <div className="space-y-6">
-      {/* Status Messages */}
-      {/* {error && (
-        <div className="rounded-md p-4 bg-red-50 text-red-700">
-          {error}
-        </div>
-      )} */}
-
       {success && (
         <div className="rounded-md p-4 bg-green-50 text-green-700">
           {success}
         </div>
       )}
-              {/* <Button 
-             
-                onClick={handleShowTutorial} 
-                variant="secondary"
-                className="flex items-center gap-2 primary-button">
-               <div className="flex items-center gap-2">
-               <BookOpen className="w-4 h-4" />
-               <p> شرح الميزة</p>
-               </div>
-              </Button> */}
-{/* <button  onClick={handleShowTutorial}  className="border-1 border-[#cd201f] overflow-hidden relative h-[35px] w-[130px] rounded-[30px] bg-white"> 
-  <span className="icon"><svg fill="none" height="33" viewBox="0 0 120 120" width="33" xmlns="http://www.w3.org/2000/svg"><path d="m120 60c0 33.1371-26.8629 60-60 60s-60-26.8629-60-60 26.8629-60 60-60 60 26.8629 60 60z" fill="#cd201f"></path><path d="m25 49c0-7.732 6.268-14 14-14h42c7.732 0 14 6.268 14 14v22c0 7.732-6.268 14-14 14h-42c-7.732 0-14-6.268-14-14z" fill="#fff"></path><path d="m74 59.5-21 10.8253v-21.6506z" fill="#cd201f"></path></svg></span>
-  <span className="text1">شرح الميزة</span>
-  <span className="text2 text-center">شاهد</span> 
-</button> */}
-<AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
-<div className="flex flex-col lg:flex-row  w-full gap-3">
-             
-      {/* Usage Statistics */}
-     <div className="w-full ">
-     {canManageWhatsApp() && hasActiveSubscription && (
-        <UsageStats platform="whatsapp" />
-      )}
-     </div>
+      
+      <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
+      
+      <div className="flex flex-col lg:flex-row w-full gap-3">
+        <div className="w-full">
+          {canManageWhatsApp() && hasActiveSubscription && (
+            <UsageStats platform="whatsapp" />
+          )}
+        </div>
 
-      {/* WhatsApp Connection */}
-      <Card className=" gradient-border w-full">
-        <CardHeader className="border-text-primary/50 text-white flex items-center justify-between">اتصال الواتساب
-        
-        <div className="">
-              <p className="text-sm  bg-green-900 text-white p-1 rounded-md">
+        <Card className="gradient-border w-full">
+          <CardHeader className="border-text-primary/50 text-white flex items-center justify-between">
+            اتصال الواتساب
+            <div>
+              <p className="text-sm bg-green-900 text-white p-1 rounded-md">
                 الحالة: <span className={`${status?.status === 'connected' || status?.status === 'CONNECTED' || status?.status === 'inChat' ? 'text-green-500' : 'text-red-300'}`}>
                   {status?.status === 'connected' || status?.status === 'CONNECTED' || status?.status === 'inChat' ? 'متصل' : 
                    status?.status === 'disconnected' ? 'غير متصل' :
@@ -759,49 +752,62 @@ export default function WhatsAppPage() {
                    status?.status || 'غير معروف'}
                 </span> 
               </p>
-              {/* {status?.message || 'لا توجد جلسة'} */}
             </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-         
-            <div className="flex items-center gap-2 w-full">
-              <Button className="w-1/2 primary-button after:bg-[#01191080] before:bg-[#01191080]" onClick={checkStatus} disabled={loading} variant="secondary">
-                تحديث
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 w-full">
+                {/* <Button 
+                  className="w-1/2 primary-button after:bg-[#01191080] before:bg-[#01191080]" 
+                  onClick={checkStatus} 
+                  disabled={loading} 
+                  variant="secondary"
+                >
+                  تحديث
+                </Button> */}
+                 <Button 
+                className={`w-1/2 primary-button after:bg-[#01191080] ${status?.botPaused ? 'after:bg-green-500' : 'after:bg-red-500'}`} 
+                onClick={handleToggleBot} 
+                disabled={loading || (status?.status !== 'connected' && status?.status !== 'CONNECTED' && status?.status !== 'inChat')} 
+                variant={status?.botPaused ? "secondary" : "destructive"}
+              >
+                {status?.botPaused ? 'استئناف البوت (البوت متوقف حالياً)' : 'ايقاف البوت (البوت يعمل حالياً)'}
               </Button>
-
-
-
-              {status?.status === 'disconnected' || !status ? (
-                <button className="w-1/2 primary-button after:bg-[#131240] relative overflow-hidden" onClick={startSession} disabled={loading}>
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-3">
-                      <div className="relative">
-                        <div className="absolute inset-0 rounded-full border-2 border-white/20"></div>
-                        <div className="relative w-5 h-5">
-                          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" style={{ animationDuration: '0.8s' }}></div>
+                
+                {status?.status === 'disconnected' || !status ? (
+                  <button className="w-1/2 primary-button after:bg-[#131240] relative overflow-hidden" onClick={startSession} disabled={loading}>
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-full border-2 border-white/20"></div>
+                          <div className="relative w-5 h-5">
+                            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-white animate-spin" style={{ animationDuration: '0.8s' }}></div>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-white font-medium">جاري الربط...</span>
-                    </span>
-                  ) : (
-                    <span> ربط حسابك</span>
-                  )}
-                </button>
-              ) : (
-                <Button className="w-1/2" onClick={stopSession} disabled={loading} variant="destructive">
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      جاري الإيقاف...
-                    </span>
-                  ) : (
-                    'إيقاف الربط'
-                  )}
-                </Button>
-              )}
+                        <span className="text-white font-medium">جاري الربط...</span>
+                      </span>
+                    ) : (
+                      <span> ربط حسابك</span>
+                    )}
+                  </button>
+                ) : (
+                  <Button className="w-1/2" onClick={stopSession} disabled={loading} variant="destructive">
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        جاري الإيقاف...
+                      </span>
+                    ) : (
+                      'إيقاف الربط'
+                    )}
+                  </Button>
+                )}
+              </div>
+
+             
             </div>
          
           

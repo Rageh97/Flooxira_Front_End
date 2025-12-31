@@ -68,7 +68,7 @@ interface Ticket {
   visitorId?: string;
   visitorName?: string;
   visitorEmail?: string;
-  status: "open" | "pending" | "closed";
+  status: "open" | "pending" | "closed" | "waiting_customer";
   assignedTo?: number;
   ticketNumber?: string;
   createdAt: string;
@@ -109,6 +109,7 @@ interface TicketStats {
   open: number;
   pending: number;
   closed: number;
+  waiting_customer: number;
 }
 
 interface KnowledgeBase {
@@ -1159,11 +1160,13 @@ export default function TicketsPage() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "open":
-        return <AlertCircle className="h-4 w-4 text-blue-500" />;
+        return <AlertCircle className="h-4 w-4 text-green-500" />;
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-500" />;
       case "closed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-red-500" />;
+      case "waiting_customer":
+        return <User className="h-4 w-4 text-purple-500" />;
       default:
         return <XCircle className="h-4 w-4 text-gray-500" />;
     }
@@ -1177,6 +1180,8 @@ export default function TicketsPage() {
         return "قيد الانتظار";
       case "closed":
         return "مغلقة";
+      case "waiting_customer":
+        return "بانتظار رد العميل";
       default:
         return status;
     }
@@ -1322,7 +1327,7 @@ export default function TicketsPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="gradient-border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -1339,9 +1344,9 @@ export default function TicketsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-200">مفتوحة</p>
-                  <p className="text-2xl font-bold text-blue-400">{stats.open}</p>
+                  <p className="text-2xl font-bold text-green-400">{stats.open}</p>
                 </div>
-                <AlertCircle className="h-8 w-8 text-blue-400" />
+                <AlertCircle className="h-8 w-8 text-green-400" />
               </div>
             </CardContent>
           </Card>
@@ -1360,10 +1365,21 @@ export default function TicketsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-200">مغلقة</p>
-                  <p className="text-2xl font-bold text-green-400">{stats.closed}</p>
+                  <p className="text-sm text-gray-200">بانتظار العميل</p>
+                  <p className="text-2xl font-bold text-purple-400">{stats.waiting_customer || 0}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-400" />
+                <User className="h-8 w-8 text-purple-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="gradient-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-200">مغلقة</p>
+                  <p className="text-2xl font-bold text-red-400">{stats.closed}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-red-400" />
               </div>
             </CardContent>
           </Card>
@@ -1409,6 +1425,7 @@ export default function TicketsPage() {
                   <SelectItem value="all">جميع الحالات</SelectItem>
                   <SelectItem value="open">مفتوحة</SelectItem>
                   <SelectItem value="pending">قيد الانتظار</SelectItem>
+                  <SelectItem value="waiting_customer">بانتظار رد العميل</SelectItem>
                   <SelectItem value="closed">مغلقة</SelectItem>
                 </SelectContent>
               </Select>
@@ -1427,8 +1444,14 @@ export default function TicketsPage() {
                     <button
                       key={ticket.id}
                       onClick={() => loadTicket(ticket.id)}
-                      className={`w-full text-left rounded-md p-4 transition-colors ${
-                        isActive ? "bg-fixed-40 inner-shadow " : "hover:bg-secondry"
+                      className={`w-full text-left rounded-md p-4 transition-colors mb-2 ${
+                        isActive ? "bg-fixed-40 inner-shadow ring-1 ring-primary/50" : ""
+                      } ${
+                        ticket.status === 'open' ? 'bg-green-500/10 hover:bg-green-500/20' :
+                        ticket.status === 'pending' ? 'bg-yellow-500/10 hover:bg-yellow-500/20' :
+                        ticket.status === 'closed' ? 'bg-red-500/10 hover:bg-red-500/20' :
+                        ticket.status === 'waiting_customer' ? 'bg-purple-500/10 hover:bg-purple-500/20' :
+                        'hover:bg-secondry'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -1445,8 +1468,8 @@ export default function TicketsPage() {
                                 </div>
                               )}
                             </div>
-                            <span className="text-[10px] text-gray-500 whitespace-nowrap">
-                              {new Date(ticket.createdAt).toLocaleDateString("en-US")}
+                            <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                              {new Date(ticket.createdAt).toLocaleDateString("en-GB")} {new Date(ticket.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
                             </span>
                           </div>
                           
@@ -1495,7 +1518,7 @@ export default function TicketsPage() {
                     رقم التذكرة: {selectedTicket.ticketNumber || `#${selectedTicket.id}`}
                   </p>
                   <p className="text-xs text-gray-200 mt-1">
-                    تم الإنشاء في {new Date(selectedTicket.createdAt).toLocaleString("en-US")}
+                    تم الإنشاء في {new Date(selectedTicket.createdAt).toLocaleDateString("en-GB")} {new Date(selectedTicket.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -1526,6 +1549,7 @@ export default function TicketsPage() {
                     <SelectContent className="bg-fixed-40 border-primary text-white">
                       <SelectItem value="open">مفتوحة</SelectItem>
                       <SelectItem value="pending">قيد الانتظار</SelectItem>
+                      <SelectItem value="waiting_customer">بانتظار رد العميل</SelectItem>
                       <SelectItem value="closed">مغلقة</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1605,7 +1629,7 @@ export default function TicketsPage() {
                           <p className="whitespace-pre-wrap">{message.content}</p>
                         )}
                         <p className="text-xs opacity-70 mt-2">
-                          {new Date(message.createdAt).toLocaleString("en-US")}
+                          {new Date(message.createdAt).toLocaleDateString("en-GB")} {new Date(message.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
                         </p>
                       </div>
                     </div>
@@ -2317,7 +2341,7 @@ export default function TicketsPage() {
                                   {kb.rowCount} صف • {kb.columns.length} عمود
                                 </p>
                                 <p className="text-xs text-yellow-500 mt-1">
-                                  آخر تحديث: {new Date(kb.updatedAt).toLocaleDateString("en-US")}
+                                  آخر تحديث: {new Date(kb.updatedAt).toLocaleDateString("en-GB")}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
