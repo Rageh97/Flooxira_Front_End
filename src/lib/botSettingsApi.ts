@@ -45,6 +45,14 @@ export interface BotSettings {
   // WhatsApp welcome auto message settings
   welcomeAutoMessageEnabled?: boolean;
   welcomeAutoMessageTemplate?: string;
+  // Order auto message settings
+  orderAutoMessageEnabled?: boolean;
+  orderCreatedTemplate?: string;
+  orderPaidTemplate?: string;
+  orderShippedTemplate?: string;
+  orderDeliveredTemplate?: string;
+  orderCancelledTemplate?: string;
+  orderStatusTemplate?: string;
   enableContextMemory: boolean;
   contextWindow: number;
   enableFallback: boolean;

@@ -19,7 +19,10 @@ interface UserPermissions {
   aiCredits: number;
   canUseLiveChat: boolean;
   liveChatAiResponses?: number;
+  canUseLiveChatAI?: boolean;
   canUseTelegramAI?: boolean;
+  canUseEventsPlugin?: boolean;
+  eventsPerMonth?: number;
 }
 
 interface Subscription {
@@ -237,6 +240,18 @@ export function usePermissions() {
     return Boolean(permissions?.canUseTelegramAI);
   };
 
+  const canUseLiveChatAI = (): boolean => {
+    return Boolean(permissions?.canUseLiveChatAI);
+  };
+
+  const canUseEventsPlugin = (): boolean => {
+    return Boolean(permissions?.canUseEventsPlugin);
+  };
+
+  const getEventsPerMonthLimit = (): number => {
+    return permissions?.eventsPerMonth || 0;
+  };
+
   const hasActiveSubscription = useMemo((): boolean => {
     // إذا لم يكن هناك subscription object ولكن هناك permissions، فهو موظف
     // الموظف يعتبر لديه اشتراك نشط (موروث من المالك)
@@ -274,7 +289,10 @@ export function usePermissions() {
     canUseAI,
     getAICredits,
     canUseLiveChat,
+    canUseLiveChatAI,
     canUseTelegramAI,
+    canUseEventsPlugin,
+    getEventsPerMonthLimit,
     hasActiveSubscription,
     reloadPermissions: loadPermissions
   };

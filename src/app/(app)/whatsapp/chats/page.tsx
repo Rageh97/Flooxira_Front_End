@@ -127,6 +127,12 @@ export default function WhatsAppChatsPage() {
   const [escalatedContacts, setEscalatedContacts] = useState<Set<string>>(new Set());
   const [isEscalating, setIsEscalating] = useState(false);
 
+  // Pagination state
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
   // Mobile detection for full-screen chat
   const [isMobile, setIsMobile] = useState(false);
   
@@ -192,7 +198,10 @@ export default function WhatsAppChatsPage() {
   // Load chat data when contact is selected
   useEffect(() => {
     if (selectedContact && token) {
-      loadChatHistory(selectedContact);
+      setOffset(0);
+      setHasMore(true);
+      setInitialLoading(true);
+      loadChatHistory(selectedContact, false, false, true);
       // Load latest note for selected contact
       (async () => {
         try {
@@ -236,25 +245,55 @@ export default function WhatsAppChatsPage() {
   // Scroll to bottom when chats are loaded or updated
   useEffect(() => {
     if (chats.length > 0 && messagesContainerRef.current) {
-      // Use setTimeout to ensure DOM is updated
-      setTimeout(() => {
-        if (messagesContainerRef.current) {
-          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      if (initialLoading) {
+        // Force scroll to bottom on initial load
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+          setInitialLoading(false);
+        }, 150);
+      } else {
+        // Smart scroll: only scroll if user is near bottom
+        const container = messagesContainerRef.current;
+        const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+        
+        if (isNearBottom) {
+          setTimeout(() => {
+            if (messagesContainerRef.current) {
+              messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+            }
+          }, 150);
         }
-      }, 150);
+      }
     }
-  }, [chats, selectedContact]);
+  }, [chats, selectedContact, initialLoading]);
 
-  async function loadChatHistory(contactNumber: string, isAutoRefresh: boolean = false) {
+  async function loadChatHistory(contactNumber: string, isAutoRefresh: boolean = false, isLoadMore: boolean = false, isNewContact: boolean = false) {
     try {
       if (isAutoRefresh) {
         setIsAutoRefreshing(true);
       }
       
-      console.log(`[WhatsApp] Loading chat history for: ${contactNumber}`);
-      const data = await getChatHistory(token, contactNumber);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      }
+      
+      const currentOffset = isLoadMore ? offset : 0;
+      console.log(`[WhatsApp] Loading chat history for: ${contactNumber}, offset: ${currentOffset}`);
+      const data = await getChatHistory(token, contactNumber, 50, currentOffset);
       console.log(`[WhatsApp] Chat history response:`, data);
+      
       if (data.success) {
+        const currentCount = (isLoadMore ? offset : 0) + data.chats.length;
+        setHasMore(currentCount < data.total);
+        
+        if (isLoadMore) {
+          setOffset(prev => prev + data.chats.length);
+        } else if (isNewContact) {
+          setOffset(data.chats.length);
+        }
+
         const processedChats = data.chats.map((chat: any) => ({
           ...chat,
           contentType: chat.contentType || 'text',
@@ -263,22 +302,25 @@ export default function WhatsAppChatsPage() {
           mediaMimetype: chat.mediaMimetype || undefined
         }));
         
-        // Log media messages for debugging
-        processedChats.forEach((chat: any) => {
-          if (chat.contentType === 'image' || chat.contentType === 'video') {
-            console.log(`[WhatsApp] Media message:`, {
-              contentType: chat.contentType,
-              messageContent: chat.messageContent,
-              mediaUrl: chat.mediaUrl,
-              hasMediaUrl: !!chat.mediaUrl
-            });
-          }
-        });
+        const serverChats = processedChats.reverse();
         
-        // Merge with existing optimistic messages (keep optimistic messages that don't have a match yet)
+        // Save scroll height if loading more to preserve position
+        const prevScrollHeight = messagesContainerRef.current?.scrollHeight || 0;
+        const prevScrollTop = messagesContainerRef.current?.scrollTop || 0;
+
         setChats(prev => {
-          const serverChats = processedChats.reverse();
+          if (isLoadMore) {
+            // Filter out existing messages to avoid duplicates (though offset should handle this)
+            const existingIds = new Set(prev.map(c => c.id));
+            const newChats = serverChats.filter(c => !existingIds.has(c.id));
+            return [...newChats, ...prev];
+          }
           
+          if (isNewContact) {
+            return serverChats;
+          }
+          
+          // Original refresh/merge logic
           // Identify optimistic messages (those with temporary IDs > 1000000000000 or _isOptimistic flag)
           const optimisticMessages = prev.filter(msg => {
             return (typeof msg.id === 'number' && msg.id > 1000000000000) || 
@@ -347,12 +389,29 @@ export default function WhatsAppChatsPage() {
           // Keep unmatched optimistic messages
           const unmatchedOptimistic = optimisticMessages.filter(msg => !matchedOptimisticIds.has(msg.id));
           
-          // Combine server chats with unmatched optimistic messages, then sort by timestamp
-          const allChats = [...mergedChats, ...unmatchedOptimistic];
+          // Preserve existing messages that are not being updated by the current refresh
+          const serverIds = new Set(serverChats.map(c => c.id));
+          const prevWithoutServerOrOptimistic = prev.filter(msg => {
+            const isOptimistic = (typeof msg.id === 'number' && msg.id > 1000000000000) || (msg as any)._isOptimistic === true;
+            return !serverIds.has(msg.id) && !matchedOptimisticIds.has(msg.id) && !isOptimistic;
+          });
+
+          // Combine all messages and sort by timestamp
+          const allChats = [...prevWithoutServerOrOptimistic, ...mergedChats, ...unmatchedOptimistic];
           return allChats.sort((a, b) => {
             return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
           });
         });
+
+        // After setting chats, if it was isLoadMore, adjust scroll to stay in place
+        if (isLoadMore) {
+          setTimeout(() => {
+            if (messagesContainerRef.current) {
+              const newScrollHeight = messagesContainerRef.current.scrollHeight;
+              messagesContainerRef.current.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+            }
+          }, 0);
+        }
         
         console.log(`[WhatsApp] Loaded ${data.chats.length} messages`);
       } else {
@@ -362,9 +421,8 @@ export default function WhatsAppChatsPage() {
       console.error(`[WhatsApp] Chat history error:`, e);
       setError(e.message);
     } finally {
-      if (isAutoRefresh) {
-        setIsAutoRefreshing(false);
-      }
+      setIsAutoRefreshing(false);
+      setLoadingMore(false);
     }
   }
 
@@ -1280,6 +1338,19 @@ export default function WhatsAppChatsPage() {
                       </div>
                     ) : (
                       <>
+                        {hasMore && (
+                          <div className="flex justify-center mb-4">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => loadChatHistory(selectedContact, false, true)}
+                              disabled={loadingMore}
+                              className="text-xs border-text-primary/30 bg-transparent text-white"
+                            >
+                              {loadingMore ? 'جاري التحميل...' : 'عرض المزيد من الرسائل السابق'}
+                            </Button>
+                          </div>
+                        )}
                         <div className="text-xs text-gray-500 text-center">
                           {chats.length} رسالة محملة
                         </div>

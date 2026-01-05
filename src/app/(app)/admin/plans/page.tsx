@@ -108,6 +108,7 @@ export default function PlansAdminPage() {
       canUseAI: false,
       aiCredits: 0,
       canUseLiveChat: false,
+      canUseLiveChatAI: false,
       liveChatAiResponses: 0,
       canUseEventsPlugin: false,
       eventsPerMonth: 0,
@@ -145,6 +146,7 @@ export default function PlansAdminPage() {
       canUseAI: false,
       aiCredits: 0,
       canUseLiveChat: false,
+      canUseLiveChatAI: false,
       liveChatAiResponses: 0,
       canUseEventsPlugin: false,
       eventsPerMonth: 0,
@@ -219,6 +221,7 @@ export default function PlansAdminPage() {
           canUseAI: false,
           aiCredits: 0,
           canUseLiveChat: false,
+          canUseLiveChatAI: false,
           liveChatAiResponses: 0,
           canUseEventsPlugin: false,
           eventsPerMonth: 0,
@@ -298,6 +301,7 @@ export default function PlansAdminPage() {
         canUseAI: (plan.permissions as any)?.canUseAI || false,
         aiCredits: (plan.permissions as any)?.aiCredits || 0,
         canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false,
+        canUseLiveChatAI: (plan.permissions as any)?.canUseLiveChatAI || false,
         liveChatAiResponses: (plan.permissions as any)?.liveChatAiResponses ?? 0,
         canUseEventsPlugin: (plan.permissions as any)?.canUseEventsPlugin || false,
         eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0,
@@ -395,7 +399,11 @@ export default function PlansAdminPage() {
               aiCredits: (plan.permissions as any)?.aiCredits || 0,
               canUseLiveChat: (plan.permissions as any)?.canUseLiveChat || false,
               canUseTelegramAI: (plan.permissions as any)?.canUseTelegramAI || false,
-              telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0
+              telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0,
+              canUseLiveChatAI: (plan.permissions as any)?.canUseLiveChatAI || false,
+              liveChatAiResponses: (plan.permissions as any)?.liveChatAiResponses || 0,
+              canUseEventsPlugin: (plan.permissions as any)?.canUseEventsPlugin || false,
+              eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0
             };
             
             return (
@@ -689,6 +697,9 @@ export default function PlansAdminPage() {
                           <>
                             <CheckCircle className="h-3 w-3 text-green-600" />
                             <span className="text-xs text-green-600 font-medium">مفعل</span>
+                            {(permissions as any).canUseLiveChatAI && (
+                              <span className="text-xs text-purple-600 font-bold ml-1"> (AI مفعل)</span>
+                            )}
                           {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
                             <span className="text-xs text-gray-500">
                               ({(permissions as any).liveChatAiResponses} رد/شهر)
@@ -1611,26 +1622,42 @@ export default function PlansAdminPage() {
                   يسمح للمستخدمين بإضافة ويدجت دردشة مباشرة على مواقعهم وإدارة التذاكر
                 </p>
                 {editPlan.permissions.canUseLiveChat && (
-                  <div className="space-y-2 mt-4">
-                    <Label>عدد ردود الذكاء الاصطناعي الشهري للـ Live Chat</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="0 = غير محدود"
-                      value={editPlan.permissions.liveChatAiResponses ?? 0}
-                      onChange={(e) =>
-                        setEditPlan({
+                  <div className="space-y-4 mt-4 mr-6">
+                    <label className="flex items-center gap-2 mb-2 text-purple-600 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={editPlan.permissions.canUseLiveChatAI}
+                        onChange={(e) => setEditPlan({
                           ...editPlan,
-                          permissions: {
-                            ...editPlan.permissions,
-                            liveChatAiResponses: parseLocalizedNumber(e.target.value),
-                          },
-                        })
-                      }
-                    />
-                    <p className="text-xs text-gray-500">
-                      يتحكم هذا العدد في مرات ردود الذكاء الاصطناعي على محادثات العملاء شهرياً. اختر 0 لغير محدود.
-                    </p>
+                          permissions: { ...editPlan.permissions, canUseLiveChatAI: e.target.checked }
+                        })}
+                      />
+                      <span>تفعيل الذكاء الاصطناعي للرد التلقائي</span>
+                    </label>
+
+                    {editPlan.permissions.canUseLiveChatAI && (
+                      <div className="space-y-2">
+                        <Label>عدد ردود الذكاء الاصطناعي الشهري للـ Live Chat</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0 = غير محدود"
+                          value={editPlan.permissions.liveChatAiResponses ?? 0}
+                          onChange={(e) =>
+                            setEditPlan({
+                              ...editPlan,
+                              permissions: {
+                                ...editPlan.permissions,
+                                liveChatAiResponses: parseLocalizedNumber(e.target.value),
+                              },
+                            })
+                          }
+                        />
+                        <p className="text-xs text-gray-500">
+                          يتحكم هذا العدد في مرات ردود الذكاء الاصطناعي على محادثات العملاء شهرياً. اختر 0 لغير محدود.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

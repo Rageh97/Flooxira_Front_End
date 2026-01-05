@@ -283,7 +283,7 @@ const { showSuccess, showError } = useToast();
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const webhookUrl = user?.storeId 
-    ? `https://api.flooxira.com/api/salla/webhook/${user.storeId}` 
+    ? `${process.env.NEXT_PUBLIC_API_URL}/api/salla/webhook/${user.storeId}` 
     : `${baseUrl}/api/salla/webhook/{store_id}`;
 
 
@@ -323,7 +323,9 @@ const { showSuccess, showError } = useToast();
           <div className="flex flex-wrap gap-2">
             {sortedTypes.map((t) => (
               <Button className="primary-button" key={t} variant={t === selectedType ? "default" : "secondary"} onClick={() => setSelectedType(t)}>
-               {getEventTypeArabic(t)} <span className="text-xs opacity-70 mr-1">({groupedByType[t]})</span>
+              <div className="flex items-center gap-1">
+                 {getEventTypeArabic(t)} <span className="text-xs opacity-70 mr-1">({groupedByType[t]})</span>
+              </div>
               </Button>
             ))}
           </div>

@@ -192,7 +192,7 @@ export default function TicketsPage() {
   const [loadingGroups, setLoadingGroups] = useState(false);
   const { showSuccess, showError } = useToast();
   const { user } = useAuth();
-  const { canUseLiveChat, hasActiveSubscription, loading: permissionsLoading, permissions } = usePermissions();
+  const { canUseLiveChat, canUseLiveChatAI, hasActiveSubscription, loading: permissionsLoading, permissions } = usePermissions();
   const socketRef = useRef<Socket | null>(null);
   const selectedTicketRef = useRef<Ticket | null>(null);
   const messagesByTicketRef = useRef<Record<number, TicketMessage[]>>({});
@@ -1790,11 +1790,15 @@ export default function TicketsPage() {
               <p className="text-xs text-gray-400">عند التعطيل سيتم تحويل جميع المحادثات للموظفين مباشرة</p>
             </div>
             <div className="flex items-center gap-2">
+              {!canUseLiveChatAI() && (
+                <span className="text-[10px] text-red-500 font-bold ml-2">غير متوفر في باقتك الحالية</span>
+              )}
               <span className={`text-xs ${aiSettings.liveChatAiEnabled ? 'text-primary' : 'text-gray-200'}`}>
                 {aiSettings.liveChatAiEnabled ? 'مفعل' : 'معطل'}
               </span>
               <Switch 
-                checked={aiSettings.liveChatAiEnabled}
+                disabled={!canUseLiveChatAI()}
+                checked={aiSettings.liveChatAiEnabled && canUseLiveChatAI()}
                 onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, liveChatAiEnabled: checked }))}
               />
             </div>

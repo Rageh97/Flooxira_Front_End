@@ -10,6 +10,7 @@ const adminTabs = [
   { href: "/admin/subscriptions", label: "المشتركين" },
   { href: "/admin/plans", label: "الباقات" },
   { href: "/admin/subscription-requests", label: "طلبات الاشتراك" },
+  { href: "/admin/revenue", label: "الإيرادات" },
   { href: "/admin/coupons", label: "إدارة القسائم" },
   { href: "/admin/services", label: "إدارة الخدمات" },
   { href: "/admin/tutorials", label: "الشروحات" },

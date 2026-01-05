@@ -156,6 +156,7 @@ export type Plan = {
     canUseAI: boolean;
     aiCredits: number;
     canUseLiveChat: boolean;
+    canUseLiveChatAI?: boolean;
     liveChatAiResponses?: number;
       canUseEventsPlugin?: boolean;
       eventsPerMonth?: number;
@@ -268,7 +269,7 @@ export async function getChatHistory(token: string, contactNumber?: string, limi
   params.set('limit', limit.toString());
   params.set('offset', offset.toString());
   
-  return apiFetch<{ success: boolean; chats: Array<{ id: number; contactNumber: string; messageType: 'incoming' | 'outgoing'; messageContent: string; responseSource: string; knowledgeBaseMatch: string | null; timestamp: string }> }>(`/api/whatsapp/chats?${params}`, { authToken: token });
+  return apiFetch<{ success: boolean; total: number; chats: Array<{ id: number; contactNumber: string; messageType: 'incoming' | 'outgoing'; messageContent: string; responseSource: string; knowledgeBaseMatch: string | null; timestamp: string }> }>(`/api/whatsapp/chats?${params}`, { authToken: token });
 }
 
 export async function getChatContacts(token: string) {
@@ -872,6 +873,28 @@ export async function getAllSubscriptions(token: string, page: number = 1, limit
     totalPages: number;
     currentPage: number;
   }>(`/api/admin/subscriptions?page=${page}&limit=${limit}&filter=${filter}`, { authToken: token });
+}
+
+export async function getRevenue(token: string) {
+  return apiFetch<{
+    success: boolean;
+    revenue: {
+      total: number;
+      currentMonth: number;
+      totalFormatted: string;
+      currentMonthFormatted: string;
+    };
+    stats: {
+      totalSubscriptions: number;
+      currentMonthSubscriptions: number;
+      activeSubscriptions: number;
+    };
+    currentMonth: {
+      month: number;
+      year: number;
+      name: string;
+    };
+  }>('/api/admin/revenue', { authToken: token });
 }
 
 export async function updateSubscriptionExpiry(token: string, subscriptionId: number, expiresAt: string) {
@@ -2768,6 +2791,7 @@ export async function checkAppointmentAvailability(token: string, params: {
 
 
 
+
 // ==================== Events Plugin API ====================
 
 export type EventsPluginConfig = {
@@ -2782,6 +2806,7 @@ export type EventsPluginConfig = {
   totalEventsReceived: number;
   lastEventAt?: string;
   notes?: string;
+  stats?: Record<string, number>; // Added stats field
   createdAt: string;
 };
 
@@ -2802,29 +2827,43 @@ export type EventLog = {
   processedAt?: string;
   errorMessage?: string;
   ipAddress?: string;
+  userAgent?: string;
   sentAt?: string;
   createdAt: string;
 };
 
-export async function getEventsPluginConfig(token: string) {
+export async function listEventsPluginConfigs(token: string) {
   return apiFetch<{
-    config: EventsPluginConfig;
-    stats: Record<string, number>;
-    recentEvents: EventLog[];
+    configs: EventsPluginConfig[];
     permissions: any;
-  }>("/api/events-plugin/config", { authToken: token });
+  }>("/api/events-plugin/configs", { authToken: token });
 }
 
-export async function updateEventsPluginConfig(token: string, data: Partial<EventsPluginConfig>) {
-  return apiFetch<{ success: boolean; config: EventsPluginConfig }>("/api/events-plugin/config", {
+export async function createEventsPluginConfig(token: string, data: Partial<EventsPluginConfig>) {
+  return apiFetch<{ success: boolean; config: EventsPluginConfig }>("/api/events-plugin/configs", {
+    method: "POST",
+    body: JSON.stringify(data),
+    authToken: token,
+  });
+}
+
+export async function updateEventsPluginConfig(token: string, configId: number, data: Partial<EventsPluginConfig>) {
+  return apiFetch<{ success: boolean; config: EventsPluginConfig }>(`/api/events-plugin/configs/${configId}`, {
     method: "PUT",
     body: JSON.stringify(data),
     authToken: token,
   });
 }
 
-export async function regenerateEventsPluginKeys(token: string) {
-  return apiFetch<{ success: boolean; apiKey: string; secretKey: string }>("/api/events-plugin/regenerate-keys", {
+export async function deleteEventsPluginConfig(token: string, configId: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/events-plugin/configs/${configId}`, {
+    method: "DELETE",
+    authToken: token,
+  });
+}
+
+export async function regenerateEventsPluginKeys(token: string, configId: number) {
+  return apiFetch<{ success: boolean; apiKey: string; secretKey: string }>(`/api/events-plugin/regenerate-keys/${configId}`, {
     method: "POST",
     authToken: token,
   });
@@ -2833,6 +2872,7 @@ export async function regenerateEventsPluginKeys(token: string) {
 export async function getEventsPluginLogs(token: string, params?: {
   page?: number;
   limit?: number;
+  configId?: number;
   eventType?: string;
   status?: string;
   startDate?: string;
@@ -2841,6 +2881,7 @@ export async function getEventsPluginLogs(token: string, params?: {
   const searchParams = new URLSearchParams();
   if (params?.page) searchParams.set('page', params.page.toString());
   if (params?.limit) searchParams.set('limit', params.limit.toString());
+  if (params?.configId) searchParams.set('configId', params.configId.toString());
   if (params?.eventType) searchParams.set('eventType', params.eventType);
   if (params?.status) searchParams.set('status', params.status);
   if (params?.startDate) searchParams.set('startDate', params.startDate);
@@ -2857,18 +2898,21 @@ export async function getEventsPluginLogs(token: string, params?: {
   }>(`/api/events-plugin/events?${searchParams.toString()}`, { authToken: token });
 }
 
-export async function getEventsPluginStats(token: string, period?: '7d' | '30d' | '90d') {
-  const params = period ? `?period=${period}` : '';
+export async function getEventsPluginStats(token: string, period?: '7d' | '30d' | '90d', configId?: number) {
+  const params = new URLSearchParams();
+  if (period) params.set('period', period);
+  if (configId) params.set('configId', configId.toString());
+  
   return apiFetch<{
     period: string;
     totalEvents: number;
     totalAmount: number;
     byEventType: Record<string, number>;
     byStatus: Record<string, number>;
-  }>(`/api/events-plugin/stats${params}`, { authToken: token });
+  }>(`/api/events-plugin/stats?${params.toString()}`, { authToken: token });
 }
 
-export async function testEventsPluginConnection(token: string) {
+export async function testEventsPluginConnection(token: string, configId: number) {
   return apiFetch<{
     success: boolean;
     message: string;
@@ -2877,5 +2921,5 @@ export async function testEventsPluginConnection(token: string) {
       isActive: boolean;
       totalEventsReceived: number;
     };
-  }>("/api/events-plugin/test", { authToken: token });
+  }>(`/api/events-plugin/test/${configId}`, { authToken: token });
 }

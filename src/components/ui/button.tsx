@@ -16,7 +16,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       none: "",
       ghost: "bg-blue-900 text-white",
       destructive: "bg-red-600 text-white hover:bg-red-700",
-      outline: "border border-gray-300 bg-transparent hover:bg-gray-100 text-gray-700",
+      outline: "border border-gray-300 bg-transparent  text-gray-700",
     };
     const sizes: Record<string, string> = {
       sm: "h-8 px-3 text-sm",

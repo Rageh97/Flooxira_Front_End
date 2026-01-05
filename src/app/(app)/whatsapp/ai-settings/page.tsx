@@ -567,13 +567,14 @@ export default function AISettingsPage() {
                   value={settings.welcomeAutoMessageTemplate || ''}
                   onChange={(e) => setSettings({ ...settings, welcomeAutoMessageTemplate: e.target.value })}
                   className="w-full p-2 border-1 border-blue-300 rounded-md h-28 bg-[#01191040]"
-                  placeholder={"مثال:\nمرحباً {name}! 👋\nسعدنا بانضمامك{store}.\nإذا احتجت أي مساعدة، راسلنا هنا في أي وقت."}
+                  placeholder={"مثال:مرحباً {name}! 👋سعدنا بانضمامك{store}.إذا احتجت أي مساعدة، راسلنا هنا في أي وقت."}
                 />
                 <div className="text-xs text-gray-400 mt-1">
                   المتغيرات المتاحة: {'{name}'} اسم العميل، {'{store}'} اسم المتجر مسبوقًا بمسافة إذا توفر
                 </div>
               </div>
             </div>
+
 
             <div>
               <label className="block text-sm font-medium mb-2"> بروميت الذكاء الاصطناعي</label>
@@ -626,6 +627,93 @@ export default function AISettingsPage() {
                 placeholder="كيف يجب أن يتعامل البوت مع اعتراضات العملاء"
               />
             </div> */}
+            
+            {/* Order Auto Messages Section */}
+            <div className="border-t border-gray-700 pt-4 mt-4">
+              <div className="space-y-4">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={!!settings.orderAutoMessageEnabled}
+                    onChange={(e) => setSettings({ ...settings, orderAutoMessageEnabled: e.target.checked })}
+                    className="mx-2"
+                  />
+                  تفعيل رسائل الطلبات التلقائية في واتساب (سلة / تكامل الأحداث)
+                </label>
+                
+                {settings.orderAutoMessageEnabled && (
+                  <div className="space-y-4 pr-6">
+                    {/* Order Created Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة الطلب الجديد</label>
+                      <textarea
+                        value={settings.orderCreatedTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, orderCreatedTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="مرحباً {name}! تم استلام طلبك رقم #{order_id} بنجاح.قيمة الطلب: {amount} {currency}"
+                      />
+                    </div>
+
+                    {/* Order Paid Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة تأكيد الدفع</label>
+                      <textarea
+                        value={settings.orderPaidTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, orderPaidTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="شكراً {name}! تم تأكيد الدفع لطلبك رقم #{order_id}.جاري تجهيز طلبك للشحن."
+                      />
+                    </div>
+
+                    {/* Order Shipped Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة الشحن</label>
+                      <textarea
+                        value={settings.orderShippedTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, orderShippedTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="مرحباً {name}! تم شحن طلبك رقم #{order_id}. تتبع الشحنة من خلال الرابط المرفق."
+                      />
+                    </div>
+
+                    {/* Order Delivered Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة التوصيل</label>
+                      <textarea
+                        value={settings.orderDeliveredTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, orderDeliveredTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="مرحباً {name}! تم توصيل طلبك رقم #{order_id} بنجاح.نتمنى أن تكون راضياً عن تجربتك معنا!"
+                      />
+                    </div>
+
+                    {/* Order Cancelled Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة الإلغاء</label>
+                      <textarea
+                        value={settings.orderCancelledTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, orderCancelledTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="مرحباً {name}،تم إلغاء طلبك رقم #{order_id}.إذا كان لديك أي استفسار، لا تتردد في التواصل معنا."
+                      />
+                    </div>
+
+                    {/* Order Status Update Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة تحديث الحالة</label>
+                      <textarea
+                        value={settings.orderStatusTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, orderStatusTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="مرحباً {name}! تم تحديث حالة طلبك رقم #{order_id}.الحالة الجديدة: {status}"
+                      />
+                    </div>
+
+                   
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
