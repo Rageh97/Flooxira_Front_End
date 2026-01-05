@@ -1776,7 +1776,7 @@ export default function TicketsPage() {
         </Card>
       )}
       {/* AI & Notification Settings Section */}
-      <Card className="gradient-border border-none bg-fixed-40 mb-6 mt-6">
+      <Card className="gradient-border border-none bg-fixed-40 mb-6 mt-2">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <Bot className="h-5 w-5 text-primary" />
@@ -1816,7 +1816,7 @@ export default function TicketsPage() {
               <p className="text-[10px] text-yellow-500">هذا العنوان يظهر في الصفحة الرئيسية للويدجت</p>
             </div>
 
-            {!aiSettings.liveChatAiEnabled && (
+            {(!aiSettings.liveChatAiEnabled || !canUseLiveChatAI()) && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">رسالة ترحيب مخصصة (عند تعطيل AI)</label>
                 <textarea 
@@ -1830,26 +1830,12 @@ export default function TicketsPage() {
             )}
           </div>
 
-          <div className="border-t border-primary/10 pt-6">
-            <h4 className="text-white font-medium mb-4 flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-green-500" />
-              تنبيهات جروب واتساب
-            </h4>
-            <div className="flex items-center flex-wrap gap-6">
-              {/* <div className="flex items-center gap-4 p-4 border border-green-500/20 rounded-xl bg-green-500/5"> */}
-                <Switch 
-                  id="notify-enabled"
-                  checked={aiSettings.whatsappNotifyEnabled}
-                  onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappNotifyEnabled: checked }))}
-                />
-                <label htmlFor="notify-enabled" className="text-sm text-gray-300 cursor-pointer">
-                  تفعيل إشعارات الواتساب للتذاكر الجديدة المعلقة
-                </label>
-              {/* </div> */}
-
-              {aiSettings.whatsappNotifyEnabled && (
+          <div className="border-t border-primary/10 flex items-center justify-between">
+           <div className="flex flex-col gap-3">
+               
+               {aiSettings.whatsappNotifyEnabled && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">اختر جروب الواتساب</label>
+                  <label className="text-sm font-medium text-gray-300">اختر جروب الواتساب للتنبيهات </label>
                   {loadingGroups ? (
                     <div className="flex items-center gap-2 text-gray-400 w-full">
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -1879,6 +1865,22 @@ export default function TicketsPage() {
                   <p className="text-[10px] text-yellow-500">سيتم إرسال تنبيه لهذا الجروب عند الحاجة لتدخل بشري</p>
                 </div>
               )}
+           </div>
+            <div className="flex items-center flex-wrap gap-6 mx-5">
+             
+
+           
+               {/* <div className="flex items-center gap-4 p-4 border border-green-500/20 rounded-xl bg-green-500/5"> */}
+               
+                <label htmlFor="notify-enabled" className="text-sm text-gray-300 cursor-pointer">
+                  تفعيل إشعارات الواتساب للتذاكر الجديدة المعلقة
+                </label>
+                 <Switch 
+                  id="notify-enabled"
+                  checked={aiSettings.whatsappNotifyEnabled}
+                  onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappNotifyEnabled: checked }))}
+                />
+              {/* </div> */}
             </div>
           </div>
 
