@@ -1637,3 +1637,58 @@ button:active {
     left: 150%;
   }
 }
+ /* Premium Loader Animations */
+@keyframes spin-reverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 3.5s linear infinite;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 6s linear infinite;
+}
+
+@keyframes spin-fast {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-fast {
+  animation: spin-fast 3s linear infinite;
+}
+
+@keyframes spin-medium {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-medium {
+  animation: spin-medium 4s linear infinite;
+}
+
+@keyframes progress-fill {
+  0% { transform: translateX(-100%); width: 30%; }
+  50% { transform: translateX(100%); width: 60%; }
+  100% { transform: translateX(-100%); width: 30%; }
+}
+
+.animate-progress-fill {
+  animation: progress-fill 5s ease-in-out infinite;
+}
+
+/* @keyframes pulse-gentle {
+  0%, 100% { opacity: 0.6; transform: scale(0.98); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s ease-in-out infinite;
+} */

@@ -517,14 +517,18 @@ export default function PlansPage() {
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
                                     <span className="text-xs text-white font-medium"> ادارة التذاكر & لايف شات</span>
-                                    {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
-                                      <span className="text-xs text-primary">
-                                        ({(permissions as any).liveChatAiResponses} رد/شهر)
-                                      </span>
-                                    ) : (
-                                      <span className="text-xs text-primary">
-                                        (غير محدود)
-                                      </span>
+                                    {(permissions as any).canUseLiveChatAI && (
+                                      <>
+                                        {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
+                                          <span className="text-xs text-primary">
+                                            ({(permissions as any).liveChatAiResponses} رد/شهر)
+                                          </span>
+                                        ) : (
+                                          <span className="text-xs text-primary">
+                                            (غير محدود)
+                                          </span>
+                                        )}
+                                      </>
                                     )}
                                   </>
                                 ) : (

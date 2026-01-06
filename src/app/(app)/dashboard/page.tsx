@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ServicesSlider from "@/components/ServicesSlider";
 import AnimatedBanner from "@/components/AnimatedBanner";
+import PremiumLoader from "@/components/PremiumLoader";
 
 interface PostStats {
   published: number;
@@ -87,6 +88,7 @@ export default function DashboardPage() {
   }, []);
 
   const loadStats = async () => {
+    const startTime = Date.now();
     try {
       const token = localStorage.getItem("auth_token") || "";
       const [postsResponse, userResponse, customerResponse] = await Promise.all([
@@ -144,6 +146,13 @@ export default function DashboardPage() {
         // ignore usage errors
       }
       
+      // Calculate remaining time to ensure 5 seconds minimum loading
+      const elapsedTime = Date.now() - startTime;
+      const minLoadingTime = 3000; 
+      if (elapsedTime < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime));
+      }
+      
       // Fetch WhatsApp message stats from billing API
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/billing/analytics`, {
@@ -162,9 +171,7 @@ export default function DashboardPage() {
           const used = whatsappStats?.count || 0;
           const remaining = Math.max(0, limit - used);
           
-          console.log('[Dashboard] WhatsApp Limit:', limit);
-          console.log('[Dashboard] WhatsApp Used:', used);
-          console.log('[Dashboard] WhatsApp Remaining:', remaining);
+        
           
           setWhatsappStats({
             messagesLimit: limit,
@@ -229,9 +236,10 @@ export default function DashboardPage() {
   }, [user, loading]);
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-      </div>
+      <PremiumLoader />
+      // <div className="flex items-center justify-center h-64">
+      //   <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      // </div>
     );
   }
 
