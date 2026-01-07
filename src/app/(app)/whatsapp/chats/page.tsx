@@ -143,6 +143,45 @@ export default function WhatsAppChatsPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // iOS Safari viewport height fix
+  useEffect(() => {
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    
+    return () => {
+      window.removeEventListener('resize', setVH);
+      window.removeEventListener('orientationchange', setVH);
+    };
+  }, []);
+
+  // Prevent body scroll when chat is open on mobile
+  useEffect(() => {
+    if (selectedContact && isMobile) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, [selectedContact, isMobile]);
+
   // Ref for messages container to scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -1155,17 +1194,6 @@ export default function WhatsAppChatsPage() {
             {/* Chat Messages */}
           <div 
             className={`flex flex-col w-full min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent lg:!static lg:!inset-auto lg:!z-auto lg:!h-full lg:w-full' : 'hidden lg:flex h-full'}`}
-            style={selectedContact && isMobile ? { 
-              position: 'fixed', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              bottom: 0, 
-              zIndex: 2147483647,
-              width: '100vw',
-              height: '100dvh',
-              backgroundColor: '#0f1827'
-            } : undefined}
           >
             {/* Mobile Header (Back button, Contact Info, and Actions) */}
             <div className="lg:hidden flex flex-col border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">

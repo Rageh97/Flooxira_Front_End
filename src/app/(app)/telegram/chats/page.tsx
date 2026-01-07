@@ -11,7 +11,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { EmojiPickerModal } from "@/components/AnimatedEmoji";
 import { ArrowLeft } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast-provider";
 
 type Contact = {
@@ -557,7 +557,7 @@ export default function TelegramChatsPage() {
                 <img src="/telegram.gif" alt="" className="w-10 h-10" />
               )}
           </button>
-          <Input
+          <Textarea
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={(e) => {
@@ -567,7 +567,8 @@ export default function TelegramChatsPage() {
               }
             }}
             placeholder="اكتب رسالة..."
-              className="flex-1 bg-fixed-40 text-[16px] sm:text-base border-primary rounded-2xl text-white placeholder-white/50 px-1"
+            rows={1}
+            className="flex-1 bg-fixed-40 text-[16px] sm:text-base border-primary rounded-2xl text-white placeholder-white/50 px-3 py-2 resize-none h-[30px] overflow-hidden"
           />
        
           </div>
