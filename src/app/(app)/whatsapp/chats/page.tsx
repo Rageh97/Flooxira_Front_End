@@ -26,6 +26,7 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function WhatsAppChatsPage() {
   const [loading, setLoading] = useState(false);
@@ -1678,12 +1679,12 @@ export default function WhatsAppChatsPage() {
                     <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />
                   </button>
                  
-                  <Input
-                    type="text"
+                  <Textarea
+                    // type="text"
                     placeholder="اكتب رسالتك..."
                     value={testMessage}
                     onChange={(e) => setTestMessage(e.target.value)}
-                    className="flex-1 px-2 sm:px-3 bg-[#01191040] py-2 sm:py-4 border border-blue-300 rounded-2xl text-[16px] sm:text-base text-white placeholder-white/50 min-w-0"
+                    className="flex-1 px-2 sm:px-3 bg-[#01191040] py-2 sm:py-4 resize-none border border-blue-300 rounded-2xl text-[16px] sm:text-base text-white placeholder-white/50 min-w-0"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
                         handleSendMessage(selectedContact, testMessage);
