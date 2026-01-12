@@ -223,8 +223,8 @@ export default function PlansPage() {
                     {/* <h4 className="text-sm text-center font-medium text-gray-300">الصلاحيات</h4> */}
                     
                     {(() => {
-                      // Define all permissions with their enabled status
                       const permissionItems = [
+                        // Basic Features
                         {
                           enabled: (permissions as any).monthlyPosts !== 0,
                           render: () => (
@@ -238,6 +238,30 @@ export default function PlansPage() {
                                   ({(permissions as any).monthlyPosts === -1 ? 'غير محدود' : (permissions as any).monthlyPosts} منشورات/شهر)
                                 </span>
                               )}
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canManageContent,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canManageContent ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200">إدارة المحتوى</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-gray-200">إدارة المحتوى</span>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           )
                         },
@@ -299,6 +323,42 @@ export default function PlansPage() {
                             </div>
                           )
                         },
+                        
+                        // Advanced Features
+                        {
+                          enabled: (permissions as any).canUseAI,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canUseAI ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white font-medium"> الذكاء الاصطناعي</span>
+                                    {(permissions as any).aiCredits > 0 && (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).aiCredits} كريديت/شهر)
+                                      </span>
+                                    )}
+                                    {(permissions as any).aiCredits === 0 && (
+                                      <span className="text-xs text-primary">
+                                        (غير محدود)
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-white">الذكاء الاصطناعي (AI)</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
                         {
                           enabled: (permissions as any).canUseTelegramAI,
                           render: () => (
@@ -322,54 +382,6 @@ export default function PlansPage() {
                                       <X className="h-3 w-3 text-black font-bold" />
                                     </div>
                                     <span className="text-xs text-white line-through font-medium">الذكاء الاصطناعي لتليجرام</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        },
-                        {
-                          enabled: (permissions as any).canSallaIntegration,
-                          render: () => (
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                {(permissions as any).canSallaIntegration ? (
-                                  <>
-                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <Check className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs font-medium text-gray-200"> سلة ويب هوك</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <X className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs text-white line-through font-medium">سلة ويب هوك </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        },
-                        {
-                          enabled: (permissions as any).canManageContent,
-                          render: () => (
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                {(permissions as any).canManageContent ? (
-                                  <>
-                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <Check className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs font-medium text-gray-200">إدارة المحتوى</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <X className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs font-medium line-through text-gray-200">إدارة المحتوى</span>
                                   </>
                                 )}
                               </div>
@@ -473,40 +485,6 @@ export default function PlansPage() {
                           )
                         },
                         {
-                          enabled: (permissions as any).canUseAI,
-                          render: () => (
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                {(permissions as any).canUseAI ? (
-                                  <>
-                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <Check className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs text-white font-medium"> الذكاء الاصطناعي</span>
-                                    {(permissions as any).aiCredits > 0 && (
-                                      <span className="text-xs text-primary">
-                                        ({(permissions as any).aiCredits} كريديت/شهر)
-                                      </span>
-                                    )}
-                                    {(permissions as any).aiCredits === 0 && (
-                                      <span className="text-xs text-primary">
-                                        (غير محدود)
-                                      </span>
-                                    )}
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <X className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs font-medium line-through text-white">الذكاء الاصطناعي (AI)</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        },
-                        {
                           enabled: (permissions as any).canUseLiveChat,
                           render: () => (
                             <div className="flex items-center gap-2">
@@ -543,6 +521,32 @@ export default function PlansPage() {
                             </div>
                           )
                         },
+                        
+                        // Premium Features (Usually disabled in lower plans)
+                        {
+                          enabled: (permissions as any).canSallaIntegration,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canSallaIntegration ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium text-gray-200"> سلة ويب هوك</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white line-through font-medium">سلة ويب هوك </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
                         {
                           enabled: (permissions as any).canUseEventsPlugin,
                           render: () => (
@@ -553,7 +557,7 @@ export default function PlansPage() {
                                     <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
-                                    <span className="text-xs text-white font-medium"> تكامل الأحداث (الفعاليات)</span>
+                                    <span className="text-xs text-white font-medium"> Webhook + Api</span>
                                     {((permissions as any).eventsPerMonth ?? 0) > 0 ? (
                                       <span className="text-xs text-primary">
                                         ({(permissions as any).eventsPerMonth} حدث/شهر)
@@ -569,7 +573,7 @@ export default function PlansPage() {
                                     <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
                                       <X className="h-3 w-3 text-black font-bold" />
                                     </div>
-                                    <span className="text-xs font-medium line-through text-gray-200">تكامل الأحداث (الفعاليات)</span>
+                                    <span className="text-xs font-medium line-through text-gray-200">Webhook + Api</span>
                                   </>
                                 )}
                               </div>
@@ -578,10 +582,17 @@ export default function PlansPage() {
                         }
                       ];
 
-                      // Sort: enabled first, then disabled
-                      const sortedPermissions = [...permissionItems].sort((a, b) => {
-                        if (a.enabled === b.enabled) return 0;
-                        return a.enabled ? -1 : 1;
+                      // Assign a fixed priority/order to each item to ensure relative order stability
+                      const permissionItemsWithOrder = permissionItems.map((item, index) => ({ ...item, order: index }));
+
+                      // Sort: 
+                      // 1. Enabled items first (Top) vs Disabled (Bottom)
+                      // 2. Then by original fixed order (Stable relative order)
+                      const sortedPermissions = permissionItemsWithOrder.sort((a, b) => {
+                        if (a.enabled === b.enabled) {
+                          return a.order - b.order; // Keep same relative order
+                        }
+                        return a.enabled ? -1 : 1; // Enabled first
                       });
 
                       // Render sorted permissions

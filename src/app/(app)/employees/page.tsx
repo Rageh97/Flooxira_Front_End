@@ -88,6 +88,7 @@ interface EmployeePermissions {
   canManageEmployees: boolean;
   maxEmployees: number;
   canManageTickets: boolean;
+  canUseEventsPlugin: boolean;
 }
 
 interface EmployeeStats {
@@ -139,7 +140,8 @@ export default function EmployeesPage() {
       maxServices: 0,
       canManageEmployees: false,
       maxEmployees: 0,
-      canManageTickets: false
+      canManageTickets: false,
+      canUseEventsPlugin: false
     }
   });
 
@@ -319,7 +321,8 @@ export default function EmployeesPage() {
         maxServices: 0,
         canManageEmployees: false,
         maxEmployees: 0,
-        canManageTickets: false
+        canManageTickets: false,
+        canUseEventsPlugin: false
       }
     });
   };
@@ -389,7 +392,7 @@ export default function EmployeesPage() {
   if (hasActiveSubscription && !canManageEmployees) {
     return (
       <NoActiveSubscription 
-      
+      heading=""
         featureName="إدارة الموظفين"
         className="container mx-auto p-6"
       />
@@ -515,6 +518,14 @@ export default function EmployeesPage() {
                         />
                         <Label htmlFor="tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
                       </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="events-plugin"
+                          checked={formData.permissions.canUseEventsPlugin}
+                          onCheckedChange={(checked) => handlePermissionChange('canUseEventsPlugin', checked)}
+                        />
+                        <Label htmlFor="events-plugin" className="cursor-pointer">الربط البرمجي (Webhook + API)</Label>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -590,11 +601,11 @@ export default function EmployeesPage() {
                 </Card>
               </div>
 
-              <div className="flex justify-end space-x-2">
-                <Button variant="secondary" onClick={() => setIsCreateDialogOpen(false)}>
+              <div className="flex justify-end gap-2">
+                <Button className="primary-button after:bg-red-500" onClick={() => setIsCreateDialogOpen(false)}>
                   إلغاء
                 </Button>
-                <Button onClick={handleCreateEmployee}>
+                <Button className="primary-button" onClick={handleCreateEmployee}>
                   إنشاء الموظف
                 </Button>
               </div>
@@ -705,6 +716,11 @@ export default function EmployeesPage() {
                         {/* Tickets & Live Chat */}
                         {employee.permissions.canManageTickets && (
                           <Badge variant="secondary" className="text-xs bg-orange-500/10 text-orange-400 hover:bg-orange-500/20">محادثة وتذاكر</Badge>
+                        )}
+
+                        {/* Events Plugin */}
+                        {employee.permissions.canUseEventsPlugin && (
+                          <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">Webhook + API</Badge>
                         )}
 
                         {/* WhatsApp */}
@@ -870,6 +886,14 @@ export default function EmployeesPage() {
                       />
                       <Label htmlFor="edit-tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
                     </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      <Checkbox
+                        id="edit-events-plugin"
+                        checked={formData.permissions.canUseEventsPlugin}
+                        onCheckedChange={(checked) => handlePermissionChange('canUseEventsPlugin', checked)}
+                      />
+                      <Label htmlFor="edit-events-plugin" className="cursor-pointer">الربط البرمجي (Webhook + API)</Label>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -945,11 +969,11 @@ export default function EmployeesPage() {
               </Card>
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button variant="secondary" onClick={() => setIsEditDialogOpen(false)}>
+            <div className="flex justify-end gap-2">
+              <Button className="primary-button after:bg-red-500" variant="secondary" onClick={() => setIsEditDialogOpen(false)}>
                 إلغاء
               </Button>
-              <Button onClick={handleUpdateEmployee}>
+              <Button className="primary-button" onClick={handleUpdateEmployee}>
                 حفظ التغييرات
               </Button>
             </div>

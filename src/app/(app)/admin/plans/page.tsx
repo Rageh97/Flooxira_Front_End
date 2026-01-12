@@ -721,7 +721,7 @@ export default function PlansAdminPage() {
 
                     {/* Events Plugin */}
                     <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                      <span className="text-xs font-medium text-gray-700">تكامل الأحداث (Events):</span>
+                      <span className="text-xs font-medium text-gray-700">Webhook + Api</span>
                       <div className="flex items-center gap-1">
                         {(permissions as any).canUseEventsPlugin ? (
                           <>

@@ -18,6 +18,7 @@ interface UserPermissions {
   canUseAI: boolean;
   aiCredits: number;
   canUseLiveChat: boolean;
+  canManageTickets?: boolean;
   liveChatAiResponses?: number;
   canUseLiveChatAI?: boolean;
   canUseTelegramAI?: boolean;
@@ -233,7 +234,7 @@ export function usePermissions() {
   };
 
   const canUseLiveChat = (): boolean => {
-    return Boolean(permissions?.canUseLiveChat);
+    return Boolean(permissions?.canUseLiveChat || permissions?.canManageTickets);
   };
 
   const canUseTelegramAI = (): boolean => {

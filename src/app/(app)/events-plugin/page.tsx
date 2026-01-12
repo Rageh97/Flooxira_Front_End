@@ -459,11 +459,11 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                   </div>
                 </Button>
               )}
-              <Button className="w-full justify-start gap-2 primary-button after:bg-red-500" variant="none" onClick={handleDelete}>
+              {/* <Button className="w-full justify-start gap-2 primary-button after:bg-red-500" variant="none" onClick={handleDelete}>
                 <div className="flex items-center gap-2">
                   <Trash2 className="h-4 w-4" /> حذف التكامل
                 </div>  
-              </Button>
+              </Button> */}
               <div className="pt-4 border-t border-gray-800 mt-4">
                 <Label className="text-xs text-primary">حالة التشغيل</Label>
                 <div className="flex items-center justify-between mt-1">

@@ -25,7 +25,7 @@ import {
 } from "@/lib/escalationApi";
 
 import { Input } from "@/components/ui/input";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Users } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function WhatsAppChatsPage() {
@@ -94,7 +94,7 @@ export default function WhatsAppChatsPage() {
     knowledgeBaseMatch: string | null; 
     timestamp: string 
   }>>([]);
-  const [contacts, setContacts] = useState<Array<{ contactNumber: string; messageCount: number; lastMessageTime: string; profilePicture?: string | null; contactName?: string | null }>>([]);
+  const [contacts, setContacts] = useState<Array<{ contactNumber: string; messageCount: number; lastMessageTime: string; profilePicture?: string | null; contactName?: string | null; isGroup?: boolean }>>([]);
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   
   // Bot control state
@@ -475,7 +475,9 @@ export default function WhatsAppChatsPage() {
       
       if (data.success) {
         // Helper to extract clean number for comparison
-        const getCleanNumber = (num: string) => {
+        const getCleanNumber = (num: string, isGroup?: boolean) => {
+          if (isGroup) return num;
+          
           let clean = num.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '').replace(/\D/g, '');
           // Extract from LID if possible
           if (clean.length >= 15) {
@@ -497,7 +499,7 @@ export default function WhatsAppChatsPage() {
         const uniqueContactsMap = new Map();
         
         data.contacts.forEach((contact: any) => {
-           const cleanNum = getCleanNumber(contact.contactNumber);
+           const cleanNum = getCleanNumber(contact.contactNumber, contact.isGroup);
            
            if (uniqueContactsMap.has(cleanNum)) {
               const existing = uniqueContactsMap.get(cleanNum);
@@ -541,6 +543,9 @@ export default function WhatsAppChatsPage() {
         // FILTER: Remove LID numbers and long internal IDs
         // User requested to hide numbers like 58858651291839 (14+ digits)
         const cleanContacts = (dedupedContacts as any[]).filter(c => {
+           // Always allow groups
+           if (c.isGroup) return true;
+
            // Explicitly filter LID suffix if user doesn't want them
            if (c.contactNumber.includes('@lid')) return false;
 
@@ -1165,6 +1170,10 @@ export default function WhatsAppChatsPage() {
                     <div className="flex items-center gap-2">
                       {contact.profilePicture ? (
                         <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
+                      ) : contact.isGroup ? (
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-200">
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
                       ) : contact.messageCount > 0 ? (
                         <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
                       ) : (
@@ -1212,6 +1221,11 @@ export default function WhatsAppChatsPage() {
                   <div className="flex items-center gap-2">
                     {selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? 
                       <img width={40} height={40} className="w-10 h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : 
+                      selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.isGroup ? (
+                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-200">
+                           <Users className="w-6 h-6" />
+                        </div>
+                      ) :
                       <img width={40} height={40} className="w-10 h-10 rounded-full" src="/user.gif" alt="" />
                     }
                     <div className="flex flex-col overflow-hidden">
