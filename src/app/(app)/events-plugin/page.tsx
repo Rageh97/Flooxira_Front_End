@@ -535,7 +535,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
             )}
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label>ملاحظات خاصة</Label>
                 <Input 
                   placeholder="مثلاً: متجر الرياض الرئيسي" 
@@ -549,7 +549,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                   value={config.platformName || ''}
                   onChange={(e) => handleUpdate({ platformName: e.target.value })}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
           <Button onClick={() => setSettingsOpen(false)} className="primary-button w-full">حفظ التغييرات</Button>
