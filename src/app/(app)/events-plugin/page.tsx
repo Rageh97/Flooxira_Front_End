@@ -35,6 +35,7 @@ import {
   CheckCircle,
   ArrowRight,
   ChevronRight,
+  Link2,
 } from "lucide-react";
 import {
   Dialog,
@@ -49,6 +50,7 @@ import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 const PLATFORMS = [
   { key: "salla", label: "سلة", icon: <img className="w-10 h-10 flex items-center justify-center" src="/salla.png"/> },
+  // { key: "iapp_cloud", label: "IAPP Cloud", icon: "☁️" },
   { key: "custom", label: "مخصص", icon: "⚙️" },
 ];
 
@@ -447,17 +449,35 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
               <CardTitle className="text-sm text-white">إدارة الربط</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full justify-start gap-2 primary-button" variant="none" onClick={() => setSettingsOpen(true)}>
-                <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" /> إعدادات المنصة
-                </div>
-              </Button>
-              {config.platform === 'custom' && (
-                <Button className="w-full justify-start gap-2 primary-button" variant="none" onClick={() => setCodeOpen(true)}>
+              {config.platform === 'iapp_cloud' ? (
+                <Button className="w-full justify-start gap-2 primary-button" variant="none" onClick={() => setSettingsOpen(true)}>
                   <div className="flex items-center gap-2">
-                    <Code className="h-4 w-4 text-purple-400" /> كود الربط
+                    <Link2 className="h-4 w-4 text-primary" /> إعدادات الربط
                   </div>
                 </Button>
+              ) : (
+                <>
+                  <Button
+                    className="w-full justify-start gap-2 primary-button"
+                    variant="none"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" /> إعدادات المنصة
+                    </div>
+                  </Button>
+                  {config.platform === "custom" && (
+                    <Button
+                      className="w-full justify-start gap-2 primary-button"
+                      variant="none"
+                      onClick={() => setCodeOpen(true)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Code className="h-4 w-4 text-purple-400" /> بيانات المطور
+                      </div>
+                    </Button>
+                  )}
+                </>
               )}
               {/* <Button className="w-full justify-start gap-2 primary-button after:bg-red-500" variant="none" onClick={handleDelete}>
                 <div className="flex items-center gap-2">
@@ -494,23 +514,106 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
           </DialogHeader>
           <div className="space-y-6 py-4">
               {/* Webhook View (Fast setup) */}
-              {config.platform !== 'custom' && (
+            {(config.platform !== "custom") && (
               <div className="p-5 bg-fixed-40 border border-primary/20 rounded-3xl space-y-4">
                 <div>
                   <Label className="text-primary font-bold">رابط التكامل </Label>
                   <div className="flex gap-2 mt-2">
-                      <Input
+                    <Input
                       value={`${process.env.NEXT_PUBLIC_API_URL}/api/events-plugin/webhook?apiKey=${config.apiKey}`}
                       readOnly
                       className="font-mono text-xs bg-black/40 border-primary/30"
                     />
-                    <Button size="sm" variant="ghost" className="bg-primary/20" onClick={() => handleCopy(`${process.env.NEXT_PUBLIC_API_URL}/api/events-plugin/webhook?apiKey=${config.apiKey}`, "link")}>
-                      {copiedField === "link" ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="bg-primary/20"
+                      onClick={() =>
+                        handleCopy(
+                          `${process.env.NEXT_PUBLIC_API_URL}/api/events-plugin/webhook?apiKey=${config.apiKey}`,
+                          "link"
+                        )
+                      }
+                    >
+                      {copiedField === "link" ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
+
+                {/* Show Keys directly for IAPP Cloud in the same modal */}
+                {config.platform === "iapp_cloud" && (
+                  <div className="space-y-4 pt-4 border-t border-primary/10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-primary uppercase tracking-wider">
+                          API Key
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={config.apiKey || ""}
+                            readOnly
+                            className="bg-black/40 font-mono text-xs border-primary/20"
+                          />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="bg-primary/10"
+                            onClick={() => handleCopy(config.apiKey || "", "api")}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-primary uppercase tracking-wider">
+                          Secret Key (للتوقيع)
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type={showSecretKey ? "text" : "password"}
+                            value={config.secretKey || ""}
+                            readOnly
+                            className="bg-black/40 font-mono text-xs border-primary/20"
+                          />
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="bg-primary/10"
+                            onClick={() => setShowSecretKey(!showSecretKey)}
+                          >
+                            {showSecretKey ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-3">
+                      <h4 className="text-sm font-bold text-primary flex items-center gap-2">
+                        <Zap className="h-4 w-4" /> تعليمات الربط للمطور
+                      </h4>
+                      <p className="text-[10px] text-gray-400 leading-relaxed">
+                        يجب على مطور IAPP Cloud إرسال التوقيع الرقمي في الهيدر
+                        (x-signature) للتأكد من أمان الأحداث المرسلة.
+                      </p>
+                      <div className="bg-black/40 p-3 rounded-xl font-mono text-[9px] border border-primary/10 text-left ltr">
+                        <p className="text-primary/60">Header: x-signature</p>
+                        <p className="text-white mt-1">
+                          Value: HMAC-SHA256(JSON_BODY, SecretKey)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              )}
+            )}
 
             {/* Event Toggles (Custom only) */}
             {config.platform === 'custom' && (
@@ -582,6 +685,21 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                   </div>
                 </div>
               </div>
+
+              {config.platform === 'iapp_cloud' && (
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-3">
+                  <h4 className="text-sm font-bold text-primary flex items-center gap-2">
+                    <Zap className="h-4 w-4" /> تعليمات الربط لـ IAPP Cloud
+                  </h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    يجب على المطور إرسال التوقيع الرقمي (Signature) في الهيدرز للتأكد من أمان البيانات.
+                  </p>
+                  <div className="space-y-2 bg-black/40 p-3 rounded-xl font-mono text-[10px]">
+                    <p className="text-gray-400">// Header to include:</p>
+                    <p className="text-white">x-signature: <span className="text-yellow-400">HMAC-SHA256(payload, secretKey)</span></p>
+                  </div>
+                </div>
+              )}
           </div>
         </DialogContent>
       </Dialog>

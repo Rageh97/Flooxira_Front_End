@@ -666,8 +666,8 @@ useEffect(() => {
       </Card>
 
       {showRedirectModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="gradient-border border border-gray-700 rounded-xl p-6 w-full max-w-xl mx-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-100  overflow-y-auto p-4">
+          <div className="gradient-border border border-gray-700 rounded-xl p-6 w-full max-w-xl my-auto ">
             <h3 className="text-lg font-semibold text-white mb-4">معلومات الربط للتطبيقات</h3>
             <p className="text-sm text-gray-400 mb-4">
               استخدم هذه المعلومات في إعدادات التطبيقات على فيسبوك، يوتيوب، وتويتر (X).

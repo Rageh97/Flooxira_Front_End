@@ -78,12 +78,25 @@ export default function ServicesSlider() {
 
   const handleServiceClick = async (service: Service) => {
     try {
-      await incrementServiceClick(service.id);
+      // Increment click count (non-blocking)
+      incrementServiceClick(service.id).catch(err => 
+        console.error("Failed to increment click:", err)
+      );
+      
+      // Open link immediately to avoid iOS popup blocker
       if (service.purchaseLink) {
-        window.open(service.purchaseLink, "_blank");
+        // Use location.href for better iOS compatibility
+        const link = document.createElement('a');
+        link.href = service.purchaseLink;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
     } catch (error) {
-      console.error("Failed to increment click:", error);
+      console.error("Failed to handle service click:", error);
     }
   };
 
@@ -351,7 +364,15 @@ export default function ServicesSlider() {
                             </svg>
                           </span>
                         </button> */}
-                        <button onClick={() => handleServiceClick(service)} className="super-button">
+                        <button 
+                          onClick={() => handleServiceClick(service)} 
+                          className="super-button"
+                          style={{ 
+                            WebkitTapHighlightColor: 'transparent',
+                            touchAction: 'manipulation',
+                            cursor: 'pointer'
+                          }}
+                        >
   <span>عرض الخدمة</span>
   <svg fill="none" viewBox="0 0 24 24" className="arrow">
     <path

@@ -61,7 +61,15 @@ export default function AskAIPage() {
   const [editedTitle, setEditedTitle] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [isMobileListOpen, setIsMobileListOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current && !inputMessage) {
+      inputRef.current.style.height = '56px';
+    }
+  }, [inputMessage]);
   const streamingMsgRef = useRef<AIMessage | null>(null);
   const streamRef = useRef<{ cancel: () => void } | null>(null);
   const { showSuccess, showError } = useToast();
@@ -73,6 +81,53 @@ export default function AskAIPage() {
       setToken(localStorage.getItem("auth_token") || "");
     }
   }, []);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // iOS Safari viewport height fix
+  useEffect(() => {
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    
+    return () => {
+      window.removeEventListener('resize', setVH);
+      window.removeEventListener('orientationchange', setVH);
+    };
+  }, []);
+
+  // Prevent body scroll when chat is open on mobile
+  useEffect(() => {
+    if (selectedConversation && !isMobileListOpen && isMobile) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.height = '100%';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    };
+  }, [selectedConversation, isMobileListOpen, isMobile]);
 
   useEffect(() => {
     if (!token) return;
@@ -291,7 +346,9 @@ export default function AskAIPage() {
       )} */}
       <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden min-w-0">
         {/* Main Chat Area */}
-        <div className={`flex-1 flex flex-col min-w-0 ${isMobileListOpen ? 'hidden lg:flex' : 'flex'}`}>
+        <div className={`flex-1 flex flex-col min-w-0 ${
+          isMobileListOpen ? 'hidden lg:flex' : 'flex mobile-fullscreen-ai-chat'
+        }`}>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
@@ -363,8 +420,8 @@ export default function AskAIPage() {
                 <div className="h-full flex items-center justify-center">
                   <div className="flex flex-col items-center">
                     {/* <Sparkles className="h-16 w-16 text-green-600 mx-auto mb-4" /> */}
-                    <div class="spinner">
-    <div class="spinner1"></div>
+                    <div className="spinner">
+    <div className="spinner1"></div>
 </div>
                     <h3 className="text-xl font-semibold text-white mb-2">
                       كيف يمكنني مساعدتك اليوم؟
@@ -438,51 +495,69 @@ export default function AskAIPage() {
             {/* Input Area */}
             <div className="border-t border-gray-700 p-4">
               <div className="relative flex items-center flex-row gap-2">
-               
-                <div className="w-full relative">
-                  <Textarea
+                <div className="w-full relative flex items-center">
+                  <textarea
+                    ref={(el) => {
+                      inputRef.current = el;
+                      if (el) {
+                        el.style.height = '56px';
+                        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                      }
+                    }}
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
+                    onChange={(e) => {
+                      setInputMessage(e.target.value);
+                      e.target.style.height = '56px';
+                      e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
                       }
                     }}
-                    placeholder="اكتب رسالتك هنا... (Enter للإرسال)"
-                    className="w-full min-h-[60px] max-h-[200px] bg-[#01191040] border-gray-700 text-white resize-none pl-24 pr-4 py-4 rounded-xl focus:border-blue-500 transition-all scrollbar-hide"
+                    placeholder="اكتب رسالتك هنا... "
+                    className="w-full min-h-[56px] max-h-[200px] bg-[#01191040] border-primary text-white pr-4 pl-14 py-4 rounded-3xl outline-none transition-all scrollbar-hide resize-none flex items-center"
                     disabled={!hasActiveSubscription || sending || isOutOfCredits}
+                    rows={1}
+                    style={{ lineHeight: '1.5', overflow: 'hidden' }}
                   />
-                  <div className="flex gap-2 absolute left-0 bottom-0 ">
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={
-                        !hasActiveSubscription ||
-                        !inputMessage.trim() ||
-                        sending ||
-                        isOutOfCredits
-                      }
-                      className="min-h-[60px] self-end bg-none"
-                    >
-                      {sending ? (
-                    <Loader2 className="h-10 w-10 animate-spin" />
-                      ) : (
-                    <img src="/telegram.gif" alt="" className="w-10 h-10" />
-                      )}
-                    </Button>
-                    {sending && (
+                  <div className="absolute left-2 flex gap-2 items-center">
+                    {sending ? (
                       <Button
                         onClick={() => { streamRef.current?.cancel(); }}
                         disabled={!sending}
-                        variant="destructive"
-                        size="sm"
-                        className="min-h-[60px] self-end"
+                        size="icon"
+                        className="h-10 w-10 !rounded-full bg-red-500 text-black flex items-center justify-center p-0"
                       >
-                        إيقاف
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="7" y="7" width="10" height="10" rx="1" fill="currentColor"/>
+                        </svg>
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={
+                          !hasActiveSubscription ||
+                          !inputMessage.trim() ||
+                          sending ||
+                          isOutOfCredits
+                        }
+                        size="icon"
+                        className={`h-10 w-10 !rounded-full transition-all flex items-center justify-center p-0 ${
+                          inputMessage.trim() && hasActiveSubscription && !isOutOfCredits
+                            ? 'bg-blue-400/50  text-white'
+                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </Button>
                     )}
                   </div>
                 </div>
+              
               </div>
               {isOutOfCredits && (
                 <p className="text-xs text-red-400 mt-2">

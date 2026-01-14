@@ -27,8 +27,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Users } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { createPortal } from "react-dom";
 
 export default function WhatsAppChatsPage() {
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -66,6 +68,11 @@ export default function WhatsAppChatsPage() {
     }, 5000);
   };
   const [testMessage, setTestMessage] = useState("");
+  useEffect(() => {
+    if (inputRef.current && !testMessage) {
+      inputRef.current.style.height = '48px';
+    }
+  }, [testMessage]);
   // Tag modal state
   const [showTagModal, setShowTagModal] = useState(false);
   const [tags, setTags] = useState<Array<{ id: number; name: string }>>([]);
@@ -628,6 +635,11 @@ export default function WhatsAppChatsPage() {
     }
   }
 
+  function openNoteModal() {
+    setNoteText("");
+    setShowNoteModal(true);
+  }
+
   async function handleAddToTag() {
     if (!selectedTagId || !selectedContactForTag) return;
     try {
@@ -1020,7 +1032,7 @@ export default function WhatsAppChatsPage() {
 
   return (
     <>
-      <div className={`space-y-6 ${showTagModal ? 'blur-sm' : ''}`}>
+      <div className={`space-y-6 ${(showTagModal || showNoteModal) ? 'blur-sm' : ''}`}>
         <div className="w-full h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)]">
           {/* Main Chat Container */}
           <Card  className=" border-none  flex flex-col lg:flex-row h-full gradient-border">
@@ -1110,7 +1122,7 @@ export default function WhatsAppChatsPage() {
                     </Button>
                     <Button 
                       size="sm"
-                      onClick={() => { setNoteText(""); setShowNoteModal(true); }}
+                      onClick={openNoteModal}
                       className="text-xs bg-transparent text-white border border-text-primary/50 inner-shadow"
                     >
                       أضف ملاحظة
@@ -1296,7 +1308,7 @@ export default function WhatsAppChatsPage() {
                 </Button>
                 <Button 
                   size="sm"
-                   onClick={() => { setNoteText(""); setShowNoteModal(true); }}
+                   onClick={openNoteModal}
                   className="text-[10px] h-8 whitespace-nowrap bg-transparent text-white border border-text-primary/50 inner-shadow"
                 >
                   أضف ملاحظة
@@ -1665,46 +1677,74 @@ export default function WhatsAppChatsPage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-1">
-          
+                <div className="flex items-end gap-2">
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    
-                    className="px-0 flex-shrink-0"
+                    className="px-0 flex-shrink-0 mb-3"
                     title="إضافة إيموجي"
                   >
                     <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/imogi.gif" alt="" />
-                    {/* <AnimatedEmoji emoji="😊" size={20} /> */}
                   </button>
-                  <label className="text-white px-0 py-2 rounded cursor-pointer flex items-center flex-shrink-0">
-                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/img.gif" alt="" />
-                    <input
-                      type="file"
-                      accept="image/*,video/*"
-                      onChange={handleMediaSelect}
-                      className="hidden"
+                  
+                  <div className="flex-1 relative">
+                    <textarea
+                      ref={(el) => {
+                        inputRef.current = el;
+                        if (el) {
+                          el.style.height = '48px';
+                          el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+                        }
+                      }}
+                      placeholder="اكتب رسالتك..."
+                      value={testMessage}
+                      onChange={(e) => {
+                        setTestMessage(e.target.value);
+                        e.target.style.height = '48px';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                      }}
+                      className="w-full px-14 bg-[#01191040] py-3 border border-blue-300 rounded-3xl text-white placeholder-white/50 resize-none outline-none"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage(selectedContact, testMessage);
+                        }
+                      }}
+                      rows={1}
+                      style={{ minHeight: '48px', maxHeight: '150px', overflow: 'hidden' }}
                     />
-                  </label>
-                  <button 
-                    onClick={() => handleSendMessage(selectedContact, testMessage)}
-                    disabled={!testMessage.trim()}
-                    className="flex-shrink-0"
-                  >
-                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/telegram.gif" alt="" />
-                  </button>
-                 
-                  <Textarea
-                    // type="text"
-                    placeholder="اكتب رسالتك..."
-                    value={testMessage}
-                    onChange={(e) => setTestMessage(e.target.value)}
-                    className="flex-1 px-2 sm:px-3 bg-[#01191040] py-2 sm:py-4 resize-none border border-blue-300 rounded-2xl text-[16px] sm:text-base text-white placeholder-white/50 min-w-0"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSendMessage(selectedContact, testMessage);
-                      }
-                    }}
-                  />
+                    
+                    {/* زر الوسائط على اليمين */}
+                    <label className="absolute  right-2 top-1/2 -translate-y-1/2 cursor-pointer">
+                      <div className="h-9 w-9 mb-1 rounded-full bg-gray-600  flex items-center justify-center transition-all">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*,video/*"
+                        onChange={handleMediaSelect}
+                        className="hidden"
+                      />
+                    </label>
+                    
+                    {/* زر الإرسال على اليسار */}
+                    <button 
+                      onClick={() => handleSendMessage(selectedContact, testMessage)}
+                      disabled={!testMessage.trim()}
+                      className="absolute left-2 top-1/2 -translate-y-1/2"
+                    >
+                      <div className={`h-9 w-9 mb-1 rounded-full flex items-center justify-center transition-all ${
+                        testMessage.trim() 
+                          ? 'bg-gray-600  text-white' 
+                          : 'bg-gray-600 text-white cursor-not-allowed'
+                      }`}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </button>
+                  </div>
                 </div>
                 {showEmojiPicker && (
                   <div className="mt-2">
@@ -1725,71 +1765,83 @@ export default function WhatsAppChatsPage() {
           </div>
 
 
-          {/* Note Modal */}
-          {showNoteModal && (
-            <div className="fixed inset-0 z-[1000] backdrop-blur-sm flex items-center justify-center bg-black/80 p-4">
-              <div className="w-full max-w-lg gradient-border rounded-lg p-4 border border-text-primary/50">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-white text-lg font-semibold">إضافة ملاحظة على الشات</h3>
-                  <button onClick={() => setShowNoteModal(false)} className="text-red-400 cursor-pointer">✕</button>
-                </div>
-                <textarea 
-                  className="w-full h-32 p-3 rounded-md bg-[#01191040] text-white border-1 border-blue-300 outline-none"
-                  placeholder="اكتب ملاحظتك هنا..."
-                  value={noteText}
-                  onChange={(e) => setNoteText(e.target.value)}
-                />
-                <div className="mt-3 flex items-center justify-end gap-2">
-                  <Button 
-                    variant="secondary"
-                    onClick={() => setShowNoteModal(false)}
-                  >
-                    إلغاء
-                  </Button>
-                  <Button 
-                    onClick={async () => {
-                      if (!selectedContact || !noteText.trim()) return;
-                      try {
-                        setSavingNote(true);
-                        const res = await createChatNote(token, { contactNumber: selectedContact, note: noteText.trim() });
-                        if (res.success) {
-                          setActiveNote(res.note as any);
-                          setOpenNoteContacts(prev => new Set(prev).add(selectedContact));
-                          showToast('تم حفظ الملاحظة بنجاح', 'success');
-                          setShowNoteModal(false);
-                          setNoteText("");
-                        }
-                      } catch (e: any) {
-                        showToast(e.message || 'فشل في حفظ الملاحظة', 'error');
-                      } finally {
-                        setSavingNote(false);
-                      }
-                    }}
-                    disabled={savingNote || !noteText.trim()}
-                    className="bg-green-600 hover:bg-green-700 cursor-pointer"
-                  >
-                    {savingNote ? 'جاري الحفظ...' : 'حفظ الملاحظة'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-          
         </Card>
         </div>
       </div>
+
+      {/* Note Modal */}
+      {showNoteModal && (typeof window !== 'undefined') && createPortal(
+        <div className="fixed inset-0 z-[1000000000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
+          <div className="absolute inset-0" onClick={() => setShowNoteModal(false)} />
+          <div className="relative z-10 w-full max-w-lg gradient-border rounded-lg p-4 max-h-[90vh] overflow-y-auto border border-text-primary/50">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white text-lg font-semibold">إضافة ملاحظة على الشات</h3>
+              <button onClick={() => setShowNoteModal(false)} className="text-red-400 cursor-pointer text-xl">✕</button>
+            </div>
+            
+            <div className="space-y-4">
+              {selectedContact && (
+                <div className="text-xs text-gray-400 mb-2">
+                  لجهة الاتصال: {selectedContact}
+                </div>
+              )}
+              
+              <textarea 
+                className="w-full h-32 p-3 rounded-md bg-[#01191040] text-white border border-blue-300/30 outline-none focus:border-blue-500 transition-colors"
+                placeholder="اكتب ملاحظتك هنا..."
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+              />
+              
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button 
+                  className="px-4 py-2 text-white border border-text-primary rounded-md hover:bg-white/5 transition-colors"
+                  onClick={() => setShowNoteModal(false)}
+                >
+                  إلغاء
+                </button>
+                <button 
+                  onClick={async () => {
+                    if (!selectedContact || !noteText.trim()) return;
+                    try {
+                      setSavingNote(true);
+                      const res = await createChatNote(token, { contactNumber: selectedContact, note: noteText.trim() });
+                      if (res.success) {
+                        setActiveNote(res.note as any);
+                        setOpenNoteContacts(prev => new Set(prev).add(selectedContact));
+                        showToast('تم حفظ الملاحظة بنجاح', 'success');
+                        setShowNoteModal(false);
+                        setNoteText("");
+                      }
+                    } catch (e: any) {
+                      showToast(e.message || 'فشل في حفظ الملاحظة', 'error');
+                    } finally {
+                      setSavingNote(false);
+                    }
+                  }}
+                  disabled={savingNote || !noteText.trim()}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md transition-colors font-medium shadow-lg"
+                >
+                  {savingNote ? 'جاري الحفظ...' : 'حفظ الملاحظة'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
       
       {/* Tag Modal */}
-      {showTagModal && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setShowTagModal(false)} />
-          <div className="relative z-10 w-full max-w-xl gradient-border rounded p-4 max-h-[90vh] overflow-y-auto">
+      {showTagModal && (typeof window !== 'undefined') && createPortal(
+        <div className="fixed inset-0 z-[1000000000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
+          <div className="absolute inset-0" onClick={() => setShowTagModal(false)} />
+          <div className="relative z-10 w-full max-w-xl gradient-border rounded-lg p-4 max-h-[90vh] overflow-y-auto border border-text-primary/50">
             <h3 className="text-white text-lg font-medium mb-3">إضافة إلى تصنيف</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm text-gray-300 mb-1">جهة الاتصال</label>
                 <select
-                  className="w-full bg-[#01191040]  rounded px-3 py-2 text-white"
+                  className="w-full bg-[#01191040]  rounded px-3 py-2 text-white outline-none border border-blue-300/30"
                   value={selectedContactForTag}
                   onChange={(e) => setSelectedContactForTag(e.target.value)}
                 >
@@ -1886,7 +1938,7 @@ export default function WhatsAppChatsPage() {
               <div>
                 <label className="block text-sm text-gray-300 mb-1">التصنيف</label>
                 <select
-                  className="w-full bg-[#01191040]  rounded px-3 py-2 text-white"
+                  className="w-full bg-[#01191040]  rounded px-3 py-2 text-white outline-none border border-blue-300/30"
                   value={selectedTagId ?? ''}
                   onChange={(e) => setSelectedTagId(parseInt(e.target.value))}
                 >
@@ -1898,7 +1950,7 @@ export default function WhatsAppChatsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <input
-                  className="flex-1 bg-[#01191040]  rounded px-3 py-2 text-white placeholder-white"
+                  className="flex-1 bg-[#01191040]  rounded px-3 py-2 text-white placeholder-white outline-none border border-blue-300/30"
                   placeholder="إنشاء تصنيف سريع"
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
@@ -1915,7 +1967,8 @@ export default function WhatsAppChatsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </>

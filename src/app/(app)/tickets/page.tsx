@@ -197,6 +197,13 @@ export default function TicketsPage() {
   const selectedTicketRef = useRef<Ticket | null>(null);
   const messagesByTicketRef = useRef<Record<number, TicketMessage[]>>({});
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  
+  useEffect(() => {
+    if (inputRef.current && !inputMessage) {
+      inputRef.current.style.height = '56px';
+    }
+  }, [inputMessage]);
   const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
   const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
 
@@ -1659,7 +1666,7 @@ export default function TicketsPage() {
                     </div>
                   </div>
                 )}
-                <div className="flex flex-row items-center gap-2 p-1 ">
+                <div className="flex flex-row items-center gap-2 p-2">
                   <input
                     type="file"
                     ref={imageInputRef}
@@ -1667,42 +1674,75 @@ export default function TicketsPage() {
                     onChange={handleImageSelect}
                     className="hidden"
                   />
+                  
+                  <div className="w-full relative flex items-center">
+                    <textarea
+                      ref={(el) => {
+                        inputRef.current = el;
+                        if (el) {
+                          el.style.height = '56px';
+                          el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                        }
+                      }}
+                      value={inputMessage}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        e.target.style.height = '56px';
+                        e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      placeholder="اكتب رسالتك..."
+                      className="w-full min-h-[56px] max-h-[200px] bg-[#01191040] border border-primary text-white pr-4 pl-14 py-4 rounded-3xl outline-none transition-all scrollbar-hide resize-none flex items-center"
+                      disabled={sending || uploadingImage}
+                      rows={1}
+                      style={{ lineHeight: '1.5', overflow: 'hidden' }}
+                    />
+                    <div className="absolute left-2 flex gap-2 items-center">
+                      {sending || uploadingImage ? (
+                        <Button
+                          size="icon"
+                          disabled
+                          className="h-10 w-10 !rounded-full bg-gray-600 text-white flex items-center justify-center p-0"
+                        >
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => sendMessage()}
+                          disabled={(!inputMessage.trim() && !selectedImage) || sending || uploadingImage}
+                          size="icon"
+                          className={`h-10 w-10 !rounded-full transition-all flex items-center justify-center p-0 ${
+                            (inputMessage.trim() || selectedImage) && !sending && !uploadingImage
+                              ? 'bg-blue-400/50  text-white'
+                              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Image Upload Button */}
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => imageInputRef.current?.click()}
                     disabled={sending || uploadingImage || !!selectedImage}
                     title="إرسال صورة"
-                    className="h-10 w-10 p-0"
+                    className="h-12 w-12 flex-shrink-0 hover:bg-gray-700 rounded-full"
                   >
                     {uploadingImage ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
-                      <Image className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Input
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                    placeholder="اكتب رسالتك..."
-                    className="flex-1 w-full"
-                    // disabled={sending || uploadingImage}
-                  />
-                  <Button
-                    onClick={() => sendMessage()}
-                    disabled={(!inputMessage.trim() && !selectedImage) || sending || uploadingImage}
-                    className=" sm:w-auto"
-                  >
-                    {sending || uploadingImage ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
+                      <Image className="h-5 w-5" />
                     )}
                   </Button>
                 </div>

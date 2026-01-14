@@ -960,18 +960,17 @@ export default function ContentHomePage() {
                   {itemsLoading ? (
                     <div className="text-center py-8 text-gray-400">جاري تحميل العناصر...</div>
                   ) : (
-                    <div className="w-full overflow-x-auto">
-                      <div className="grid min-w-[700px] grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-1 sm:gap-2 rounded-lg p-2 sm:p-4 overflow-x-auto">
                       {/* Day headers */}
                       {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map(day => (
-                        <div key={day} className="p-3 text-center font-semibold text-green-400 bg-secondry rounded-lg">
+                        <div key={day} className="p-1 sm:p-2 md:p-3 text-center font-semibold text-green-400 bg-secondry rounded text-xs sm:text-sm">
                           {day}
                         </div>
                       ))}
                       
                       {/* Empty cells for days before month starts */}
                       {Array.from({ length: firstDay }).map((_, index) => (
-                        <div key={`empty-${index}`} className="p-3 h-20 bg-fixed-40 rounded-lg"></div>
+                        <div key={`empty-${index}`} className="p-1 sm:p-2 md:p-3 h-12 sm:h-16 bg-fixed-40 rounded"></div>
                       ))}
                       
                       {/* Days of the month */}
@@ -987,7 +986,7 @@ export default function ContentHomePage() {
                         return (
                           <div
                             key={day}
-                            className={`p-2 h-20 rounded-lg cursor-pointer transition-all duration-200 ${
+                            className={`p-1 sm:p-2 md:p-3 h-12 sm:h-16 rounded cursor-pointer transition-all duration-200 relative flex flex-col ${
                               isToday 
                                 ? 'gradient-border-green text-white shadow-lg' 
                                 : isPast
@@ -997,19 +996,19 @@ export default function ContentHomePage() {
                                 : 'bg-fixed-40 text-white  text-gray-300'
                             }`}
                           >
-                            <div className="text-sm font-semibold mb-1 flex items-center justify-between">
+                            <div className="text-xs sm:text-sm font-semibold mb-0.5 sm:mb-1 flex items-center justify-between">
                               <span>{day}</span>
                               {dayItems.length > 0 && (
-                                <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full">
+                                <span className="text-[10px] sm:text-xs bg-blue-500 text-white px-1 sm:px-1.5 py-0.5 rounded-full">
                                   {dayItems.length}
                                 </span>
                               )}
                             </div>
-                            <div className={`space-y-1 ${dayItems.length > 2 ? 'max-h-12 overflow-y-auto scrollbar-hide' : ''}`}>
+                            <div className={`space-y-0.5 sm:space-y-1 ${dayItems.length > 2 ? 'max-h-[1.5rem] sm:max-h-12 overflow-y-auto scrollbar-hide' : ''}`}>
                               {dayItems.map((item, idx) => (
                                 <div
                                   key={idx}
-                                  className={`text-xs px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 flex items-center justify-between ${
+                                  className={`text-[10px] sm:text-xs px-0.5 sm:px-1 py-0.5 rounded truncate cursor-pointer hover:opacity-80 flex items-center justify-between ${
                                     isPast ? 'bg-red-500 text-white' : 'bg-green-500 text-white hover:bg-green-600'
                                   }`}
                                   title={item.title}
@@ -1019,7 +1018,7 @@ export default function ContentHomePage() {
                                       e.stopPropagation();
                                       onEditItem(item);
                                     }}
-                                    className="flex-1"
+                                    className="flex-1 truncate"
                                   >
                                     {item.title}
                                   </span>
@@ -1029,10 +1028,10 @@ export default function ContentHomePage() {
                                         e.stopPropagation();
                                         onDeleteItem(item.id);
                                       }}
-                                      className="ml-1 text-red-200 hover:text-white"
+                                      className="ml-0.5 sm:ml-1 text-red-200 hover:text-white shrink-0"
                                       title="حذف"
                                     >
-                                      <Trash2 className="w-3 h-3" />
+                                      <Trash2 className="w-2 h-2 sm:w-3 sm:h-3" />
                                     </button>
                                   )}
                                 </div>
@@ -1042,7 +1041,6 @@ export default function ContentHomePage() {
                         );
                       })}
                       </div>
-                    </div>
                   )}
                 </CardContent>
               </Card>

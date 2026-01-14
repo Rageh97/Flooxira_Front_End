@@ -2801,7 +2801,7 @@ export type EventsPluginConfig = {
   isActive: boolean;
   enabledEvents: Record<string, boolean>;
   webhookUrl?: string;
-  platform?: 'woocommerce' | 'salla' | 'zid' | 'shopify' | 'custom' | 'other';
+  platform?: 'woocommerce' | 'salla' | 'zid' | 'shopify' | 'iapp_cloud' | 'custom' | 'other';
   platformName?: string;
   totalEventsReceived: number;
   lastEventAt?: string;

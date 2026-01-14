@@ -236,7 +236,7 @@ export default function WhatsAppSettingsPage() {
 
           {settings.workingHoursEnabled && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="start-time" className="text-white">وقت البداية</Label>
                   <Input
@@ -265,7 +265,7 @@ export default function WhatsAppSettingsPage() {
 
               <div>
                 <Label className="text-white mb-3 block">أيام العمل</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7  gap-2">
                   {DAYS_OF_WEEK.map((day) => (
                     <div key={day.value} className="flex items-center gap-2 bg-fixed-40 p-2 w-55 justify-between  ">
                       <Checkbox

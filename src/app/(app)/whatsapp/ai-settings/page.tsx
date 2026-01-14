@@ -217,7 +217,7 @@ export default function AISettingsPage() {
       {/* Tabs */}
       <div className="mb-6 gradient-border inner-shadow">
         <div className="relative">
-          <div className="flex overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
+          <div className="flex overflow-x-auto  pb-0 hide-scrollbar">
             <div className="flex space-x-1 px-1 sm:px-2">
               {[
                 { id: 'general', label: 'عام' },
