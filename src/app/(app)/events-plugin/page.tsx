@@ -50,8 +50,8 @@ import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 const PLATFORMS = [
   { key: "salla", label: "سلة", icon: <img className="w-10 h-10 flex items-center justify-center" src="/salla.png"/> },
-  // { key: "iapp_cloud", label: "IAPP Cloud", icon: "☁️" },
-  { key: "custom", label: "مخصص", icon: "⚙️" },
+  { key: "iapp_cloud", label: "IAPP Cloud", icon: "☁️" },
+  // { key: "custom", label: "مخصص", icon: "⚙️" },
 ];
 
 const EVENT_TYPES = [
@@ -547,7 +547,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                 {/* Show Keys directly for IAPP Cloud in the same modal */}
                 {config.platform === "iapp_cloud" && (
                   <div className="space-y-4 pt-4 border-t border-primary/10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div className="space-y-2">
                         <Label className="text-xs text-primary uppercase tracking-wider">
                           API Key
@@ -568,46 +568,27 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                           </Button>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs text-primary uppercase tracking-wider">
-                          Secret Key (للتوقيع)
-                        </Label>
-                        <div className="flex gap-2">
-                          <Input
-                            type={showSecretKey ? "text" : "password"}
-                            value={config.secretKey || ""}
-                            readOnly
-                            className="bg-black/40 font-mono text-xs border-primary/20"
-                          />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="bg-primary/10"
-                            onClick={() => setShowSecretKey(!showSecretKey)}
-                          >
-                            {showSecretKey ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
                     </div>
 
                     <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-3">
-                      <h4 className="text-sm font-bold text-primary flex items-center gap-2">
-                        <Zap className="h-4 w-4" /> تعليمات الربط للمطور
-                      </h4>
-                      <p className="text-[10px] text-gray-400 leading-relaxed">
-                        يجب على مطور IAPP Cloud إرسال التوقيع الرقمي في الهيدر
-                        (x-signature) للتأكد من أمان الأحداث المرسلة.
-                      </p>
-                      <div className="bg-black/40 p-3 rounded-xl font-mono text-[9px] border border-primary/10 text-left ltr">
-                        <p className="text-primary/60">Header: x-signature</p>
-                        <p className="text-white mt-1">
-                          Value: HMAC-SHA256(JSON_BODY, SecretKey)
-                        </p>
+                     
+                      
+                      <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 space-y-2">
+                        <h5 className="text-xs font-bold text-blue-400">الأحداث المدعومة:</h5>
+                        <div className="grid grid-cols-3 gap-2 text-[9px]">
+                          <div className="bg-black/40 p-2 rounded-lg">
+                            <p className="text-green-400 font-bold">ORDER</p>
+                            <p className="text-gray-400 text-[8px]">created, updated, deleted</p>
+                          </div>
+                          <div className="bg-black/40 p-2 rounded-lg">
+                            <p className="text-blue-400 font-bold">ORDER_ITEM</p>
+                            <p className="text-gray-400 text-[8px]">created, updated, deleted</p>
+                          </div>
+                          <div className="bg-black/40 p-2 rounded-lg">
+                            <p className="text-yellow-400 font-bold">CART</p>
+                            <p className="text-gray-400 text-[8px]">created, updated, deleted</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -669,19 +650,12 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <Label className="text-xs text-primary uppercase tracking-wider">API Key</Label>
                   <div className="flex gap-2">
                     <Input value={config.apiKey || ""} readOnly className="bg-gray-800/50 font-mono text-xs" />
                     <Button size="sm" variant="default" onClick={() => handleCopy(config.apiKey || "", "api")}><Copy className="h-4 w-4" /></Button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs text-primary uppercase tracking-wider">Secret Key (للتوقيع)</Label>
-                  <div className="flex gap-2">
-                    <Input type={showSecretKey ? "text" : "password"} value={config.secretKey || ""} readOnly className="bg-gray-800/50 font-mono text-xs" />
-                    <Button size="sm" variant="default" onClick={() => setShowSecretKey(!showSecretKey)}>{showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
                   </div>
                 </div>
               </div>
@@ -696,7 +670,8 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                   </p>
                   <div className="space-y-2 bg-black/40 p-3 rounded-xl font-mono text-[10px]">
                     <p className="text-gray-400">// Header to include:</p>
-                    <p className="text-white">x-signature: <span className="text-yellow-400">HMAC-SHA256(payload, secretKey)</span></p>
+                    <p className="text-white">x-signature: <span className="text-yellow-400">hash_hmac('sha256', base64_encode(json_encode($data)) . $domain, SECRET_KEY)</span></p>
+                    <p className="text-gray-400 mt-2">// المفتاح السري ثابت ومعروف لدى مطور IAPP Cloud</p>
                   </div>
                 </div>
               )}

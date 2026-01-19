@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getAllUsers } from "@/lib/api";
+import * as XLSX from 'xlsx';
+import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 type User = {
   id: number;
@@ -26,6 +29,7 @@ export default function UsersAdminPage() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const usersPerPage = 10;
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // Read token from localStorage only on the client
   useEffect(() => {
@@ -62,6 +66,48 @@ export default function UsersAdminPage() {
     router.push(`/admin/users/${userId}`);
   };
 
+  const handleExportUsers = async () => {
+    if (!token) return;
+    
+    try {
+      setIsExporting(true);
+      // Fetch all users with a large limit
+      const response = await getAllUsers(token, 1, 100000);
+      
+      if (!response.success) {
+        toast.error('فشل في جلب المستخدمين للتصدير');
+        return;
+      }
+
+      const allUsers = response.users;
+      
+      // Filter users with phone numbers and format data for Excel
+      const exportData = allUsers
+        .filter(user => user.phone)
+        .map(user => ({
+          'رقم الهاتف': user.phone
+        }));
+
+      if (exportData.length === 0) {
+        toast.error('لا يوجد مستخدمين لديهم أرقام هواتف للتصدير');
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'المستخدمين');
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+      XLSX.writeFile(workbook, `users_phones_${timestamp}.xlsx`);
+      
+      toast.success(`تم تصدير ${exportData.length} رقم بنجاح`);
+    } catch (err: any) {
+      console.error('Export error:', err);
+      toast.error('حدث خطأ أثناء التصدير');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card className="bg-card border-none">
@@ -86,7 +132,18 @@ export default function UsersAdminPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-white">إدارة المستخدمين</h2>
-        <span className="text-sm text-gray-300">{totalUsers} إجمالي المستخدمين</span>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={handleExportUsers} 
+            disabled={isExporting}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? 'جاري التصدير...' : 'تصدير الأرقام'}
+          </Button>
+          <span className="text-sm text-gray-300">{totalUsers} إجمالي المستخدمين</span>
+        </div>
       </div>
       
       <Card className="bg-card border-none">

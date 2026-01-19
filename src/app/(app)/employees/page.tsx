@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Dialog, 
   DialogContent, 
@@ -22,13 +23,6 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
   Checkbox 
 } from "@/components/ui/checkbox";
 import { 
@@ -39,18 +33,15 @@ import {
   Users, 
   UserCheck, 
   UserX,
-  Lock,
-  Mail,
-  Phone,
-  Calendar,
   Shield,
   MessageSquare,
-  Ticket,
   LayoutDashboard,
-  ShoppingCart,
-  FileText,
-  Users2,
-  Megaphone
+  Megaphone,
+  Clock,
+  Briefcase,
+  DollarSign,
+  Coffee,
+  Trophy
 } from "lucide-react";
 import { usePermissions } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
@@ -61,8 +52,12 @@ import { useToast } from "@/components/ui/toast-provider";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
-import { BookOpen } from "lucide-react";
 import AnimatedTutorialButton from "@/components/YoutubeButton";
+import EmployeeDashboard from "@/components/employees/EmployeeDashboard";
+import AttendanceManagement from "@/components/employees/AttendanceManagement";
+import SalaryManagement from "@/components/employees/SalaryManagement";
+import LeaveManagement from "@/components/employees/LeaveManagement";
+import PointsSystem from "@/components/employees/PointsSystem";
 
 interface Employee {
   id: number;
@@ -102,8 +97,6 @@ const PLATFORMS = [
   { value: 'instagram', label: 'إنستغرام' },
   { value: 'twitter', label: 'تويتر' },
   { value: 'linkedin', label: 'لينكد إن' },
-  // { value: 'pinterest', label: 'بينتيريست' },
-  // { value: 'tiktok', label: 'تيك توك' },
   { value: 'youtube', label: 'يوتيوب' }
 ];
 
@@ -147,17 +140,14 @@ export default function EmployeesPage() {
 
   const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
   const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
+  
   const handleShowTutorial = () => {
     const employeesTutorial = 
       getTutorialByCategory('Employees') || 
       getTutorialByCategory('موظفين') || 
-      getTutorialByCategory('Employees') ||   
-      getTutorialByCategory('موظفين') ||
       tutorials.find(t => 
         t.title.toLowerCase().includes('موظفين') ||
-        t.title.toLowerCase().includes('Employees') ||
-        t.category.toLowerCase().includes('موظفين') ||
-        t.category.toLowerCase().includes('Employees')
+        t.title.toLowerCase().includes('Employees')
       ) || null;
     
     if (employeesTutorial) {
@@ -167,15 +157,17 @@ export default function EmployeesPage() {
       showError("لم يتم العثور على شرح خاص بالموظفين");
     }
   };
-  // Check permissions
+
   const canManageEmployees = permissions?.canManageEmployees || false;
   const maxEmployees = permissions?.maxEmployees || 0;
   const canCreateMore = maxEmployees === 0 || (stats?.totalEmployees || 0) < maxEmployees;
+
   useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
       showError("لا يوجد اشتراك نشط");
     }
   }, [hasActiveSubscription, permissionsLoading]);
+
   const loadEmployees = useCallback(async () => {
     if (!hasActiveSubscription || !canManageEmployees) return;
     
@@ -213,7 +205,41 @@ export default function EmployeesPage() {
     }
   }, [hasActiveSubscription, canManageEmployees, getToken]);
 
+  const validateForm = () => {
+    // التحقق من الاسم
+    if (!formData.name || formData.name.trim().length < 2) {
+      showError('يجب إدخال اسم صحيح (حرفين على الأقل)');
+      return false;
+    }
+
+    // التحقق من البريد الإلكتروني
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      showError('يجب إدخال بريد إلكتروني صحيح');
+      return false;
+    }
+
+    // التحقق من كلمة المرور (فقط عند الإنشاء)
+    if (!editingEmployee && (!formData.password || formData.password.length < 8)) {
+      showError('يجب أن تكون كلمة المرور 8 أحرف على الأقل');
+      return false;
+    }
+
+    // التحقق من رقم الهاتف (اختياري ولكن إذا تم إدخاله يجب أن يكون صحيحاً)
+    if (formData.phone && formData.phone.trim()) {
+      const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+      if (!phoneRegex.test(formData.phone) || formData.phone.length < 10) {
+        showError('يجب إدخال رقم هاتف صحيح (10 أرقام على الأقل)');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleCreateEmployee = async () => {
+    if (!validateForm()) return;
+
     try {
       const token = getToken();
       if (!token) return;
@@ -225,17 +251,17 @@ export default function EmployeesPage() {
       });
 
       if (response.success) {
-        toast.success('تم إنشاء الموظف بنجاح');
+        showSuccess('تم إنشاء الموظف بنجاح');
         setIsCreateDialogOpen(false);
         resetForm();
         loadEmployees();
         loadStats();
       } else {
-        toast.error(response.message || 'خطأ في إنشاء الموظف');
+        showError(response.message || 'خطأ في إنشاء الموظف');
       }
     } catch (error) {
       console.error('Error creating employee:', error);
-      toast.error('خطأ في إنشاء الموظف');
+      showError('خطأ في إنشاء الموظف');
     }
   };
 
@@ -361,38 +387,16 @@ export default function EmployeesPage() {
     }));
   };
 
-  // Load data on component mount and when dependencies change
   useEffect(() => {
     if (!hasActiveSubscription || !canManageEmployees) return;
     loadStats();
-  }, [hasActiveSubscription, canManageEmployees, loadStats]);
-
-  useEffect(() => {
-    if (!hasActiveSubscription || !canManageEmployees) return;
     loadEmployees();
-  }, [hasActiveSubscription, canManageEmployees, loadEmployees]);
-
-  // Permission checks
-  useEffect(() => {
-    if (!hasActiveSubscription) {
-      toast.error('تحتاج إلى اشتراك نشط للوصول إلى هذه الميزة');
-      return;
-    }
-
-    if (!canManageEmployees) {
-      toast.error('ليس لديك صلاحية إدارة الموظفين. يرجى الترقية إلى باقة تدعم هذه الميزة.');
-      return;
-    }
-  }, [hasActiveSubscription, canManageEmployees]);
-
-  // Show loading or redirect if no permissions
-
-  
+  }, [hasActiveSubscription, canManageEmployees, loadEmployees, loadStats]);
 
   if (hasActiveSubscription && !canManageEmployees) {
     return (
-      <NoActiveSubscription 
-      heading=""
+      <NoActiveSubscription
+      heading="" 
         featureName="إدارة الموظفين"
         className="container mx-auto p-6"
       />
@@ -400,88 +404,411 @@ export default function EmployeesPage() {
   }
 
   return (
-    <>
-    <div className="w-full space-y-6">
-      {/* {!hasActiveSubscription && (
-        <NoActiveSubscription 
-          heading="إدارة الموظفين"
-          featureName="إدارة الموظفين"
-          className="container mx-auto p-6"
-        />
-      )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
+    <div  className={`w-full space-y-6 ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
       {/* Header */}
       <div className="flex flex-col lg:flex-row gap-2 justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-white">إدارة الموظفين</h1>
-          <p className="text-gray-300 mt-2">إدارة موظفيك وصلاحياتهم</p>
+          <Badge className="bg-yellow-500/20 text-white">سيتوفر المزيد من المميزات القوية داخل نظام ادارة الموظفين قريبا...</Badge>
         </div>
         <div className="flex items-center gap-2">
-        <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                disabled={!canCreateMore}
-                className="primary-button "
-              >
-                {/* <Plus className="w-4 h-4 mr-2" /> */}
-                إضافة موظف جديد
-              </Button>
-            </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>إضافة موظف جديد</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
+          <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
+        </div>
+      </div>
+
+      <Tabs dir="rtl" defaultValue="dashboard" className="space-y-6">
+        <TabsList className="bg-secondry p-1 rounded-xl w-full flex-wrap h-auto justify-start gap-2">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-text-primary text-white data-[state=active]:text-black gap-2">
+            <LayoutDashboard className="h-4 w-4" />
+            الرئيسية
+          </TabsTrigger>
+          <TabsTrigger value="employees" className="data-[state=active]:bg-text-primary text-white data-[state=active]:text-black gap-2">
+            <Users className="h-4 w-4" />
+            الموظفين
+          </TabsTrigger>
+          <TabsTrigger value="attendance" className="data-[state=active]:bg-text-primary text-white data-[state=active]:text-black gap-2">
+            <Clock className="h-4 w-4" />
+            الحضور والانصراف
+          </TabsTrigger>
+          {/* <TabsTrigger value="salary" className="data-[state=active]:bg-text-primary text-white data-[state=active]:text-black gap-2">
+            <DollarSign className="h-4 w-4" />
+            الرواتب
+          </TabsTrigger>
+          <TabsTrigger value="leaves" className="data-[state=active]:bg-text-primary text-white data-[state=active]:text-black gap-2">
+            <Coffee className="h-4 w-4" />
+            الإجازات
+          </TabsTrigger>
+          <TabsTrigger value="points" className="data-[state=active]:bg-text-primary text-white data-[state=active]:text-black gap-2">
+            <Trophy className="h-4 w-4" />
+            نقاط التحفيز
+          </TabsTrigger> */}
+        </TabsList>
+
+        <TabsContent value="dashboard" className="space-y-6">
+          <EmployeeDashboard />
+        </TabsContent>
+
+        <TabsContent value="employees" className="space-y-6">
+          <div className="flex justify-between items-center">
+            
+            <div className="relative flex-1 max-w-sm ml-4">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="البحث في الموظفين..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10 h-10"
+              />
+            </div>
+
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={!canCreateMore} className="primary-button">
+                  <div className="flex items-center gap-2">
+                    <Plus className="w-4 h-4 ml-2" />
+                  إضافة موظف جديد
+                  </div>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>إضافة موظف جديد</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="name">الاسم *</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="اسم الموظف"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="email">البريد الإلكتروني *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="employee@example.com"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="phone">رقم الهاتف</Label>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="+966501234567"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="password">كلمة المرور *</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                        placeholder="كلمة مرور قوية"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Permissions */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      الصلاحيات
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Communication & Support */}
+                      <Card className="bg-fixed-40 border-none">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4" />
+                            التواصل والدعم
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="whatsapp"
+                              checked={formData.permissions.canManageWhatsApp}
+                              onCheckedChange={(checked) => handlePermissionChange('canManageWhatsApp', checked)}
+                            />
+                            <Label htmlFor="whatsapp" className="cursor-pointer">إدارة الواتساب</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="telegram"
+                              checked={formData.permissions.canManageTelegram}
+                              onCheckedChange={(checked) => handlePermissionChange('canManageTelegram', checked)}
+                            />
+                            <Label htmlFor="telegram" className="cursor-pointer">إدارة التليجرام</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="tickets"
+                              checked={formData.permissions.canManageTickets}
+                              onCheckedChange={(checked) => handlePermissionChange('canManageTickets', checked)}
+                            />
+                            <Label htmlFor="tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="events-plugin"
+                              checked={formData.permissions.canUseEventsPlugin}
+                              onCheckedChange={(checked) => handlePermissionChange('canUseEventsPlugin', checked)}
+                            />
+                            <Label htmlFor="events-plugin" className="cursor-pointer">الربط البرمجي (Webhook + API)</Label>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Management & Operations */}
+                      <Card className="bg-fixed-40 border-none">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                            <LayoutDashboard className="w-4 h-4" />
+                            الإدارة والعمليات
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {/* <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="salla"
+                              checked={formData.permissions.canSallaIntegration}
+                              onCheckedChange={(checked) => handlePermissionChange('canSallaIntegration', checked)}
+                            />
+                            <Label htmlFor="salla" className="cursor-pointer">تكامل سلة</Label>
+                          </div> */}
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="content"
+                              checked={formData.permissions.canManageContent}
+                              onCheckedChange={(checked) => handlePermissionChange('canManageContent', checked)}
+                            />
+                            <Label htmlFor="content" className="cursor-pointer">إدارة المحتوى</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="customers"
+                              checked={formData.permissions.canManageCustomers}
+                              onCheckedChange={(checked) => handlePermissionChange('canManageCustomers', checked)}
+                            />
+                            <Label htmlFor="customers" className="cursor-pointer">إدارة العملاء</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            <Checkbox
+                              id="services"
+                              checked={formData.permissions.canMarketServices}
+                              onCheckedChange={(checked) => handlePermissionChange('canMarketServices', checked)}
+                            />
+                            <Label htmlFor="services" className="cursor-pointer">تسويق الخدمات</Label>
+                          </div>
+                          <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                              <Checkbox
+                                id="employees"
+                                checked={formData.permissions.canManageEmployees}
+                                onCheckedChange={(checked) => handlePermissionChange('canManageEmployees', checked)}
+                              />
+                              <Label htmlFor="employees" className="cursor-pointer">إدارة الموظفين</Label>
+                            </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Platforms */}
+                    <Card className="bg-fixed-40 border-none">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
+                          <Megaphone className="w-4 h-4" />
+                          المنصات الاجتماعية
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {PLATFORMS.map(platform => (
+                            <div key={platform.value} className="flex items-center space-x-2 rtl:space-x-reverse">
+                              <Checkbox
+                                id={platform.value}
+                                checked={formData.permissions.platforms.includes(platform.value)}
+                                onCheckedChange={() => handlePlatformToggle(platform.value)}
+                              />
+                              <Label htmlFor={platform.value} className="text-sm cursor-pointer">
+                                {platform.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <Button className="primary-button after:bg-red-500" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      إلغاء
+                    </Button>
+                    <Button className="primary-button" onClick={handleCreateEmployee}>
+                      إنشاء الموظف
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card className="gradient-border">
+            <CardHeader>
+              <CardTitle className="text-lg text-white font-medium">قائمة الموظفين</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">جاري التحميل...</div>
+              ) : employees.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  لا يوجد موظفين
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الاسم</TableHead>
+                      <TableHead>البريد الإلكتروني</TableHead>
+                      <TableHead>الهاتف</TableHead>
+                      <TableHead>الصلاحيات</TableHead>
+                      <TableHead>آخر دخول</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map((employee) => (
+                      <TableRow key={employee.id}>
+                        <TableCell className="font-medium text-white">{employee.name}</TableCell>
+                        <TableCell className="text-text-primary font-medium">{employee.email}</TableCell>
+                        <TableCell className="text-white">{employee.phone || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {employee.permissions.platforms.slice(0, 2).map(platform => (
+                              <Badge key={platform} variant="secondary" className="text-[10px] px-1 h-5">
+                                {PLATFORMS.find(p => p.value === platform)?.label || platform}
+                              </Badge>
+                            ))}
+                            {employee.permissions.platforms.length > 2 && (
+                              <Badge variant="secondary" className="text-[10px] px-1 h-5">+{employee.permissions.platforms.length - 2}</Badge>
+                            )}
+                            {employee.permissions.canManageWhatsApp && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">واتساب</Badge>}
+                            {employee.permissions.canManageTelegram && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">تليجرام</Badge>}
+                            {employee.permissions.canManageTickets && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">تذاكر</Badge>}
+                            {employee.permissions.canManageContent && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">محتوى</Badge>}
+                            {employee.permissions.canManageCustomers && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">عملاء</Badge>}
+                            {employee.permissions.canMarketServices && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">خدمات</Badge>}
+                            {employee.permissions.canSallaIntegration && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">سلة</Badge>}
+                            {employee.permissions.canManageEmployees && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">إدارة</Badge>}
+                            {employee.permissions.canUseEventsPlugin && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">Webhook</Badge>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-text-primary font-medium">
+                          {employee.lastLoginAt 
+                            ? new Date(employee.lastLoginAt).toLocaleDateString('ar-SA')
+                            : 'لم يسجل دخول'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={employee.isActive ? "default" : "destructive"}>
+                            {employee.isActive ? 'نشط' : 'غير نشط'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => openEditDialog(employee)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => openDeleteDialog(employee)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="attendance">
+          <AttendanceManagement />
+        </TabsContent>
+
+        <TabsContent value="salary">
+          <SalaryManagement />
+        </TabsContent>
+
+        <TabsContent value="leaves">
+          <LeaveManagement />
+        </TabsContent>
+
+        <TabsContent value="points">
+          <PointsSystem />
+        </TabsContent>
+      </Tabs>
+
+      <TutorialVideoModal
+        tutorial={selectedTutorial}
+        onClose={() => setSelectedTutorial(null)}
+        onViewIncrement={incrementViews}
+      />
+      
+      {/* Edit & Delete Dialogs remain similar but simplified here for brevity as they are mainly for the basic CRUD */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>تعديل بيانات الموظف</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="name">الاسم *</Label>
+                  <Label htmlFor="edit-name">الاسم *</Label>
                   <Input
-                    id="name"
+                    id="edit-name"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="اسم الموظف"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="email">البريد الإلكتروني *</Label>
+                  <Label htmlFor="edit-phone">رقم الهاتف</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="employee@example.com"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="phone">رقم الهاتف</Label>
-                  <Input
-                    id="phone"
+                    id="edit-phone"
                     value={formData.phone}
                     onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     placeholder="+966501234567"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="password">كلمة المرور *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    placeholder="كلمة مرور قوية"
-                  />
-                </div>
               </div>
 
-              {/* Permissions */}
-              <div className="space-y-4">
+              {/* Permissions Section Re-used for Edit */}
+              <div className="space-y-4 pt-4 border-t border-white/10">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <Shield className="w-5 h-5 text-primary" />
-                  الصلاحيات
+                  تعديل الصلاحيات
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -496,35 +823,35 @@ export default function EmployeesPage() {
                     <CardContent className="space-y-3">
                       <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="whatsapp"
+                          id="edit-whatsapp"
                           checked={formData.permissions.canManageWhatsApp}
                           onCheckedChange={(checked) => handlePermissionChange('canManageWhatsApp', checked)}
                         />
-                        <Label htmlFor="whatsapp" className="cursor-pointer">إدارة الواتساب</Label>
+                        <Label htmlFor="edit-whatsapp" className="cursor-pointer">إدارة الواتساب</Label>
                       </div>
                       <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="telegram"
+                          id="edit-telegram"
                           checked={formData.permissions.canManageTelegram}
                           onCheckedChange={(checked) => handlePermissionChange('canManageTelegram', checked)}
                         />
-                        <Label htmlFor="telegram" className="cursor-pointer">إدارة التليجرام</Label>
+                        <Label htmlFor="edit-telegram" className="cursor-pointer">إدارة التليجرام</Label>
                       </div>
                       <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="tickets"
+                          id="edit-tickets"
                           checked={formData.permissions.canManageTickets}
                           onCheckedChange={(checked) => handlePermissionChange('canManageTickets', checked)}
                         />
-                        <Label htmlFor="tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
+                        <Label htmlFor="edit-tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
                       </div>
                       <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="events-plugin"
+                          id="edit-events-plugin"
                           checked={formData.permissions.canUseEventsPlugin}
                           onCheckedChange={(checked) => handlePermissionChange('canUseEventsPlugin', checked)}
                         />
-                        <Label htmlFor="events-plugin" className="cursor-pointer">الربط البرمجي (Webhook + API)</Label>
+                        <Label htmlFor="edit-events-plugin" className="cursor-pointer">الربط البرمجي (Webhook + API)</Label>
                       </div>
                     </CardContent>
                   </Card>
@@ -538,37 +865,45 @@ export default function EmployeesPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                      {/* <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="salla"
+                          id="edit-salla"
                           checked={formData.permissions.canSallaIntegration}
                           onCheckedChange={(checked) => handlePermissionChange('canSallaIntegration', checked)}
                         />
-                        <Label htmlFor="salla" className="cursor-pointer">تكامل سلة</Label>
-                      </div>
+                        <Label htmlFor="edit-salla" className="cursor-pointer">تكامل سلة</Label>
+                      </div> */}
                       <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="content"
+                          id="edit-content"
                           checked={formData.permissions.canManageContent}
                           onCheckedChange={(checked) => handlePermissionChange('canManageContent', checked)}
                         />
-                        <Label htmlFor="content" className="cursor-pointer">إدارة المحتوى</Label>
+                        <Label htmlFor="edit-content" className="cursor-pointer">إدارة المحتوى</Label>
                       </div>
                       <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="customers"
+                          id="edit-customers"
                           checked={formData.permissions.canManageCustomers}
                           onCheckedChange={(checked) => handlePermissionChange('canManageCustomers', checked)}
                         />
-                        <Label htmlFor="customers" className="cursor-pointer">إدارة العملاء</Label>
+                        <Label htmlFor="edit-customers" className="cursor-pointer">إدارة العملاء</Label>
                       </div>
                       <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <Checkbox
-                          id="services"
+                          id="edit-services"
                           checked={formData.permissions.canMarketServices}
                           onCheckedChange={(checked) => handlePermissionChange('canMarketServices', checked)}
                         />
-                        <Label htmlFor="services" className="cursor-pointer">تسويق الخدمات</Label>
+                        <Label htmlFor="edit-services" className="cursor-pointer">تسويق الخدمات</Label>
+                      </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="edit-employees"
+                          checked={formData.permissions.canManageEmployees}
+                          onCheckedChange={(checked) => handlePermissionChange('canManageEmployees', checked)}
+                        />
+                        <Label htmlFor="edit-employees" className="cursor-pointer">إدارة الموظفين</Label>
                       </div>
                     </CardContent>
                   </Card>
@@ -587,11 +922,11 @@ export default function EmployeesPage() {
                       {PLATFORMS.map(platform => (
                         <div key={platform.value} className="flex items-center space-x-2 rtl:space-x-reverse">
                           <Checkbox
-                            id={platform.value}
+                            id={`edit-${platform.value}`}
                             checked={formData.permissions.platforms.includes(platform.value)}
                             onCheckedChange={() => handlePlatformToggle(platform.value)}
                           />
-                          <Label htmlFor={platform.value} className="text-sm cursor-pointer">
+                          <Label htmlFor={`edit-${platform.value}`} className="text-sm cursor-pointer">
                             {platform.label}
                           </Label>
                         </div>
@@ -601,413 +936,26 @@ export default function EmployeesPage() {
                 </Card>
               </div>
 
-              <div className="flex justify-end gap-2">
-                <Button className="primary-button after:bg-red-500" onClick={() => setIsCreateDialogOpen(false)}>
-                  إلغاء
-                </Button>
-                <Button className="primary-button" onClick={handleCreateEmployee}>
-                  إنشاء الموظف
-                </Button>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button className="primary-button after:bg-red-500" variant="outline" onClick={() => setIsEditDialogOpen(false)}>إلغاء</Button>
+                <Button className="primary-button" onClick={handleUpdateEmployee}>حفظ التغييرات</Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-        </div>
-      </div>
-
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="gradient-border border-none">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg text-white font-medium">إجمالي الموظفين</CardTitle>
-              <Users className="h-4 w-4 text-white" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl text-white font-bold">{stats.totalEmployees}</div>
-              {maxEmployees > 0 && (
-                <p className="text-xs text-text-primary">
-                  من أصل {maxEmployees}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card className="gradient-border border-none">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg text-white font-medium">نشط</CardTitle>
-              <UserCheck className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-green-500">{stats.activeEmployees}</div>
-              <p className="text-xs text-text-primary">آخر 7 أيام</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="gradient-border border-none">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg text-white font-medium">غير نشط</CardTitle>
-              <UserX className="h-4 w-4 text-red-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-red-500">{stats.inactiveEmployees}</div>
-              <p className="text-xs text-text-primary">أكثر من 7 أيام</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Search */}
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="البحث في الموظفين..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-12"
-          />
-        </div>
-        {/* <Button onClick={loadEmployees} variant="secondary">
-          بحث
-        </Button> */}
-      </div>
-
-      {/* Employees Table */}
-      <Card className="gradient-border">
-        <CardHeader>
-          <CardTitle className="text-lg text-white font-medium">قائمة الموظفين</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8"></div>
-          ) : employees.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
-              لا يوجد موظفين
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>الاسم</TableHead>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>الهاتف</TableHead>
-                  <TableHead>الصلاحيات</TableHead>
-                  <TableHead>آخر دخول</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {employees.map((employee) => (
-                  <TableRow className="" key={employee.id}>
-                    <TableCell className="font-medium text-white">{employee.name}</TableCell>
-                    <TableCell className="text-text-primary font-medium">{employee.email}</TableCell>
-                    <TableCell className="text-white">{employee.phone || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {/* Social Media Platforms */}
-                        {employee.permissions.platforms.map(platform => (
-                          <Badge key={platform} variant="secondary" className="text-xs">
-                            {PLATFORMS.find(p => p.value === platform)?.label || platform}
-                          </Badge>
-                        ))}
-                        
-                        {/* Tickets & Live Chat */}
-                        {employee.permissions.canManageTickets && (
-                          <Badge variant="secondary" className="text-xs bg-orange-500/10 text-orange-400 hover:bg-orange-500/20">محادثة وتذاكر</Badge>
-                        )}
-
-                        {/* Events Plugin */}
-                        {employee.permissions.canUseEventsPlugin && (
-                          <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">Webhook + API</Badge>
-                        )}
-
-                        {/* WhatsApp */}
-                        {employee.permissions.canManageWhatsApp && (
-                          <Badge variant="secondary" className="text-xs">واتساب</Badge>
-                        )}
-                        
-                        {/* Telegram */}
-                        {employee.permissions.canManageTelegram && (
-                          <Badge variant="secondary" className="text-xs">تليجرام</Badge>
-                        )}
-                        
-                        {/* Salla Integration */}
-                        {employee.permissions.canSallaIntegration && (
-                          <Badge variant="secondary" className="text-xs">سلة</Badge>
-                        )}
-                        
-                        {/* Content Management */}
-                        {employee.permissions.canManageContent && (
-                          <Badge variant="secondary" className="text-xs">محتوى</Badge>
-                        )}
-                        
-                        {/* Customer Management */}
-                        {employee.permissions.canManageCustomers && (
-                          <Badge variant="secondary" className="text-xs">عملاء</Badge>
-                        )}
-                        
-                        {/* Services Marketing */}
-                        {employee.permissions.canMarketServices && (
-                          <Badge variant="secondary" className="text-xs">خدمات</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-text-primary font-medium">
-                      {employee.lastLoginAt 
-                        ? new Date(employee.lastLoginAt).toLocaleDateString('en-US')
-                        : 'لم يسجل دخول'
-                      }
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={employee.isActive ? "default" : "destructive"}>
-                        {employee.isActive ? 'نشط' : 'غير نشط'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2 space-x-2">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openEditDialog(employee)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => openDeleteDialog(employee)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-        <TutorialVideoModal
-          tutorial={selectedTutorial}
-          onClose={() => setSelectedTutorial(null)}
-          onViewIncrement={incrementViews}
-        />
-      </Card>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center space-x-2">
-          <Button
-            variant="secondary"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(prev => prev - 1)}
-          >
-            السابق
-          </Button>
-          <span className="flex items-center px-4">
-            صفحة {currentPage} من {totalPages}
-          </span>
-          <Button
-            variant="secondary"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(prev => prev + 1)}
-          >
-            التالي
-          </Button>
-        </div>
-      )}
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>تعديل الموظف</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-name">الاسم *</Label>
-                <Input
-                  id="edit-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-phone">رقم الهاتف</Label>
-                <Input
-                  id="edit-phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            {/* Permissions */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Shield className="w-5 h-5 text-primary" />
-                الصلاحيات
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Communication & Support */}
-                <Card className="bg-fixed-40 border-none">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      التواصل والدعم
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-whatsapp"
-                        checked={formData.permissions.canManageWhatsApp}
-                        onCheckedChange={(checked) => handlePermissionChange('canManageWhatsApp', checked)}
-                      />
-                      <Label htmlFor="edit-whatsapp" className="cursor-pointer">إدارة الواتساب</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-telegram"
-                        checked={formData.permissions.canManageTelegram}
-                        onCheckedChange={(checked) => handlePermissionChange('canManageTelegram', checked)}
-                      />
-                      <Label htmlFor="edit-telegram" className="cursor-pointer">إدارة التليجرام</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-tickets"
-                        checked={formData.permissions.canManageTickets}
-                        onCheckedChange={(checked) => handlePermissionChange('canManageTickets', checked)}
-                      />
-                      <Label htmlFor="edit-tickets" className="cursor-pointer">المحادثة المباشرة والتذاكر</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-events-plugin"
-                        checked={formData.permissions.canUseEventsPlugin}
-                        onCheckedChange={(checked) => handlePermissionChange('canUseEventsPlugin', checked)}
-                      />
-                      <Label htmlFor="edit-events-plugin" className="cursor-pointer">الربط البرمجي (Webhook + API)</Label>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Management & Operations */}
-                <Card className="bg-fixed-40 border-none">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
-                      <LayoutDashboard className="w-4 h-4" />
-                      الإدارة والعمليات
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-salla"
-                        checked={formData.permissions.canSallaIntegration}
-                        onCheckedChange={(checked) => handlePermissionChange('canSallaIntegration', checked)}
-                      />
-                      <Label htmlFor="edit-salla" className="cursor-pointer">تكامل سلة</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-content"
-                        checked={formData.permissions.canManageContent}
-                        onCheckedChange={(checked) => handlePermissionChange('canManageContent', checked)}
-                      />
-                      <Label htmlFor="edit-content" className="cursor-pointer">إدارة المحتوى</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-customers"
-                        checked={formData.permissions.canManageCustomers}
-                        onCheckedChange={(checked) => handlePermissionChange('canManageCustomers', checked)}
-                      />
-                      <Label htmlFor="edit-customers" className="cursor-pointer">إدارة العملاء</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                      <Checkbox
-                        id="edit-services"
-                        checked={formData.permissions.canMarketServices}
-                        onCheckedChange={(checked) => handlePermissionChange('canMarketServices', checked)}
-                      />
-                      <Label htmlFor="edit-services" className="cursor-pointer">تسويق الخدمات</Label>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Platforms */}
-              <Card className="bg-fixed-40 border-none">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-primary flex items-center gap-2">
-                    <Megaphone className="w-4 h-4" />
-                    المنصات الاجتماعية
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {PLATFORMS.map(platform => (
-                      <div key={platform.value} className="flex items-center space-x-2 rtl:space-x-reverse">
-                        <Checkbox
-                          id={`edit-${platform.value}`}
-                          checked={formData.permissions.platforms.includes(platform.value)}
-                          onCheckedChange={() => handlePlatformToggle(platform.value)}
-                        />
-                        <Label htmlFor={`edit-${platform.value}`} className="text-sm cursor-pointer">
-                          {platform.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button className="primary-button after:bg-red-500" variant="secondary" onClick={() => setIsEditDialogOpen(false)}>
-                إلغاء
-              </Button>
-              <Button className="primary-button" onClick={handleUpdateEmployee}>
-                حفظ التغييرات
-              </Button>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>تأكيد الحذف</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-text-primary">
-              هل أنت متأكد من حذف الموظف <strong>{deletingEmployee?.name}</strong>؟
-            </p>
-            <p className="text-sm text-red-600">
-              هذا الإجراء لا يمكن التراجع عنه.
-            </p>
-            <div className="flex gap-2 justify-end space-x-2">
-              <Button variant="secondary" onClick={() => setIsDeleteDialogOpen(false)}>
-                إلغاء
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteEmployee}>
-                حذف الموظف
-              </Button>
-            </div>
+          <p>هل أنت متأكد من رغبتك في حذف الموظف {deletingEmployee?.name}؟</p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button className="primary-button after:bg-red-500" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>إلغاء</Button>
+            <Button variant="destructive" onClick={handleDeleteEmployee}>حذف</Button>
           </div>
         </DialogContent>
       </Dialog>
-      </div>
     </div>
-  
-    </>
   );
 }

@@ -2923,3 +2923,25 @@ export async function testEventsPluginConnection(token: string, configId: number
     };
   }>(`/api/events-plugin/test/${configId}`, { authToken: token });
 }
+export async function getSubscriptionReminderTemplates(token: string) {
+  return apiFetch<{ success: boolean; data: any[] }>("/api/admin/subscription-reminders", { authToken: token });
+}
+
+export async function updateSubscriptionReminderTemplate(token: string, id: number, updates: any) {
+  return apiFetch<{ success: boolean; data: any }>(`/api/admin/subscription-reminders/${id}`, {
+    method: "PUT",
+    authToken: token,
+    body: JSON.stringify(updates)
+  });
+}
+
+export async function uploadReminderMedia(token: string, file: File) {
+  const formData = new FormData();
+  formData.append('media', file);
+  
+  return apiFetch<{ success: boolean; url: string; mediaType: string }>('/api/admin/subscription-reminders/upload-media', {
+    method: 'POST',
+    authToken: token,
+    body: formData
+  });
+}

@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { getAllSubscriptions, updateSubscriptionExpiry } from "@/lib/api";
-import { Users, Calendar, DollarSign, Edit } from "lucide-react";
+import { Users, Calendar, DollarSign, Edit, Download } from "lucide-react";
+import * as XLSX from 'xlsx';
+import { toast } from "sonner";
 
 type Subscription = {
   id: number;
@@ -44,6 +46,7 @@ export default function SubscriptionsAdminPage() {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalSubscriptions, setTotalSubscriptions] = useState<number>(0);
   const subscriptionsPerPage = 10;
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // Edit expiry date modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -113,18 +116,25 @@ export default function SubscriptionsAdminPage() {
   };
 
   const getDaysUntilExpiry = (expiresAt: string) => {
-    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const expiry = new Date(expiresAt);
-    const diffTime = expiry.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const expiryDateOnly = new Date(expiry);
+    expiryDateOnly.setHours(0, 0, 0, 0);
+
+    const diffTime = expiryDateOnly.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
 
   const handleEditExpiry = (subscription: Subscription) => {
     setSelectedSubscription(subscription);
-    // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+    // Format date for datetime-local input (YYYY-MM-DDTHH:mm) using local timezone
     const expiryDate = new Date(subscription.expiresAt);
-    const formattedDate = expiryDate.toISOString().slice(0, 16);
+    const offset = expiryDate.getTimezoneOffset() * 60000;
+    const localDate = new Date(expiryDate.getTime() - offset);
+    const formattedDate = localDate.toISOString().slice(0, 16);
     setNewExpiryDate(formattedDate);
     setIsEditModalOpen(true);
   };
@@ -149,6 +159,56 @@ export default function SubscriptionsAdminPage() {
       alert(`خطأ في تحديث تاريخ الانتهاء: ${error.message}`);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleExportSubscriptions = async () => {
+    if (!token) return;
+    
+    try {
+      setIsExporting(true);
+      // Fetch all subscriptions based on current filter with a large limit
+      const response = await getAllSubscriptions(token, 1, 100000, filter);
+      
+      if (!response.success) {
+        toast.error('فشل في جلب الاشتراكات للتصدير');
+        return;
+      }
+
+      const allSubs = response.subscriptions;
+      
+      // Filter subs with user phone numbers and format data for Excel
+      const exportData = allSubs
+        .filter(sub => sub.user && sub.user.phone)
+        .map(sub => ({
+          'رقم الهاتف': sub.user.phone
+        }));
+
+      if (exportData.length === 0) {
+        toast.error('لا توجد اشتراكات بأرقام هواتف للتصدير حسب الفلتر الحالي');
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      
+      // Dynamic sheet name based on filter
+      let sheetName = 'الاشتراكات';
+      if (filter === 'expired') sheetName = 'المنتهية';
+      else if (filter === 'active') sheetName = 'النشطة';
+      else if (filter === 'cancelled') sheetName = 'الملغية';
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+      const filenameFilter = filter === 'all' ? 'subscriptions' : `subscriptions_${filter}`;
+      XLSX.writeFile(workbook, `${filenameFilter}_phones_${timestamp}.xlsx`);
+      
+      toast.success(`تم تصدير ${exportData.length} رقم بنجاح`);
+    } catch (err: any) {
+      console.error('Export error:', err);
+      toast.error('حدث خطأ أثناء التصدير');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -193,8 +253,19 @@ export default function SubscriptionsAdminPage() {
           <Users className="w-6 h-6" />
           <span>إدارة المشتركين</span>
         </h1>
-        <div className="text-sm text-gray-300">
-          إجمالي المشتركين: {subscriptions.length}
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={handleExportSubscriptions} 
+            disabled={isExporting}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? 'جاري التصدير...' : `تصدير ${filter === 'expired' ? 'المنتهين' : 'القائمة'}`}
+          </Button>
+          <div className="text-sm text-gray-300">
+            إجمالي المشتركين: {subscriptions.length}
+          </div>
         </div>
       </div>
 

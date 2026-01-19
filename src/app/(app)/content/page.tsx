@@ -1191,7 +1191,7 @@ export default function ContentHomePage() {
                       className="bg-purple-600 hover:bg-purple-700 text-white text-xs"
                     >
                       <Sparkles className="w-3 h-3 mr-1" />
-                      إنشاء بالذكاء الاصطناعي
+                      إنشاء سريع بالذكاء الاصطناعي
                     </Button>
                   </div>
                   <Textarea 
@@ -1618,9 +1618,9 @@ export default function ContentHomePage() {
 
         {/* AI Content Generator Modal */}
         {showAIModal && (
-          <div className="fixed inset-0 bg-black/50  backdrop-blur-lg  flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50  backdrop-blur-lg  flex items-center justify-center z-[999]">
             <div className=" gradient-border rounded-lg p-6 max-w-lg w-full mx-4">
-              <h3 className="text-lg font-semibold text-white mb-4">إنشاء المحتوى بالذكاء الاصطناعي</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">إنشاء سريع للمحتوى بالذكاء الاصطناعي</h3>
               <div className="space-y-4">
                 <Textarea 
                   placeholder="اكتب البروميت الخاص بك..." 

@@ -227,7 +227,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
         try {
           const subRes = await getMySubscription(token);
           if (subRes.success && subRes.subscription) {
-            setPlanName(subRes.subscription.plan.name || 'غير محدد');
+            const name = subRes.subscription.plan.name;
+            if (name && name !== 'No Plan' && name !== 'Error' && name.toLowerCase() !== 'noplan') {
+              setPlanName(name);
+            } else {
+              setPlanName('غير محدد');
+            }
             
             if (subRes.subscription.expiresAt) {
               const start = new Date(subRes.subscription.startedAt).getTime();
@@ -259,7 +264,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
         // Fallback to usage stats if my-subscription fails or returns no data
         const res = await getPostUsageStats(token);
         if (res.success && res.data) {
-          setPlanName(res.data.planName || 'غير محدد');
+          const name = res.data.planName;
+          if (name && name !== 'No Plan' && name !== 'Error' && name.toLowerCase() !== 'noplan') {
+            setPlanName(name);
+          } else {
+            setPlanName('غير محدد');
+          }
           // Old logic for dates from usage-stats (if available) - likely not needed if we want to rely on the above
         }
       } catch (error) {

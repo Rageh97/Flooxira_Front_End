@@ -1557,7 +1557,7 @@ button {
     transform: rotate(360deg);
   }
 }
-@media (max-width: 768px) {
+@media (max-width: 1595px) {
   .super-button {
     padding: 7px 10px;
     font-size: 12px;

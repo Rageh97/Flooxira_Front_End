@@ -20,7 +20,7 @@ const telegramTabs = [
 
 export default function TelegramLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
-  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const { hasActiveSubscription, canManageTelegram, loading: permissionsLoading } = usePermissions();
   const { showError } = useToast();
   
   useEffect(() => {
@@ -28,15 +28,33 @@ export default function TelegramLayout({ children }: PropsWithChildren) {
       showError("لا يوجد اشتراك نشط");
     }
   }, [hasActiveSubscription, permissionsLoading]);
+
+  // Loading state
+  if (permissionsLoading) {
+    return (
+      <div className="flex justify-center items-center h-64 text-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="mr-3">جاري التحقق من الصلاحيات...</span>
+      </div>
+    );
+  }
+
+  // Check if user has Telegram management permission
+  if (hasActiveSubscription && !canManageTelegram()) {
+    return (
+      <div className="container mx-auto p-6">
+        <h1 className="text-2xl font-semibold mb-6 text-white text-right">إدارة التليجرام</h1>
+        <NoActiveSubscription 
+          heading=""
+          cardTitle="ليس لديك صلاحية إدارة التليجرام"
+          description="باقتك الحالية أو صلاحياتك لا تشمل إدارة التليجرام"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* {!hasActiveSubscription && (
-        <NoActiveSubscription 
-          heading="إدارة التليجرام"
-          featureName="إدارة التليجرام"
-          className="container mx-auto p-6"
-        />
-      )} */}
       <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
       {/* Header */}
       {/* <div className="bg-semidark-custom border border-gray-700 rounded-lg p-6">

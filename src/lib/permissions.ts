@@ -86,19 +86,15 @@ export function usePermissions() {
       loadingPromise = (async () => {
         try {
           // Check if user is an employee first
+          let employeePerms = null;
           try {
             const employeeResponse = await apiFetch<{ success: boolean; employee?: { permissions: UserPermissions } }>('/api/employees/me', { authToken: token });
             if (employeeResponse.success && employeeResponse.employee) {
-              // User is an employee - use employee permissions
-              cachedPermissions = employeeResponse.employee.permissions;
-              cachedSubscription = null;
-              setPermissions(cachedPermissions);
-              setSubscription(null);
-              lastLoadTime = Date.now();
-              return;
+              // Store employee permissions but continue to get owner subscription
+              employeePerms = employeeResponse.employee.permissions;
             }
           } catch (error) {
-            // Not an employee, continue with owner logic
+            // Not an employee or error, continue with owner logic
           }
 
           // Try multiple endpoints to find the correct one
@@ -133,21 +129,22 @@ export function usePermissions() {
           if ((response as any).success) {
             if ((response as any).subscription) {
               cachedSubscription = (response as any).subscription;
-              cachedPermissions = (response as any).subscription.plan.permissions;
+              // If we are an employee, use our specific permissions. Otherwise use the plan's permissions.
+              cachedPermissions = employeePerms || (response as any).subscription.plan.permissions;
               setSubscription(cachedSubscription);
               setPermissions(cachedPermissions);
               lastLoadTime = Date.now();
             } else {
-              cachedPermissions = null;
               cachedSubscription = null;
-              setPermissions(null);
+              cachedPermissions = employeePerms;
               setSubscription(null);
+              setPermissions(cachedPermissions);
               lastLoadTime = Date.now();
             }
           } else {
-            cachedPermissions = null;
+            cachedPermissions = employeePerms;
             cachedSubscription = null;
-            setPermissions(null);
+            setPermissions(cachedPermissions);
             setSubscription(null);
             lastLoadTime = Date.now();
           }
@@ -254,18 +251,19 @@ export function usePermissions() {
   };
 
   const hasActiveSubscription = useMemo((): boolean => {
-    // إذا لم يكن هناك subscription object ولكن هناك permissions، فهو موظف
-    // الموظف يعتبر لديه اشتراك نشط (موروث من المالك)
-    if (permissions && !subscription) {
-      console.log('Employee has active subscription (inherited from owner)');
-      return true;
-    }
-    
     // للمالك، يتحقق من الـ subscription
     const isActive = Boolean(subscription?.status === 'active' && 
            subscription?.expiresAt && 
            new Date(subscription.expiresAt) > new Date());
-    console.log('Owner subscription status:', isActive, subscription);
+    
+    // إذا كان موظفاً (ليس المالك)
+    if (permissions && !subscription) {
+      // إذا لم يكن هناك اشتراك للمالك، فالموظف ليس لديه اشتراك فعال
+      console.log('Employee - no owner subscription found or expired');
+      return false;
+    }
+
+    console.log('Subscription status:', isActive, subscription);
     return isActive;
   }, [subscription, permissions]);
 

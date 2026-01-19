@@ -106,19 +106,12 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
   if (hasActiveSubscription && !canManageWhatsApp()) {
     return (
       <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-4">إدارة الواتساب</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية إدارة الواتساب</h3>
-            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل إدارة الواتساب</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              ترقية الباقة
-            </Button>
-          </CardContent>
-        </Card>
+        <h1 className="text-2xl font-semibold mb-6 text-white text-right">إدارة الواتساب</h1>
+        <NoActiveSubscription 
+          heading=""
+          cardTitle="ليس لديك صلاحية إدارة الواتساب"
+          description="باقتك الحالية أو صلاحياتك لا تشمل إدارة الواتساب"
+        />
       </div>
     );
   }

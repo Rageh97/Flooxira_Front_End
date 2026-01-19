@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import ServicesSlider from "@/components/ServicesSlider";
 import AnimatedBanner from "@/components/AnimatedBanner";
 import PremiumLoader from "@/components/PremiumLoader";
+import AttendanceAction from "@/components/employees/AttendanceAction";
+
 
 interface PostStats {
   published: number;
@@ -252,6 +254,12 @@ export default function DashboardPage() {
         showControls={true}
         className="mb-3"
       />
+
+      {/* Attendance Action for Employees */}
+      <div className="mb-3">
+        <AttendanceAction />
+      </div>
+
 
       {/* Header Section */}
       {/* <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-lg p-6 border border-blue-500/30">

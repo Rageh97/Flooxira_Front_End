@@ -226,19 +226,12 @@ export default function TelegramBotPage() {
   if (hasActiveSubscription && !canManageTelegram()) {
     return (
       <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">إدارة التليجرام</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية إدارة التليجرام</h3>
-            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل إدارة التليجرام</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              ترقية الباقة
-            </Button>
-          </CardContent>
-        </Card>
+        <h1 className="text-2xl font-semibold text-white">إدارة التليجرام</h1>
+        <NoActiveSubscription 
+          heading=""
+          cardTitle="ليس لديك صلاحية إدارة التليجرام"
+          description="باقتك الحالية أو صلاحياتك لا تشمل إدارة التليجرام"
+        />
       </div>
     );
   }
