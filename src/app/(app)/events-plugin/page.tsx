@@ -51,7 +51,7 @@ import NoActiveSubscription from "@/components/NoActiveSubscription";
 const PLATFORMS = [
   { key: "salla", label: "سلة", icon: <img className="w-10 h-10 flex items-center justify-center" src="/salla.png"/> },
   { key: "iapp_cloud", label: "IAPP Cloud", icon: "☁️" },
-  // { key: "custom", label: "مخصص", icon: "⚙️" },
+  { key: "custom", label: "مخصص", icon: "⚙️" },
 ];
 
 const EVENT_TYPES = [
@@ -466,7 +466,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                       <Settings className="h-4 w-4" /> إعدادات المنصة
                     </div>
                   </Button>
-                  {config.platform === "custom" && (
+                  {/* {config.platform === "custom" && (
                     <Button
                       className="w-full justify-start gap-2 primary-button"
                       variant="none"
@@ -476,7 +476,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                         <Code className="h-4 w-4 text-purple-400" /> بيانات المطور
                       </div>
                     </Button>
-                  )}
+                  )} */}
                 </>
               )}
               {/* <Button className="w-full justify-start gap-2 primary-button after:bg-red-500" variant="none" onClick={handleDelete}>

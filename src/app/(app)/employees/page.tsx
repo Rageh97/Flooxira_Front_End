@@ -416,7 +416,7 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      <Tabs dir="rtl" defaultValue="dashboard" className="space-y-6">
+      <Tabs dir="rtl" defaultValue="employees" className="space-y-6">
         <TabsList className="bg-secondry p-1 rounded-xl w-full flex-wrap h-auto justify-start gap-2">
           {/* <TabsTrigger value="dashboard" className="data-[state=active]:bg-text-primary text-white data-[state=active]:text-black gap-2">
             <LayoutDashboard className="h-4 w-4" />
