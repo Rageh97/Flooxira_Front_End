@@ -53,6 +53,9 @@ export interface BotSettings {
   orderDeliveredTemplate?: string;
   orderCancelledTemplate?: string;
   orderStatusTemplate?: string;
+  // Cart auto message settings
+  cartCreatedTemplate?: string;
+  cartAbandonedTemplate?: string;
   enableContextMemory: boolean;
   contextWindow: number;
   enableFallback: boolean;

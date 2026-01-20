@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast-provider";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BookOpen } from "lucide-react";
 
 import { 
@@ -23,7 +24,9 @@ import {
   generateAIContent,
   ContentCategory,
   ContentItem,
-  checkPlatformConnections
+  checkPlatformConnections,
+  getAIStats,
+  type AIStats
 } from "@/lib/api";
 import { usePermissions } from "@/lib/permissions";
 import { toast } from "sonner";
@@ -40,7 +43,8 @@ import {
   Sparkles,
   Copy,
   Save,
-  Upload
+  Upload,
+  Coins
 } from "lucide-react";
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
@@ -78,9 +82,9 @@ export default function ContentHomePage() {
   const [showCreateItem, setShowCreateItem] = useState(false);
   const [showEditItem, setShowEditItem] = useState(false);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
-  const [showAIModal, setShowAIModal] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGeneratedContent, setAiGeneratedContent] = useState("");
+  const [previousItemBody, setPreviousItemBody] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ContentItem | null>(null);
@@ -93,6 +97,7 @@ export default function ContentHomePage() {
   const [itemToRemind, setItemToRemind] = useState<ContentItem | null>(null);
   const [whatsappSessionPhone, setWhatsappSessionPhone] = useState<string>("");
   const [activeReminders, setActiveReminders] = useState<Set<number>>(new Set());
+  const [stats, setStats] = useState<AIStats | null>(null);
   
   // Message modals
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -218,16 +223,28 @@ export default function ContentHomePage() {
     }
   };
 
+  const loadStats = async () => {
+    try {
+      const response = await getAIStats(token);
+      setStats(response.stats);
+    } catch (error: any) {
+      console.error("Failed to load stats:", error);
+    }
+  };
+
   useEffect(() => { 
     loadCategories();
     loadActiveReminders();
+    if (token) {
+      loadStats();
+    }
     (async () => {
       try {
         const { connections } = await checkPlatformConnections(token);
         setConnections(connections as any);
       } catch (e) {}
     })();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -501,6 +518,9 @@ export default function ContentHomePage() {
   const generateAIContentHandler = async () => {
     if (!aiPrompt.trim()) return;
     setIsGenerating(true);
+    setAiGeneratedContent(""); // Clear previous
+    // Store current body in case of cancel
+    setPreviousItemBody(itemBody);
     try {
       const response = await generateAIContent(token, {
         prompt: aiPrompt,
@@ -508,20 +528,47 @@ export default function ContentHomePage() {
         tone: 'professional',
         length: 'medium'
       });
-      setAiGeneratedContent(response.content);
-    } catch (e) {
+      
+      const fullContent = response.content;
+      
+      // Update stats immediately if returned
+      if (response.remainingCredits !== undefined) {
+        setStats(prev => prev ? { ...prev, remainingCredits: response.remainingCredits } : null);
+      } else {
+        loadStats();
+      }
+
+      // ⚡ Simulate streaming for "Ask AI" feeling
+      let currentText = "";
+      const words = fullContent.split(' ');
+      for (let i = 0; i < words.length; i++) {
+        currentText += (i === 0 ? "" : " ") + words[i];
+        setAiGeneratedContent(currentText);
+        setItemBody(currentText);
+        // Vary delay slightly for more natural feel
+        await new Promise(r => setTimeout(r, 30 + Math.random() * 20));
+      }
+      
+    } catch (e: any) {
       console.error('AI generation failed:', e);
-      showMessage('فشل في إنشاء المحتوى بالذكاء الاصطناعي', 'error');
+      const errorMsg = e.message || 'فشل في إنشاء المحتوى بالذكاء الاصطناعي';
+      showMessage(errorMsg, 'error');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const copyAIContent = () => {
-    setItemBody(aiGeneratedContent);
-    setShowAIModal(false);
-    setAiPrompt("");
+  const acceptAIContent = () => {
     setAiGeneratedContent("");
+    setAiPrompt("");
+    setPreviousItemBody("");
+  };
+
+  const cancelAIContent = () => {
+    setItemBody(previousItemBody);
+    setAiGeneratedContent("");
+    setAiPrompt("");
+    setPreviousItemBody("");
   };
 
   const onEditItem = (item: ContentItem) => {
@@ -1171,10 +1218,17 @@ export default function ContentHomePage() {
         )}
 
         {/* Create Item Modal */}
-        {showCreateItem && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-lg flex items-start justify-center overflow-y-auto scrollbar-hide z-999">
-            <div className="gradient-border rounded-lg p-6 max-w-2xl w-full mx-4 my-8 max-h-full overflow-y-auto scrollbar-hide">
-              <h3 className="text-lg font-semibold text-white mb-4">إضافة عنصر جديد</h3>
+        <Dialog open={showCreateItem} onOpenChange={(open) => {
+          if (!open) {
+            setShowCreateItem(false);
+            setCreatedItemId(null);
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[95vh] flex flex-col p-0 overflow-hidden ">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="text-lg font-semibold text-white">إضافة عنصر جديد</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar">
               <div className="space-y-4">
                 <Input 
                   placeholder="عنوان العنصر" 
@@ -1184,22 +1238,69 @@ export default function ContentHomePage() {
                 />
                 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-white text-sm">المحتوى</label>
-                    <Button
-                      onClick={() => setShowAIModal(true)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white text-xs"
-                    >
-                      <Sparkles className="w-3 h-3 mr-1" />
-                      إنشاء سريع بالذكاء الاصطناعي
-                    </Button>
-                  </div>
+                  <label className="text-white text-sm">المحتوى</label>
                   <Textarea 
                     placeholder="اكتب المحتوى..." 
                     value={itemBody} 
                     onChange={(e) => setItemBody(e.target.value)}
-                    className="bg-[#011910] border-gray-700 text-white min-h-[100px]"
+                    autoResize
+                    maxHeight={600}
+                    className="bg-[#011910] border-gray-700 text-white"
                   />
+                </div>
+
+                {/* AI Section Inline */}
+                <div className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between text-purple-400 text-sm font-bold">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      <span>إنشاء سريع بالذكاء الاصطناعي</span>
+                    </div>
+                    {stats && (
+                      <div className="flex items-center gap-1.5 bg-purple-500/20 px-2 py-1 rounded-lg border border-purple-500/30 text-[10px] sm:text-xs">
+                        <Coins className="w-3 h-3" />
+                        <span>
+                          {stats.isUnlimited ? "غير محدود" : `${stats.remainingCredits} كريديت`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Textarea 
+                    placeholder="اكتب ما تريد إنتاجه هنا (مثال: منشور عن أهمية إدارة الوقت)..." 
+                    value={aiPrompt} 
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    autoResize
+                    maxHeight={300}
+                    className="bg-[#011910] border-purple-500/50 text-white text-sm"
+                  />
+                  <div className="flex gap-2">
+                    {!aiGeneratedContent ? (
+                      <Button 
+                        onClick={generateAIContentHandler} 
+                        disabled={isGenerating || !aiPrompt.trim()}
+                        className="bg-purple-600 hover:bg-purple-700 text-white text-sm flex-1"
+                      >
+                        {isGenerating ? 'جاري الإنشاء...' : 'إنشاء المحتوى'}
+                      </Button>
+                    ) : (
+                      <>
+                        <Button 
+                          onClick={acceptAIContent}
+                          className="bg-green-600 hover:bg-green-700 text-white text-sm flex-1"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          استخدام المحتوى
+                        </Button>
+                        <Button 
+                          onClick={cancelAIContent}
+                          variant="secondary"
+                          className="bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600/50 text-sm flex-1"
+                        >
+                          تجاهل
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1398,14 +1499,26 @@ export default function ContentHomePage() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Item Modal */}
-        {showEditItem && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-lg flex items-start justify-center overflow-y-auto scrollbar-hide z-50">
-            <div className="gradient-border rounded-lg p-6 max-w-2xl w-full mx-4 my-8 max-h-full overflow-y-auto scrollbar-hide">
-              <h3 className="text-lg font-semibold text-white mb-4">تحرير العنصر</h3>
+        <Dialog open={showEditItem} onOpenChange={(open) => {
+          if (!open) {
+            setShowEditItem(false);
+            setEditingItem(null);
+            setItemTitle("");
+            setItemBody("");
+            setItemAttachments([]);
+            setSelectedPlatforms([]);
+            setScheduledAt("");
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[95vh] flex flex-col p-0 overflow-hidden">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="text-lg font-semibold text-white">تحرير العنصر</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 overflow-y-auto p-6 pt-2 scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
               <div className="space-y-4">
                 <Input 
                   placeholder="عنوان العنصر" 
@@ -1415,22 +1528,69 @@ export default function ContentHomePage() {
                 />
                 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-white text-sm">المحتوى</label>
-                    <Button
-                      onClick={() => setShowAIModal(true)}
-                      className="primary-button after:bg-purple-600  text-white font-bold text-lg"
-                    >
-                      
-                      إنشاء بالذكاء الاصطناعي
-                    </Button>
-                  </div>
+                  <label className="text-white text-sm">المحتوى</label>
                   <Textarea 
                     placeholder="اكتب المحتوى..." 
                     value={itemBody} 
                     onChange={(e) => setItemBody(e.target.value)}
-                    className="bg-[#011910] border-gray-300 text-white min-h-[100px]"
+                    autoResize
+                    maxHeight={600}
+                    className="bg-[#011910] border-gray-700 text-white"
                   />
+                </div>
+
+                {/* AI Section Inline */}
+                <div className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between text-purple-400 text-sm font-bold">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      <span>إنشاء سريع بالذكاء الاصطناعي</span>
+                    </div>
+                    {stats && (
+                      <div className="flex items-center gap-1.5 bg-purple-500/20 px-2 py-1 rounded-lg border border-purple-500/30 text-[10px] sm:text-xs">
+                        <Coins className="w-3 h-3" />
+                        <span>
+                          {stats.isUnlimited ? "غير محدود" : `${stats.remainingCredits} كريديت`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <Textarea 
+                    placeholder="اكتب ما تريد إنتاجه هنا (مثال: منشور عن أهمية إدارة الوقت)..." 
+                    value={aiPrompt} 
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    autoResize
+                    maxHeight={300}
+                    className="bg-[#011910] border-purple-500/50 text-white text-sm"
+                  />
+                  <div className="flex gap-2">
+                    {!aiGeneratedContent ? (
+                      <Button 
+                        onClick={generateAIContentHandler} 
+                        disabled={isGenerating || !aiPrompt.trim()}
+                        className="bg-purple-600 hover:bg-purple-700 text-white text-sm flex-1"
+                      >
+                        {isGenerating ? 'جاري الإنشاء...' : 'إنشاء المحتوى'}
+                      </Button>
+                    ) : (
+                      <>
+                        <Button 
+                          onClick={acceptAIContent}
+                          className="bg-green-600 hover:bg-green-700 text-white text-sm flex-1"
+                        >
+                          <Copy className="w-4 h-4 mr-2" />
+                          استخدام المحتوى
+                        </Button>
+                        <Button 
+                          onClick={cancelAIContent}
+                          variant="secondary"
+                          className="bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600/50 text-sm flex-1"
+                        >
+                          تجاهل
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1574,7 +1734,6 @@ export default function ContentHomePage() {
 
                 <div className="flex gap-2">
                   <Button onClick={onUpdateItem} className="primary-button a text-white font-bold text-lg flex-1">
-                    
                     تحديث
                   </Button>
                   <Button 
@@ -1595,7 +1754,7 @@ export default function ContentHomePage() {
                     جدولة
                   </Button>
                   <Button 
-                  className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
+                    className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
                     onClick={() => {
                       setShowEditItem(false);
                       setEditingItem(null);
@@ -1606,71 +1765,15 @@ export default function ContentHomePage() {
                       setScheduledAt("");
                     }}
                     variant="secondary"
-                    
                   >
                     إلغاء
                   </Button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
-        {/* AI Content Generator Modal */}
-        {showAIModal && (
-          <div className="fixed inset-0 bg-black/50  backdrop-blur-lg  flex items-center justify-center z-[999]">
-            <div className=" gradient-border rounded-lg p-6 max-w-lg w-full mx-4">
-              <h3 className="text-lg font-semibold text-white mb-4">إنشاء سريع للمحتوى بالذكاء الاصطناعي</h3>
-              <div className="space-y-4">
-                <Textarea 
-                  placeholder="اكتب البروميت الخاص بك..." 
-                  value={aiPrompt} 
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="bg-[#011910] border-gray-300 text-white min-h-[100px]"
-                />
-                
-                {aiGeneratedContent && (
-                  <div className="space-y-2">
-                    <label className="text-white text-sm">المحتوى المُولد:</label>
-                    <div className="bg-gray-800 border border-gray-700 rounded p-3 text-white text-sm">
-                      {aiGeneratedContent}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={generateAIContentHandler} 
-                    disabled={isGenerating || !aiPrompt.trim()}
-                    className="primary-button   text-white font-bold text-lg flex-1"
-                  >
-                    {isGenerating ? 'جاري الإنشاء...' : 'إنشاء المحتوى'}
-                  </Button>
-                  {aiGeneratedContent && (
-                    <Button 
-                      onClick={copyAIContent}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      نسخ
-                    </Button>
-                  )}
-                  <Button 
-                  className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
-                    onClick={() => {
-                      setShowAIModal(false);
-                      setAiPrompt("");
-                      setAiGeneratedContent("");
-                    }}
-                    variant="secondary"
-                  >
-                    إلغاء
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (

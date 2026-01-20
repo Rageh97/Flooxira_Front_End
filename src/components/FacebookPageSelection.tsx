@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getFacebookPages, selectFacebookPage, getInstagramAccounts, selectInstagramAccount } from "@/lib/api";
 import { BookOpenCheckIcon } from "lucide-react";
+import { useToast } from "@/components/ui/toast-provider";
 
 interface FacebookPage {
   id: string;
@@ -38,6 +39,17 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
   const [selectedInstagram, setSelectedInstagram] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'pages' | 'instagram'>('pages');
+  const { showError } = useToast();
+
+  const getFriendlyErrorMessage = (message: string) => {
+    if (message.includes('invalid_token') || message.includes('expired')) {
+      return 'انتهت صلاحية الاتصال بـ Facebook. يرجى محاولة إعادة تسجيل الدخول من صفحة الإعدادات.';
+    }
+    if (message.includes('permission')) {
+      return 'لا توجد صلاحيات كافية للوصول إلى هذه الصفحة. يرجى التأكد من منح كافة الصلاحيات عند ربط الحساب.';
+    }
+    return message;
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -62,7 +74,8 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
       }
     } catch (error) {
       console.error('Error loading Facebook pages:', error);
-      alert(`Error loading pages: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const originalMessage = error instanceof Error ? error.message : 'Unknown error';
+      showError("خطأ في تحميل الصفحات", getFriendlyErrorMessage(originalMessage));
     } finally {
       setLoading(false);
     }
@@ -108,7 +121,8 @@ export default function FacebookPageSelection({ isOpen, onClose, onComplete }: F
       }
     } catch (error) {
       console.error('Error selecting Facebook page:', error);
-      alert(`Error selecting page: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const originalMessage = error instanceof Error ? error.message : 'Unknown error';
+      showError("خطأ في اختيار الصفحة", getFriendlyErrorMessage(originalMessage));
     } finally {
       setLoading(false);
     }

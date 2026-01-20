@@ -714,6 +714,40 @@ export default function AISettingsPage() {
                 )}
               </div>
             </div>
+
+            {/* Cart Auto Messages Section */}
+            <div className="border-t border-gray-700 pt-4 mt-4">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-white mb-2">رسائل السلة التلقائية</h3>
+                <p className="text-sm text-gray-400 mb-4">يتم استخدام نفس إعداد التفعيل أعلاه (تفعيل رسائل الطلبات) لتفعيل هذه الرسائل أيضاً.</p>
+                
+                {settings.orderAutoMessageEnabled && (
+                  <div className="space-y-4 pr-6">
+                    {/* Cart Created Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة إضافة للسلة</label>
+                      <textarea
+                        value={settings.cartCreatedTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, cartCreatedTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="مرحباً {name}! 🛒 تم إضافة '{product}' إلى سلتك. هل تريد إتمام الطلب؟"
+                      />
+                    </div>
+
+                    {/* Cart Abandoned Template */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2"> رسالة السلة المتروكة</label>
+                      <textarea
+                        value={settings.cartAbandonedTemplate || ''}
+                        onChange={(e) => setSettings({ ...settings, cartAbandonedTemplate: e.target.value })}
+                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                        placeholder="مرحباً {name}! 👋 لاحظنا أنك تركت '{product}' في سلتك. هل تحتاج مساعدة؟"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -4,7 +4,7 @@ import { clsx } from "clsx";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "default" | "secondary" | "ghost" | "destructive" | "outline" | "none";
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "icon";
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -22,6 +22,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       sm: "h-8 px-3 text-sm",
       md: "h-9 px-4 text-sm",
       lg: "h-10 px-6 text-base",
+      icon: "",
     };
     return (
       <button ref={ref} className={clsx(base, variants[variant], sizes[size], className)} {...props} />

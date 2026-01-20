@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { getYouTubeChannels, selectYouTubeChannel } from "@/lib/api";
 import { BookOpenCheck } from "lucide-react";
+import { useToast } from "@/components/ui/toast-provider";
 
 interface YouTubeChannel {
   id: string;
@@ -23,6 +24,17 @@ export default function YouTubeChannelSelection({ isOpen, onClose, onComplete }:
   const [channels, setChannels] = useState<YouTubeChannel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const { showError } = useToast();
+
+  const getFriendlyErrorMessage = (message: string) => {
+    if (message.includes('invalid_client')) {
+      return 'فشل الاتصال بخدمة YouTube. قد يكون هناك مشكلة في إعدادات التطبيق أو انتهت صلاحية الجلسة. يرجى محاولة إعادة ربط القناة من الإعدادات.';
+    }
+    if (message.includes('access_denied')) {
+      return 'تم رفض الوصول. يرجى التأكد من منح كافة الصلاحيات المطلوبة عند ربط حساب YouTube.';
+    }
+    return message;
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -47,7 +59,8 @@ export default function YouTubeChannelSelection({ isOpen, onClose, onComplete }:
       }
     } catch (error) {
       console.error('Error loading YouTube channels:', error);
-      alert(`Error loading channels: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const originalMessage = error instanceof Error ? error.message : 'Unknown error';
+      showError("خطأ في تحميل القنوات", getFriendlyErrorMessage(originalMessage));
     } finally {
       setLoading(false);
     }
@@ -76,7 +89,8 @@ export default function YouTubeChannelSelection({ isOpen, onClose, onComplete }:
       }
     } catch (error) {
       console.error('Error selecting YouTube channel:', error);
-      alert(`Error selecting channel: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const originalMessage = error instanceof Error ? error.message : 'Unknown error';
+      showError("خطأ في اختيار القناة", getFriendlyErrorMessage(originalMessage));
     } finally {
       setLoading(false);
     }

@@ -25,7 +25,13 @@ import {
   Copy,
   CheckCheck,
   ArrowRight,
+  PanelLeftClose,
+  PanelLeft,
+  LayoutGrid,
+  Image as ImageIcon,
+  ArrowUpRight,
 } from "lucide-react";
+import { clsx } from "clsx";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
 import {
@@ -47,6 +53,7 @@ import NoActiveSubscription from "@/components/NoActiveSubscription";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 export default function AskAIPage() {
+  const [currentTab, setCurrentTab] = useState<'all' | 'ask-ai' | 'media'>('all');
   const [token, setToken] = useState("");
   const [conversations, setConversations] = useState<AIConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<AIConversation | null>(null);
@@ -60,8 +67,11 @@ export default function AskAIPage() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
-  const [isMobileListOpen, setIsMobileListOpen] = useState(true);
+  const [isMobileListOpen, setIsMobileListOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -70,6 +80,7 @@ export default function AskAIPage() {
       inputRef.current.style.height = '56px';
     }
   }, [inputMessage]);
+  
   const streamingMsgRef = useRef<AIMessage | null>(null);
   const streamRef = useRef<{ cancel: () => void } | null>(null);
   const { showSuccess, showError } = useToast();
@@ -109,7 +120,7 @@ export default function AskAIPage() {
 
   // Prevent body scroll when chat is open on mobile
   useEffect(() => {
-    if (selectedConversation && !isMobileListOpen && isMobile) {
+    if (selectedConversation && (isMobileListOpen || isSidebarOpen) && isMobile) {
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
       document.body.style.width = '100%';
@@ -138,6 +149,23 @@ export default function AskAIPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle pending message after switching to Ask AI
+  useEffect(() => {
+    if (pendingMessage && currentTab === 'ask-ai' && !sending) {
+      if (selectedConversation) {
+        const msg = pendingMessage;
+        setPendingMessage(null);
+        handleSendMessage(msg);
+      } else if (!loading && conversations.length > 0) {
+        // Automatically select the first conversation if none selected
+        loadConversation(conversations[0].id);
+      } else if (!loading) {
+        // Create new conversation
+        handleCreateConversation();
+      }
+    }
+  }, [pendingMessage, currentTab, selectedConversation, conversations, loading, sending]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -185,21 +213,40 @@ export default function AskAIPage() {
       setSelectedConversation(response.conversation);
       setMessages([]);
       setIsMobileListOpen(false);
-      showSuccess("تم إنشاء محادثة جديدة!");
+      // If we had a pending message, it will be handled by the useEffect
+      if (!pendingMessage) {
+        showSuccess("تم إنشاء محادثة جديدة!");
+      }
     } catch (error: any) {
       showError("خطأ", error.message);
     }
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (overrideContent?: string) => {
     if (!hasActiveSubscription) {
       showError("تنبيه", "لا يمكنك إرسال رسائل بدون اشتراك نشط.");
       return;
     }
-    if (!inputMessage.trim() || !selectedConversation || sending) return;
 
-    const userMessageContent = inputMessage.trim();
+    // If on home tab, switch and set pending
+    if (currentTab === 'all') {
+      const msg = overrideContent || inputMessage.trim();
+      if (!msg) return;
+      setPendingMessage(msg);
+      setCurrentTab('ask-ai');
+      setInputMessage("");
+      return;
+    }
+
+    if (!selectedConversation && !pendingMessage) return;
+    
+    const userMessageContent = overrideContent || inputMessage.trim();
+    if (!userMessageContent || sending) return;
+
+    if (!selectedConversation) return; // Should be handled by useEffect if pending
+
     setInputMessage("");
+    setPendingMessage(null);
     setSending(true);
 
     try {
@@ -247,7 +294,6 @@ export default function AskAIPage() {
                 remainingCredits,
               });
             }
-            // Refresh conversations list preview
             loadConversations();
             setSending(false);
           },
@@ -260,10 +306,7 @@ export default function AskAIPage() {
       );
     } catch (error: any) {
       showError("خطأ", error.message);
-      setInputMessage(userMessageContent); // Restore message on error
-    } finally {
-      // setSending(false) will be handled in onDone/onError; keep as safety in case of early exceptions
-      // setSending(false);
+      if (!overrideContent) setInputMessage(userMessageContent);
     }
   };
 
@@ -317,12 +360,224 @@ export default function AskAIPage() {
       showError("خطأ", "فشل نسخ الرسالة");
     }
   };
-  useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
 
+  const renderTabs = () => (
+    <div className="flex justify-center mb-10 mt-4">
+      <div className="bg-fixed-40 backdrop-blur-lg inner-shadow rounded-[30px] nav-shine-effect border border-white/5">
+        <div className="flex justify-around items-center h-16 px-4 gap-2">
+          {[
+            { id: 'all', label: 'الكل', icon: LayoutGrid },
+            { id: 'ask-ai', label: 'فلوكسيرا AI', icon: Sparkles },
+            { id: 'media', label: 'ميديا', icon: ImageIcon }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = currentTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setCurrentTab(tab.id as any)}
+                className={clsx(
+                  "relative flex flex-col items-center justify-center gap-1 min-w-[80px] h-full transition-all duration-500",
+                  isActive ? "text-primary scale-110" : "text-gray-400 hover:text-white"
+                )}
+              >
+                <div className="relative">
+                  <Icon 
+                    size={22} 
+                    className={clsx(
+                      "transition-all duration-500",
+                      isActive ? "drop-shadow-[0_0_8px_rgba(116,226,255,0.4)]" : ""
+                    )} 
+                  />
+                  {isActive && (
+                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_rgba(116,226,255,0.8)] animate-pulse" />
+                  )}
+                </div>
+                <span className="text-[10px] font-bold tracking-wide">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderInputArea = (isHome: boolean = false) => (
+    <div className={`transition-all duration-500 ${isHome ? 'mx-auto w-full max-w-2xl px-4 mt-8 pb-12' : 'border-t border-gray-700 p-4'}`}>
+      <div className="relative flex items-center flex-row gap-2">
+          <div className="w-full relative flex items-center">
+            <textarea
+              ref={isHome ? null : (el) => {
+                inputRef.current = el;
+                if (el) {
+                  el.style.height = '56px';
+                  el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+                }
+              }}
+              value={inputMessage}
+              onChange={(e) => {
+                setInputMessage(e.target.value);
+                e.target.style.height = '56px';
+                e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder={isHome ? "اكتب سؤالك هنا للبدء مباشرة..." : "اكتب رسالتك هنا... "}
+              className={`w-full min-h-[56px] max-h-[200px] bg-[#1a1c1e]/40 backdrop-blur-md border border-blue-500/50 text-white pr-4 pl-14 py-4 rounded-3xl outline-none transition-all scrollbar-hide resize-none flex items-center focus:border-text-primary focus:ring-1 focus:ring-blue-500/20 ${
+                isHome ? 'shadow-2xl shadow-blue-500/5' : ''
+              }`}
+              disabled={!hasActiveSubscription || sending || isOutOfCredits}
+              rows={1}
+              style={{ lineHeight: '1.5', overflow: 'hidden' }}
+            />
+            <div className="absolute left-2 flex gap-2 items-center">
+              {sending && !isHome ? (
+                <Button
+                  onClick={() => { streamRef.current?.cancel(); }}
+                  disabled={!sending}
+                  size="icon"
+                  className="h-10 w-10 !rounded-full bg-red-500/20 text-red-500 hover:bg-red-500/30 flex items-center justify-center p-0"
+                >
+                  <div className="w-3 h-3 bg-red-500 rounded-sm" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleSendMessage()}
+                  disabled={
+                    !hasActiveSubscription ||
+                    !inputMessage.trim() ||
+                    (sending && !isHome) ||
+                    isOutOfCredits
+                  }
+                  size="icon"
+                  className={`h-10 w-10 !rounded-full transition-all duration-300 flex items-center justify-center p-0 ${
+                    inputMessage.trim() && hasActiveSubscription && !isOutOfCredits
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-100 hover:scale-105 active:scale-95'
+                      : 'bg-white/5 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Send className="h-5 w-5 rotate-180" />
+                </Button>
+              )}
+            </div>
+          </div>
+      </div>
+      {(isOutOfCredits || !hasActiveSubscription) && (
+        <div className="mt-3 flex items-center gap-2 px-2">
+          <AlertCircle className="h-3.5 w-3.5 text-yellow-500" />
+          <p className="text-[10px] text-gray-400">
+            {isOutOfCredits 
+              ? "لقد استنفدت كريديت AI الخاص بك. يرجى ترقية باقتك." 
+              : "تحتاج إلى اشتراك نشط لاستخدام ميزات AI."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderHomeGrid = () => {
+    const features = [
+      {
+        id: 'ask-ai',
+        title: 'اسأل AI',
+        desc: 'مساعدك الشخصي للدردشة والإجابة على الأسئلة',
+        image: 'https://images.unsplash.com/photo-1674027444485-cec3da58eef4?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+        status: 'active'
+      },
+      {
+        id: 'text-to-image',
+        title: 'تحويل النص لصورة',
+        desc: 'حول خيالك إلى صور واقعية مذهلة',
+        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop',
+        status: 'soon'
+      },
+      {
+        id: 'voice-gen',
+        title: 'توليد الصوت',
+        desc: 'حول النصوص إلى تعليق صوتي احترافي',
+        image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop',
+        status: 'soon'
+      },
+      {
+        id: 'video-gen',
+        title: 'توليد الفيديو',
+        desc: 'أنشئ فيديوهات سينمائية من خلال النصوص',
+        image: 'https://i.pinimg.com/736x/fd/d0/14/fdd014fa1e75b6a705935c48ae95a883.jpg',
+        status: 'soon'
+      }
+    ];
+
+    const filteredFeatures = currentTab === 'media' 
+      ? features.filter(f => f.id !== 'ask-ai')
+      : features;
+
+    return (
+      <div className="flex flex-col items-center w-full min-h-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 mb-12 w-full mx-auto">
+          {filteredFeatures.map((feature) => (
+            <div
+              key={feature.id}
+              onClick={() => feature.status === 'active' && setCurrentTab('ask-ai')}
+              className={`group relative h-[300px] rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#1a1c1e] transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 ${
+                feature.status === 'soon' ? 'opacity-80' : ''
+              }`}
+            >
+              {/* Background Image */}
+              <div className="absolute inset-0">
+                <img
+                  src={feature.image}
+                  alt={feature.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b0d] via-[#0a0b0d]/40 to-transparent" />
+              </div>
+
+              {/* Content */}
+              <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                    {feature.title}
+                  </h3>
+                  {/* {feature.status === 'soon' && (
+                    <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-[10px] text-gray-300 font-bold tracking-wider">
+                      قريباً
+                    </span>
+                  )} */}
+                </div>
+                <p className="text-sm text-gray-400 line-clamp-2 mb-4 group-hover:text-gray-300">
+                  {feature.desc}
+                </p>
+                
+                <button
+                  disabled={feature.status === 'soon'}
+                  className="relative inline-flex h-7 active:scale-95 transition overflow-hidden rounded-lg p-[1px] focus:outline-none w-25"
+                >
+                  <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#e7029a_0%,#f472b6_50%,#bd5fff_100%)]"></span>
+                  <span className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg px-7 text-sm font-medium backdrop-blur-3xl gap-2 ${
+                    feature.status === 'active'
+                      ? 'bg-slate-950 text-white'
+                      : 'bg-slate-950 text-gray-500 cursor-not-allowed'
+                  }`}>
+                    {feature.status === 'active' ? 'ابدأ ' : 'قريباً'}
+                    {feature.status === 'active' && (
+                      <ArrowUpRight className="h-4 w-4" />
+                    )}
+                  </span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Chat Input for "All" Tab */}
+        {currentTab === 'all' && renderInputArea(true)}
+      </div>
+    );
+  };
 
   if (permissionsLoading || loading) {
     return (
@@ -331,379 +586,310 @@ export default function AskAIPage() {
       </div>
     );
   }
-  
-
-  
 
   return (
-    <div className="flex flex-col gap-4 h-[calc(100vh-3rem)]">
-      {/* {!hasActiveSubscription && (
-        <NoActiveSubscription
-          heading=" "
-          featureName="ميزة الذكاء الاصطناعي"
-          className="w-full"
-        />
-      )} */}
-      <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden min-w-0">
-        {/* Main Chat Area */}
-        <div className={`flex-1 flex flex-col min-w-0 ${
-          isMobileListOpen ? 'hidden lg:flex' : 'flex mobile-fullscreen-ai-chat'
-        }`}>
-        {selectedConversation ? (
-          <>
-            {/* Chat Header */}
-            <div className="border-b border-gray-700 p-4">
-              <div className="flex items-center justify-between gap-2">
+    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+      {/* Conditionally show Tab Navigation */}
+      {currentTab !== 'ask-ai' && <div className="shrink-0">{renderTabs()}</div>}
+
+      <div className={`flex flex-1 overflow-hidden ${currentTab !== 'ask-ai' ? 'px-4' : ''}`}>
+        {currentTab === 'ask-ai' ? (
+          <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden min-w-0 h-full relative">
+            
+            {/* Sidebar Toggle Button (When Sidebar is Closed) */}
+            {!isSidebarOpen && !isMobile && (
+              <div className="absolute top-4 right-4 z-50">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="md:hidden shrink-0"
-                  onClick={() => setIsMobileListOpen(true)}
+                  size="icon"
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="h-9 w-9 bg-[#1a1c1e] border border-white/10 text-gray-400 hover:text-white rounded-lg shadow-xl"
                 >
-                  <ArrowRight className="h-5 w-5 text-gray-400" />
+                  <PanelLeft className="h-5 w-5" />
                 </Button>
-                {editingTitle ? (
-                  <div className="flex items-center gap-2 flex-1">
-                    <Input
-                      value={editedTitle}
-                      onChange={(e) => setEditedTitle(e.target.value)}
-                      className="flex-1"
-                      autoFocus
-                    />
-                    <Button
-                      onClick={handleUpdateTitle}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setEditingTitle(false);
-                        setEditedTitle("");
-                      }}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                      {selectedConversation.title}
-                    </h2>
-                    {stats && !stats.isUnlimited && stats.remainingCredits <= 0 && (
-                <p className="text-xs text-red-400 mt-2">
-                  لقد استنفدت كريديت AI الخاص بك. يرجى ترقية باقتك أو انتظار التجديد.
-                </p>
-              )}
-                    <Button
-                      onClick={() => {
-                        setEditedTitle(selectedConversation.title);
-                        setEditingTitle(true);
-                      }}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <Edit2 className="h-4 w-4 text-gray-200" />
-                    </Button>
-                    
-                  </>
-                )}
               </div>
-            </div>
+            )}
 
-            {/* Messages Area */}
-            <div className="flex-1 custom-scrollbar overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
-              {messages.length === 0 ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="flex flex-col items-center">
-                    {/* <Sparkles className="h-16 w-16 text-green-600 mx-auto mb-4" /> */}
-                    <div className="spinner">
-    <div className="spinner1"></div>
-</div>
-                    <h3 className="text-xl font-semibold text-white mb-2">
-                      كيف يمكنني مساعدتك اليوم؟
-                    </h3>
-                    <p className="text-gray-400">
-                      اطرح أي سؤال وسأكون سعيداً بالمساعدة
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex w-full ${
-                        message.role === "user" ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%] min-w-0 rounded-lg p-4 relative group break-words overflow-hidden ${
-                          message.role === "user"
-                            ? "bg-blue-600/20 text-white"
-                            : "bg-gray-800 text-white"
-                        }`}
-                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                      >
-                        {message.role === "assistant" ? (
-                          <>
-                            <div className="w-full min-w-0 max-w-full overflow-x-auto">
-                              <div className="min-w-0 max-w-full">
-                                <MarkdownRenderer content={message.content} />
-                              </div>
-                            </div>
-                            <Button
-                              onClick={() => handleCopyMessage(message.id, message.content)}
-                              size="sm"
-                              variant="ghost"
-                              className="absolute bottom-2 left-2 transition-opacity bg-gray-700/50 hover:bg-gray-700 p-1.5 h-auto opacity-0 group-hover:opacity-100"
-                            >
-                              {copiedMessageId === message.id ? (
-                                <CheckCheck className="h-4 w-4 text-green-400" />
-                              ) : (
-                                <Copy className="h-4 w-4 text-gray-300" />
-                              )}
-                            </Button>
-                          </>
-                        ) : (
-                          <p className="whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{message.content}</p>
-                        )}
-                        <p className="text-xs opacity-70 mt-2">
-                          {new Date(message.createdAt).toLocaleTimeString('ar-SA', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {sending && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[80%] rounded-lg p-4 bg-gray-800">
-                        <Loader2 className="h-5 w-5 animate-spin text-green-600" />
-                      </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </>
-              )}
-            </div>
-
-            {/* Input Area */}
-            <div className="border-t border-gray-700 p-4">
-              <div className="relative flex items-center flex-row gap-2">
-                <div className="w-full relative flex items-center">
-                  <textarea
-                    ref={(el) => {
-                      inputRef.current = el;
-                      if (el) {
-                        el.style.height = '56px';
-                        el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-                      }
-                    }}
-                    value={inputMessage}
-                    onChange={(e) => {
-                      setInputMessage(e.target.value);
-                      e.target.style.height = '56px';
-                      e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    placeholder="اكتب رسالتك هنا... "
-                    className="w-full min-h-[56px] max-h-[200px] bg-[#01191040] border-primary text-white pr-4 pl-14 py-4 rounded-3xl outline-none transition-all scrollbar-hide resize-none flex items-center"
-                    disabled={!hasActiveSubscription || sending || isOutOfCredits}
-                    rows={1}
-                    style={{ lineHeight: '1.5', overflow: 'hidden' }}
-                  />
-                  <div className="absolute left-2 flex gap-2 items-center">
-                    {sending ? (
+            {/* Main Chat Area */}
+            <div className={`flex-1 flex flex-col min-w-0 h-full ${
+              isMobileListOpen ? 'hidden lg:flex' : 'flex'
+            }`}>
+            {selectedConversation ? (
+              <>
+                {/* Chat Header */}
+                <div className="border-b border-gray-700 p-4 shrink-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                       {!isSidebarOpen && !isMobile && <div className="w-10" />} {/* Spacer if toggle is floating above */}
                       <Button
-                        onClick={() => { streamRef.current?.cancel(); }}
-                        disabled={!sending}
-                        size="icon"
-                        className="h-10 w-10 !rounded-full bg-red-500 text-black flex items-center justify-center p-0"
+                        variant="none"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => {
+                          setSelectedConversation(null);
+                          setCurrentTab('all');
+                        }}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <rect x="7" y="7" width="10" height="10" rx="1" fill="currentColor"/>
-                        </svg>
+                        <ArrowRight className="h-6 w-6 text-primary" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="md:hidden shrink-0"
+                        onClick={() => setIsMobileListOpen(true)}
+                      >
+                        <MessageSquare className="h-5 w-5 text-gray-400" />
+                      </Button>
+                    </div>
+                    {editingTitle ? (
+                      <div className="flex items-center gap-2 flex-1">
+                        <Input
+                          value={editedTitle}
+                          onChange={(e) => setEditedTitle(e.target.value)}
+                          className="flex-1"
+                          autoFocus
+                        />
+                        <Button onClick={handleUpdateTitle} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button onClick={() => { setEditingTitle(false); setEditedTitle(""); }} size="sm" variant="ghost">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     ) : (
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={
-                          !hasActiveSubscription ||
-                          !inputMessage.trim() ||
-                          sending ||
-                          isOutOfCredits
-                        }
-                        size="icon"
-                        className={`h-10 w-10 !rounded-full transition-all flex items-center justify-center p-0 ${
-                          inputMessage.trim() && hasActiveSubscription && !isOutOfCredits
-                            ? 'bg-blue-400/50  text-white'
-                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </Button>
+                      <>
+                        <h2 className="text-lg font-semibold text-white flex items-center gap-2 truncate">
+                          {selectedConversation.title}
+                        </h2>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => {
+                              setEditedTitle(selectedConversation.title);
+                              setEditingTitle(true);
+                            }}
+                            size="icon"
+                            variant="none"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit2 className="h-5 w-5 text-primary" />
+                          </Button>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
-              
-              </div>
-              {isOutOfCredits && (
-                <p className="text-xs text-red-400 mt-2">
-                  لقد استنفدت كريديت AI الخاص بك. يرجى ترقية باقتك أو انتظار التجديد.
-                </p>
-              )}
-              {!hasActiveSubscription && (
-                <p className="text-xs text-yellow-400 mt-2">
-                  تحتاج إلى اشتراك نشط لبدء أو متابعة المحادثات.
-                </p>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center relative">
-             <Button
-                  variant="ghost"
-                  size="sm"
-                  className="md:hidden absolute top-4 right-4"
-                  onClick={() => setIsMobileListOpen(true)}
-                >
-                  <ArrowRight className="h-5 w-5 text-gray-400" />
-                </Button>
-            <div className="flex flex-col items-center">
-              {/* <img src="/Bot.gif" alt="" className="w-40 h-40 mb-4" /> */}
-              <div className="spinner">
-    <div className="spinner1"></div>
-</div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                اختر محادثة أو ابدأ محادثة جديدة
-              </h3>
-              <p className="text-primary mb-6">
-                استخدم AI لإنشاء محتوى رائع لوسائل التواصل الاجتماعي
-              </p>
-              <Button
-                onClick={handleCreateConversation}
-                className="primary-button"
-                disabled={!hasActiveSubscription}
-              >
-                {/* <Plus className="h-5 w-5 mr-2" /> */}
-                بدء محادثة جديدة
-              </Button>
-            </div>
-          </div>
-        )}
-        </div>
-        {/* Sidebar - Conversations List */}
-        <div className={`w-full md:w-64 border-r border-gray-700 flex flex-col shrink-0 ${isMobileListOpen ? 'flex' : 'hidden lg:flex'}`}>
-        {/* New Chat Button */}
-        <div className="p-3">
-            <Button
-              onClick={handleCreateConversation}
-              className="w-full primary-button"
-              disabled={!hasActiveSubscription}
-            >
-            {/* <Plus className="h-4 w-4 mr-2" /> */}
-            محادثة جديدة
-          </Button>
-        </div>
 
-        {/* Stats */}
-        {stats && (
-          <div className="px-3 pb-3">
-            <Card className="bg-gradient-custom border-primary rounded-lg">
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="h-4 w-4 text-green-400" />
-                  <span className="text-xs font-medium text-primary">كريديت AI</span>
+                {/* Messages Area */}
+                <div className="flex-1 custom-scrollbar overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
+                  {messages.length === 0 ? (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="flex flex-col items-center">
+                        <div className="spinner">
+                          <div className="spinner1"></div>
+                        </div>
+                        <h3 className="text-xl font-semibold text-white mb-2">كيف يمكنني مساعدتك اليوم؟</h3>
+                        <p className="text-gray-400">اطرح أي سؤال وسأكون سعيداً بالمساعدة</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {messages.map((message) => (
+                        <div key={message.id} className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                          <div className={`max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%] min-w-0 rounded-lg p-4 relative group break-words overflow-hidden ${
+                            message.role === "user" ? "bg-blue-600/20 text-white" : "bg-gray-800 text-white shadow-lg"
+                          }`}>
+                            {message.role === "assistant" ? (
+                              <>
+                                <div className="w-full min-w-0 max-w-full overflow-x-auto">
+                                  <MarkdownRenderer content={message.content} />
+                                </div>
+                                <Button
+                                  onClick={() => handleCopyMessage(message.id, message.content)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="absolute bottom-2 left-2 transition-opacity bg-gray-700/50 hover:bg-gray-700 p-1.5 h-auto opacity-0 group-hover:opacity-100"
+                                >
+                                  {copiedMessageId === message.id ? <CheckCheck className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4 text-gray-300" />}
+                                </Button>
+                              </>
+                            ) : (
+                              <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                            )}
+                            <p className="text-[10px] opacity-50 mt-2">
+                              {new Date(message.createdAt).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {sending && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] rounded-lg p-4 bg-gray-800 animate-pulse">
+                            <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                          </div>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
                 </div>
-                <div className="text-lg font-bold text-green-400">
-                  {stats.isUnlimited 
-                    ? "غير محدود" 
-                    : `${stats.remainingCredits} / ${stats.totalCredits}`
-                  }
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
-        {/* Conversations List */}
-        <div className="flex-1 custom-scrollbar overflow-y-auto px-2">
-          {conversations.length === 0 ? (
-            <div className="text-center py-8 px-4">
-              <MessageSquare className="h-12 w-12 text-yellow-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-200">لا توجد محادثات بعد</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  className={`group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
-                    selectedConversation?.id === conversation.id
-                      ? "bg-blue-600/20 border border-green-600/30"
-                      : "hover:bg-gray-800"
-                  }`}
-                  onClick={() => loadConversation(conversation.id)}
-                >
-                  <MessageSquare className="h-4 w-4 text-yellow-400 flex-shrink-0" />
-                  <span className="text-sm text-white flex-1 truncate">
-                    {conversation.title}
-                  </span>
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDeleteModal(conversation);
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className=" transition-opacity p-1 h-auto"
-                  >
-                    <Trash2 className="h-3 w-3 text-red-400" />
+                {/* Chat Input */}
+                <div className="shrink-0">
+                  {renderInputArea(false)}
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center relative h-full">
+                 <Button
+                      variant="none"
+                      size="sm"
+                      className="absolute top-4 right-4"
+                      onClick={() => setCurrentTab('all')}
+                    >
+                      <ArrowRight className="h-6 w-6 text-primary" />
+                    </Button>
+                <div className="flex flex-col items-center">
+                  <div className="spinner">
+                    <div className="spinner1"></div>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">اختر محادثة أو ابدأ محادثة جديدة</h3>
+                  <p className="text-primary mb-6">استخدم AI لإنشاء محتوى رائع لوسائل التواصل الاجتماعي</p>
+                  <Button onClick={handleCreateConversation} className="primary-button" disabled={!hasActiveSubscription}>
+                    بدء محادثة جديدة
                   </Button>
                 </div>
-              ))}
+              </div>
+            )}
             </div>
-          )}
-        </div>
+
+            {/* Sidebar - Conversations List */}
+            <div 
+              className={`
+                transition-all duration-300 ease-in-out border-r border-gray-700 flex flex-col shrink-0 h-full
+                ${isMobile ? (isMobileListOpen ? 'fixed inset-0 z-[100] w-full' : 'hidden') : (isSidebarOpen ? 'w-64' : 'w-0 border-none')}
+              `}
+            >
+              <div className="p-3 flex items-center gap-2 shrink-0">
+                  <Button onClick={handleCreateConversation} className="flex-1 primary-button text-xs h-10 px-2" disabled={!hasActiveSubscription}>
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4 ml-1" />
+                    محادثة جديدة
+                    </div>
+                  </Button>
+                  {!isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsSidebarOpen(false)}
+                      className="h-10 w-10 shrink-0 text-gray-400 hover:text-white"
+                    >
+                      <PanelLeftClose className="h-5 w-5" />
+                    </Button>
+                  )}
+                  {isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsMobileListOpen(false)}
+                      className="h-10 w-10 shrink-0 text-gray-400 hover:text-white"
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  )}
+              </div>
+
+              {stats && (
+                <div className="px-3 pb-3 shrink-0">
+                  <Card className="bg-fixed-40 border-primary rounded-2xl overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                          <Sparkles className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <span className="text-xs font-semibold text-gray-400">كريديت AI</span>
+                      </div>
+                      <div className="text-lg font-bold text-white tracking-tight">
+                        {stats.isUnlimited ? "غير محدود" : `${stats.remainingCredits.toLocaleString()} / ${stats.totalCredits.toLocaleString()}`}
+                      </div>
+                      {!stats.isUnlimited && (
+                        <div className="mt-3 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-blue-500 h-full transition-all duration-1000" 
+                            style={{ width: `${(stats.remainingCredits / stats.totalCredits) * 100}%` }}
+                          />
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              <div className="flex-1 custom-scrollbar overflow-y-auto px-2 pb-4">
+                {conversations.length === 0 ? (
+                  <div className="text-center py-12 px-4 opacity-50">
+                    <MessageSquare className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+                    <p className="text-xs text-gray-400">لا توجد محادثات باقية</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {conversations.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className={`group flex items-center gap-2 p-3 rounded-2xl cursor-pointer transition-all duration-300 ${
+                          selectedConversation?.id === conversation.id
+                            ? "bg-blue-500/10 border border-blue-500/20"
+                            : "hover:bg-white/5 border border-transparent"
+                        }`}
+                        onClick={() => loadConversation(conversation.id)}
+                      >
+                        <MessageSquare className={`h-4 w-4 flex-shrink-0 ${selectedConversation?.id === conversation.id ? 'text-blue-400' : 'text-gray-500'}`} />
+                        <span className={`text-xs flex-1 truncate ${selectedConversation?.id === conversation.id ? 'text-white font-semibold' : 'text-gray-400'}`}>
+                          {conversation.title}
+                        </span>
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); openDeleteModal(conversation); }}
+                          size="sm"
+                          variant="none"
+                          className="text-red-500"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {renderHomeGrid()}
+          </div>
+        )}
       </div>
-      </div>
+
       {/* Delete Confirmation Modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className=" border-white/10 rounded-3xl pb-8">
           <DialogHeader>
-            <DialogTitle className="text-white">تأكيد الحذف</DialogTitle>
-            <DialogDescription className="text-gray-300">
-              هل أنت متأكد من حذف المحادثة "{conversationToDelete?.title}"؟ لا يمكن التراجع عن هذا الإجراء.
+            <DialogTitle className="text-white text-xl">حذف المحادثة</DialogTitle>
+            <DialogDescription className="text-gray-400 pt-2">
+              هل أنت متأكد من حذف "{conversationToDelete?.title}"؟ لا يمكن التراجع عن هذا الإجراء.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2 pt-4">
+          <div className="flex justify-end gap-3 pt-6">
             <Button
-              variant="secondary"
-              onClick={() => {
-                setDeleteModalOpen(false);
-                setConversationToDelete(null);
-              }}
-              className="primary-button after:bg-gray-600"
+              variant="ghost"
+              onClick={() => { setDeleteModalOpen(false); setConversationToDelete(null); }}
+              className="rounded-xl px-6"
             >
               إلغاء
             </Button>
             <Button
               onClick={handleDeleteConversation}
-              className="primary-button after:bg-red-600"
+              className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-6 shadow-lg shadow-red-600/20"
             >
-              حذف
+              حذف نهائي
             </Button>
           </div>
         </DialogContent>
@@ -711,6 +897,3 @@ export default function AskAIPage() {
     </div>
   );
 }
-
-
-

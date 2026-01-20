@@ -814,13 +814,13 @@ export default function CreatePostPage() {
         setTelegramGroups(data.groups || []);
         setTelegramBotActive(data.groups && data.groups.length > 0);
         console.log('[Telegram] Synced groups:', data.groups);
-        alert(`✅ تم المزامنة! تم العثور على ${data.groups?.length || 0} قناة/مجموعة`);
+        showSuccess("تمت المزامنة بنجاح", `تم العثور على ${data.groups?.length || 0} قناة/مجموعة`);
       } else {
-        alert(`❌ فشلت المزامنة: ${data.message}`);
+        showError("فشلت المزامنة", data.message || "حدث خطأ غير معروف أثناء المزامنة");
       }
     } catch (error) {
       console.error('Error syncing Telegram groups:', error);
-      alert('❌ حدث خطأ أثناء المزامنة');
+      showError("خطأ في المزامنة", "حدث خطأ أثناء محاولة مزامنة قنوات Telegram");
     } finally {
       setTelegramGroupsLoading(false);
     }

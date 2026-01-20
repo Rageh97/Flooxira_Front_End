@@ -714,7 +714,7 @@ export async function scheduleContentItem(token: string, id: number, payload: { 
 
 // AI Content Generation
 export async function generateAIContent(token: string, payload: { prompt: string; platform?: string; tone?: string; length?: string }) {
-  return apiFetch<{ content: string; prompt: string; platform?: string; tone?: string; length?: string }>("/api/content/ai/generate", {
+  return apiFetch<{ content: string; remainingCredits?: number; prompt: string; platform?: string; tone?: string; length?: string }>("/api/content/ai/generate", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
