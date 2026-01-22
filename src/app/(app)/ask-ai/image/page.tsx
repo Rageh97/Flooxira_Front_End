@@ -324,7 +324,7 @@ export default function TextToImagePage() {
             </div>
 
             {/* Models Card */}
-            <div className=" relative bg-[#0a0c10] rounded-3xl border border-text-primary/20 p-1 transition-all duration-500 ">
+            {/* <div className=" relative bg-[#0a0c10] rounded-3xl border border-text-primary/20 p-1 transition-all duration-500 ">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="relative p-5 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -361,7 +361,7 @@ export default function TextToImagePage() {
                   })}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Inspiration Tip */}
             <div className="bg-gradient-to-r from-blue-900/20 to-cyan-900/20 rounded-3xl p-6 border border-white/5 relative overflow-hidden">
@@ -387,7 +387,7 @@ export default function TextToImagePage() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="ما الذي يدور في ذهنك؟ ... مثلاً: رائد فضاء يركب حصاناً على المريخ بأسلوب سينمائي"
+                  placeholder="ما الذي يدور في ذهنك؟ ... "
                   className="w-full min-h-[140px] bg-transparent text-white p-6 pb-20 text-lg md:text-xl font-medium placeholder:text-gray-600 outline-none resize-none scrollbar-hide rounded-[28px] "
                   style={{ lineHeight: '1.6' }}
                 />
