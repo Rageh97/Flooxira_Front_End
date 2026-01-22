@@ -615,6 +615,12 @@ export default function AskAIPage() {
       <div
         key={feature.id}
         onClick={() => {
+          // Check subscription before allowing access
+          if (!hasActiveSubscription) {
+            showError("تنبيه", "تحتاج إلى اشتراك نشط للوصول إلى أدوات الذكاء الاصطناعي");
+            return;
+          }
+
           if (currentTab === 'all' || (currentTab === 'media' && mediaSubTab === 'all')) {
             if (feature.id === 'text-to-image') {
               setCurrentTab('media');
