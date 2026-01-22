@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 import {
   listEventsPluginConfigs,
   createEventsPluginConfig,
@@ -65,6 +66,7 @@ const EVENT_TYPES = [
 export default function EventsPluginPage() {
   const auth = useAuth();
   const { showSuccess, showError } = useToast();
+  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   const token = auth.getToken() || "";
 
   const [configs, setConfigs] = useState<EventsPluginConfig[]>([]);
@@ -171,12 +173,24 @@ export default function EventsPluginPage() {
     setConfigs(configs.filter(c => c.id !== deletedConfigId));
   };
 
-  if (loading) return <AuthGuard><div className="flex h-screen items-center justify-center"><RefreshCw className="animate-spin h-10 w-10 text-primary" /></div></AuthGuard>;
-  if (error === "feature_not_available") return <AuthGuard><NoActiveSubscription heading="تكامل الأحداث" featureName="ربط المنصات الخارجية" description="يرجى الاشتراك لتفعيل ميزة ربط المنصات الخارجية" /></AuthGuard>;
+  if (loading || permissionsLoading) return <AuthGuard><div className="flex h-screen items-center justify-center"><RefreshCw className="animate-spin h-10 w-10 text-primary" /></div></AuthGuard>;
+  
+  const isFeatureRestricted = error === "feature_not_available" || !hasActiveSubscription;
 
   return (
     <AuthGuard>
-      <div className="space-y-6 mx-auto p-4 md:p-8">
+      <div className="relative min-h-screen">
+        {/* {isFeatureRestricted && (
+          <div className="absolute inset-0 z-50 flex items-start justify-center pt-20 bg-black/5 backdrop-blur-[2px] pointer-events-auto">
+            <NoActiveSubscription 
+              heading="تكامل الأحداث" 
+              featureName="ربط المنصات الخارجية" 
+              description="يرجى الاشتراك لتفعيل ميزة ربط المنصات الخارجية" 
+            />
+          </div>
+        )} */}
+
+        <div className={`space-y-6 mx-auto p-4 md:p-8 transition-all duration-500 ${isFeatureRestricted ? "blur- grayscale opacity-50 pointer-events-none select-none" : ""}`}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -252,6 +266,7 @@ export default function EventsPluginPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </AuthGuard>
   );

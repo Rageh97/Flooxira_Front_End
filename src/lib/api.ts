@@ -167,6 +167,10 @@ export type Plan = {
   paymentLink?: string | null;
 };
 
+export async function listEmployees(token: string) {
+  return apiFetch<{ success: boolean; employees: any[] }>('/api/employees', { authToken: token });
+}
+
 export async function listPlans(token: string) {
   return apiFetch<{ plans: Plan[] }>("/api/plans", { authToken: token });
 }
@@ -2619,6 +2623,62 @@ export function sendAIMessageStream(
   return {
     cancel: () => controller.abort()
   };
+}
+
+export async function generateAIImage(token: string, payload: { prompt: string; aspectRatio?: string; safetySetting?: string; model?: string }) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function generateAIVideo(token: string, payload: { prompt: string; aspectRatio?: string }) {
+  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function generateAILogo(token: string, payload: { prompt: string; aspectRatio?: string }) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/logo", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function generateAINano(token: string, payload: { prompt: string; aspectRatio?: string; model?: string }) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/nano", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function processAIImage(token: string, payload: { operation: string; imageUrl: string; prompt?: string }) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/process", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function processAIVideo(token: string, payload: { operation: string; inputUrl: string; prompt?: string; aspectRatio?: string }) {
+  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video/process", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function describeAIImage(token: string, imageUrl: string) {
+  return apiFetch<{ success: boolean; description: string; remainingCredits: number; creditsUsed: number }>("/api/ai/describe", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ imageUrl }),
+  });
 }
 
 // ===== APPOINTMENTS API =====

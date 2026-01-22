@@ -10,6 +10,7 @@ import {
   getOpenChatNotes,
   createChatNote,
   resolveChatNote,
+  listEmployees,
 } from "@/lib/api";
 import { listTags, addContactToTag, createTag, listContactsByTag } from "@/lib/tagsApi";
 import { sendWhatsAppMedia } from "@/lib/mediaApi";
@@ -130,6 +131,8 @@ export default function WhatsAppChatsPage() {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [savingNote, setSavingNote] = useState(false);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [selectedMentionEmployeeId, setSelectedMentionEmployeeId] = useState<string>("none");
 
   // Escalation state
   const [escalatedContacts, setEscalatedContacts] = useState<Set<string>>(new Set());
@@ -217,6 +220,7 @@ export default function WhatsAppChatsPage() {
     if (token) {
       loadChatContacts();
       loadBotStatus();
+      loadEmployees();
       // Load open notes for highlighting
       (async () => {
         try {
@@ -241,6 +245,17 @@ export default function WhatsAppChatsPage() {
       })();
     }
   }, [token]);
+
+  async function loadEmployees() {
+    try {
+      const res = await listEmployees(token);
+      if (res.success) {
+        setEmployees(res.employees || []);
+      }
+    } catch (e) {
+      console.error("Failed to load employees:", e);
+    }
+  }
 
   // Load chat data when contact is selected
   useEffect(() => {
@@ -637,6 +652,7 @@ export default function WhatsAppChatsPage() {
 
   function openNoteModal() {
     setNoteText("");
+    setSelectedMentionEmployeeId("none");
     setShowNoteModal(true);
   }
 
@@ -1792,6 +1808,23 @@ export default function WhatsAppChatsPage() {
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
               />
+
+              <div className="space-y-2">
+                <label className="block text-sm text-gray-300">منشن لموظف (اختياري)</label>
+                <div className="flex items-center gap-2">
+                  <select
+                    className="flex-1 bg-[#01191040] rounded px-3 py-2 text-white outline-none border border-blue-300/30 focus:border-blue-500"
+                    value={selectedMentionEmployeeId}
+                    onChange={(e) => setSelectedMentionEmployeeId(e.target.value)}
+                  >
+                    <option value="none">بدون منشن</option>
+                    {employees.filter(emp => emp.isActive && emp.phone).map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.phone})</option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-[10px] text-gray-400">سيتم إرسال إشعار للموظف عبر الواتساب فور حفظ الملاحظة</p>
+              </div>
               
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button 
@@ -1809,9 +1842,20 @@ export default function WhatsAppChatsPage() {
                       if (res.success) {
                         setActiveNote(res.note as any);
                         setOpenNoteContacts(prev => new Set(prev).add(selectedContact));
-                        showToast('تم حفظ الملاحظة بنجاح', 'success');
+                        
+                        // Handle Mention Notification
+                        if (selectedMentionEmployeeId !== "none") {
+                          const employee = employees.find(emp => emp.id.toString() === selectedMentionEmployeeId);
+                          if (employee && employee.phone) {
+                            const mentionMsg = `🔔 *إشعار منشن جديد*\n\nقام المدير بمنشن لك في ملاحظة لعميل:\n*العميل:* ${selectedContact}\n*الملاحظة:* ${noteText.trim()}\n\n_يرجى مراجعة المحادثة في لوحة التحكم._`;
+                            await sendWhatsAppMessage(token, employee.phone, mentionMsg);
+                          }
+                        }
+
+                        showToast('تم حفظ الملاحظة بنجاح وإرسال الإشعار إن وجد', 'success');
                         setShowNoteModal(false);
                         setNoteText("");
+                        setSelectedMentionEmployeeId("none");
                       }
                     } catch (e: any) {
                       showToast(e.message || 'فشل في حفظ الملاحظة', 'error');

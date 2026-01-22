@@ -52,7 +52,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const { permissions } = usePermissions();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebar-collapsed') === 'true';
+    }
+    return false;
+  });
   const [whatsappMenuOpen, setWhatsappMenuOpen] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [showTooltip, setShowTooltip] = useState(false);
   const [planName, setPlanName] = useState<string>("");
   const [subscriptionStatus, setSubscriptionStatus] = useState<{ daysRemaining: number | null, colorClass: string }>({ daysRemaining: null, colorClass: '' });
   const [newsBarClosed, setNewsBarClosed] = useState(false);
@@ -216,6 +225,30 @@ export default function AppLayout({ children }: PropsWithChildren) {
     setWhatsappMenuOpen(false);
   }, [pathname]);
 
+  // Save sidebar collapsed state to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar-collapsed', sidebarCollapsed.toString());
+    }
+  }, [sidebarCollapsed]);
+
+  // Tooltip functions
+  const handleMouseEnter = (event: React.MouseEvent, content: string) => {
+    if (!sidebarCollapsed) return;
+    
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltipContent(content);
+    setTooltipPosition({
+      x: rect.left - 12, // يسار العنصر بدلاً من يمينه
+      y: rect.top + rect.height / 2
+    });
+    setShowTooltip(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
   // Load plan name
   useEffect(() => {
     const loadPlanName = async () => {
@@ -327,7 +360,43 @@ export default function AppLayout({ children }: PropsWithChildren) {
 
   return (
     <AuthGuard>
-    <div className="flex  h-dvh overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
+      <style jsx global>{`
+        .tooltip-container {
+          position: relative;
+        }
+        
+        .tooltip-content {
+          position: fixed;
+          background: #1f2937;
+          color: white;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 14px;
+          white-space: nowrap;
+          z-index: 9999;
+          border: 1px solid #374151;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+          pointer-events: none;
+        }
+        
+        .tooltip-container:hover .tooltip-content {
+          opacity: 1;
+          visibility: visible;
+        }
+        
+        .tooltip-arrow {
+          position: absolute;
+          top: 50%;
+          left: 100%;
+          transform: translateY(-50%);
+          border: 6px solid transparent;
+          border-right: 6px solid #1f2937;
+        }
+      `}</style>
   
       {/* Mobile sidebar + overlay */}
       <div className={clsx("fixed inset-0 z-40 md:hidden", sidebarOpen ? "block" : "hidden")}> 
@@ -454,138 +523,186 @@ export default function AppLayout({ children }: PropsWithChildren) {
       </div>
 
       {/* Desktop sidebar - fixed position */}
-      <aside className="hidden  md:flex w-[240px] h-dvh bg- border-l  border-gray-600 text-white flex-col overflow-hidden flex-shrink-0">
-        <div className="px-4 py-1 w-full flex justify-center">
-          <Image src="/Logo.gif" alt="logo" width={180} height={110} />
-        </div>
-        <div className="border-t border-gray-600 px-2 py-0 flex-shrink-0 w-full">
-          <Link href="/profile" className="flex items-center justify-between hover:bg-light-custom/50 rounded-lg p-2 transition-colors">
-            <div className="text-sm flex items-center gap-2">
-              <img 
-                src={!loading && user ? (user.avatar || (typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null) || "/user.gif") : "/user.gif"} 
-                alt="" 
-                className="w-10 h-10 rounded-full object-cover cursor-pointer" 
-              />
-              <div className="flex items-center gap-2  ">
-                {!loading && user && <span className="font-medium text-xs cursor-pointer">{user.name }</span>}
-                {planName && (
-                  <div className="flex flex-col items-start ml-1">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-primary gradient-border text-center p-1">{planName} {subscriptionStatus.daysRemaining !== null && (
-                        <span className={`text-[9px] font-bold ${subscriptionStatus.colorClass}  `}>
-                          {subscriptionStatus.daysRemaining}D
-                        </span>
-                      )} </span>
-                    </div>
-                  
-                  </div>
-                )}
+      <div className={clsx(
+        "hidden md:flex h-dvh flex-shrink-0 transition-all duration-300 relative",
+        sidebarCollapsed ? "w-16" : "w-[240px]"
+      )}>
+        <aside className="w-full bg- border-l border-gray-600 text-white flex flex-col overflow-hidden">
+          <div className={clsx("px-4 py-1 w-full flex justify-center", sidebarCollapsed && "px-2")}>
+            {sidebarCollapsed ? (
+              <div className="relative">
+                <button
+                  onClick={() => setSidebarCollapsed(false)}
+                  className="w-12 h-12 flex items-center justify-center hover:bg-light-custom/50 rounded-lg transition-colors"
+                  onMouseEnter={(e) => handleMouseEnter(e, 'فتح السايدبار')}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <Menu className="w-6 h-6 text-primary" />
+                </button>
               </div>
-            </div>
-           
-          </Link>
-            <div className="flex justify-start mx-5">
-              {(subscriptionStatus.colorClass.includes('yellow') || subscriptionStatus.colorClass.includes('red')) && (
-                      <Link href="/plans" className="text-xs bg-primary/20 hover:bg-primary/40 text-primary px-2 py-0.5 rounded mt-1 transition-colors">
-                        تجديد الاشتراك
-                      </Link>
-                    )}
-            </div>
-        </div>
-        <nav className="px-2 py-2 space-y-1 flex-1 overflow-y-auto scrollbar-hide">
-          {visibleNavItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={clsx(
-                "flex items-center gap-2 rounded-md px-3 py-2  ",
-                pathname === item.href ? "bg-light-custom text-white text-lg gradient-border" : "hover:bg-light-custom text-sm"
-              )}
-            >
-              <img src={item.img} className="w-5 h-5" alt="" />
-              <span className="flex-1">{item.label}</span>
-              {item.href === "/tickets" && pendingTicketsCount > 0 && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  {pendingTicketsCount}
-                </span>
-              )}
-              {item.href === "/whatsapp" && whatsappPendingCount > 0 && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  {whatsappPendingCount}
-                </span>
-              )}
-              {item.href === "/telegram" && telegramPendingCount > 0 && (
-                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  {telegramPendingCount}
-                </span>
-              )}
-            </Link>
-          ))}
-          {!loading && user && (
-              <Button 
-                size="sm" 
-                
-                onClick={() => { signOut(); router.push('/sign-in'); }}
-                className="w-full primary-button after:bg-red-500 text-white "
-              >
-                تسجيل خروج
-              </Button>
-            )}
-          {user?.role === 'admin' && (
-            <div className="pt-3">
-              <Link
-                href="/admin"
-                className={clsx(
-                  "block rounded-md px-3 py-2 text-sm ",
-                  pathname.startsWith('/admin') ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
-                )}
-              >
-             ادارة المنصة
-              </Link>
-            </div>
-          )}
-          {/* <div className="pt-3">
-            <div className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-gray-400">Legal</div>
-            <Link
-              href="/privacy-policy"
-              className={clsx(
-                "block rounded-md px-3 py-2 text-sm ",
-                pathname === '/privacy-policy' ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
-              )}
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href="/terms"
-              className={clsx(
-                "block rounded-md px-3 py-2 text-sm ",
-                pathname === '/terms' ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
-              )}
-            >
-              Terms of Service
-            </Link>
-          </div> */}
-        </nav>
-        {/* User info at bottom */}
-        {/* <div className="border-t border-gray-600 p-2">
-          <div className="flex items-center justify-between">
-            <div className="text-sm ">
-              {!loading && user && <span className="font-medium">{user.name || user.email}</span>}
-            </div>
-            {!loading && user && (
-              <Button 
-                size="sm" 
-                variant="secondary" 
-                onClick={() => { signOut(); router.push('/sign-in'); }}
-                className="bg-red-600 text-white "
-              >
-                Logout
-              </Button>
+            ) : (
+              <div className="flex items-center justify-between w-full">
+                <Image src="/Logo.gif" alt="logo" width={180} height={110} />
+                <button
+                  onClick={() => setSidebarCollapsed(true)}
+                  className="p-2 hover:bg-light-custom/50 rounded-lg transition-colors"
+                  title="إغلاق السايدبار"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             )}
           </div>
-        </div> */}
+        <div className={clsx("border-t border-gray-600 px-2 py-0 flex-shrink-0 w-full", sidebarCollapsed && "px-1")}>
+          {sidebarCollapsed ? (
+            <div className="flex justify-center py-2">
+              <div className="relative">
+                <Link 
+                  href="/profile" 
+                  className="w-12 h-12 flex items-center justify-center hover:bg-light-custom/50 rounded-lg transition-colors"
+                  onMouseEnter={(e) => handleMouseEnter(e, 'الملف الشخصي')}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <img 
+                    src={!loading && user ? (user.avatar || (typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null) || "/user.gif") : "/user.gif"} 
+                    alt="" 
+                    className="w-8 h-8 rounded-full object-cover" 
+                  />
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <Link href="/profile" className="flex items-center justify-between hover:bg-light-custom/50 rounded-lg p-2 transition-colors">
+              <div className="text-sm flex items-center gap-2">
+                <img 
+                  src={!loading && user ? (user.avatar || (typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null) || "/user.gif") : "/user.gif"} 
+                  alt="" 
+                  className="w-10 h-10 rounded-full object-cover cursor-pointer" 
+                />
+                <div className="flex items-center gap-2  ">
+                  {!loading && user && <span className="font-medium text-xs cursor-pointer">{user.name }</span>}
+                  {planName && (
+                    <div className="flex flex-col items-start ml-1">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] text-primary gradient-border text-center p-1">{planName} {subscriptionStatus.daysRemaining !== null && (
+                          <span className={`text-[9px] font-bold ${subscriptionStatus.colorClass}  `}>
+                            {subscriptionStatus.daysRemaining}D
+                          </span>
+                        )} </span>
+                      </div>
+                    
+                    </div>
+                  )}
+                </div>
+              </div>
+             
+            </Link>
+          )}
+            {!sidebarCollapsed && (
+              <div className="flex justify-start mx-5">
+                {(subscriptionStatus.colorClass.includes('yellow') || subscriptionStatus.colorClass.includes('red')) && (
+                        <Link href="/plans" className="text-xs bg-primary/20 hover:bg-primary/40 text-primary px-2 py-0.5 rounded mt-1 transition-colors">
+                          تجديد الاشتراك
+                        </Link>
+                      )}
+              </div>
+            )}
+        </div>
+        <nav className={clsx("px-2 py-2 space-y-1 flex-1 overflow-y-auto scrollbar-hide", sidebarCollapsed && "px-1")}>
+          {visibleNavItems.map((item) => (
+            <div key={item.href} className="relative">
+              <Link
+                href={item.href}
+                className={clsx(
+                  "flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-200 relative",
+                  sidebarCollapsed ? "justify-center px-2" : "",
+                  pathname === item.href ? "bg-light-custom text-white text-lg gradient-border" : "hover:bg-light-custom text-sm"
+                )}
+                onMouseEnter={(e) => sidebarCollapsed && handleMouseEnter(e, item.label)}
+                onMouseLeave={handleMouseLeave}
+              >
+                <div className="relative flex-shrink-0">
+                  <img src={item.img} className="w-5 h-5" alt="" />
+                  {item.href === "/tickets" && pendingTicketsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1 py-0.5 rounded-full min-w-[16px] h-4 flex items-center justify-center">
+                      {pendingTicketsCount}
+                    </span>
+                  )}
+                  {item.href === "/whatsapp" && whatsappPendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1 py-0.5 rounded-full min-w-[16px] h-4 flex items-center justify-center">
+                      {whatsappPendingCount}
+                    </span>
+                  )}
+                  {item.href === "/telegram" && telegramPendingCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1 py-0.5 rounded-full min-w-[16px] h-4 flex items-center justify-center">
+                      {telegramPendingCount}
+                    </span>
+                  )}
+                </div>
+                {!sidebarCollapsed && <span className="flex-1">{item.label}</span>}
+              </Link>
+            </div>
+          ))}
           
-      </aside>
+          {!sidebarCollapsed ? (
+            <>
+              {!loading && user && (
+                <Button 
+                  size="sm" 
+                  onClick={() => { signOut(); router.push('/sign-in'); }}
+                  className="w-full primary-button after:bg-red-500 text-white "
+                >
+                  تسجيل خروج
+                </Button>
+              )}
+              {user?.role === 'admin' && (
+                <div className="pt-3">
+                  <Link
+                    href="/admin"
+                    className={clsx(
+                      "block rounded-md px-3 py-2 text-sm ",
+                      pathname.startsWith('/admin') ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
+                    )}
+                  >
+                 ادارة المنصة
+                  </Link>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {!loading && user && (
+                <div className="relative">
+                  <button
+                    onClick={() => { signOut(); router.push('/sign-in'); }}
+                    className="w-full flex justify-center p-2 hover:bg-red-600/20 rounded-md transition-colors"
+                    onMouseEnter={(e) => handleMouseEnter(e, 'تسجيل خروج')}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <LogOut className="w-5 h-5 text-red-500" />
+                  </button>
+                </div>
+              )}
+              {user?.role === 'admin' && (
+                <div className="relative">
+                  <Link
+                    href="/admin"
+                    className={clsx(
+                      "flex justify-center p-2 rounded-md transition-colors",
+                      pathname.startsWith('/admin') ? "bg-semidark-custom text-white" : "hover:bg-semidark-custom"
+                    )}
+                    onMouseEnter={(e) => handleMouseEnter(e, 'ادارة المنصة')}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <SettingsIcon className="w-5 h-5" />
+                  </Link>
+                </div>
+              )}
+            </>
+          )}
+        </nav>
+        </aside>
+      </div>
       {/* Content area - independent scrolling */}
       <div className="flex-1 flex flex-col h-dvh overflow-hidden">
         {/* Mobile menu button */}
@@ -814,6 +931,23 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </div>
         </div>
       </div>
+      
+      {/* Global Tooltip */}
+      {showTooltip && (
+        <div
+          className="fixed bg-gray-900 text-white px-3 py-2 rounded-lg shadow-lg text-sm whitespace-nowrap z-[9999] border border-gray-700 pointer-events-none"
+          style={{
+            right: `calc(100vw - ${tooltipPosition.x}px)`, // استخدام right بدلاً من left
+            top: tooltipPosition.y,
+            transform: 'translateY(-50%)'
+          }}
+        >
+          {tooltipContent}
+          <div 
+            className="absolute top-1/2 left-full transform -translate-y-1/2 border-[6px] border-transparent border-r-gray-900"
+          ></div>
+        </div>
+      )}
     </div>
    <Script >
       {`window.WIDGET_API_URL = 'https://api.flooxira.com';

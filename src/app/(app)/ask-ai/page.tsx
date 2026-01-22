@@ -30,6 +30,21 @@ import {
   LayoutGrid,
   Image as ImageIcon,
   ArrowUpRight,
+  Video,
+  Mic,
+  Zap,
+  Package,
+  Eraser,
+  LayoutTemplate,
+  Palette,
+  UserCircle,
+  Droplets,
+  History,
+  Move,
+  Users,
+  Wand2,
+  Maximize,
+  FileVideo,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useToast } from "@/components/ui/toast-provider";
@@ -52,8 +67,12 @@ import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
+import { useRouter } from "next/navigation";
+
 export default function AskAIPage() {
+  const router = useRouter();
   const [currentTab, setCurrentTab] = useState<'all' | 'ask-ai' | 'media'>('all');
+  const [mediaSubTab, setMediaSubTab] = useState<'all' | 'images' | 'video' | 'audio'>('all');
   const [token, setToken] = useState("");
   const [conversations, setConversations] = useState<AIConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<AIConversation | null>(null);
@@ -375,9 +394,12 @@ export default function AskAIPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setCurrentTab(tab.id as any)}
+                onClick={() => {
+                  setCurrentTab(tab.id as any);
+                  if (tab.id === 'media') setMediaSubTab('all');
+                }}
                 className={clsx(
-                  "relative flex flex-col items-center justify-center gap-1 min-w-[80px] h-full transition-all duration-500",
+                  "relative flex flex-col items-center justify-center gap-1 min-w-[200px] h-full transition-all duration-500",
                   isActive ? "text-primary scale-110" : "text-gray-400 hover:text-white"
                 )}
               >
@@ -393,7 +415,7 @@ export default function AskAIPage() {
                     <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_rgba(116,226,255,0.8)] animate-pulse" />
                   )}
                 </div>
-                <span className="text-[10px] font-bold tracking-wide">{tab.label}</span>
+                <span className="text-sm font-bold tracking-wide">{tab.label}</span>
               </button>
             );
           })}
@@ -479,105 +501,230 @@ export default function AskAIPage() {
     </div>
   );
 
+  const renderMediaNav = () => (
+    <div className="flex flex-wrap justify-center mb-10 gap-3 px-4">
+      {[
+        { id: 'all', label: 'الكل', icon: LayoutGrid },
+        { id: 'images', label: 'الصور', icon: ImageIcon },
+        { id: 'video', label: 'الفيديو', icon: Video },
+        { id: 'audio', label: 'الصوت', icon: Mic }
+      ].map((tab) => {
+        const Icon = tab.icon;
+        const isActive = mediaSubTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => setMediaSubTab(tab.id as any)}
+            className={clsx(
+              "flex items-center gap-2 px-6 py-3 mt-5 rounded-2xl transition-all duration-500 border backdrop-blur-md",
+              isActive 
+                ? "bg-blue-600/20 border-blue-500/50 text-white shadow-lg shadow-blue-500/20 scale-105" 
+                : "bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10"
+            )}
+          >
+            <Icon size={18} className={isActive ? "text-blue-400" : ""} />
+            <span className="text-sm font-bold tracking-wide">{tab.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   const renderHomeGrid = () => {
     const features = [
       {
         id: 'ask-ai',
-        title: 'اسأل AI',
+        title: 'فلوكسيرا AI',
         desc: 'مساعدك الشخصي للدردشة والإجابة على الأسئلة',
-        image: 'https://images.unsplash.com/photo-1674027444485-cec3da58eef4?q=80&w=1332&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-        status: 'active'
+        image: '/gpt فلوكسيرا.png',
+        status: 'active',
+        path: 'chat'
       },
       {
         id: 'text-to-image',
         title: 'تحويل النص لصورة',
-        desc: 'حول خيالك إلى صور واقعية مذهلة',
-        image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop',
-        status: 'soon'
+        desc: 'حول خيالك إلى صور واقعية مذهلة بجودة فائقة',
+        image: '/انشاء الصور.png',
+        status: 'active',
+        path: '/ask-ai/image'
+      },
+      {
+        id: 'video-gen',
+        title: 'توليد الفيديو ',
+        desc: 'أنشئ فيديوهات سينمائية من خلال النصوص بذكاء Veo 2.0',
+        image: '/تاثيرات الفيديو.png',
+        status: 'active',
+        path: '/ask-ai/video'
       },
       {
         id: 'voice-gen',
         title: 'توليد الصوت',
         desc: 'حول النصوص إلى تعليق صوتي احترافي',
-        image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop',
+        image: '/انشاء تعليق صوتي.png',
         status: 'soon'
       },
       {
-        id: 'video-gen',
-        title: 'توليد الفيديو',
-        desc: 'أنشئ فيديوهات سينمائية من خلال النصوص',
-        image: 'https://i.pinimg.com/736x/fd/d0/14/fdd014fa1e75b6a705935c48ae95a883.jpg',
-        status: 'soon'
-      }
+        id: 'image-to-text',
+        title: 'تحويل الصورة الى نص',
+        desc: 'تحويل الصورة الى بروميتات',
+        path: '/ask-ai/image-to-text',
+        image: '/الصورة لنص.png',
+        status: 'active'
+      },
     ];
 
-    const filteredFeatures = currentTab === 'media' 
-      ? features.filter(f => f.id !== 'ask-ai')
-      : features;
+    const imageTools = [
+      { id: 't2i', title: 'حول النص الى صورة', desc: 'حول خيالك إلى صور واقعية مذهلة', icon: ImageIcon, path: '/ask-ai/image', image: '/انشاء الصور.png', status: 'active' },
+      { id: 'upscale', title: 'تحسين الصور', desc: 'زيادة جودة ووضوح الصور بذكاء', icon: Sparkles, path: '/ask-ai/upscale', image: '/رفع جودة الصور.png', status: 'active' },
+      { id: 'nano', title: 'Nano banana Pro', desc: 'نموذج توليد صور فائق السرعة', icon: Zap, path: '/ask-ai/nano', image: '/Whisk_d2a441bc8622fa5b2774cf54a715f70feg.png', status: 'active' },
+      { id: 'logo', title: 'صانع الشعار', desc: 'صمم شعارات احترافية في ثوانٍ', icon: LayoutTemplate, path: '/ask-ai/logo', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=1000', status: 'active' },
+      { id: 'edit', title: 'تحرير الصورة', desc: 'تعديل الصور بالذكاء الاصطناعي', icon: Edit2, path: '/ask-ai/edit', image: '/تعديل الصور.png', status: 'active' },
+      { id: 'product', title: 'نماذج منتجات', desc: 'عرض منتجاتك في بيئات احترافية', icon: Package, path: '/ask-ai/product', image: '/نماذج لمنتجك.png', status: 'active' },
+      { id: 'bg-remove', title: 'ازالة الخلفية', desc: 'حذف خلفية الصور بدقة عالية', icon: Eraser, path: '/ask-ai/bg-remove', image: '/ازالة الخلفية.png', status: 'active' },
+      { id: 'avatar', title: 'انشاء افاتار', desc: 'اصنع شخصيتك الافتراضية الخاصة', icon: UserCircle, path: '/ask-ai/avatar', image: '/انشاء افاتار.png', status: 'active' },
+      { id: 'restore', title: 'ترميم الصور', desc: 'إصلاح الصور التالفة والقديمة', icon: History, path: '/ask-ai/restore', image: '/ترميم الصور .jpeg', status: 'active' },
+      // { id: 'logo-mockup', title: 'نماذج الشعارات', desc: 'معاينة الشعارات على منتجات واقعية', icon: LayoutGrid, path: '#', image: 'https://images.unsplash.com/photo-1572044162444-ad60f128bde7?q=80&w=1000', status: 'soon' },
+      { id: 'sketch', title: 'رسم الى صور', desc: 'حول رسوماتك اليدوية لصور واقعية', icon: Palette, path: '/ask-ai/sketch', image: '/رسم الصور.png', status: 'active' },
+      { id: 'colorize', title: 'تلوين الصورة', desc: 'تلوين الصور القديمة بالألوان الطبيعية', icon: Droplets, path: '/ask-ai/colorize', image: '/تلوين الصورة.png', status: 'active' },
+    ];
+
+    const videoTools = [
+      { id: 'vgen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', icon: Video, path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
+      { id: 'motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', icon: Move, path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
+      { id: 'ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', icon: Users, path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'active' },
+      { id: 'effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', icon: Wand2, path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'active' },
+      { id: 'lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', icon: MessageSquare, path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'active' },
+      { id: 'resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', icon: Maximize, path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'active' },
+      { id: 'vupscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', icon: FileVideo, path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'active' },
+    ];
+
+    let displayFeatures = features;
+    if (currentTab === 'media') {
+      if (mediaSubTab === 'all') {
+        displayFeatures = features.filter(f => f.id !== 'ask-ai');
+      } else if (mediaSubTab === 'images') {
+        displayFeatures = imageTools;
+      } else if (mediaSubTab === 'video') {
+        displayFeatures = videoTools;
+      } else if (mediaSubTab === 'audio') {
+        displayFeatures = []; // Let the empty state handle the message, or move message here
+      }
+    }
+
+    const renderFeatureCard = (feature: any) => (
+      <div
+        key={feature.id}
+        onClick={() => {
+          if (currentTab === 'all' || (currentTab === 'media' && mediaSubTab === 'all')) {
+            if (feature.id === 'text-to-image') {
+              setCurrentTab('media');
+              setMediaSubTab('images');
+              return;
+            }
+            if (feature.id === 'video-gen') {
+              setCurrentTab('media');
+              setMediaSubTab('video');
+              return;
+            }
+            if (feature.id === 'voice-gen') {
+              setCurrentTab('media');
+              setMediaSubTab('audio');
+              return;
+            }
+          }
+
+          if (feature.status !== 'active') return;
+          if (feature.id === 'ask-ai') setCurrentTab('ask-ai');
+          else if (feature.path) router.push(feature.path);
+        }}
+        className={`group relative aspect-square rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#1a1c1e] transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 ${
+          feature.status === 'soon' ? 'opacity-80' : ''
+        }`}
+      >
+        {/* Background Image */}
+        <div className="absolute inset-0 w-full h-full">
+          <img
+            src={(feature as any).image}
+            alt={feature.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b0d] via-[#0a0b0d]/40 to-transparent" />
+        </div>
+
+        {/* Content */}
+        <div className="absolute inset-0 p-6 flex flex-col justify-end">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+              {feature.title}
+            </h3>
+          </div>
+          <p className="text-sm text-gray-400 line-clamp-2 mb-4 group-hover:text-gray-300">
+            {feature.desc}
+          </p>
+          
+          <button
+            disabled={feature.status === 'soon'}
+            className="relative inline-flex h-7 active:scale-95 transition overflow-hidden rounded-lg p-[1px] focus:outline-none w-25"
+          >
+            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#e7029a_0%,#f472b6_50%,#bd5fff_100%)]"></span>
+            <span className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg px-7 text-sm font-medium backdrop-blur-3xl gap-2 ${
+              feature.status === 'active'
+                ? 'bg-slate-950 text-white'
+                : 'bg-slate-950 text-gray-500 cursor-not-allowed'
+            }`}>
+              {feature.status === 'active' ? 'ابدأ ' : 'قريباً'}
+              {feature.status === 'active' && (
+                <ArrowUpRight className="h-4 w-4" />
+              )}
+            </span>
+          </button>
+        </div>
+      </div>
+    );
 
     return (
       <div className="flex flex-col items-center w-full min-h-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 mb-12 w-full mx-auto">
-          {filteredFeatures.map((feature) => (
-            <div
-              key={feature.id}
-              onClick={() => feature.status === 'active' && setCurrentTab('ask-ai')}
-              className={`group relative h-[300px] rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#1a1c1e] transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 ${
-                feature.status === 'soon' ? 'opacity-80' : ''
-              }`}
-            >
-              {/* Background Image */}
-              <div className="absolute inset-0">
-                <img
-                  src={feature.image}
-                  alt={feature.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b0d] via-[#0a0b0d]/40 to-transparent" />
-              </div>
-
-              {/* Content */}
-              <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-                    {feature.title}
-                  </h3>
-                  {/* {feature.status === 'soon' && (
-                    <span className="px-3 py-1 bg-white/10 backdrop-blur-md border border-white/10 rounded-full text-[10px] text-gray-300 font-bold tracking-wider">
-                      قريباً
-                    </span>
-                  )} */}
-                </div>
-                <p className="text-sm text-gray-400 line-clamp-2 mb-4 group-hover:text-gray-300">
-                  {feature.desc}
-                </p>
-                
-                <button
-                  disabled={feature.status === 'soon'}
-                  className="relative inline-flex h-7 active:scale-95 transition overflow-hidden rounded-lg p-[1px] focus:outline-none w-25"
-                >
-                  <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#e7029a_0%,#f472b6_50%,#bd5fff_100%)]"></span>
-                  <span className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg px-7 text-sm font-medium backdrop-blur-3xl gap-2 ${
-                    feature.status === 'active'
-                      ? 'bg-slate-950 text-white'
-                      : 'bg-slate-950 text-gray-500 cursor-not-allowed'
-                  }`}>
-                    {feature.status === 'active' ? 'ابدأ ' : 'قريباً'}
-                    {feature.status === 'active' && (
-                      <ArrowUpRight className="h-4 w-4" />
-                    )}
-                  </span>
-                </button>
-              </div>
+        {currentTab === 'media' && renderMediaNav()}
+        
+        {mediaSubTab === 'audio' && currentTab === 'media' ? (
+          <div className="flex flex-col items-center justify-center py-32 w-full animate-in fade-in duration-700">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
+              <Mic size={80} className="relative text-primary animate-pulse" />
             </div>
-          ))}
-        </div>
+            <h3 className="text-3xl font-bold text-white mb-2">سيتوفر قريباً</h3>
+            <p className="text-gray-400 text-lg">نحن نعمل على إضافة ميزات توليد الصوت الاحترافية</p>
+          </div>
+        ) : (
+          <div className="w-full flex flex-col gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 px-4 w-full mx-auto">
+              {displayFeatures.map((feature) => renderFeatureCard(feature))}
+            </div>
+
+            {(currentTab === 'all' || (currentTab === 'media' && mediaSubTab === 'all')) && (
+              <div className="flex flex-col gap-8 px-4 mb-20">
+                <div className="flex items-center gap-4">
+                  <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-text-primary/50 to-transparent" />
+                  <h2 className="text-2xl font-bold text-white whitespace-nowrap px-4">
+                    تصفح جميع الأدوات
+                  </h2>
+                  <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-text-primary/50 to-transparent" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                  {[...imageTools, ...videoTools].map((tool) => renderFeatureCard(tool))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         
         {/* Chat Input for "All" Tab */}
         {currentTab === 'all' && renderInputArea(true)}
       </div>
     );
   };
+
 
   if (permissionsLoading || loading) {
     return (
@@ -588,11 +735,17 @@ export default function AskAIPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+    <div className={clsx(
+      "flex flex-col",
+      currentTab === 'ask-ai' ? "h-[calc(100vh-4rem)] overflow-hidden" : "min-h-[calc(100vh-4rem)]"
+    )}>
       {/* Conditionally show Tab Navigation */}
       {currentTab !== 'ask-ai' && <div className="shrink-0">{renderTabs()}</div>}
 
-      <div className={`flex flex-1 overflow-hidden ${currentTab !== 'ask-ai' ? 'px-4' : ''}`}>
+      <div className={clsx(
+        "flex flex-1",
+        currentTab === 'ask-ai' ? "overflow-hidden" : "px-4"
+      )}>
         {currentTab === 'ask-ai' ? (
           <div className="flex flex-1 bg-fixed-40 rounded-xl overflow-hidden min-w-0 h-full relative">
             
@@ -862,7 +1015,7 @@ export default function AskAIPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="flex-1">
             {renderHomeGrid()}
           </div>
         )}
