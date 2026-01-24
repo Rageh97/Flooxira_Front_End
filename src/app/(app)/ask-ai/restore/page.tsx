@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
+import { getAIStats, processAIImage, listPlans, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 
 interface ProcessedImage {
   id: string;
@@ -32,6 +33,8 @@ export default function RestorePage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<ProcessedImage[]>([]);
   const [selectedResult, setSelectedResult] = useState<ProcessedImage | null>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -46,7 +49,12 @@ export default function RestorePage() {
     }
   }, []);
 
-  useEffect(() => { if (token) loadStats(); }, [token]);
+  useEffect(() => { 
+    if (token) {
+      loadStats();
+      checkAIPlans();
+    }
+  }, [token]);
   useEffect(() => { if (history.length > 0) localStorage.setItem("ai_restore_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
@@ -54,6 +62,16 @@ export default function RestorePage() {
       const response = await getAIStats(token);
       setStats(response.stats);
     } catch (error) { console.error(error); }
+  };
+
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +85,10 @@ export default function RestorePage() {
 
   const handleProcess = async () => {
     if (!previewUrl) return showError("تنبيه", "يرجى اختيار صورة!");
-    if (!hasActiveSubscription) return showError("تنبيه", "تحتاج اشتراك نشط!");
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
     
     setIsProcessing(true);
     try {
@@ -152,6 +173,14 @@ export default function RestorePage() {
           )}
         </section>
       </main>
+
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لترميم الصور"
+        description="للاستفادة من تقنية ترميم الصور القديمة والتالفة وإعادة إحيائها بجودة عالية مع إصلاح الخدوش والعيوب، تحتاج إلى اشتراك نشط."
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }

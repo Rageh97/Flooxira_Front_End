@@ -130,8 +130,11 @@ export async function selectInstagramAccount(token: string, pageId: string, inst
 export type Plan = { 
   id: number; 
   name: string; 
+  type: 'standard' | 'ai';
   priceCents: number; 
   interval: 'monthly' | 'yearly'; 
+  paymentLink?: string;
+  isActive: boolean;
   features?: any; 
   permissions?: {
     platforms: string[];
@@ -163,16 +166,18 @@ export type Plan = {
       canUseTelegramAI?: boolean;
       telegramAiCredits?: number;
     };
-  isActive: boolean;
-  paymentLink?: string | null;
 };
 
 export async function listEmployees(token: string) {
   return apiFetch<{ success: boolean; employees: any[] }>('/api/employees', { authToken: token });
 }
 
-export async function listPlans(token: string) {
-  return apiFetch<{ plans: Plan[] }>("/api/plans", { authToken: token });
+export async function listPlans(token: string, type?: string) {
+  let url = "/api/plans";
+  if (type) {
+    url += `?type=${type}`;
+  }
+  return apiFetch<{ plans: Plan[] }>(url, { authToken: token });
 }
 
 export async function createPlan(token: string, plan: Partial<Plan>) {
@@ -2633,7 +2638,7 @@ export async function generateAIImage(token: string, payload: { prompt: string; 
   });
 }
 
-export async function generateAIVideo(token: string, payload: { prompt: string; aspectRatio?: string }) {
+export async function generateAIVideo(token: string, payload: { prompt: string; aspectRatio?: string; includeAudio?: boolean }) {
   return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video", {
     method: "POST",
     authToken: token,
@@ -2678,6 +2683,64 @@ export async function describeAIImage(token: string, imageUrl: string) {
     method: "POST",
     authToken: token,
     body: JSON.stringify({ imageUrl }),
+  });
+}
+
+// Advanced Image Editing
+export async function editImageInpainting(token: string, payload: { imageUrl: string; maskUrl?: string; prompt: string }) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/inpaint", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function editImageOutpainting(token: string, payload: { imageUrl: string; direction: 'left' | 'right' | 'up' | 'down'; prompt?: string }) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/outpaint", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function upscaleImage(token: string, payload: { imageUrl: string; scale?: number }) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/upscale", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function removeImageBackground(token: string, imageUrl: string) {
+  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/remove-bg", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ imageUrl }),
+  });
+}
+
+// Advanced Video Editing
+export async function addVideoAudio(token: string, payload: { videoUrl: string; audioText: string; voice?: string; language?: string }) {
+  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video/add-audio", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function extendVideo(token: string, payload: { videoUrl: string; duration: number; prompt?: string }) {
+  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video/extend", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function enhanceVideo(token: string, payload: { videoUrl: string; enhancement: 'stabilize' | 'denoise' | 'upscale' | 'colorgrade' }) {
+  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video/enhance", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
   });
 }
 

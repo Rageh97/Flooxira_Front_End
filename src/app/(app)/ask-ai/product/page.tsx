@@ -16,6 +16,8 @@ import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import { listPlans } from "@/lib/api";
 
 export default function ProductModelPage() {
   const [token, setToken] = useState("");
@@ -25,6 +27,8 @@ export default function ProductModelPage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -37,7 +41,7 @@ export default function ProductModelPage() {
     }
   }, []);
 
-  useEffect(() => { if (token) loadStats(); }, [token]);
+  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
   useEffect(() => { localStorage.setItem("ai_product_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
@@ -45,7 +49,22 @@ export default function ProductModelPage() {
     setStats(res.stats);
   };
 
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
+  };
+
   const handleProcess = async () => {
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    
     if (!previewUrl || !prompt.trim()) return showError("تنبيه", "ارفع صورة منتج واكتب وصفاً للبيئة المحيطة!");
     setIsProcessing(true);
     try {
@@ -131,6 +150,15 @@ export default function ProductModelPage() {
            )}
         </section>
       </main>
+
+      {/* Subscription Required Modal */}
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لنماذج المنتجات"
+        description="للاستفادة من تقنية عرض المنتجات في بيئات احترافية وإنشاء صور تسويقية عالية الجودة، تحتاج إلى اشتراك نشط."
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }

@@ -45,6 +45,7 @@ import {
   Wand2,
   Maximize,
   FileVideo,
+  Film,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useToast } from "@/components/ui/toast-provider";
@@ -58,6 +59,7 @@ import {
   deleteAIConversation,
   updateAIConversationTitle,
   getAIStats,
+  listPlans,
   type AIConversation,
   type AIMessage,
   type AIStats,
@@ -66,6 +68,7 @@ import ReactMarkdown from 'react-markdown';
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 
 import { useRouter } from "next/navigation";
 
@@ -90,6 +93,8 @@ export default function AskAIPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -103,7 +108,7 @@ export default function AskAIPage() {
   const streamingMsgRef = useRef<AIMessage | null>(null);
   const streamRef = useRef<{ cancel: () => void } | null>(null);
   const { showSuccess, showError } = useToast();
-  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const { hasActiveSubscription, loading: permissionsLoading, isAIToolAllowed } = usePermissions();
   const isOutOfCredits = !!(stats && !stats.isUnlimited && stats.remainingCredits <= 0);
 
   useEffect(() => {
@@ -163,6 +168,7 @@ export default function AskAIPage() {
     if (!token) return;
     loadConversations();
     loadStats();
+    checkAIPlans();
   }, [token]);
 
   useEffect(() => {
@@ -210,6 +216,16 @@ export default function AskAIPage() {
     }
   };
 
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
+  };
+
   const loadConversation = async (conversationId: number) => {
     try {
       const response = await getAIConversation(token, conversationId);
@@ -223,7 +239,7 @@ export default function AskAIPage() {
 
   const handleCreateConversation = async () => {
     if (!hasActiveSubscription) {
-      showError("تنبيه", "لا يمكنك بدء محادثة بدون اشتراك نشط.");
+      setSubscriptionModalOpen(true);
       return;
     }
     try {
@@ -243,7 +259,12 @@ export default function AskAIPage() {
 
   const handleSendMessage = async (overrideContent?: string) => {
     if (!hasActiveSubscription) {
-      showError("تنبيه", "لا يمكنك إرسال رسائل بدون اشتراك نشط.");
+      setSubscriptionModalOpen(true);
+      return;
+    }
+
+    if (isOutOfCredits) {
+      showError("تنبيه", "لقد استنفدت كريديت AI الخاص بك. يرجى ترقية باقتك.");
       return;
     }
 
@@ -452,7 +473,7 @@ export default function AskAIPage() {
               className={`w-full min-h-[56px] max-h-[200px] bg-[#1a1c1e]/40 backdrop-blur-md border border-blue-500/50 text-white pr-4 pl-14 py-4 rounded-3xl outline-none transition-all scrollbar-hide resize-none flex items-center focus:border-text-primary focus:ring-1 focus:ring-blue-500/20 ${
                 isHome ? 'shadow-2xl shadow-blue-500/5' : ''
               }`}
-              disabled={!hasActiveSubscription || sending || isOutOfCredits}
+              disabled={sending}
               rows={1}
               style={{ lineHeight: '1.5', overflow: 'hidden' }}
             />
@@ -470,14 +491,12 @@ export default function AskAIPage() {
                 <Button
                   onClick={() => handleSendMessage()}
                   disabled={
-                    !hasActiveSubscription ||
                     !inputMessage.trim() ||
-                    (sending && !isHome) ||
-                    isOutOfCredits
+                    (sending && !isHome)
                   }
                   size="icon"
                   className={`h-10 w-10 !rounded-full transition-all duration-300 flex items-center justify-center p-0 ${
-                    inputMessage.trim() && hasActiveSubscription && !isOutOfCredits
+                    inputMessage.trim()
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-100 hover:scale-105 active:scale-95'
                       : 'bg-white/5 text-gray-400 cursor-not-allowed'
                   }`}
@@ -534,6 +553,7 @@ export default function AskAIPage() {
     const features = [
       {
         id: 'ask-ai',
+        permId: 'chat',
         title: 'فلوكسيرا AI',
         desc: 'مساعدك الشخصي للدردشة والإجابة على الأسئلة',
         image: '/gpt فلوكسيرا.png',
@@ -542,6 +562,7 @@ export default function AskAIPage() {
       },
       {
         id: 'text-to-image',
+        permId: 'image_gen',
         title: 'تحويل النص لصورة',
         desc: 'حول خيالك إلى صور واقعية مذهلة بجودة فائقة',
         image: '/انشاء الصور.png',
@@ -550,6 +571,7 @@ export default function AskAIPage() {
       },
       {
         id: 'video-gen',
+        permId: 'video_gen',
         title: 'توليد الفيديو ',
         desc: 'أنشئ فيديوهات سينمائية من خلال النصوص بذكاء Veo 2.0',
         image: '/تاثيرات الفيديو.png',
@@ -565,6 +587,7 @@ export default function AskAIPage() {
       },
       {
         id: 'image-to-text',
+        permId: 'image_describe',
         title: 'تحويل الصورة الى نص',
         desc: 'تحويل الصورة الى بروميتات',
         path: '/ask-ai/image-to-text',
@@ -574,40 +597,43 @@ export default function AskAIPage() {
     ];
 
     const imageTools = [
-      { id: 't2i', title: 'حول النص الى صورة', desc: 'حول خيالك إلى صور واقعية مذهلة', icon: ImageIcon, path: '/ask-ai/image', image: '/انشاء الصور.png', status: 'active' },
-      { id: 'upscale', title: 'تحسين الصور', desc: 'زيادة جودة ووضوح الصور بذكاء', icon: Sparkles, path: '/ask-ai/upscale', image: '/رفع جودة الصور.png', status: 'active' },
-      { id: 'nano', title: 'Nano banana Pro', desc: 'نموذج توليد صور فائق السرعة', icon: Zap, path: '/ask-ai/nano', image: '/Whisk_d2a441bc8622fa5b2774cf54a715f70feg.png', status: 'active' },
-      { id: 'logo', title: 'صانع الشعار', desc: 'صمم شعارات احترافية في ثوانٍ', icon: LayoutTemplate, path: '/ask-ai/logo', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=1000', status: 'active' },
-      { id: 'edit', title: 'تحرير الصورة', desc: 'تعديل الصور بالذكاء الاصطناعي', icon: Edit2, path: '/ask-ai/edit', image: '/تعديل الصور.png', status: 'active' },
-      { id: 'product', title: 'نماذج منتجات', desc: 'عرض منتجاتك في بيئات احترافية', icon: Package, path: '/ask-ai/product', image: '/نماذج لمنتجك.png', status: 'active' },
-      { id: 'bg-remove', title: 'ازالة الخلفية', desc: 'حذف خلفية الصور بدقة عالية', icon: Eraser, path: '/ask-ai/bg-remove', image: '/ازالة الخلفية.png', status: 'active' },
-      { id: 'avatar', title: 'انشاء افاتار', desc: 'اصنع شخصيتك الافتراضية الخاصة', icon: UserCircle, path: '/ask-ai/avatar', image: '/انشاء افاتار.png', status: 'active' },
-      { id: 'restore', title: 'ترميم الصور', desc: 'إصلاح الصور التالفة والقديمة', icon: History, path: '/ask-ai/restore', image: '/ترميم الصور .jpeg', status: 'active' },
-      // { id: 'logo-mockup', title: 'نماذج الشعارات', desc: 'معاينة الشعارات على منتجات واقعية', icon: LayoutGrid, path: '#', image: 'https://images.unsplash.com/photo-1572044162444-ad60f128bde7?q=80&w=1000', status: 'soon' },
-      { id: 'sketch', title: 'رسم الى صور', desc: 'حول رسوماتك اليدوية لصور واقعية', icon: Palette, path: '/ask-ai/sketch', image: '/رسم الصور.png', status: 'active' },
-      { id: 'colorize', title: 'تلوين الصورة', desc: 'تلوين الصور القديمة بالألوان الطبيعية', icon: Droplets, path: '/ask-ai/colorize', image: '/تلوين الصورة.png', status: 'active' },
+      { id: 't2i', permId: 'image_gen', title: 'حول النص الى صورة', desc: 'حول خيالك إلى صور واقعية مذهلة', icon: ImageIcon, path: '/ask-ai/image', image: '/انشاء الصور.png', status: 'active' },
+      { id: 'upscale', permId: 'image_upscale', title: 'تحسين الصور', desc: 'زيادة جودة ووضوح الصور بذكاء', icon: Sparkles, path: '/ask-ai/upscale', image: '/رفع جودة الصور.png', status: 'active' },
+      { id: 'nano', permId: 'image_nano', title: 'Nano banana Pro', desc: 'نموذج توليد صور فائق السرعة', icon: Zap, path: '/ask-ai/nano', image: '/Whisk_d2a441bc8622fa5b2774cf54a715f70feg.png', status: 'active' },
+      { id: 'logo', permId: 'image_logo', title: 'صانع الشعار', desc: 'صمم شعارات احترافية في ثوانٍ', icon: LayoutTemplate, path: '/ask-ai/logo', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=1000', status: 'active' },
+      { id: 'edit', permId: 'image_edit', title: 'تحرير الصورة', desc: 'تعديل الصور بالذكاء الاصطناعي', icon: Edit2, path: '/ask-ai/edit', image: '/تعديل الصور.png', status: 'active' },
+      { id: 'product', permId: 'image_product', title: 'نماذج منتجات', desc: 'عرض منتجاتك في بيئات احترافية', icon: Package, path: '/ask-ai/product', image: '/نماذج لمنتجك.png', status: 'active' },
+      { id: 'bg-remove', permId: 'image_bg_remove', title: 'ازالة الخلفية', desc: 'حذف خلفية الصور بدقة عالية', icon: Eraser, path: '/ask-ai/bg-remove', image: '/ازالة الخلفية.png', status: 'active' },
+      { id: 'avatar', permId: 'image_avatar', title: 'انشاء افاتار', desc: 'اصنع شخصيتك الافتراضية الخاصة', icon: UserCircle, path: '/ask-ai/avatar', image: '/انشاء افاتار.png', status: 'active' },
+      { id: 'restore', permId: 'image_restore', title: 'ترميم الصور', desc: 'إصلاح الصور التالفة والقديمة', icon: History, path: '/ask-ai/restore', image: '/ترميم الصور .jpeg', status: 'active' },
+      { id: 'sketch', permId: 'image_sketch', title: 'رسم الى صور', desc: 'حول رسوماتك اليدوية لصور واقعية', icon: Palette, path: '/ask-ai/sketch', image: '/رسم الصور.png', status: 'active' },
+      { id: 'colorize', permId: 'image_colorize', title: 'تلوين الصورة', desc: 'تلوين الصور القديمة بالألوان الطبيعية', icon: Droplets, path: '/ask-ai/colorize', image: '/تلوين الصورة.png', status: 'active' },
     ];
 
     const videoTools = [
-      { id: 'vgen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', icon: Video, path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
-      { id: 'motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', icon: Move, path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
-      { id: 'ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', icon: Users, path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'active' },
-      { id: 'effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', icon: Wand2, path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'active' },
-      { id: 'lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', icon: MessageSquare, path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'active' },
-      { id: 'resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', icon: Maximize, path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'active' },
-      { id: 'vupscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', icon: FileVideo, path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'active' },
+      { id: 'vgen', permId: 'video_gen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', icon: Video, path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
+      { id: 'long-video', permId: 'video_gen', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', icon: Film, path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'active' },
+      { id: 'motion', permId: 'video_motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', icon: Move, path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
+      { id: 'ugc', permId: 'video_ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', icon: Users, path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'active' },
+      { id: 'effects', permId: 'video_effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', icon: Wand2, path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'active' },
+      { id: 'lipsync', permId: 'video_lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', icon: MessageSquare, path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'active' },
+      { id: 'resize', permId: 'video_resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', icon: Maximize, path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'active' },
+      { id: 'vupscale', permId: 'video_upscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', icon: FileVideo, path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'active' },
     ];
 
-    let displayFeatures = features;
+    // Filter by allowed tools
+    const filterTools = (tools: any[]) => tools;
+
+    let displayFeatures = filterTools(features);
     if (currentTab === 'media') {
       if (mediaSubTab === 'all') {
-        displayFeatures = features.filter(f => f.id !== 'ask-ai');
+        displayFeatures = filterTools(features.filter(f => f.id !== 'ask-ai'));
       } else if (mediaSubTab === 'images') {
-        displayFeatures = imageTools;
+        displayFeatures = filterTools(imageTools);
       } else if (mediaSubTab === 'video') {
-        displayFeatures = videoTools;
+        displayFeatures = filterTools(videoTools);
       } else if (mediaSubTab === 'audio') {
-        displayFeatures = []; // Let the empty state handle the message, or move message here
+        displayFeatures = [];
       }
     }
 
@@ -615,12 +641,6 @@ export default function AskAIPage() {
       <div
         key={feature.id}
         onClick={() => {
-          // Check subscription before allowing access
-          if (!hasActiveSubscription) {
-            showError("تنبيه", "تحتاج إلى اشتراك نشط للوصول إلى أدوات الذكاء الاصطناعي");
-            return;
-          }
-
           if (currentTab === 'all' || (currentTab === 'media' && mediaSubTab === 'all')) {
             if (feature.id === 'text-to-image') {
               setCurrentTab('media');
@@ -746,7 +766,35 @@ export default function AskAIPage() {
       currentTab === 'ask-ai' ? "h-[calc(100vh-4rem)] overflow-hidden" : "min-h-[calc(100vh-4rem)]"
     )}>
       {/* Conditionally show Tab Navigation */}
-      {currentTab !== 'ask-ai' && <div className="shrink-0">{renderTabs()}</div>}
+      {currentTab !== 'ask-ai' && (
+        <div className="shrink-0 flex items-center justify-between px-4">
+          <div className="flex-1 shrink-0">{renderTabs()}</div>
+          {stats ? (
+            <div className="hidden md:flex items-center gap-4 bg-purple-600/10 border border-purple-500/30 px-6 py-2 rounded-[20px] backdrop-blur-md">
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">رصيد الكريديت</span>
+                <span className="text-sm font-black text-purple-400">
+                  {stats.isUnlimited ? 'غير محدود' : `${stats.remainingCredits.toLocaleString()} كريديت`}
+                </span>
+              </div>
+              <div className="p-2 bg-purple-500/20 rounded-xl border border-purple-500/20 animate-pulse">
+                <Zap className="w-4 h-4 text-purple-400 fill-purple-400" />
+              </div>
+            </div>
+          ) : (
+            hasAIPlans && (
+              <Button 
+                variant="none" 
+                className="hidden md:flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-4 rounded-full transition-all"
+                onClick={() => router.push('/ask-ai/plans')}
+              >
+                <Sparkles className="w-5 h-5" />
+                <span className="font-bold">باقات AI التوفيرية</span>
+              </Button>
+            )
+          )}
+        </div>
+      )}
 
       <div className={clsx(
         "flex flex-1",
@@ -913,7 +961,7 @@ export default function AskAIPage() {
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-2">اختر محادثة أو ابدأ محادثة جديدة</h3>
                   <p className="text-primary mb-6">استخدم AI لإنشاء محتوى رائع لوسائل التواصل الاجتماعي</p>
-                  <Button onClick={handleCreateConversation} className="primary-button" disabled={!hasActiveSubscription}>
+                  <Button onClick={handleCreateConversation} className="primary-button" >
                     بدء محادثة جديدة
                   </Button>
                 </div>
@@ -929,7 +977,7 @@ export default function AskAIPage() {
               `}
             >
               <div className="p-3 flex items-center gap-2 shrink-0">
-                  <Button onClick={handleCreateConversation} className="flex-1 primary-button text-xs h-10 px-2" disabled={!hasActiveSubscription}>
+                  <Button onClick={handleCreateConversation} className="flex-1 primary-button text-xs h-10 px-2">
                     <div className="flex items-center gap-2">
                       <Plus className="h-4 w-4 ml-1" />
                     محادثة جديدة
@@ -971,12 +1019,22 @@ export default function AskAIPage() {
                         {stats.isUnlimited ? "غير محدود" : `${stats.remainingCredits.toLocaleString()} / ${stats.totalCredits.toLocaleString()}`}
                       </div>
                       {!stats.isUnlimited && (
-                        <div className="mt-3 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-blue-500 h-full transition-all duration-1000" 
-                            style={{ width: `${(stats.remainingCredits / stats.totalCredits) * 100}%` }}
-                          />
-                        </div>
+                        <>
+                          <div className="mt-3 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-blue-500 h-full transition-all duration-1000" 
+                              style={{ width: `${(stats.remainingCredits / stats.totalCredits) * 100}%` }}
+                            />
+                          </div>
+                          <Button 
+                            variant="none" 
+                            size="sm" 
+                            className="w-full mt-4 text-[10px] text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-xl"
+                            onClick={() => router.push('/ask-ai/plans')}
+                          >
+                            شحن الرصيد
+                          </Button>
+                        </>
                       )}
                     </CardContent>
                   </Card>
@@ -1053,6 +1111,15 @@ export default function AskAIPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Subscription Required Modal */}
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب للمتابعة"
+        description="للاستفادة من جميع أدوات الذكاء الاصطناعي المتقدمة، تحتاج إلى اشتراك نشط. اختر الباقة المناسبة لك وابدأ رحلتك مع الذكاء الاصطناعي!"
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }

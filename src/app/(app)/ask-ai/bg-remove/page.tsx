@@ -18,12 +18,13 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
+import { getAIStats, processAIImage, listPlans, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 
 interface ProcessedImage {
   id: string;
@@ -41,6 +42,8 @@ export default function BackgroundRemovalPage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<ProcessedImage[]>([]);
   const [selectedResult, setSelectedResult] = useState<ProcessedImage | null>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -56,7 +59,10 @@ export default function BackgroundRemovalPage() {
   }, []);
 
   useEffect(() => {
-    if (token) loadStats();
+    if (token) {
+      loadStats();
+      checkAIPlans();
+    }
   }, [token]);
 
   useEffect(() => {
@@ -68,6 +74,16 @@ export default function BackgroundRemovalPage() {
       const response = await getAIStats(token);
       setStats(response.stats);
     } catch (error) { console.error("Failed to load stats:", error); }
+  };
+
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,7 +98,10 @@ export default function BackgroundRemovalPage() {
 
   const handleProcess = async () => {
     if (!previewUrl) return showError("تنبيه", "يرجى اختيار صورة أولاً!");
-    if (!hasActiveSubscription) return showError("تنبيه", "تحتاج إلى اشتراك نشط للإبداع!");
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
 
     setIsProcessing(true);
@@ -271,6 +290,14 @@ export default function BackgroundRemovalPage() {
           )}
         </section>
       </main>
+
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لإزالة الخلفية"
+        description="للاستفادة من تقنية إزالة الخلفية بدقة عالية وعزل العناصر بشكل احترافي مع الحفاظ على التفاصيل الدقيقة، تحتاج إلى اشتراك نشط."
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }

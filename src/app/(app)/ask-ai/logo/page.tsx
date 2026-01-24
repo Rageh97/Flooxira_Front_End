@@ -18,12 +18,13 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, generateAILogo, type AIStats } from "@/lib/api";
+import { getAIStats, generateAILogo, listPlans, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 
 interface GeneratedImage {
   id: string;
@@ -39,6 +40,8 @@ export default function LogoMakerPage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -54,7 +57,10 @@ export default function LogoMakerPage() {
   }, []);
 
   useEffect(() => {
-    if (token) loadStats();
+    if (token) {
+      loadStats();
+      checkAIPlans();
+    }
   }, [token]);
 
   useEffect(() => {
@@ -68,9 +74,22 @@ export default function LogoMakerPage() {
     } catch (error) { console.error("Failed to load stats:", error); }
   };
 
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return showError("تنبيه", "ادخل اسم الشركة أو فكرة الشعار!");
-    if (!hasActiveSubscription) return showError("تنبيه", "تحتاج إلى اشتراك نشط!");
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
     
     setIsGenerating(true);
     try {
@@ -247,6 +266,14 @@ export default function LogoMakerPage() {
            )}
         </section>
       </main>
+
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لتصميم الشعارات"
+        description="للاستفادة من تقنية تصميم الشعارات الاحترافية وإنشاء هوية بصرية مميزة لعلامتك التجارية، تحتاج إلى اشتراك نشط."
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }

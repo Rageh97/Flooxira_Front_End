@@ -67,6 +67,30 @@ const parseLocalizedNumber = (value: string) => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
+const AI_TOOLS_LIST = [
+  { id: 'chat', label: 'الدردشة (AI Chat)', category: 'الدردشة' },
+  { id: 'image_gen', label: 'توليد الصور (Text to Image)', category: 'الصور' },
+  { id: 'image_upscale', label: 'تحسين جودة الصور', category: 'الصور' },
+  { id: 'image_nano', label: 'Nano Banana Pro (توليد سريع)', category: 'الصور' },
+  { id: 'image_logo', label: 'صانع الشعارات', category: 'الصور' },
+  { id: 'image_edit', label: 'تحرير الصور', category: 'الصور' },
+  { id: 'image_product', label: 'نماذج المنتجات (Product Mockups)', category: 'الصور' },
+  { id: 'image_bg_remove', label: 'إزالة خلفية الصور', category: 'الصور' },
+  { id: 'image_avatar', label: 'إنشاء الأفاتار', category: 'الصور' },
+  { id: 'image_restore', label: 'ترميم الصور القديمة', category: 'الصور' },
+  { id: 'image_sketch', label: 'تحويل الرسم لصورة', category: 'الصور' },
+  { id: 'image_colorize', label: 'تلوين الصور', category: 'الصور' },
+  { id: 'image_describe', label: 'تحويل الصورة لنص وصف', category: 'الصور' },
+  { id: 'video_gen', label: 'توليد الفيديو', category: 'الفيديو' },
+  { id: 'video_long', label: 'فيديو طويل (Multi-Scene)', category: 'الفيديو' },
+  { id: 'video_motion', label: 'إضافة حركة للفيديو', category: 'الفيديو' },
+  { id: 'video_ugc', label: 'فيديوهات UGC', category: 'الفيديو' },
+  { id: 'video_effects', label: 'تأثيرات الفيديو', category: 'الفيديو' },
+  { id: 'video_lipsync', label: 'حركة الشفاه (LipSync)', category: 'الفيديو' },
+  { id: 'video_resize', label: 'تغيير أبعاد الفيديو', category: 'الفيديو' },
+  { id: 'video_upscale', label: 'تحسين جودة الفيديو', category: 'الفيديو' },
+];
+
 export default function PlansAdminPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -113,8 +137,10 @@ export default function PlansAdminPage() {
       canUseEventsPlugin: false,
       eventsPerMonth: 0,
       canUseTelegramAI: false,
-      telegramAiCredits: 0
-    }
+      telegramAiCredits: 0,
+      allowedAITools: [] as string[]
+    },
+    type: 'standard' as 'standard' | 'ai'
   });
 
   const [editPlan, setEditPlan] = useState({
@@ -151,8 +177,10 @@ export default function PlansAdminPage() {
       canUseEventsPlugin: false,
       eventsPerMonth: 0,
       canUseTelegramAI: false,
-      telegramAiCredits: 0
-    }
+      telegramAiCredits: 0,
+      allowedAITools: [] as string[]
+    },
+    type: 'standard' as 'standard' | 'ai'
   });
 
   // Read token from localStorage only on the client
@@ -189,6 +217,7 @@ export default function PlansAdminPage() {
         permissions: newPlan.permissions,
         interval: newPlan.interval,
         isActive: newPlan.isActive,
+        type: newPlan.type as any,
       });
 
       setCreateModalOpen(false);
@@ -226,8 +255,10 @@ export default function PlansAdminPage() {
           canUseEventsPlugin: false,
           eventsPerMonth: 0,
           canUseTelegramAI: false,
-          telegramAiCredits: 0
-        }
+          telegramAiCredits: 0,
+          allowedAITools: []
+        },
+        type: 'standard'
       });
       loadPlans();
       showSuccess('تم إنشاء الباقة بنجاح!', 'تم إنشاء الباقة الجديدة بنجاح');
@@ -246,7 +277,8 @@ export default function PlansAdminPage() {
         interval: editPlan.interval,
         isActive: editPlan.isActive,
         paymentLink: editPlan.paymentLink,
-        permissions: editPlan.permissions
+        permissions: editPlan.permissions,
+        type: editPlan.type as any,
       });
 
       setEditModalOpen(false);
@@ -306,8 +338,10 @@ export default function PlansAdminPage() {
         canUseEventsPlugin: (plan.permissions as any)?.canUseEventsPlugin || false,
         eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0,
         canUseTelegramAI: (plan.permissions as any)?.canUseTelegramAI || false,
-        telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0
-      }
+        telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0,
+        allowedAITools: (plan.permissions as any)?.allowedAITools || []
+      },
+      type: plan.type || 'standard'
     });
     setEditModalOpen(true);
   };
@@ -809,7 +843,7 @@ export default function PlansAdminPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="plan-interval">نوع الاشتراك</Label>
+                <Label htmlFor="plan-interval">فترة الاشتراك</Label>
                 <select
                   id="plan-interval"
                   value={newPlan.interval}
@@ -820,16 +854,29 @@ export default function PlansAdminPage() {
                   <option value="yearly">سنوي</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="plan-active"
-                  checked={newPlan.isActive}
-                  onChange={(e) => setNewPlan({ ...newPlan, isActive: e.target.checked })}
-                  className="rounded"
-                />
-                <Label htmlFor="plan-active">الباقة نشطة</Label>
+              <div>
+                <Label htmlFor="plan-type">نوع الباقة</Label>
+                <select
+                  id="plan-type"
+                  value={newPlan.type}
+                  onChange={(e) => setNewPlan({ ...newPlan, type: e.target.value as 'standard' | 'ai' })}
+                  className="w-full mt-1 px-3 py-2 bg-fixed-40 border-primary rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="standard">باقة أساسية (Standard)</option>
+                  <option value="ai">باقة ذكاء اصطناعي (AI)</option>
+                </select>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="plan-active"
+                checked={newPlan.isActive}
+                onChange={(e) => setNewPlan({ ...newPlan, isActive: e.target.checked })}
+                className="rounded"
+              />
+              <Label htmlFor="plan-active">الباقة نشطة</Label>
             </div>
 
             {/* Payment Link */}
@@ -845,6 +892,104 @@ export default function PlansAdminPage() {
               <p className="text-xs text-gray-500 mt-1">
                 إذا تم إدخال رابط، سيتم تحويل المستخدم إليه مباشرة عند النقر على زر الاشتراك.
               </p>
+            </div>
+
+            {/* AI Features */}
+            <div className="p-4 bg-primary/5 rounded-3xl border border-primary/10">
+              <Label className="text-lg font-bold text-primary mb-2 block">ميزات الذكاء الاصطناعي (AI)</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newPlan.permissions.canUseAI}
+                    onChange={(e) => setNewPlan({
+                      ...newPlan,
+                      permissions: { ...newPlan.permissions, canUseAI: e.target.checked }
+                    })}
+                    className="w-5 h-5 rounded border-primary text-primary focus:ring-primary"
+                  />
+                  <span className="font-semibold">تفعيل ميزة AI لهذه الباقة</span>
+                </label>
+                {newPlan.permissions.canUseAI && (
+                  <>
+                    <div className="mt-4">
+                      <Label>كريديت AI الشهرية</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="عدد الكريديت (0 = غير محدود)"
+                        value={newPlan.permissions.aiCredits || ''}
+                        onChange={(e) => setNewPlan({
+                          ...newPlan,
+                          permissions: { ...newPlan.permissions, aiCredits: parseInt(e.target.value) || 0 }
+                        })}
+                        className="mt-2 border-primary/20"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
+                      </p>
+                    </div>
+                    
+                    <div className="mt-4 p-4 bg-gray-900/60 rounded-2xl border border-white/5">
+                        <Label className="text-primary mb-3 block font-bold">الأدوات الذكية المتاحة</Label>
+                        <div className="space-y-4">
+                          {['الدردشة', 'الصور', 'الفيديو'].map(cat => (
+                            <div key={cat} className="space-y-2">
+                              <div className="flex items-center justify-between border-b border-white/5 pb-1">
+                                <span className="text-xs font-bold text-gray-400">{cat}</span>
+                                <Button 
+                                  variant="none" 
+                                  size="sm" 
+                                  type="button"
+                                  className="text-[10px] h-6 text-blue-400 hover:text-blue-300"
+                                  onClick={() => {
+                                    const catTools = AI_TOOLS_LIST.filter(t => t.category === cat).map(t => t.id);
+                                    const current = newPlan.permissions.allowedAITools || [];
+                                    const allIn = catTools.every(id => current.includes(id));
+                                    let next;
+                                    if (allIn) {
+                                      next = current.filter(id => !catTools.includes(id));
+                                    } else {
+                                      next = Array.from(new Set([...current, ...catTools]));
+                                    }
+                                    setNewPlan({
+                                      ...newPlan,
+                                      permissions: { ...newPlan.permissions, allowedAITools: next }
+                                    });
+                                  }}
+                                >
+                                  {AI_TOOLS_LIST.filter(t => t.category === cat).every(t => (newPlan.permissions.allowedAITools || []).includes(t.id)) ? 'إلغاء الكل' : 'تحديد الكل'}
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                {AI_TOOLS_LIST.filter(t => t.category === cat).map(tool => (
+                                  <label key={tool.id} className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-white/10">
+                                    <input
+                                      type="checkbox"
+                                      checked={(newPlan.permissions.allowedAITools || []).includes(tool.id)}
+                                      onChange={(e) => {
+                                        const current = newPlan.permissions.allowedAITools || [];
+                                        const next = e.target.checked 
+                                            ? [...current, tool.id]
+                                            : current.filter(id => id !== tool.id);
+                                        setNewPlan({
+                                          ...newPlan,
+                                          permissions: { ...newPlan.permissions, allowedAITools: next }
+                                        });
+                                      }}
+                                      className="rounded border-gray-600 bg-gray-800 text-primary focus:ring-primary"
+                                    />
+                                    <span className="text-[11px] text-gray-300 leading-tight">{tool.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Platforms */}
@@ -1025,42 +1170,7 @@ export default function PlansAdminPage() {
               </div>
             </div>
 
-            {/* AI Features */}
-            <div>
-              {/* <Label>ميزات الذكاء الاصطناعي (AI)</Label> */}
-              <div className="mt-2">
-                <label className="flex items-center gap-2 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={newPlan.permissions.canUseAI}
-                    onChange={(e) => setNewPlan({
-                      ...newPlan,
-                      permissions: { ...newPlan.permissions, canUseAI: e.target.checked }
-                    })}
-                  />
-                  <span>تفعيل ميزة AI</span>
-                </label>
-                {newPlan.permissions.canUseAI && (
-                  <div>
-                    <Label>كريديت AI الشهرية</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="عدد الكريديت (0 = غير محدود)"
-                      value={newPlan.permissions.aiCredits || ''}
-                      onChange={(e) => setNewPlan({
-                        ...newPlan,
-                        permissions: { ...newPlan.permissions, aiCredits: parseInt(e.target.value) || 0 }
-                      })}
-                      className="mt-2"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+
 
             {/* Live Chat & Tickets */}
             <div>
@@ -1387,9 +1497,103 @@ export default function PlansAdminPage() {
                 إذا تم إدخال رابط، سيتم تحويل المستخدم إليه مباشرة عند النقر على زر الاشتراك.
               </p>
             </div>
+            {/* AI Features */}
+            <div className="p-4 bg-primary/5 rounded-3xl border border-primary/10">
+              <Label className="text-lg font-bold text-primary mb-2 block">ميزات الذكاء الاصطناعي (AI)</Label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editPlan.permissions.canUseAI}
+                    onChange={(e) => setEditPlan({
+                      ...editPlan,
+                      permissions: { ...editPlan.permissions, canUseAI: e.target.checked }
+                    })}
+                    className="w-5 h-5 rounded border-primary text-primary focus:ring-primary"
+                  />
+                  <span className="font-semibold">تفعيل ميزة AI لهذه الباقة</span>
+                </label>
+                {editPlan.permissions.canUseAI && (
+                  <>
+                    <div className="mt-4">
+                      <Label>كريديت AI الشهرية</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="عدد الكريديت (0 = غير محدود)"
+                        value={editPlan.permissions.aiCredits || ''}
+                        onChange={(e) => setEditPlan({
+                          ...editPlan,
+                          permissions: { ...editPlan.permissions, aiCredits: parseInt(e.target.value) || 0 }
+                        })}
+                        className="mt-2 border-primary/20"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
+                      </p>
+                    </div>
 
-
-            {/* Platforms */}
+                    <div className="mt-4 p-4 bg-gray-900/60 rounded-2xl border border-white/5">
+                      <Label className="text-primary mb-3 block font-bold">الأدوات الذكية المتاحة</Label>
+                      <div className="space-y-4">
+                        {['الدردشة', 'الصور', 'الفيديو'].map(cat => (
+                          <div key={cat} className="space-y-2">
+                            <div className="flex items-center justify-between border-b border-white/5 pb-1">
+                              <span className="text-xs font-bold text-gray-400">{cat}</span>
+                              <Button 
+                                variant="none" 
+                                size="sm" 
+                                type="button"
+                                className="text-[10px] h-6 text-blue-400 hover:text-blue-300"
+                                onClick={() => {
+                                  const catTools = AI_TOOLS_LIST.filter(t => t.category === cat).map(t => t.id);
+                                  const current = editPlan.permissions.allowedAITools || [];
+                                  const allIn = catTools.every(id => current.includes(id));
+                                  let next;
+                                  if (allIn) {
+                                    next = current.filter(id => !catTools.includes(id));
+                                  } else {
+                                    next = Array.from(new Set([...current, ...catTools]));
+                                  }
+                                  setEditPlan({
+                                    ...editPlan,
+                                    permissions: { ...editPlan.permissions, allowedAITools: next }
+                                  });
+                                }}
+                              >
+                                {AI_TOOLS_LIST.filter(t => t.category === cat).every(t => (editPlan.permissions.allowedAITools || []).includes(t.id)) ? 'إلغاء الكل' : 'تحديد الكل'}
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              {AI_TOOLS_LIST.filter(t => t.category === cat).map(tool => (
+                                <label key={tool.id} className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-white/10">
+                                  <input
+                                    type="checkbox"
+                                    checked={(editPlan.permissions.allowedAITools || []).includes(tool.id)}
+                                    onChange={(e) => {
+                                      const current = editPlan.permissions.allowedAITools || [];
+                                      const next = e.target.checked 
+                                          ? [...current, tool.id]
+                                          : current.filter(id => id !== tool.id);
+                                      setEditPlan({
+                                        ...editPlan,
+                                        permissions: { ...editPlan.permissions, allowedAITools: next }
+                                      });
+                                    }}
+                                    className="rounded border-gray-600 bg-gray-800 text-primary focus:ring-primary"
+                                  />
+                                  <span className="text-[11px] text-gray-300 leading-tight">{tool.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
             <div>
               <Label>المنصات المسموحة</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
@@ -1566,42 +1770,7 @@ export default function PlansAdminPage() {
               </div>
             </div>
 
-            {/* AI Features */}
-            <div>
-              <Label>ميزات الذكاء الاصطناعي (AI)</Label>
-              <div className="mt-2">
-                <label className="flex items-center gap-2 mb-2">
-                  <input
-                    type="checkbox"
-                    checked={editPlan.permissions.canUseAI}
-                    onChange={(e) => setEditPlan({
-                      ...editPlan,
-                      permissions: { ...editPlan.permissions, canUseAI: e.target.checked }
-                    })}
-                  />
-                  <span>تفعيل ميزة AI</span>
-                </label>
-                {editPlan.permissions.canUseAI && (
-                  <div>
-                    <Label>كريديت AI الشهرية</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="عدد الكريديت (0 = غير محدود)"
-                      value={editPlan.permissions.aiCredits || ''}
-                      onChange={(e) => setEditPlan({
-                        ...editPlan,
-                        permissions: { ...editPlan.permissions, aiCredits: parseInt(e.target.value) || 0 }
-                      })}
-                      className="mt-2"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      عدد الكريديت المسموح شهرياً لاستخدام AI. اترك 0 لغير محدود.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+
 
             {/* Live Chat & Tickets */}
             <div>

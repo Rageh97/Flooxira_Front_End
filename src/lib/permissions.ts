@@ -24,6 +24,7 @@ interface UserPermissions {
   canUseTelegramAI?: boolean;
   canUseEventsPlugin?: boolean;
   eventsPerMonth?: number;
+  allowedAITools?: string[];
 }
 
 interface Subscription {
@@ -267,6 +268,14 @@ export function usePermissions() {
     return isActive;
   }, [subscription, permissions]);
 
+  const isAIToolAllowed = (toolId: string): boolean => {
+    if (!permissions) return false;
+    // If user has canUseAI but allowedAITools is empty/undefined, we might want to default to all or none.
+    // Let's assume if it's empty, they have no specific tools unless we want to grant all.
+    // Given the request, we should check the array.
+    return permissions.allowedAITools?.includes(toolId) || false;
+  };
+
   return {
     permissions,
     subscription,
@@ -293,6 +302,7 @@ export function usePermissions() {
     canUseEventsPlugin,
     getEventsPerMonthLimit,
     hasActiveSubscription,
+    isAIToolAllowed,
     reloadPermissions: loadPermissions
   };
 }

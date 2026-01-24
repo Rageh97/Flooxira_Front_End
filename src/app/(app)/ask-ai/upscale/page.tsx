@@ -19,12 +19,13 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
+import { getAIStats, processAIImage, listPlans, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 
 interface ProcessedImage {
   id: string;
@@ -42,6 +43,8 @@ export default function UpscalePage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<ProcessedImage[]>([]);
   const [selectedResult, setSelectedResult] = useState<ProcessedImage | null>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -57,7 +60,10 @@ export default function UpscalePage() {
   }, []);
 
   useEffect(() => {
-    if (token) loadStats();
+    if (token) {
+      loadStats();
+      checkAIPlans();
+    }
   }, [token]);
 
   useEffect(() => {
@@ -69,6 +75,16 @@ export default function UpscalePage() {
       const response = await getAIStats(token);
       setStats(response.stats);
     } catch (error) { console.error("Failed to load stats:", error); }
+  };
+
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +99,10 @@ export default function UpscalePage() {
 
   const handleProcess = async () => {
     if (!previewUrl) return showError("تنبيه", "يرجى اختيار صورة أولاً!");
-    if (!hasActiveSubscription) return showError("تنبيه", "تحتاج إلى اشتراك نشط للإبداع!");
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
 
     setIsProcessing(true);
@@ -289,6 +308,15 @@ export default function UpscalePage() {
           )}
         </section>
       </main>
+
+      {/* Subscription Required Modal */}
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لتحسين الصور"
+        description="للاستفادة من تقنية تحسين الصور بالذكاء الاصطناعي، تحتاج إلى اشتراك نشط. احصل على صور عالية الجودة بدقة مذهلة!"
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }

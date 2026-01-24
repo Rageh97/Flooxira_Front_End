@@ -18,19 +18,34 @@ import {
   ArrowRight,
   Play,
   Film,
-  X
+  X,
+  Volume2,
+  VolumeX,
+  Mic,
+  Languages,
+  ArrowUpCircle,
+  Sparkle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, generateAIVideo, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  generateAIVideo, 
+  addVideoAudio,
+  extendVideo,
+  enhanceVideo,
+  listPlans,
+  type AIStats 
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import AILoader from "@/components/AILoader";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 
 // --- Configuration Constants ---
 const ASPECT_RATIOS = [
@@ -62,10 +77,17 @@ export default function TextToVideoPage() {
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("16:9");
   const [selectedStyle, setSelectedStyle] = useState("none");
+  const [includeAudio, setIncludeAudio] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedVideo[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<GeneratedVideo | null>(null);
+  const [audioText, setAudioText] = useState("");
+  const [selectedVoice, setSelectedVoice] = useState("ar-XA-Standard-A");
+  const [selectedLanguage, setSelectedLanguage] = useState("ar");
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -81,7 +103,10 @@ export default function TextToVideoPage() {
   }, []);
 
   useEffect(() => {
-    if (token) loadStats();
+    if (token) {
+      loadStats();
+      checkAIPlans();
+    }
   }, [token]);
 
   useEffect(() => {
@@ -95,9 +120,22 @@ export default function TextToVideoPage() {
     } catch (error) { console.error("Failed to load stats:", error); }
   };
 
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return showError("تنبيه", "أطلق العنان لخيالك واكتب وصفاً للفيديو!");
-    if (!hasActiveSubscription) return showError("تنبيه", "تحتاج إلى اشتراك نشط للإبداع!");
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 50) return showError("تنبيه", "رصيدك غير كافٍ (تحتاج 50 كريديت)");
 
     setIsGenerating(true);
@@ -108,6 +146,7 @@ export default function TextToVideoPage() {
       const response = await generateAIVideo(token, {
         prompt: finalPrompt,
         aspectRatio: selectedRatio,
+        includeAudio: includeAudio,
       });
 
       const newVideo: GeneratedVideo = {
@@ -156,6 +195,106 @@ export default function TextToVideoPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
+  };
+
+  // إعادة توليد الفيديو بنفس الإعدادات
+  const handleRegenerate = async () => {
+    if (!selectedVideo) return;
+    setPrompt(selectedVideo.prompt);
+    setSelectedRatio(selectedVideo.aspectRatio);
+    setSelectedStyle(selectedVideo.style);
+    await handleGenerate();
+  };
+
+  // إضافة صوت للفيديو - Text to Speech
+  const handleAddAudio = async () => {
+    if (!selectedVideo || !audioText.trim()) {
+      return showError("تنبيه", "يرجى كتابة النص الصوتي");
+    }
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 30) {
+      return showError("تنبيه", "رصيدك غير كافٍ (تحتاج 30 كريديت)");
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await addVideoAudio(token, {
+        videoUrl: selectedVideo.url,
+        audioText: audioText.trim(),
+        voice: selectedVoice,
+        language: selectedLanguage,
+      });
+
+      const videoWithAudio: GeneratedVideo = {
+        id: Date.now().toString(),
+        url: response.videoUrl,
+        prompt: `${selectedVideo.prompt} (مع صوت)`,
+        timestamp: new Date().toISOString(),
+        aspectRatio: selectedVideo.aspectRatio,
+        style: selectedVideo.style,
+      };
+
+      setHistory([videoWithAudio, ...history]);
+      setSelectedVideo(videoWithAudio);
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: response.remainingCredits,
+        usedCredits: prev.usedCredits + response.creditsUsed
+      } : null);
+      
+      setAudioText("");
+      showSuccess("تم محاكاة إضافة الصوت بنجاح! (ملاحظة: هذه عملية تجريبية)");
+    } catch (error: any) {
+      showError("خطأ", error.message || "حدث خطأ أثناء إضافة الصوت");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // تحسين جودة الفيديو
+  const handleEnhanceVideo = async (enhancement: 'stabilize' | 'denoise' | 'upscale' | 'colorgrade') => {
+    if (!selectedVideo) return;
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 40) {
+      return showError("تنبيه", "رصيدك غير كافٍ (تحتاج 40 كريديت)");
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await enhanceVideo(token, {
+        videoUrl: selectedVideo.url,
+        enhancement,
+      });
+
+      const enhancedVideo: GeneratedVideo = {
+        id: Date.now().toString(),
+        url: response.videoUrl,
+        prompt: `${selectedVideo.prompt} (محسّن)`,
+        timestamp: new Date().toISOString(),
+        aspectRatio: selectedVideo.aspectRatio,
+        style: selectedVideo.style,
+      };
+
+      setHistory([enhancedVideo, ...history]);
+      setSelectedVideo(enhancedVideo);
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: response.remainingCredits,
+        usedCredits: prev.usedCredits + response.creditsUsed
+      } : null);
+      
+      showSuccess("تم محاكاة تحسين الفيديو بنجاح! (ملاحظة: هذه عملية تجريبية)");
+    } catch (error: any) {
+      showError("خطأ", error.message || "حدث خطأ أثناء التحسين");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (permissionsLoading) return (
@@ -309,16 +448,173 @@ export default function TextToVideoPage() {
               </div>
             </div>
 
+            {/* Sound Toggle Card */}
+            <div className=" relative bg-[#0a0c10] rounded-3xl border border-text-primary/20 p-1 transition-all duration-500 ">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="relative p-5 space-y-4">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                   <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+                        <Volume2 size={18} />
+                      </div>
+                      <span className="font-bold text-sm text-gray-200">إعدادات الصوت</span>
+                   </div>
+                   <div 
+                    onClick={() => setIncludeAudio(!includeAudio)}
+                    className={clsx(
+                      "w-12 h-6 rounded-full transition-all duration-500 cursor-pointer p-1 relative",
+                      includeAudio ? "bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "bg-white/10"
+                    )}
+                   >
+                     <motion.div 
+                       animate={{ x: includeAudio ? 24 : 0 }}
+                       transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                       className="w-4 h-4 bg-white rounded-full shadow-lg flex items-center justify-center overflow-hidden"
+                     >
+                        {includeAudio ? <Volume2 size={8} className="text-blue-600" /> : <VolumeX size={8} className="text-gray-400" />}
+                     </motion.div>
+                   </div>
+                </div>
+                
+                <div className="flex flex-col gap-1">
+                  <p className="text-[10px] text-gray-400 leading-relaxed px-1">
+                    {includeAudio 
+                      ? "سيقوم الذكاء الاصطناعي بتوليد مؤثرات صوتية وموسيقى خلفية متوافقة مع الفيديو."
+                      : "سيتم توليد فيديو صامت بدون صوت."}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Editing Tools */}
+            {selectedVideo && (
+              <div className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 rounded-3xl p-6 border border-white/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Wand2 size={80} />
+                </div>
+                <h3 className="text-sm font-bold text-white mb-4 relative z-10 flex items-center gap-2">
+                  <Wand2 size={16} className="text-indigo-400" />
+                  أدوات التعديل المتقدمة
+                </h3>
+                
+                <div className="relative z-10 space-y-4">
+                  {/* Add Audio Section */}
+                  <div className="space-y-3 p-3 bg-gradient-to-r from-purple-500/10 to-indigo-500/10 rounded-xl border border-purple-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Volume2 size={14} className="text-purple-400" />
+                      <span className="text-xs font-bold text-purple-200">إضافة صوت (TTS)</span>
+                      <span className="text-[8px] text-gray-500 mr-auto">30 كريديت</span>
+                    </div>
+                    
+                    <textarea
+                      value={audioText}
+                      onChange={(e) => setAudioText(e.target.value)}
+                      placeholder="اكتب النص الذي تريد تحويله إلى صوت..."
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50 resize-none"
+                      rows={3}
+                    />
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={selectedLanguage}
+                        onChange={(e) => setSelectedLanguage(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500/50"
+                      >
+                        <option value="ar">العربية</option>
+                        <option value="en">English</option>
+                      </select>
+                      
+                      <select
+                        value={selectedVoice}
+                        onChange={(e) => setSelectedVoice(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-purple-500/50"
+                      >
+                        <option value="ar-XA-Standard-A">صوت رجالي</option>
+                        <option value="ar-XA-Standard-B">صوت نسائي</option>
+                      </select>
+                    </div>
+                    
+                    <Button
+                      onClick={handleAddAudio}
+                      disabled={isProcessing || isGenerating || !audioText.trim()}
+                      className="w-full rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-9"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin mr-2" />
+                          جاري المعالجة...
+                        </>
+                      ) : (
+                        <>
+                          <Mic size={14} className="mr-2" />
+                          إضافة الصوت
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Enhancement Options */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkle size={14} className="text-amber-400" />
+                      <span className="text-xs font-bold text-amber-200">تحسينات الفيديو</span>
+                      <span className="text-[8px] text-gray-500 mr-auto">40 كريديت</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => handleEnhanceVideo('upscale')}
+                        disabled={isProcessing || isGenerating}
+                        className="rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border border-emerald-500/20 text-emerald-300 h-auto py-3 flex flex-col items-center gap-1"
+                      >
+                        <ArrowUpCircle size={16} />
+                        <span className="text-xs">رفع الجودة</span>
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleEnhanceVideo('stabilize')}
+                        disabled={isProcessing || isGenerating}
+                        className="rounded-xl bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border border-blue-500/20 text-blue-300 h-auto py-3 flex flex-col items-center gap-1"
+                      >
+                        <Film size={16} />
+                        <span className="text-xs">تثبيت الصورة</span>
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleEnhanceVideo('denoise')}
+                        disabled={isProcessing || isGenerating}
+                        className="rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 hover:from-violet-500/20 hover:to-purple-500/20 border border-violet-500/20 text-violet-300 h-auto py-3 flex flex-col items-center gap-1"
+                      >
+                        <Sparkles size={16} />
+                        <span className="text-xs">إزالة التشويش</span>
+                      </Button>
+                      
+                      <Button
+                        onClick={() => handleEnhanceVideo('colorgrade')}
+                        disabled={isProcessing || isGenerating}
+                        className="rounded-xl bg-gradient-to-r from-pink-500/10 to-rose-500/10 hover:from-pink-500/20 hover:to-rose-500/20 border border-pink-500/20 text-pink-300 h-auto py-3 flex flex-col items-center gap-1"
+                      >
+                        <Palette size={16} />
+                        <span className="text-xs">تحسين الألوان</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Inspiration Tip */}
-            {/* <div className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 rounded-3xl p-6 border border-white/5 relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-10">
+            {/* {!selectedVideo && (
+              <div className="bg-gradient-to-r from-purple-900/20 to-indigo-900/20 rounded-3xl p-6 border border-white/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10">
                   <Film size={80} />
-               </div>
-               <h3 className="text-sm font-bold text-white mb-2 relative z-10">نصيحة للمخرج</h3>
-               <p className="text-xs text-gray-400 leading-relaxed relative z-10">
-                 صِف حركة الكاميرا بوضوح مثل "Slow zoom in" أو "Dolly shot" أو "Cinematic drone view" للحصول على نتائج سينمائية مذهلة.
-               </p>
-            </div> */}
+                </div>
+                <h3 className="text-sm font-bold text-white mb-2 relative z-10">نصيحة للمخرج</h3>
+                <p className="text-xs text-gray-400 leading-relaxed relative z-10">
+                  صِف حركة الكاميرا بوضوح مثل "Slow zoom in" أو "Dolly shot" أو "Cinematic drone view" للحصول على نتائج سينمائية مذهلة.
+                </p>
+              </div>
+            )} */}
           </div>
         </aside>
 
@@ -333,22 +629,28 @@ export default function TextToVideoPage() {
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="وصف مشهد الفيديو... مثلاً: شلالات غائمة بين جبال خضراء مع حركة كاميرا ناعمة بأسلوب سينمائي"
+                  placeholder="وصف مشهد الفيديو..."
                   className="w-full min-h-[140px] bg-transparent text-white p-6 pb-20 text-lg md:text-xl font-medium placeholder:text-gray-600 outline-none resize-none scrollbar-hide rounded-[28px]"
                   style={{ lineHeight: '1.6' }}
                 />
                 
-                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+               
+              </div>
+              <BorderBeam duration={8} size={150} />
+            </div>
+            
+          </div>
+           <div className=" flex items-center justify-between">
                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
+                      {/* <Button 
+                        variant="none" 
                         size="sm" 
                         onClick={() => setPrompt("")}
                         className="text-gray-500 hover:text-white hover:bg-white/10 rounded-full h-10 px-4 transition-all"
                       >
                          <RefreshCw size={14} className="ml-2" />
                          مسح
-                      </Button>
+                      </Button> */}
                    </div>
                    
                    <GradientButton
@@ -364,10 +666,7 @@ export default function TextToVideoPage() {
                     توليد الفيديو
                   </GradientButton>
                 </div>
-              </div>
-              <BorderBeam duration={8} size={150} />
-            </div>
-          </div>
+          
 
           {/* Main Display Area */}
           <div className="flex-1 min-h-[500px] flex flex-col">
@@ -407,34 +706,35 @@ export default function TextToVideoPage() {
                       </div>
 
                       {/* Floating Actions Bar */}
-                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 p-2 bg-black/60 backdrop-blur-2xl border border-text-primary/20 rounded-full shadow-2xl translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-20">
-                         <Button 
-                           onClick={() => downloadVideo(selectedVideo.url, `ai-vid-${selectedVideo.id}.mp4`)}
-                           className="rounded-full bg-black text-black  h-10 px-5 font-bold"
-                         >
-                            <Download size={16} className="mr-2" />
-                            تحميل الفيديو
-                         </Button>
-                         <div className="w-px h-6 bg-white/20" />
-                         {/* <Button 
-                           variant="ghost" 
-                           size="icon"
-                           className="rounded-full hover:bg-white/10 text-white"
-                           onClick={() => {
-                              navigator.clipboard.writeText(selectedVideo.url);
-                              showSuccess('تم نسخ الرابط');
-                           }}
-                         >
-                            <Share2 size={16} />
-                         </Button> */}
-                         <Button 
-                           variant="ghost" 
-                           size="icon"
-                           className="rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-400"
-                           onClick={(e) => deleteFromHistory(selectedVideo.id, e)}
-                         >
-                            <Trash2 size={16} />
-                         </Button>
+                      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 translate-y-20 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 z-20">
+                         {/* Main Actions */}
+                         <div className="flex items-center gap-3 p-2 bg-black/60 backdrop-blur-2xl border border-text-primary/20 rounded-full shadow-2xl">
+                            <Button 
+                              onClick={() => downloadVideo(selectedVideo.url, `ai-vid-${selectedVideo.id}.mp4`)}
+                              className="rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white h-10 px-5 font-bold"
+                            >
+                               <Download size={16} className="mr-2" />
+                               تحميل الفيديو
+                            </Button>
+                            <div className="w-px h-6 bg-white/20" />
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="rounded-full hover:bg-purple-500/20 text-purple-400 hover:text-purple-300"
+                              onClick={handleRegenerate}
+                              disabled={isGenerating || isProcessing}
+                            >
+                               <RefreshCw size={16} />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="rounded-full hover:bg-red-500/20 text-red-400 hover:text-red-400"
+                              onClick={(e) => deleteFromHistory(selectedVideo.id, e)}
+                            >
+                               <Trash2 size={16} />
+                            </Button>
+                         </div>
                       </div>
                    </motion.div>
                 ) : isGenerating ? (
@@ -465,7 +765,7 @@ export default function TextToVideoPage() {
                 <div className="flex items-center justify-between px-2">
                    <h4 className="text-lg font-bold flex items-center gap-2 text-white">
                       <History size={18} className="text-purple-400" />
-                      روائعك السابقة
+                      فيديوهات سابقة
                    </h4>
                    <Button variant="ghost" size="sm" onClick={() => setHistory([])} className="text-xs text-red-500/50 hover:text-red-400 hover:bg-red-500/10 h-8 rounded-full">
                       مسح الكل
@@ -498,6 +798,15 @@ export default function TextToVideoPage() {
           )}
         </section>
       </main>
+
+      {/* Subscription Required Modal */}
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لتوليد الفيديوهات"
+        description="للاستفادة من تقنيات توليد وتحرير الفيديوهات بالذكاء الاصطناعي، تحتاج إلى اشتراك نشط. أنشئ فيديوهات سينمائية مذهلة من النصوص!"
+        hasAIPlans={hasAIPlans}
+      />
       
       <style jsx global>{`
         .animate-spin-slow { animation: spin 8s linear infinite; }

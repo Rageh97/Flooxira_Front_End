@@ -38,7 +38,7 @@ export default function PlansPage() {
     if (!token) return;
     
     setLoading(true);
-    listPlans(token)
+    listPlans(token, 'standard')
       .then((res) => setPlans(res.plans))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

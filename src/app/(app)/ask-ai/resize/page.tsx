@@ -15,6 +15,8 @@ import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import { listPlans } from "@/lib/api";
 
 const RATIOS = [
   { id: "9:16", label: "TikTok / Reels (9:16)", value: "9:16" },
@@ -31,6 +33,8 @@ export default function ResizePage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -43,7 +47,7 @@ export default function ResizePage() {
     }
   }, []);
 
-  useEffect(() => { if (token) loadStats(); }, [token]);
+  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
   useEffect(() => { localStorage.setItem("ai_resize_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
@@ -51,7 +55,22 @@ export default function ResizePage() {
     setStats(res.stats);
   };
 
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
+  };
+
   const handleProcess = async () => {
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    
     if (!previewUrl) return showError("تنبيه", "ارفع فيديو أولاً!");
     setIsProcessing(true);
     try {
@@ -147,6 +166,15 @@ export default function ResizePage() {
            </div>
         </section>
       </main>
+
+      {/* Subscription Required Modal */}
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لتغيير أبعاد الفيديو"
+        description="للاستفادة من تقنية تغيير مقاسات الفيديو للمنصات المختلفة وتحسين المحتوى لجميع وسائل التواصل، تحتاج إلى اشتراك نشط."
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }

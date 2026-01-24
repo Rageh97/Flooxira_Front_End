@@ -16,6 +16,8 @@ import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import { listPlans } from "@/lib/api";
 
 const AVATAR_STYLES = [
   { id: "3d", label: "3D ستايل", prompt: "3D stylized character, Pixar style, highly detailed render, vibrant colors" },
@@ -32,6 +34,8 @@ export default function AvatarPage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -44,7 +48,12 @@ export default function AvatarPage() {
     }
   }, []);
 
-  useEffect(() => { if (token) loadStats(); }, [token]);
+  useEffect(() => { 
+    if (token) {
+      loadStats();
+      checkAIPlans();
+    }
+  }, [token]);
   useEffect(() => { localStorage.setItem("ai_avatar_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
@@ -52,7 +61,22 @@ export default function AvatarPage() {
     setStats(res.stats);
   };
 
+  const checkAIPlans = async () => {
+    try {
+      const response = await listPlans(token, 'ai');
+      setHasAIPlans(response.plans && response.plans.length > 0);
+    } catch (error: any) {
+      console.error("Failed to check AI plans:", error);
+      setHasAIPlans(false);
+    }
+  };
+
   const handleProcess = async () => {
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    
     if (!previewUrl) return showError("تنبيه", "ارفع صورة واضحة لوجهك!");
     setIsProcessing(true);
     try {
@@ -143,6 +167,15 @@ export default function AvatarPage() {
            )}
         </section>
       </main>
+
+      {/* Subscription Required Modal */}
+      <SubscriptionRequiredModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        title="اشتراك مطلوب لإنشاء الأفاتار"
+        description="للاستفادة من تقنية إنشاء الأفاتار الشخصي بالذكاء الاصطناعي وتحويل صورتك إلى شخصيات رقمية مذهلة بأساليب فنية متنوعة، تحتاج إلى اشتراك نشط."
+        hasAIPlans={hasAIPlans}
+      />
     </div>
   );
 }
