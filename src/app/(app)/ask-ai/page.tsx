@@ -46,6 +46,7 @@ import {
   Maximize,
   FileVideo,
   Film,
+  Search,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useToast } from "@/components/ui/toast-provider";
@@ -71,6 +72,7 @@ import MarkdownRenderer from "@/components/MarkdownRenderer";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 
 import { useRouter } from "next/navigation";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 export default function AskAIPage() {
   const router = useRouter();
@@ -93,6 +95,8 @@ export default function AskAIPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [toolSearchQuery, setToolSearchQuery] = useState("");
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   
@@ -402,7 +406,6 @@ export default function AskAIPage() {
   };
 
   const renderTabs = () => (
-    <div className="flex justify-center mb-10 mt-4">
       <div className="bg-fixed-40 backdrop-blur-lg inner-shadow rounded-[30px] nav-shine-effect border border-white/5">
         <div className="flex justify-around items-center h-16 px-4 gap-2">
           {[
@@ -420,7 +423,7 @@ export default function AskAIPage() {
                   if (tab.id === 'media') setMediaSubTab('all');
                 }}
                 className={clsx(
-                  "relative flex flex-col items-center justify-center gap-1 min-w-[200px] h-full transition-all duration-500",
+                  "relative flex flex-col items-center justify-center gap-1 min-w-[200px] h-full transition-all duration-500 shrink-0 whitespace-nowrap",
                   isActive ? "text-primary scale-110" : "text-gray-400 hover:text-white"
                 )}
               >
@@ -442,7 +445,6 @@ export default function AskAIPage() {
           })}
         </div>
       </div>
-    </div>
   );
 
   const renderInputArea = (isHome: boolean = false) => (
@@ -621,8 +623,20 @@ export default function AskAIPage() {
       { id: 'vupscale', permId: 'video_upscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', icon: FileVideo, path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'active' },
     ];
 
-    // Filter by allowed tools
-    const filterTools = (tools: any[]) => tools;
+    // Filter by allowed tools and search query
+    const filterTools = (tools: any[]) => {
+      let filtered = tools;
+      
+      if (toolSearchQuery.trim()) {
+        const query = toolSearchQuery.toLowerCase();
+        filtered = filtered.filter(t => 
+          t.title.toLowerCase().includes(query) || 
+          t.desc.toLowerCase().includes(query)
+        );
+      }
+      
+      return filtered;
+    };
 
     let displayFeatures = filterTools(features);
     if (currentTab === 'media') {
@@ -723,12 +737,12 @@ export default function AskAIPage() {
           </div>
         ) : (
           <div className="w-full flex flex-col gap-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 px-4 w-full mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6  w-full mx-auto">
               {displayFeatures.map((feature) => renderFeatureCard(feature))}
             </div>
 
             {(currentTab === 'all' || (currentTab === 'media' && mediaSubTab === 'all')) && (
-              <div className="flex flex-col gap-8 px-4 mb-20">
+              <div className="flex flex-col gap-8  mb-20">
                 <div className="flex items-center gap-4">
                   <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-text-primary/50 to-transparent" />
                   <h2 className="text-2xl font-bold text-white whitespace-nowrap px-4">
@@ -767,33 +781,52 @@ export default function AskAIPage() {
     )}>
       {/* Conditionally show Tab Navigation */}
       {currentTab !== 'ask-ai' && (
-        <div className="shrink-0 flex items-center justify-between px-4">
-          <div className="flex-1 shrink-0">{renderTabs()}</div>
-          {stats ? (
-            <div className="hidden md:flex items-center gap-4 bg-purple-600/10 border border-purple-500/30 px-6 py-2 rounded-[20px] backdrop-blur-md">
-              <div className="flex flex-col items-start leading-tight">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">رصيد الكريديت</span>
-                <span className="text-sm font-black text-purple-400">
-                  {stats.isUnlimited ? 'غير محدود' : `${stats.remainingCredits.toLocaleString()} كريديت`}
-                </span>
-              </div>
-              <div className="p-2 bg-purple-500/20 rounded-xl border border-purple-500/20 animate-pulse">
-                <Zap className="w-4 h-4 text-purple-400 fill-purple-400" />
-              </div>
+        <div className="shrink-0 flex items-center justify-between gap-4  mt-6 mb-8">
+          
+          <div className="w-96 hidden xl:block shrink-0 ">
+            <div className="relative rounded-[20px] overflow-hidden">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+              <input 
+                value={toolSearchQuery}
+                onChange={(e) => setToolSearchQuery(e.target.value)}
+                placeholder="ابحث عن أداة..."
+                className="bg-[#1a1c1e]/50 w-full py-4 border-white/10 text-right pr-9 h-11 rounded-[20px] text-sm focus-visible:ring-blue-500 text-white placeholder:text-gray-300 shadow-xl shadow-black/5"
+              /> 
+            <BorderBeam  duration={4} delay={9} />
             </div>
-          ) : (
-            hasAIPlans && (
-              <Button 
-                variant="none" 
-                className="hidden md:flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-4 rounded-full transition-all"
-                onClick={() => router.push('/ask-ai/plans')}
-              >
-                <Sparkles className="w-5 h-5" />
-                <span className="font-bold">باقات AI التوفيرية</span>
-              </Button>
-            )
-          )}
+          </div>
+
+          <div className="flex-1 flex justify-center shrink-0">{renderTabs()}</div>
+          
+          <div className="flex items-center gap-4 shrink-0 justify-end">
+            {stats ? (
+              <div className="hidden md:flex items-center gap-4 bg-purple-600/10 border border-purple-500/30 px-6 py-2 rounded-[50px] backdrop-blur-md whitespace-nowrap">
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">رصيد الكريديت</span>
+                  <span className="text-sm font-black text-purple-400">
+                    {stats.isUnlimited ? 'غير محدود' : `${stats.remainingCredits.toLocaleString()} كريديت`}
+                  </span>
+                </div>
+                <div className="p-2 bg-purple-500/20 rounded-xl border border-purple-500/20 animate-pulse">
+                  <Zap className="w-4 h-4 text-purple-400 fill-purple-400" />
+                </div>
+                
+              </div>
+            ) : (
+              // hasAIPlans && (
+              <p></p>
+              // )
+            )}
+            <button 
+                  className="hidden md:flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all whitespace-nowrap"
+                  onClick={() => router.push('/ask-ai/plans')}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span className="font-bold">باقات AI التوفيرية</span>
+                </button>
+          </div>
         </div>
+        
       )}
 
       <div className={clsx(
@@ -1005,6 +1038,18 @@ export default function AskAIPage() {
                   )}
               </div>
 
+              <div className="px-3 pb-2">
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="بحث في المحادثات..."
+                    className="bg-white/5 border-white/10 text-right pr-9 h-10 rounded-xl text-xs focus-visible:ring-blue-500/50 text-white placeholder:text-gray-500"
+                  />
+                </div>
+              </div>
+
               {stats && (
                 <div className="px-3 pb-3 shrink-0">
                   <Card className="bg-fixed-40 border-primary rounded-2xl overflow-hidden">
@@ -1049,7 +1094,9 @@ export default function AskAIPage() {
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    {conversations.map((conversation) => (
+                    {conversations
+                      .filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((conversation) => (
                       <div
                         key={conversation.id}
                         className={`group flex items-center gap-2 p-3 rounded-2xl cursor-pointer transition-all duration-300 ${

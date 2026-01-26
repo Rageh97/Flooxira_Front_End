@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Image as ImageIcon, Zap, Move 
+  Loader2, ArrowRight, Image as ImageIcon, Zap, Move, Trash2 
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -57,6 +57,22 @@ export default function MotionPage() {
       console.error("Failed to check AI plans:", error);
       setHasAIPlans(false);
     }
+  };
+
+  const handleDeleteHistory = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("هل أنت متأكد من حذف هذا الفيديو؟")) return;
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    if (selectedResult?.id === id) {
+      setSelectedResult(newHistory.length > 0 ? newHistory[0] : null);
+    }
+  };
+
+  const clearHistory = () => {
+    if (!confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة؟")) return;
+    setHistory([]);
+    setSelectedResult(null);
   };
 
   const handleProcess = async () => {
@@ -152,12 +168,23 @@ export default function MotionPage() {
            
            {history.length > 0 && (
              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><HistoryIcon size={14} /> المعارض السابقة</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><HistoryIcon size={14} /> المعارض السابقة</h4>
+                  <Button variant="ghost" size="sm" onClick={clearHistory} className="text-[10px] h-6 text-red-400/50 hover:text-red-400 hover:bg-red-400/10 rounded-full px-3">مسح الكل</Button>
+                </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
                     {history.map(h => (
                         <div key={h.id} onClick={() => setSelectedResult(h)} className={clsx("aspect-square rounded-xl cursor-pointer border-2 transition-all relative group overflow-hidden", selectedResult?.id === h.id ? "border-blue-500 scale-105" : "border-white/5 opacity-50 hover:opacity-100")}>
                             <video src={h.url} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Zap size={20} /></div>
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <Zap size={20} className="group-hover:scale-110 transition-transform" />
+                            </div>
+                            <button 
+                              onClick={(e) => handleDeleteHistory(h.id, e)}
+                              className="absolute top-1 right-1 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-20"
+                            >
+                              <Trash2 size={12} />
+                            </button>
                         </div>
                     ))}
                 </div>

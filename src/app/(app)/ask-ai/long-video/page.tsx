@@ -283,7 +283,7 @@ export default function LongVideoPage() {
         </div>
       </header>
 
-      <main className="mx-auto p-4 md:p-8 max-w-7xl">
+      <main className="mx-auto p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Left Panel: Controls */}
