@@ -13,7 +13,8 @@ import {
   Palette,
   Cpu,
   Trash2,
-  X
+  X,
+  History
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -146,6 +147,16 @@ export default function NanoPage() {
     setHistory(newHistory);
     localStorage.setItem("ai_nano_history", JSON.stringify(newHistory));
     if (selectedImage?.id === id) setSelectedImage(null);
+    showSuccess("تم الحذف بنجاح!");
+  };
+
+  const clearAllHistory = () => {
+    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال؟")) {
+      setHistory([]);
+      localStorage.removeItem("ai_nano_history");
+      setSelectedImage(null);
+      showSuccess("تم حذف جميع الأعمال!");
+    }
   };
 
   const downloadImage = async (url: string, filename: string) => {
@@ -166,7 +177,7 @@ export default function NanoPage() {
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden selection:bg-yellow-500/30 font-sans">
+    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden selection:bg-yellow-500/30 font-sans" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-950/10 via-[#00050a] to-[#00050a]" />
       
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a]/80">
@@ -174,7 +185,7 @@ export default function NanoPage() {
           <div className="flex items-center gap-6">
             <Link href="/ask-ai">
               <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-                <ArrowRight className="h-5 w-5 text-white" />
+                <ArrowRight className="h-5 w-5 text-white rotate-180" />
               </Button>
             </Link>
             <h1 className="text-2xl font-bold flex items-center gap-3 tracking-tighter">
@@ -245,9 +256,10 @@ export default function NanoPage() {
                    value={prompt}
                    onChange={(e) => setPrompt(e.target.value)}
                    placeholder="وصف سريع..."
-                   className="w-full min-h-[120px] bg-white/5 rounded-2xl p-4 pb-16 text-white placeholder:text-gray-600 outline-none border border-transparent focus:border-yellow-500/30 transition-all resize-none"
+                   className="w-full min-h-[120px] bg-white/5 rounded-2xl p-4 pb-16 text-white placeholder:text-gray-600 outline-none border border-transparent focus:border-yellow-500/30 transition-all resize-none text-right"
+                   dir="rtl"
                  />
-                 <div className="absolute bottom-3 right-3">
+                 <div className="absolute bottom-3 left-3">
                    <GradientButton 
                       onClick={handleGenerate}
                       disabled={!prompt.trim()}
@@ -268,7 +280,7 @@ export default function NanoPage() {
               <h3 className="text-xs font-bold text-yellow-500 mb-2 flex items-center gap-2">
                  <Sparkles size={14} /> وضع التوليد اللحظي
               </h3>
-              <p className="text-[11px] text-gray-400 leading-relaxed">
+              <p className="text-[11px] text-gray-400 leading-relaxed text-right">
                  استخدم Nano للحصول على نتائج سريعة جداً للمسودات والأفكار الأولية. يتميز هذا النموذج بالسرعة الفائقة مع الحفاظ على جودة فنية مقبولة جداً.
               </p>
            </div>
@@ -285,15 +297,13 @@ export default function NanoPage() {
                        className="relative flex-1 rounded-[40px] bg-[#0a0c10] border border-white/10 overflow-hidden flex items-center justify-center p-8 group"
                     >
                        {/* Close Button */}
-                       <div className="absolute top-4 right-4 z-30">
-                          <Button 
-                             variant="ghost" 
-                             size="icon" 
+                       <div className="absolute top-4 left-4 z-30">
+                          <button 
                              onClick={() => setSelectedImage(null)}
-                             className="rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10"
+                             className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
                           >
-                             <X size={18} />
-                          </Button>
+                             <X size={14} />
+                          </button>
                        </div>
 
                        <img src={selectedImage.url} className="max-h-[600px] rounded-2xl shadow-2xl relative z-10" />
@@ -329,20 +339,43 @@ export default function NanoPage() {
            </div>
 
            {history.length > 0 && (
-             <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-2">
-                {history.map(img => (
-                   <motion.div 
-                      layout
-                      key={img.id}
-                      onClick={() => setSelectedImage(img)}
-                      className={clsx(
-                         "aspect-square rounded-xl cursor-pointer overflow-hidden border transition-all",
-                         selectedImage?.id === img.id ? "border-yellow-500 scale-105 z-10" : "border-white/5 hover:border-white/20"
-                      )}
-                   >
-                      <img src={img.url} className="w-full h-full object-cover" />
-                   </motion.div>
-                ))}
+             <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-gray-400 flex items-center gap-2">
+                    <History size={16} className="text-yellow-500" />
+                    الأعمال السابقة ({history.length})
+                  </h4>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={clearAllHistory}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 px-3 text-xs"
+                  >
+                    <Trash2 size={14} className="ml-2" />
+                    حذف الكل
+                  </Button>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-2">
+                   {history.map(img => (
+                      <motion.div 
+                         layout
+                         key={img.id}
+                         onClick={() => setSelectedImage(img)}
+                         className={clsx(
+                            "relative aspect-square rounded-xl cursor-pointer overflow-hidden border transition-all group",
+                            selectedImage?.id === img.id ? "border-yellow-500 scale-105 z-10" : "border-white/5 hover:border-white/20"
+                         )}
+                      >
+                         <img src={img.url} className="w-full h-full object-cover" />
+                         <button
+                           onClick={(e) => deleteFromHistory(img.id, e)}
+                           className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                         >
+                           <Trash2 size={12} />
+                         </button>
+                      </motion.div>
+                   ))}
+                </div>
              </div>
            )}
         </section>

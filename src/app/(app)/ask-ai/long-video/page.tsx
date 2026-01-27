@@ -15,7 +15,10 @@ import {
   ArrowRight,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  History as HistoryIcon,
+  X,
+  Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +28,7 @@ import { usePermissions } from "@/lib/permissions";
 import { getAIStats, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
+import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
@@ -36,11 +40,26 @@ const ASPECT_RATIOS = [
   { id: "1:1", label: "مربع", value: "1:1" },
 ];
 
+const RESOLUTIONS = [
+  { id: "720p", label: "HD (720p)", value: "720p", cost: 50 },
+  { id: "1080p", label: "FHD (1080p)", value: "1080p", cost: 75 },
+  { id: "2k", label: "2K (1440p)", value: "1440p", cost: 150 },
+  { id: "4k", label: "4K (2160p)", value: "2160p", cost: 250 },
+];
+
 const TRANSITIONS = [
   { id: "fade", label: "تلاشي" },
   { id: "dissolve", label: "ذوبان" },
   { id: "none", label: "بدون" },
 ];
+
+interface GeneratedLongVideo {
+  id: string;
+  url: string;
+  duration: number;
+  timestamp: string;
+  mode: string;
+}
 
 export default function LongVideoPage() {
   const [token, setToken] = useState("");
@@ -48,11 +67,13 @@ export default function LongVideoPage() {
   const [scenes, setScenes] = useState<string[]>([""]);
   const [script, setScript] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("16:9");
+  const [selectedResolution, setSelectedResolution] = useState("720p");
   const [selectedTransition, setSelectedTransition] = useState("fade");
   const [includeAudio, setIncludeAudio] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState<any>(null);
-  const [generatedVideo, setGeneratedVideo] = useState<any>(null);
+  const [selectedVideo, setSelectedVideo] = useState<GeneratedLongVideo | null>(null);
+  const [history, setHistory] = useState<GeneratedLongVideo[]>([]);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
@@ -63,8 +84,23 @@ export default function LongVideoPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
+      const saved = localStorage.getItem("ai_long_video_history");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setHistory(parsed);
+        } catch (e) {
+          console.error("History parse error:", e);
+        }
+      }
     }
   }, []);
+
+  useEffect(() => {
+    if (history.length > 0) {
+      localStorage.setItem("ai_long_video_history", JSON.stringify(history));
+    }
+  }, [history]);
 
   useEffect(() => {
     if (token) {
@@ -112,7 +148,6 @@ export default function LongVideoPage() {
   };
 
   const handleGenerate = async () => {
-    // Check for subscription AND specific tool permission
     if (!hasActiveSubscription || !isAIToolAllowed('video_long')) {
       setSubscriptionModalOpen(true);
       return;
@@ -131,7 +166,9 @@ export default function LongVideoPage() {
       }
     }
 
-    const totalCost = mode === "scenes" ? scenes.filter(s => s.trim()).length * 50 : 500;
+    const resObj = RESOLUTIONS.find(r => r.value === selectedResolution);
+    const sceneCost = resObj ? resObj.cost : 50;
+    const totalCost = mode === "scenes" ? scenes.filter(s => s.trim()).length * sceneCost : 500 * (sceneCost / 50);
     if (stats && !stats.isUnlimited && stats.remainingCredits < totalCost) {
       showError("تنبيه", `رصيد غير كافٍ. تحتاج ${totalCost} كريديت`);
       return;
@@ -139,14 +176,12 @@ export default function LongVideoPage() {
 
     setIsGenerating(true);
     setProgress(null);
-    setGeneratedVideo(null);
+    setSelectedVideo(null);
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
       const validScenes = mode === "scenes" ? scenes.filter(s => s.trim()) : [];
-      
-      // Build URL with proper encoding
-      let url = `${API_URL}/api/ai/video/long?token=${encodeURIComponent(token)}&mode=${mode}&aspectRatio=${selectedRatio}&includeAudio=${includeAudio}&transition=${selectedTransition}&transitionDuration=0.5`;
+      let url = `${API_URL}/api/ai/video/long?token=${encodeURIComponent(token)}&mode=${mode}&aspectRatio=${selectedRatio}&resolution=${selectedResolution}&includeAudio=${includeAudio}&transition=${selectedTransition}&transitionDuration=0.5`;
       
       if (mode === "scenes") {
         url += `&scenes=${encodeURIComponent(JSON.stringify(validScenes))}`;
@@ -154,67 +189,70 @@ export default function LongVideoPage() {
         url += `&script=${encodeURIComponent(script)}`;
       }
       
-      console.log('[Long Video] Connecting to:', url.substring(0, 100) + '...');
-      
       const eventSource = new EventSource(url);
 
-      eventSource.onopen = () => {
-        console.log('[Long Video] ✅ Connection established');
-      };
-
       eventSource.onmessage = (event) => {
-        console.log('[Long Video] Message received:', event.data);
-        
         try {
           const data = JSON.parse(event.data);
-          
-          if (data.event === 'start') {
-            console.log('[Long Video] Generation started');
-          } else if (data.event === 'progress') {
-            console.log('[Long Video] Progress:', data.message);
+          if (data.event === 'progress') {
             setProgress(data);
           } else if (data.event === 'complete') {
-            console.log('[Long Video] ✅ Complete!', data);
-            setGeneratedVideo(data);
+            const newVideo: GeneratedLongVideo = {
+              id: Date.now().toString(),
+              url: data.videoUrl,
+              duration: data.duration,
+              timestamp: new Date().toISOString(),
+              mode: mode
+            };
+            const newHistory = [newVideo, ...history];
+            setHistory(newHistory);
+            localStorage.setItem("ai_long_video_history", JSON.stringify(newHistory));
+            setSelectedVideo(newVideo);
             setStats(prev => prev ? {
               ...prev,
               remainingCredits: data.remainingCredits,
-              usedCredits: prev.usedCredits + data.creditsUsed
+              usedCredits: (prev.usedCredits || 0) + data.creditsUsed
             } : null);
             showSuccess("تم توليد الفيديو الطويل بنجاح!");
             eventSource.close();
             setIsGenerating(false);
           } else if (data.event === 'error') {
-            console.error('[Long Video] ❌ Error from server:', data.message);
             showError("خطأ", data.message);
             eventSource.close();
             setIsGenerating(false);
           }
         } catch (parseError) {
-          console.error('[Long Video] Failed to parse message:', event.data, parseError);
+          console.error(parseError);
         }
       };
 
       eventSource.onerror = (error) => {
-        console.error('[Long Video] ❌ EventSource error:', error);
-        console.error('[Long Video] ReadyState:', eventSource.readyState);
-        
-        // ReadyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSED
-        if (eventSource.readyState === EventSource.CLOSED) {
-          showError("خطأ", "انقطع الاتصال بالخادم. تحقق من اتصالك بالإنترنت.");
-        } else if (eventSource.readyState === EventSource.CONNECTING) {
-          showError("خطأ", "فشل الاتصال بالخادم. تأكد من تشغيل الخادم.");
-        }
-        
         eventSource.close();
         setIsGenerating(false);
       };
 
     } catch (error: any) {
-      console.error('[Long Video] ❌ Exception:', error);
       showError("خطأ", error.message || "حدث خطأ أثناء التوليد");
       setIsGenerating(false);
     }
+  };
+
+  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem("ai_long_video_history", JSON.stringify(newHistory));
+    if (selectedVideo?.id === id) setSelectedVideo(null);
+    showSuccess("تم الحذف بنجاح!");
+  };
+
+  const clearHistory = () => {
+    if (!confirm("هل تريد مسح السجل بالكامل؟")) return;
+    setHistory([]);
+    localStorage.removeItem("ai_long_video_history");
+    setSelectedVideo(null);
+    showSuccess("تم مسح السجل بالكامل.");
   };
 
   const downloadVideo = async (url: string) => {
@@ -234,310 +272,207 @@ export default function LongVideoPage() {
     }
   };
 
-  if (permissionsLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#00050a]">
-        <Loader text="جاري التحميل..." size="lg" variant="warning" />
-      </div>
-    );
-  }
+  if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] text-white overflow-x-hidden rounded-2xl selection:bg-purple-500/30 selection:text-purple-200 font-sans">
-      {/* Background */}
+    <div className="min-h-screen bg-[#00050a] text-white overflow-x-hidden rounded-2xl selection:bg-purple-500/30 font-sans" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-950 via-[#00050a] to-[#00050a]" />
-      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-purple-900/10 via-indigo-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a]/80">
-        <div className="mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/ask-ai">
-              <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10">
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <span className="bg-gradient-to-r from-purple-300 via-indigo-300 to-blue-300 bg-clip-text text-transparent">
-                فيديو طويل
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500/10 to-indigo-500/10 border border-purple-500/20 text-[10px] text-purple-300 font-mono">
-                MULTI-SCENE
-              </span>
-            </h1>
-          </div>
-
-          {stats && (
-            <div className="flex items-center gap-3 bg-white/5 rounded-full pl-2 pr-4 py-1.5 border border-white/5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center">
-                <Zap size={14} className="text-white fill-white" />
-              </div>
-              <div className="flex flex-col items-end leading-none">
-                <span className="text-[10px] text-gray-400">الرصيد</span>
-                <span className="text-sm font-bold font-mono">
-                  {stats.isUnlimited ? "∞" : stats.remainingCredits}
-                </span>
-              </div>
-            </div>
-          )}
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
+        <div className="flex items-center gap-6">
+          <Link href="/ask-ai">
+            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
+              <ArrowRight className="h-5 w-5 rotate-180 text-white" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-300 via-indigo-300 to-blue-300 bg-clip-text text-transparent">فيديو طويل</h1>
         </div>
+        {stats && (
+          <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5 font-mono">
+            <Zap size={14} className="text-amber-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
+          </div>
+        )}
       </header>
 
-      <main className="mx-auto p-4 md:p-8">
+      <main className="p-4 md:p-8 max-w-[1600px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Panel: Controls */}
           <aside className="lg:col-span-1 space-y-6">
-            
-            {/* Mode Selection */}
-            <div className="bg-[#0a0c10] rounded-3xl border border-text-primary/20 p-6">
-              <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
-                <Wand2 size={16} className="text-purple-400" />
-                طريقة الإنشاء
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setMode("scenes")}
-                  className={clsx(
-                    "p-3 rounded-xl transition-all flex flex-col items-center gap-2",
-                    mode === "scenes" ? "bg-purple-500/20 border border-purple-500/50" : "bg-white/5 hover:bg-white/10"
-                  )}
-                >
-                  <Film size={20} />
-                  <span className="text-xs">مشاهد متعددة</span>
-                </button>
-                <button
-                  onClick={() => setMode("script")}
-                  className={clsx(
-                    "p-3 rounded-xl transition-all flex flex-col items-center gap-2",
-                    mode === "script" ? "bg-purple-500/20 border border-purple-500/50" : "bg-white/5 hover:bg-white/10"
-                  )}
-                >
-                  <FileText size={20} />
-                  <span className="text-xs">من سيناريو</span>
-                </button>
+            <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 shadow-2xl space-y-6">
+              <div className="flex items-center gap-2 text-purple-400 justify-end">
+                <span className="text-sm font-bold">طريقة الإنشاء</span>
+                <Wand2 size={18} />
               </div>
-            </div>
-
-            {/* Settings */}
-            <div className="bg-[#0a0c10] rounded-3xl border border-text-primary/20 p-6 space-y-4">
-              <h3 className="text-sm font-bold mb-4">الإعدادات</h3>
               
-              {/* Aspect Ratio */}
-              <div>
-                <label className="text-xs text-gray-400 mb-2 block">نسبة الأبعاد</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {ASPECT_RATIOS.map((ratio) => (
-                    <button
-                      key={ratio.id}
-                      onClick={() => setSelectedRatio(ratio.value)}
-                      className={clsx(
-                        "p-2 rounded-lg text-xs transition-all",
-                        selectedRatio === ratio.value 
-                          ? "bg-purple-500/20 border border-purple-500/50" 
-                          : "bg-white/5 hover:bg-white/10"
-                      )}
-                    >
-                      {ratio.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Transition */}
-              <div>
-                <label className="text-xs text-gray-400 mb-2 block">الانتقالات</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {TRANSITIONS.map((trans) => (
-                    <button
-                      key={trans.id}
-                      onClick={() => setSelectedTransition(trans.id)}
-                      className={clsx(
-                        "p-2 rounded-lg text-xs transition-all",
-                        selectedTransition === trans.id 
-                          ? "bg-indigo-500/20 border border-indigo-500/50" 
-                          : "bg-white/5 hover:bg-white/10"
-                      )}
-                    >
-                      {trans.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Audio Toggle */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">تضمين الصوت</span>
-                <button
-                  onClick={() => setIncludeAudio(!includeAudio)}
-                  className={clsx(
-                    "w-12 h-6 rounded-full transition-all p-1",
-                    includeAudio ? "bg-gradient-to-r from-blue-500 to-indigo-500" : "bg-white/10"
-                  )}
-                >
-                  <motion.div 
-                    animate={{ x: includeAudio ? 24 : 0 }}
-                    className="w-4 h-4 bg-white rounded-full"
-                  />
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => setMode("scenes")} className={clsx("p-4 rounded-2xl transition-all flex flex-col items-center gap-2", mode === "scenes" ? "bg-purple-500/20 border border-purple-500/50 text-white shadow-[0_0_20px_rgba(168,85,247,0.1)]" : "bg-white/5 hover:bg-white/10 text-gray-400")}>
+                  <Film size={20} /> <span className="text-xs font-bold">مشاهد متعددة</span>
+                </button>
+                <button onClick={() => setMode("script")} className={clsx("p-4 rounded-2xl transition-all flex flex-col items-center gap-2", mode === "script" ? "bg-purple-500/20 border border-purple-500/50 text-white shadow-[0_0_20px_rgba(168,85,247,0.1)]" : "bg-white/5 hover:bg-white/10 text-gray-400")}>
+                  <FileText size={20} /> <span className="text-xs font-bold">من سيناريو</span>
                 </button>
               </div>
-            </div>
 
-            {/* Cost Info */}
-            <div className="bg-gradient-to-r from-amber-900/20 to-orange-900/20 rounded-2xl p-4 border border-amber-500/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap size={14} className="text-amber-400" />
-                <span className="text-xs font-bold text-amber-200">التكلفة المتوقعة</span>
-              </div>
-              <p className="text-2xl font-bold text-amber-300">
-                {mode === "scenes" ? scenes.filter(s => s.trim()).length * 50 : 500}
-                <span className="text-xs text-amber-400 mr-2">كريديت</span>
-              </p>
-            </div>
-
-          </aside>
-
-          {/* Right Panel: Content */}
-          <section className="lg:col-span-2 space-y-6">
-            
-            {mode === "scenes" ? (
-              // Scenes Mode
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold">المشاهد ({scenes.length}/10)</h2>
-                  <Button
-                    onClick={addScene}
-                    disabled={scenes.length >= 10}
-                    className="rounded-full bg-purple-500/20 hover:bg-purple-500/30 text-purple-300"
-                    size="sm"
-                  >
-                    <Plus size={16} className="ml-2" />
-                    إضافة مشهد
-                  </Button>
+              <div className="space-y-6 pt-4 border-t border-white/5">
+                <div className="flex items-center gap-2 text-gray-400 justify-end">
+                   <span className="text-xs font-bold uppercase tracking-widest">إعدادات الإخراج</span>
+                   <Settings size={14} />
                 </div>
 
-                {scenes.map((scene, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-[#0a0c10] rounded-2xl border border-text-primary/20 p-4"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-bold text-purple-300">المشهد {index + 1}</span>
-                      {scenes.length > 1 && (
-                        <button
-                          onClick={() => removeScene(index)}
-                          className="text-red-400 hover:text-red-300"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                    <textarea
-                      value={scene}
-                      onChange={(e) => updateScene(index, e.target.value)}
-                      placeholder="صف المشهد بالتفصيل..."
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-purple-500/50 resize-none"
-                      rows={3}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              // Script Mode
-              <div className="bg-[#0a0c10] rounded-2xl border border-text-primary/20 p-6">
-                <h2 className="text-lg font-bold mb-4">السيناريو</h2>
-                <textarea
-                  value={script}
-                  onChange={(e) => setScript(e.target.value)}
-                  placeholder="اكتب سيناريو الفيديو الطويل هنا... سيقوم الذكاء الاصطناعي بتقسيمه إلى مشاهد تلقائياً"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm outline-none focus:border-purple-500/50 resize-none"
-                  rows={15}
-                />
-              </div>
-            )}
-
-            {/* Generate Button */}
-            <GradientButton
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              loading={isGenerating}
-              loadingText="جاري التوليد..."
-              icon={<Film />}
-              size="lg"
-              className="w-full h-14 text-lg"
-            >
-              توليد الفيديو الطويل
-            </GradientButton>
-
-            {/* Progress */}
-            {progress && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-[#0a0c10] rounded-2xl border border-purple-500/20 p-6"
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <Loader2 className="animate-spin text-purple-400" size={20} />
-                  <span className="text-sm font-bold">{progress.message}</span>
-                </div>
-                <div className="w-full bg-white/5 rounded-full h-2">
-                  <div 
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 h-2 rounded-full transition-all"
-                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  {progress.current} / {progress.total}
-                </p>
-              </motion.div>
-            )}
-
-            {/* Result */}
-            {generatedVideo && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-[#0a0c10] rounded-2xl border border-green-500/20 p-6"
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle2 className="text-green-400" size={20} />
-                  <span className="text-sm font-bold text-green-300">تم التوليد بنجاح!</span>
-                </div>
-                
-                <video 
-                  src={generatedVideo.videoUrl} 
-                  controls 
-                  className="w-full rounded-lg mb-4"
-                />
-                
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={() => downloadVideo(generatedVideo.videoUrl)}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500"
-                  >
-                    <Download size={16} className="ml-2" />
-                    تحميل
-                  </Button>
-                  <div className="text-xs text-gray-400">
-                    <Clock size={12} className="inline ml-1" />
-                    {Math.round(generatedVideo.duration)}s
+                <div className="space-y-3">
+                  <label className="text-[10px] uppercase font-bold text-gray-500 block text-right font-mono">ASPECT RATIO / الأبعاد</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {ASPECT_RATIOS.map((ratio) => (
+                      <button key={ratio.id} onClick={() => setSelectedRatio(ratio.value)} className={clsx("p-2.5 rounded-xl text-xs transition-all border font-bold", selectedRatio === ratio.value ? "bg-white/10 border-white/20 text-white" : "bg-white/5 border-transparent text-gray-500 hover:bg-white/[0.07]")}>{ratio.label}</button>
+                    ))}
                   </div>
                 </div>
-              </motion.div>
-            )}
 
+                <div className="space-y-3">
+                  <label className="text-[10px] uppercase font-bold text-gray-500 block text-right font-mono">QUALITY / الجودة</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {RESOLUTIONS.map((res) => (
+                      <button key={res.id} onClick={() => setSelectedResolution(res.value)} className={clsx("p-2.5 rounded-xl text-xs transition-all border font-bold", selectedResolution === res.value ? "bg-purple-500/10 border-purple-500/20 text-purple-300" : "bg-white/5 border-transparent text-gray-500")}>{res.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] uppercase font-bold text-gray-500 block text-right font-mono">TRANSITIONS / الانتقالات</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {TRANSITIONS.map((trans) => (
+                      <button key={trans.id} onClick={() => setSelectedTransition(trans.id)} className={clsx("p-2.5 rounded-xl text-xs transition-all border font-bold", selectedTransition === trans.id ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-300" : "bg-white/5 border-transparent text-gray-500")}>{trans.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <button onClick={() => setIncludeAudio(!includeAudio)} className={clsx("w-12 h-6 rounded-full transition-all p-1 relative", includeAudio ? "bg-purple-600" : "bg-white/10")}>
+                    <motion.div animate={{ x: includeAudio ? 24 : 0 }} className="w-4 h-4 bg-white rounded-full shadow-lg" />
+                  </button>
+                  <span className="text-xs text-gray-300 font-bold">تضمين موسيقى خلفية</span>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 shadow-inner">
+                <div className="flex items-center gap-2 justify-end mb-1">
+                   <span className="text-[10px] font-bold text-amber-500/70 uppercase">Estimated Cost</span>
+                   <Zap size={14} className="text-amber-500" />
+                </div>
+                <p className="text-2xl font-bold text-amber-500 text-right">
+                  {(() => {
+                    const resObj = RESOLUTIONS.find(r => r.value === selectedResolution);
+                    const sceneCost = resObj ? resObj.cost : 50;
+                    return mode === "scenes" ? scenes.filter(s => s.trim()).length * sceneCost : 500 * (sceneCost / 50);
+                  })()}
+                  <span className="text-xs mr-2 opacity-60">كريديت</span>
+                </p>
+              </div>
+
+              <GradientButton onClick={handleGenerate} disabled={isGenerating} loading={isGenerating} loadingText="جاري الإنتاج..." icon={<Film />} size="lg" className="w-full h-14 text-base">بدء إنتاج الفيديو</GradientButton>
+            </div>
+          </aside>
+
+          <section className="lg:col-span-2 space-y-6">
+            <div className="relative min-h-[600px] rounded-[48px] bg-[#0a0c10] border border-white/10 flex flex-col items-center justify-center p-8 overflow-hidden group shadow-2xl">
+               <AnimatePresence mode="wait">
+                 {selectedVideo ? (
+                    <motion.div key="vid" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
+                       <button onClick={() => setSelectedVideo(null)} className="absolute top-0 left-0 z-30 flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20">
+                          <X size={14}/>
+                       </button>
+                       <video src={selectedVideo.url} controls autoPlay className="max-h-[550px] w-auto rounded-3xl shadow-3xl border border-white/5" />
+                       <div className="mt-8 flex items-center gap-3">
+                          <Button onClick={() => downloadVideo(selectedVideo.url)} className="rounded-full bg-white opacity-90 hover:opacity-100 text-black font-bold h-11 px-10 transition-all hover:scale-105"><Download size={18} className="ml-2" /> حفظ الفيديو</Button>
+                          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 h-11 w-11 border border-red-500/20 hover:bg-red-500/20" onClick={(e) => handleDeleteItem(selectedVideo.id, e)}><Trash2 size={20} /></Button>
+                       </div>
+                       <BorderBeam duration={10} colorFrom="#8b5cf6" colorTo="#3b82f6" />
+                    </motion.div>
+                 ) : isGenerating ? (
+                    <div className="w-full max-w-md text-center">
+                       <AILoader />
+                       {progress && (
+                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-12 space-y-4">
+                             <div className="flex justify-between items-center text-sm font-bold text-gray-400 px-1">
+                                <span className="bg-white/5 px-3 py-1 rounded-full text-[10px] font-mono border border-white/5">{progress.current} / {progress.total}</span>
+                                <span className="text-xs">{progress.message}</span>
+                             </div>
+                             <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5 p-0.5">
+                                <motion.div className="bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 h-full rounded-full" animate={{ width: `${(progress.current / progress.total) * 100}%` }} transition={{ type: "spring", stiffness: 50 }} />
+                             </div>
+                          </motion.div>
+                       )}
+                    </div>
+                 ) : (
+                    <div className="w-full h-full flex flex-col">
+                       {mode === "scenes" ? (
+                          <div className="space-y-6">
+                             <div className="flex items-center justify-between px-4">
+                                <Button onClick={addScene} disabled={scenes.length >= 10} className="rounded-full bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 h-10 px-6 font-bold" size="sm"><Plus size={18} className="ml-2" /> إدراج مشهد جديد</Button>
+                                <h2 className="text-xl font-bold bg-gradient-to-l from-white to-gray-500 bg-clip-text text-transparent">هيكل المشاهد ({scenes.length}/10)</h2>
+                             </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[600px] overflow-y-auto custom-scrollbar p-2">
+                                {scenes.map((scene, index) => (
+                                   <motion.div key={index} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#0f1115] rounded-[24px] border border-white/5 p-5 group/scene relative hover:border-purple-500/30 transition-colors shadow-lg">
+                                      <div className="flex items-center justify-between mb-3">
+                                         {scenes.length > 1 && <button onClick={() => removeScene(index)} className="w-7 h-7 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center opacity-0 group-hover/scene:opacity-100 transition-all hover:bg-red-500/20"><Trash2 size={14} /></button>}
+                                         <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase font-mono">Scene</span>
+                                            <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-black">{index + 1}</span>
+                                         </div>
+                                      </div>
+                                      <textarea value={scene} onChange={(e) => updateScene(index, e.target.value)} placeholder="اكتب وصفاً تفصيلياً للمشهد، مثلاً: رائد فضاء يسير على سطح المريخ تحت سماء أرجوانية مع انعكاس النجوم على خوذته..." className="w-full bg-transparent text-sm text-gray-300 placeholder:text-gray-700 outline-none resize-none min-h-[120px] leading-relaxed text-right" dir="rtl" />
+                                   </motion.div>
+                                ))}
+                             </div>
+                          </div>
+                       ) : (
+                          <div className="h-full flex flex-col space-y-4">
+                             <div className="flex items-center justify-end gap-2 px-2">
+                                <h2 className="text-xl font-bold text-white">السيناريو القصصي</h2>
+                                <FileText size={20} className="text-purple-400" />
+                             </div>
+                             <div className="flex-1 bg-white/[0.02] rounded-[32px] p-8 border border-white/5 shadow-inner">
+                                <textarea value={script} onChange={(e) => setScript(e.target.value)} placeholder="ابدأ بكتابة قصتك هنا... 
+
+مثال: تبدأ القصة في مدينة غارقة تحت الماء في عام 2150. تسبح الأسماك المضيئة حول ناطحات السحاب الصدئة. تظهر بطلة القصة ببدلة غوص متطورة تستكشف مكتبة قديمة..." className="w-full h-full bg-transparent text-white placeholder:text-gray-700 outline-none resize-none min-h-[450px] text-lg leading-relaxed text-right scrollbar-hide" dir="rtl" />
+                             </div>
+                          </div>
+                       )}
+                    </div>
+                 )}
+               </AnimatePresence>
+            </div>
+
+            {history.length > 0 && (
+               <div className="space-y-5 pt-8">
+                  <div className="flex items-center justify-between px-4">
+                     <Button variant="ghost" size="sm" onClick={clearHistory} className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-full px-4 border border-transparent hover:border-red-500/20 transition-all">مسح السجل</Button>
+                     <h4 className="text-[10px] font-bold text-gray-500 flex items-center gap-2 uppercase tracking-[3px]"><HistoryIcon size={14} className="text-purple-500" /> Recent Productions ({history.length})</h4>
+                  </div>
+                  <div className="flex gap-5 overflow-x-auto pb-6 px-4 custom-scrollbar">
+                     {history.map(h => (
+                        <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedResult ? setSelectedVideo(h) : null}>
+                           <div className={clsx("w-48 aspect-video rounded-2xl border-2 transition-all overflow-hidden shadow-2xl cursor-pointer", selectedVideo?.id === h.id ? "border-purple-500 scale-105 z-10" : "border-white/5 opacity-50 hover:opacity-100")}>
+                              <video src={h.url} className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <Play size={24} className="text-white fill-white scale-75 group-hover:scale-100 transition-transform" />
+                              </div>
+                           </div>
+                           <button onClick={(e) => { e.stopPropagation(); handleDeleteItem(h.id); }} className="absolute -top-2 -right-2 h-7 w-7 flex items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:bg-red-500 z-20"><X size={12} /></button>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
           </section>
         </div>
       </main>
 
-      {/* Subscription Required Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}
-        title="اشتراك مطلوب للمتابعة"
-        description="لإنشاء فيديوهات طويلة احترافية متعددة المشاهد، تحتاج إلى اشتراك نشط في باقات الذكاء الاصطناعي. اختر الباقة المناسبة لك وابدأ رحلتك!"
+        title="باقة الفيديو الطويل مطلوبة"
+        description="لإنشاء فيديوهات سينمائية طويلة تصل لعدة دقائق مع تقنية الدمج الذكي، تحتاج للاشتراك في باقة PRO."
         hasAIPlans={hasAIPlans}
       />
     </div>

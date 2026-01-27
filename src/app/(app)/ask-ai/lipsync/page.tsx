@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Zap, MessageSquare, Mic, FileVideo 
+  Loader2, ArrowRight, Zap, MessageSquare, Mic, FileVideo, X, Trash2 
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -45,8 +45,12 @@ export default function LipSyncPage() {
   useEffect(() => { localStorage.setItem("ai_lipsync_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
-    const res = await getAIStats(token);
-    setStats(res.stats);
+    try {
+      const res = await getAIStats(token);
+      setStats(res.stats);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const checkAIPlans = async () => {
@@ -81,27 +85,58 @@ export default function LipSyncPage() {
     finally { setIsProcessing(false); }
   };
 
+  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm("هل تريد حذف هذا المقطع؟")) return;
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem("ai_lipsync_history", JSON.stringify(newHistory));
+    if (selectedResult?.id === id) setSelectedResult(null);
+    showSuccess("تم الحذف بنجاح!");
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
+      setHistory([]);
+      setSelectedResult(null);
+      localStorage.removeItem("ai_lipsync_history");
+      showSuccess("تم حذف جميع الأعمال!");
+    }
+  };
+
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-900/10 via-[#00050a] to-[#00050a]" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80">
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
         <div className="flex items-center gap-6">
-          <Link href="/ask-ai"><Button variant="ghost" size="icon" className="rounded-full bg-white/5 hover:bg-white/10"><ArrowRight className="h-5 w-5 text-white" /></Button></Link>
+          <Link href="/ask-ai">
+            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
+              <ArrowRight className="h-5 w-5 text-white rotate-180" />
+            </Button>
+          </Link>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-green-300 to-emerald-300 bg-clip-text text-transparent">تحريك الشفاه (Lip Sync)</h1>
         </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5"><Zap size={14} className="text-green-400" /> <span className="text-sm font-bold font-mono">{stats.remainingCredits}</span></div>}
+        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-green-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
       </header>
 
       <main className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full">
         <aside className="lg:col-span-4 space-y-6">
           <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
              <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2"><FileVideo size={16} /> فيديو الوجه</label>
-                <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden bg-white/5" onClick={() => document.getElementById('file-v-l')?.click()}>
-                   {videoPreview ? <video src={videoPreview} className="w-full h-full object-cover opacity-50" /> : <Upload className="text-gray-700" size={32} />}
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 justify-end">فيديو الوجه <FileVideo size={16} /></label>
+                <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload" onClick={() => document.getElementById('file-v-l')?.click()}>
+                   {videoPreview ? (
+                     <>
+                        <video src={videoPreview} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <FileVideo className="text-green-400 mb-2" size={32} />
+                          <span className="text-xs font-bold text-white">تغيير الفيديو</span>
+                        </div>
+                     </>
+                   ) : <Upload className="text-gray-700 group-hover/upload:text-green-400" size={32} />}
                 </div>
                 <input id="file-v-l" type="file" className="hidden" accept="video/*" onChange={e => {
                    const file = e.target.files?.[0];
@@ -110,7 +145,7 @@ export default function LipSyncPage() {
              </div>
 
              <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2"><Mic size={16} /> ملف الصوت</label>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 justify-end">ملف الصوت <Mic size={16} /></label>
                 <div className="rounded-2xl border-2 border-dashed border-white/10 p-4 flex flex-col items-center justify-center cursor-pointer bg-white/5 hover:border-green-500/30 transition-all" onClick={() => document.getElementById('file-a-l')?.click()}>
                    {audioPreview ? <audio src={audioPreview} controls className="w-full" /> : <><Upload className="text-gray-700 mb-2" size={24} /><span className="text-[10px] text-gray-500">اختر الملف الصوتي</span></>}
                 </div>
@@ -133,9 +168,9 @@ export default function LipSyncPage() {
              </GradientButton>
           </div>
           
-          <div className="p-6 bg-green-500/5 rounded-[24px] border border-green-500/10">
-             <h4 className="text-sm font-bold text-green-400 mb-2">تكلم بجميع اللغات</h4>
-             <p className="text-xs text-gray-400 leading-relaxed">باستخدام تقنية Lip Sync، يمكنك جعل أي شخص في الفيديو ينطق بالكلمات الموجودة في الملف الصوتي بدقة مذهلة، وبشكل يبدو طبيعياً تماماً.</p>
+          <div className="p-6 bg-green-500/5 rounded-2xl border border-green-500/10">
+             <h4 className="text-sm font-bold text-green-400 mb-2 text-right">تكلم بجميع اللغات</h4>
+             <p className="text-xs text-gray-400 leading-relaxed text-right">باستخدام تقنية Lip Sync، يمكنك جعل أي شخص في الفيديو ينطق بالكلمات الموجودة في الملف الصوتي بدقة مذهلة، وبشكل يبدو طبيعياً تماماً.</p>
           </div>
         </aside>
 
@@ -143,17 +178,28 @@ export default function LipSyncPage() {
            <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
               <AnimatePresence mode="wait">
                  {selectedResult ? (
-                    <motion.div key="res" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                       <video src={selectedResult.url} controls autoPlay loop className="max-h-[550px] w-auto rounded-[30px] border border-white/10 shadow-3xl" />
-                       <div className="mt-8">
-                          <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-green-600 hover:bg-green-700 font-bold h-10 px-8 hover:scale-105 transition-all"><Download className="mr-2 h-4 w-4" /> تحميل النتيجة</Button>
+                    <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
+                        {/* Close Button */}
+                        <div className="absolute top-4 left-4 z-30">
+                          <button 
+                            onClick={() => setSelectedResult(null)}
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
+                          >
+                            <X size={14}/>
+                          </button>
+                        </div>
+
+                       <video src={selectedResult.url} controls autoPlay loop className="max-h-[550px] w-auto rounded-[30px] border border-white/10 shadow-3xl transition-transform duration-500 hover:scale-[1.01]" />
+                       <div className="mt-8 flex items-center gap-3">
+                          <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-green-600 hover:bg-green-700 font-bold h-10 px-8 transition-all hover:scale-105"><Download className="mr-2 h-4 w-4" /> تحميل النتيجة</Button>
+                          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => handleDeleteItem(selectedResult.id, e)}><Trash2 size={18} /></Button>
                        </div>
                        <BorderBeam colorFrom="#10B981" colorTo="#34D399" />
                     </motion.div>
                  ) : isProcessing ? <AILoader /> : (
-                    <div className="text-center">
-                       <MessageSquare size={80} className="text-green-500/5 mb-6 mx-auto" />
-                       <h3 className="text-xl font-bold mb-2">مزامنة احترافية</h3>
+                    <div className="text-center group">
+                       <MessageSquare size={80} className="text-green-500/5 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
+                       <h3 className="text-2xl font-bold mb-2 text-white">مزامنة احترافية</h3>
                        <p className="text-sm text-gray-500">ارفع الفيديو والصوت وشاهد النتائج المبهرة.</p>
                     </div>
                  )}
@@ -161,18 +207,33 @@ export default function LipSyncPage() {
            </div>
            
            {history.length > 0 && (
-             <div className="flex gap-3 overflow-x-auto pb-4 px-2 custom-scrollbar">
-                {history.map(h => (
-                   <div key={h.id} onClick={() => setSelectedResult(h)} className={clsx("w-24 aspect-square rounded-2xl cursor-pointer border-2 transition-all overflow-hidden flex-shrink-0", selectedResult?.id === h.id ? "border-green-500 scale-105" : "border-white/5 opacity-50")}>
-                      <video src={h.url} className="w-full h-full object-cover" />
-                   </div>
-                ))}
+             <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><HistoryIcon size={14} className="text-green-500" /> النتائج السابقة ({history.length})</h4>
+                   <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 px-2 custom-scrollbar">
+                   {history.map(h => (
+                      <div key={h.id} className="relative group flex-shrink-0" onClick={() => setSelectedResult(h)}>
+                        <div 
+                           className={clsx("w-32 aspect-video rounded-2xl cursor-pointer border-2 transition-all overflow-hidden shadow-lg", selectedResult?.id === h.id ? "border-green-500 scale-110 opacity-100" : "border-white/5 opacity-50 hover:opacity-100")}
+                        >
+                           <video src={h.url} className="w-full h-full object-cover" />
+                        </div>
+                        <button
+                           onClick={(e) => { e.stopPropagation(); handleDeleteItem(h.id); }}
+                           className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
+                        >
+                           <X size={10} />
+                        </button>
+                      </div>
+                   ))}
+                </div>
              </div>
            )}
         </section>
       </main>
 
-      {/* Subscription Required Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}

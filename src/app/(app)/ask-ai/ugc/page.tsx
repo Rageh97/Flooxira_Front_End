@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Zap, Users, ShieldCheck, Play 
+  Loader2, ArrowRight, Zap, Users, ShieldCheck, Play, X, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -44,8 +44,12 @@ export default function UGCPage() {
   useEffect(() => { localStorage.setItem("ai_ugc_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
-    const res = await getAIStats(token);
-    setStats(res.stats);
+    try {
+      const res = await getAIStats(token);
+      setStats(res.stats);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const checkAIPlans = async () => {
@@ -69,7 +73,7 @@ export default function UGCPage() {
     try {
       const res = await processAIVideo(token, {
         operation: 'ugc',
-        inputUrl: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg", // Dummy input to trigger the processAI operation for text-based if needed, or we adapt back-end to handle null input. For now, we use a placeholder or prompt-based.
+        inputUrl: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg", 
         prompt: `UGC (User Generated Content) style, handheld camera, natural lighting, relatable person, ${prompt.trim()}`
       });
       const newItem = { id: Date.now().toString(), url: res.videoUrl, prompt: prompt.trim() };
@@ -80,32 +84,54 @@ export default function UGCPage() {
     finally { setIsGenerating(false); }
   };
 
+  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm("هل تريد حذف هذا المقطع؟")) return;
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem("ai_ugc_history", JSON.stringify(newHistory));
+    if (selectedResult?.id === id) setSelectedResult(null);
+    showSuccess("تم الحذف بنجاح!");
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
+      setHistory([]);
+      setSelectedResult(null);
+      localStorage.removeItem("ai_ugc_history");
+      showSuccess("تم حذف جميع الأعمال!");
+    }
+  };
+
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-pink-900/10 via-[#00050a] to-[#00050a]" />
       
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
         <div className="flex items-center gap-6">
-          <Link href="/ask-ai"><Button variant="ghost" size="icon" className="rounded-full bg-white/5"><ArrowRight className="h-5 w-5 text-white" /></Button></Link>
+          <Link href="/ask-ai">
+            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
+              <ArrowRight className="h-5 w-5 text-white rotate-180" />
+            </Button>
+          </Link>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">فيديوهات UGC تفاعلية</h1>
         </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5"><Zap size={14} className="text-pink-400" /> <span className="text-sm font-bold font-mono">{stats.remainingCredits}</span></div>}
+        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-pink-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
       </header>
 
       <main className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full">
         <aside className="lg:col-span-4 space-y-6">
           <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
             <div className="space-y-4">
-               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  <Users size={16} className="text-pink-400" /> سيناريو المحتوى
-               </label>
+               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 justify-end">سيناريو المحتوى <Users size={16} className="text-pink-400" /></label>
                <textarea 
                   value={prompt} 
                   onChange={(e) => setPrompt(e.target.value)} 
                   placeholder="مثال: شخص يتحدث عن جودة منتج العناية بالبشرة، تصوير منزلي بسيط، حماس في الكلام..." 
-                  className="w-full h-40 bg-white/5 border border-white/5 rounded-2xl p-4 text-sm placeholder:text-gray-600 outline-none resize-none focus:border-pink-500/30 transition-all leading-relaxed" 
+                  className="w-full h-40 bg-white/5 border border-white/5 rounded-2xl p-4 text-sm placeholder:text-gray-600 outline-none resize-none focus:border-pink-500/30 transition-all leading-relaxed text-right" 
+                  dir="rtl"
                />
             </div>
             
@@ -122,31 +148,43 @@ export default function UGCPage() {
             </GradientButton>
           </div>
           
-          <div className="p-6 bg-pink-500/5 rounded-[24px] border border-pink-500/10 space-y-3">
-             <div className="flex items-center gap-2 text-pink-400 font-bold text-sm">
-                <ShieldCheck size={16} /> ستايل واقعي (UGC)
+          <div className="p-6 bg-pink-500/5 rounded-2xl border border-pink-500/10 space-y-3 shadow-inner">
+             <div className="flex items-center gap-2 text-pink-400 font-bold text-sm justify-end">
+                <span>ستايل واقعي (UGC)</span>
+                <ShieldCheck size={16} />
              </div>
-             <p className="text-xs text-gray-400 leading-relaxed">تتميز هذه الفيديوهات بكونها تبدو كأنها مصورة بواسطة مستخدمين حقيقيين، مما يزيد من ثقة العملاء في علامتك التجارية.</p>
+             <p className="text-xs text-gray-400 leading-relaxed text-right">تتميز هذه الفيديوهات بكونها تبدو كأنها مصورة بواسطة مستخدمين حقيقيين، مما يزيد من ثقة العملاء في علامتك التجارية.</p>
           </div>
         </aside>
 
         <section className="lg:col-span-8 space-y-6">
-           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden">
+           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
               <AnimatePresence mode="wait">
                 {selectedResult ? (
-                  <motion.div key="res" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                    <video src={selectedResult.url} controls autoPlay loop className="max-h-[550px] w-auto rounded-[30px] border border-white/10 shadow-3xl" />
-                    <div className="mt-8">
-                        <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-pink-600 hover:bg-pink-700 font-bold h-10 px-8"><Download className="mr-2 h-4 w-4" /> تحميل المحتوى</Button>
+                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
+                    {/* Close Button */}
+                    <div className="absolute top-0 left-0 z-30">
+                        <button 
+                            onClick={() => setSelectedResult(null)}
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+
+                    <video src={selectedResult.url} controls autoPlay loop className="max-h-[550px] w-auto rounded-[30px] border border-white/10 shadow-3xl transition-transform duration-500 hover:scale-[1.01]" />
+                    <div className="mt-8 flex items-center gap-3">
+                        <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-pink-600 hover:bg-pink-700 font-bold h-10 px-8 transition-all hover:scale-105"><Download className="ml-2 h-4 w-4" /> تحميل المحتوى</Button>
+                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => handleDeleteItem(selectedResult.id, e)}><Trash2 size={18} /></Button>
                     </div>
                     <BorderBeam colorFrom="#DB2777" colorTo="#9333EA" />
                   </motion.div>
                 ) : isGenerating ? <AILoader /> : (
-                  <div className="flex flex-col items-center text-center max-w-sm">
-                     <div className="w-20 h-20 rounded-full bg-pink-500/10 flex items-center justify-center mb-6 border border-pink-500/20">
+                  <div className="flex flex-col items-center text-center max-w-sm group">
+                     <div className="w-20 h-20 rounded-full bg-pink-500/10 flex items-center justify-center mb-6 border border-pink-500/20 group-hover:scale-110 transition-transform duration-500 animate-pulse">
                         <Users size={32} className="text-pink-400" />
                      </div>
-                     <h3 className="text-xl font-bold mb-2">اصنع محتوى يلامس جمهورك</h3>
+                     <h3 className="text-2xl font-bold mb-2 text-white">اصنع محتوى يلامس جمهورك</h3>
                      <p className="text-sm text-gray-500 leading-relaxed">اكتب تفاصيل المشهد الذي تريده وسنقوم بتوليد فيديو يبدو وكأنه مصور بهاتف محمول بشكل شخصي وواقعي.</p>
                   </div>
                 )}
@@ -154,12 +192,31 @@ export default function UGCPage() {
            </div>
            
            {history.length > 0 && (
-             <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
-                {history.map(h => (
-                    <div key={h.id} onClick={() => setSelectedResult(h)} className={clsx("aspect-square rounded-xl cursor-pointer border-2 transition-all overflow-hidden", selectedResult?.id === h.id ? "border-pink-500 ring-4 ring-pink-500/10" : "border-white/5 opacity-50 hover:opacity-100")}>
-                        <video src={h.url} className="w-full h-full object-cover" />
-                    </div>
-                ))}
+             <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><HistoryIcon size={14} className="text-pink-500" /> الفيديوهات السابقة ({history.length})</h4>
+                   <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 px-2 custom-scrollbar">
+                   {history.map(h => (
+                      <div key={h.id} className="relative group flex-shrink-0" onClick={() => setSelectedResult(h)}>
+                        <div 
+                           className={clsx("w-32 aspect-video rounded-2xl cursor-pointer border-2 transition-all overflow-hidden shadow-lg", selectedResult?.id === h.id ? "border-pink-500 scale-110 opacity-100" : "border-white/5 opacity-50 hover:opacity-100")}
+                        >
+                           <video src={h.url} className="w-full h-full object-cover" />
+                           <div className="absolute inset-x-0 bottom-0 bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <p className="text-[6px] text-white truncate text-center">{h.prompt}</p>
+                           </div>
+                        </div>
+                        <button
+                           onClick={(e) => { e.stopPropagation(); handleDeleteItem(h.id); }}
+                           className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
+                        >
+                           <X size={10} />
+                        </button>
+                      </div>
+                   ))}
+                </div>
              </div>
            )}
         </section>
@@ -170,7 +227,7 @@ export default function UGCPage() {
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}
         title="اشتراك مطلوب لفيديوهات UGC"
-        description="للاستفادة من تقنية إنشاء محتوى فيديو تفاعلي وواقعي يبدو كأنه مصور بواسطة مستخدمين حقيقيين، تحتاج إلى اشتراك نشط."
+        description="للاستفادة من تقنية إنشاء محتوى فيديو تفاعلي وواقعي يبدو كأنه مصور بواسطة مستخدمين حقيقيين, تحتاج إلى اشتراك نشط."
         hasAIPlans={hasAIPlans}
       />
     </div>

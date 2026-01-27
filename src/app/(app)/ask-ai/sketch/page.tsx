@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Download, Palette, 
-  Loader2, ArrowRight, Zap, History, Layout
+  Loader2, ArrowRight, Zap, History, Layout, X, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -45,8 +45,10 @@ export default function SketchPage() {
   useEffect(() => { localStorage.setItem("ai_sketch_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
-    const res = await getAIStats(token);
-    setStats(res.stats);
+    try {
+      const res = await getAIStats(token);
+      setStats(res.stats);
+    } catch (e) { console.error(e); }
   };
 
   const checkAIPlans = async () => {
@@ -81,15 +83,37 @@ export default function SketchPage() {
     finally { setIsProcessing(false); }
   };
 
+  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm("هل تريد حذف هذا التصميم؟")) return;
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem("ai_sketch_history", JSON.stringify(newHistory));
+    if (selectedResult?.id === id) setSelectedResult(null);
+    showSuccess("تم الحذف.");
+  };
+
+  const clearHistory = () => {
+    if (!confirm("هل تريد مسح سجل التصميمات بالكامل؟")) return;
+    setHistory([]);
+    localStorage.removeItem("ai_sketch_history");
+    setSelectedResult(null);
+    showSuccess("تم مسح السجل.");
+  };
+
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/10 via-[#00050a] to-[#00050a]" />
       
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
         <div className="flex items-center gap-6">
-          <Link href="/ask-ai"><Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all"><ArrowRight className="h-5 w-5 text-white" /></Button></Link>
+          <Link href="/ask-ai">
+            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
+              <ArrowRight className="h-5 w-5 rotate-180" />
+            </Button>
+          </Link>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">رسم إلى صور واقعية</h1>
         </div>
         {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5"><Zap size={14} className="text-purple-400" /> <span className="text-sm font-bold font-mono">{stats.remainingCredits}</span></div>}
@@ -99,9 +123,9 @@ export default function SketchPage() {
         <aside className="lg:col-span-4 space-y-6">
           <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
             <div className="space-y-4">
-               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">ارفع رسمك اليدوي</label>
-               <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-purple-500/30 transition-all bg-white/5" onClick={() => document.getElementById('file-s')?.click()}>
-                  {previewUrl ? <img src={previewUrl} className="w-full h-full object-contain" /> : <Palette className="text-gray-700" size={48} />}
+               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">ارفع رسمك اليدوي</label>
+               <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-purple-500/30 transition-all bg-white/5 group" onClick={() => document.getElementById('file-s')?.click()}>
+                  {previewUrl ? <img src={previewUrl} className="w-full h-full object-contain" /> : <Palette className="text-gray-700 group-hover:text-purple-400" size={48} />}
                </div>
                <input id="file-s" type="file" className="hidden" accept="image/*" onChange={e => {
                   const file = e.target.files?.[0];
@@ -112,8 +136,14 @@ export default function SketchPage() {
             </div>
             
             <div className="space-y-4">
-               <label className="text-xs font-bold text-gray-400">وصف النتيجة النهائية</label>
-               <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="مثال: منظر طبيعي للجبال وقت الغروب، جودة سينمائية، تفاصيل دقيقة..." className="w-full h-32 bg-white/5 border border-white/5 rounded-2xl p-4 text-sm placeholder:text-gray-600 outline-none resize-none focus:border-purple-500/30 transition-all" />
+               <label className="text-xs font-bold text-gray-400 block text-right">وصف النتيجة النهائية</label>
+               <textarea 
+                 value={prompt} 
+                 onChange={e => setPrompt(e.target.value)} 
+                 placeholder="مثال: منظر طبيعي للجبال وقت الغروب، جودة سينمائية، تفاصيل دقيقة..." 
+                 className="w-full h-32 bg-white/5 border border-white/5 rounded-2xl p-4 text-sm placeholder:text-gray-600 outline-none resize-none focus:border-purple-500/30 transition-all text-right" 
+                 dir="rtl"
+               />
             </div>
 
             <GradientButton 
@@ -131,7 +161,7 @@ export default function SketchPage() {
           
           <div className="p-6 bg-purple-500/5 rounded-[24px] border border-purple-500/10 space-y-3">
              <h4 className="text-sm font-bold text-purple-400 mb-2">من خربشة إلى إبداع</h4>
-             <p className="text-xs text-gray-400 leading-relaxed">حوّل أبسط الرسومات اليدوية إلى صور واقعية مذهلة. استخدم الأوامر النصية لتوجيه الذكاء الاصطناعي نحو الألوان والستايل الذي تفضله.</p>
+             <p className="text-xs text-gray-400 leading-relaxed text-right">حوّل أبسط الرسومات اليدوية إلى صور واقعية مذهلة. استخدم الأوامر النصية لتوجيه الذكاء الاصطناعي نحو الألوان والستايل الذي تفضله.</p>
           </div>
         </aside>
 
@@ -139,8 +169,18 @@ export default function SketchPage() {
            <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden group">
               <AnimatePresence mode="wait">
                 {selectedResult ? (
-                  <motion.div key="res" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 text-center">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
+                    {/* Close Button */}
+                    <div className="absolute top-0 left-0 z-30">
+                        <button 
+                            onClick={() => setSelectedResult(null)}
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center w-full">
                        <div className="space-y-2">
                           <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">الرسم الأصلي</span>
                           <img src={selectedResult.original} className="rounded-xl border border-white/5 opacity-50 grayscale" />
@@ -148,7 +188,10 @@ export default function SketchPage() {
                        <div className="space-y-2 relative group/img">
                           <span className="text-[10px] text-purple-400 uppercase tracking-widest font-bold">النتيجة النهائية</span>
                           <img src={selectedResult.url} className="rounded-2xl shadow-3xl border border-white/10" />
-                          <Button onClick={() => window.open(selectedResult.url)} className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white text-black font-bold h-10 px-6 opacity-0 group-hover/img:opacity-100 transition-opacity"><Download className="mr-2 h-4 w-4" /> تحميل</Button>
+                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                            <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-white text-black font-bold h-10 px-6"><Download className="ml-2 h-4 w-4" /> تحميل</Button>
+                            <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => deleteFromHistory(selectedResult.id, e)}><Trash2 size={18} /></Button>
+                          </div>
                        </div>
                     </div>
                     <BorderBeam colorFrom="#A855F7" colorTo="#EC4899" />
@@ -165,11 +208,20 @@ export default function SketchPage() {
            
            {history.length > 0 && (
              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-500 px-2 flex items-center gap-2"><History size={14} /> التصميمات السابقة</h4>
+                <div className="flex items-center justify-between px-2">
+                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2"><History size={14} className="text-purple-500" /> التصميمات السابقة ({history.length})</h4>
+                   <Button variant="ghost" size="sm" onClick={clearHistory} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                </div>
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-2">
                    {history.map(img => (
-                      <div key={img.id} onClick={() => setSelectedResult(img)} className={clsx("aspect-square rounded-xl cursor-pointer border-2 transition-all overflow-hidden", selectedResult?.id === img.id ? "border-purple-500 scale-105" : "border-white/5 opacity-40 hover:opacity-100")}>
-                         <img src={img.url} className="w-full h-full object-cover" />
+                      <div key={img.id} className="relative group aspect-square rounded-xl cursor-pointer overflow-hidden border transition-all" onClick={() => setSelectedResult(img)}>
+                         <img src={img.url} className={clsx("w-full h-full object-cover transition-all", selectedResult?.id === img.id ? "scale-110 opacity-100 border-2 border-purple-500" : "opacity-40 hover:opacity-100")} />
+                         <button 
+                           onClick={(e) => deleteFromHistory(img.id, e)}
+                           className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                         >
+                           <X size={8} />
+                         </button>
                       </div>
                    ))}
                 </div>

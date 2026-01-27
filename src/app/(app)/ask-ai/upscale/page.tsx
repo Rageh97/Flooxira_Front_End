@@ -6,13 +6,14 @@ import {
   Upload,
   Download, 
   Trash2,
-  ChevronRight,
   Maximize2,
   Zap,
   Loader2,
   ArrowRight,
   History,
-  Image as ImageIcon
+  Image as ImageIcon,
+  X,
+  RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -107,22 +108,22 @@ export default function UpscalePage() {
 
     setIsProcessing(true);
     try {
-      // Validate image format and size
       if (selectedFile) {
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
         if (selectedFile.size > maxSize) {
+          setIsProcessing(false);
           return showError("تنبيه", "حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
         }
-
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!allowedTypes.includes(selectedFile.type)) {
+          setIsProcessing(false);
           return showError("تنبيه", "نوع الصورة غير مدعوم. يرجى استخدام JPG, PNG, أو WebP");
         }
       }
 
       const response = await processAIImage(token, {
         operation: 'upscale',
-        imageUrl: previewUrl, // This is the base64 data URL from FileReader
+        imageUrl: previewUrl,
         prompt: "Highly detailed, sharp, 4k, professional photography"
       });
 
@@ -144,11 +145,28 @@ export default function UpscalePage() {
       
       showSuccess("تم تحسين جودة الصورة بنجاح!");
     } catch (error: any) {
-      console.error("Upscale error:", error);
       showError("خطأ", error.message || "حدث خطأ أثناء المعالجة");
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm("هل تريد حذف هذه الصورة؟")) return;
+    const newHistory = history.filter(img => img.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem("ai_upscale_history", JSON.stringify(newHistory));
+    if (selectedResult?.id === id) setSelectedResult(null);
+    showSuccess("تم الحذف بنجاح!");
+  };
+
+  const clearHistory = () => {
+    if (!confirm("هل تريد مسح السجل بالكامل؟")) return;
+    setHistory([]);
+    localStorage.removeItem("ai_upscale_history");
+    setSelectedResult(null);
+    showSuccess("تم مسح السجل بالكامل.");
   };
 
   const downloadImage = async (url: string, filename: string) => {
@@ -169,15 +187,15 @@ export default function UpscalePage() {
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden font-sans selection:bg-blue-500/30" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-[#00050a] to-[#00050a]" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a]/80">
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a]/80 shadow-2xl">
         <div className="mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/ask-ai">
               <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-                <ArrowRight className="h-5 w-5 text-white" />
+                <ArrowRight className="h-5 w-5 text-white rotate-180" />
               </Button>
             </Link>
             <h1 className="text-2xl font-bold flex items-center gap-3">
@@ -186,41 +204,39 @@ export default function UpscalePage() {
               </span>
             </h1>
           </div>
-
           {stats && (
-            <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5">
+            <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5 font-mono">
                <Zap size={14} className="text-amber-400 fill-amber-400" />
-               <span className="text-sm font-bold font-mono">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
+               <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
             </div>
           )}
         </div>
       </header>
 
-      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left: Controls */}
-        <aside className="lg:col-span-4 space-y-2">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-text-primary/20 space-y-2">
+      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px]">
+        <aside className="lg:col-span-4 space-y-6">
+          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
             <div className="space-y-4">
-              <label className="block text-sm font-bold text-gray-300">اختر الصورة</label>
+              <label className="block text-xs font-bold text-gray-400 text-right uppercase tracking-widest">اختر الصورة</label>
               <div 
                 className={clsx(
-                  "relative aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group",
-                  previewUrl ? "border-blue-500/50" : "border-white/10 hover:border-blue-500/30 hover:bg-white/5"
+                  "relative aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group/upload",
+                  previewUrl ? "border-blue-500/50" : "border-white/10 hover:border-blue-500/30 bg-white/5"
                 )}
                 onClick={() => document.getElementById('fileInput')?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
+                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <ImageIcon className="text-blue-400 mb-2" size={32} />
-                      <span className="text-xs font-bold">تغيير الصورة</span>
+                      <span className="text-xs font-bold text-white">تغيير الصورة</span>
                     </div>
                   </>
                 ) : (
                   <>
-                    <Upload className="text-gray-500 mb-4 group-hover:text-blue-400 transition-colors" size={40} />
-                    <span className="text-sm text-gray-400 font-medium">اضغط لرفع صورة</span>
+                    <Upload className="text-gray-500 mb-4 group-hover/upload:text-blue-400 transition-colors" size={40} />
+                    <span className="text-sm">اضغط لرفع صورة</span>
                     <span className="text-[10px] text-gray-600 mt-2">JPG, PNG, WebP (Max 5MB)</span>
                   </>
                 )}
@@ -241,75 +257,75 @@ export default function UpscalePage() {
             </GradientButton>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-900/10 to-transparent rounded-3xl p-6 border border-text-primary/20 ">
-             <h3 className="text-sm font-bold mb-2">كيف يعمل؟</h3>
-             <p className="text-xs text-gray-400 leading-relaxed">
-               يستخدم نموذجنا الذكاء الاصطناعي التوليدي لإعادة رسم التفاصيل المفقودة وزيادة دقة الصورة حتى 4 أضعاف مع الحفاظ على الملامح الأصلية ووضوح الألوان.
+          <div className="p-6 bg-blue-500/5 rounded-2xl border border-blue-500/10 shadow-inner">
+             <h4 className="text-sm font-bold text-blue-400 mb-2 text-right">كيف يعمل؟</h4>
+             <p className="text-xs text-gray-400 leading-relaxed text-right">
+               يستخدم أحدث تقنيات الذكاء الاصطناعي لإعادة بناء التفاصيل المفقودة، إزالة التشويش، وزيادة دقة الصورة حتى 4 أضعاف مع الحفاظ على الملامح الطبيعية.
              </p>
           </div>
         </aside>
 
-        {/* Right: Preview */}
-        <section className="lg:col-span-8 flex flex-col gap-6">
-          <div className="relative min-h-[500px] flex flex-col">
-            <AnimatePresence mode="wait">
-              {selectedResult ? (
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="relative flex-1 rounded-[40px] bg-[#0a0c10] border border-white/10 overflow-hidden group"
-                >
-                  <div className="relative h-full w-full flex items-center justify-center p-8">
-                    <img src={selectedResult.url} className="max-h-[600px] rounded-xl shadow-2xl" />
-                  </div>
-                  
-                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 p-2 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl">
-                    <Button 
-                      onClick={() => downloadImage(selectedResult.url, `upscaled-${selectedResult.id}.png`)}
-                      className="rounded-full bg-blue-600 hover:bg-blue-700 h-10 px-6 font-bold"
-                    >
-                      <Download size={16} className="ml-2" /> تحميل النتيجة
-                    </Button>
-                  </div>
-                  <BorderBeam duration={6} />
-                </motion.div>
-              ) : isProcessing ? (
-                <AILoader />
-              ) : (
-                <div className="flex-1 rounded-[40px] border-2 border-dashed border-text-primary/20  flex flex-col items-center justify-center p-12 text-center">
-                  <Maximize2 size={48} className="text-gray-700 mb-6" />
-                  <h3 className="text-xl font-bold mb-2">لم يتم معالجة أي صورة بعد</h3>
-                  <p className="text-gray-500 max-w-sm">ارفع صورة من القائمة الجانبية ثم اضغط على زر التحسين لمشاهدة السحر.</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
+        <section className="lg:col-span-8 space-y-6">
+           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden group">
+              <AnimatePresence mode="wait">
+                {selectedResult ? (
+                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
+                    <div className="absolute top-4 left-4 z-30">
+                        <button 
+                            onClick={() => setSelectedResult(null)}
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
 
-          {/* History */}
-          {history.length > 0 && (
-            <div className="space-y-4">
-              <h4 className="font-bold flex items-center gap-2"><History size={18} className="text-blue-400" /> العمليات السابقة</h4>
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {history.map((item) => (
-                  <div 
-                    key={item.id} 
-                    onClick={() => setSelectedResult(item)}
-                    className={clsx(
-                      "aspect-square rounded-xl cursor-pointer overflow-hidden border transition-all",
-                      selectedResult?.id === item.id ? "border-blue-500 ring-2 ring-blue-500/20 shadow-lg" : "border-white/5 hover:border-white/20"
-                    )}
-                  >
-                    <img src={item.url} className="w-full h-full object-cover" />
+                    <img src={selectedResult.url} className="max-h-[600px] rounded-2xl shadow-3xl transition-transform duration-500 hover:scale-[1.01]" />
+                    <div className="mt-8 flex items-center gap-3">
+                        <Button onClick={() => downloadImage(selectedResult.url, `upscaled-${selectedResult.id}.png`)} className="rounded-full bg-blue-600 hover:bg-blue-700 h-10 px-8 font-bold transition-all hover:scale-105 shadow-lg shadow-blue-600/30"><Download size={16} className="ml-2" /> حفظ النتيجة</Button>
+                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => deleteFromHistory(selectedResult.id, e)}><Trash2 size={18} /></Button>
+                    </div>
+                    <BorderBeam />
+                  </motion.div>
+                ) : isProcessing ? (
+                  <AILoader />
+                ) : (
+                  <div className="flex flex-col items-center text-center group">
+                     <Maximize2 size={80} className="text-blue-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
+                     <h3 className="text-2xl font-bold text-white mb-2">وضوح فائق الدقة</h3>
+                     <p className="text-sm text-gray-500">ارفع الصورة التي تريد تحسينها وسنقوم بمضاعفة جودتها بذكاء.</p>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
+              </AnimatePresence>
+           </div>
+           
+           {history.length > 0 && (
+             <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><History size={14} className="text-blue-500" /> العمليات السابقة ({history.length})</h4>
+                   <Button variant="ghost" size="sm" onClick={clearHistory} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar px-2">
+                   {history.map(h => (
+                      <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedResult(h)}>
+                        <div 
+                           className={clsx("w-32 aspect-square rounded-2xl border-2 transition-all overflow-hidden shadow-lg cursor-pointer", selectedResult?.id === h.id ? "border-blue-500 scale-110 opacity-100" : "border-white/5 opacity-50 hover:opacity-100")}
+                        >
+                           <img src={h.url} className="w-full h-full object-cover" />
+                        </div>
+                        <button
+                           onClick={(e) => { e.stopPropagation(); deleteFromHistory(h.id); }}
+                           className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
+                        >
+                           <X size={10} />
+                        </button>
+                      </div>
+                   ))}
+                </div>
+             </div>
+           )}
         </section>
       </main>
 
-      {/* Subscription Required Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}

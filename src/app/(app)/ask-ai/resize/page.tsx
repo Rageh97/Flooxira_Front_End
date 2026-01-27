@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Zap, Maximize, FileVideo 
+  Loader2, ArrowRight, Zap, Maximize, FileVideo, X, Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { usePermissions } from "@/lib/permissions";
 import { getAIStats, processAIVideo, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
+import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
@@ -51,8 +52,12 @@ export default function ResizePage() {
   useEffect(() => { localStorage.setItem("ai_resize_history", JSON.stringify(history)); }, [history]);
 
   const loadStats = async () => {
-    const res = await getAIStats(token);
-    setStats(res.stats);
+    try {
+      const res = await getAIStats(token);
+      setStats(res.stats);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const checkAIPlans = async () => {
@@ -87,27 +92,58 @@ export default function ResizePage() {
     finally { setIsProcessing(false); }
   };
 
+  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm("هل تريد حذف هذا المقطع؟")) return;
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem("ai_resize_history", JSON.stringify(newHistory));
+    if (selectedResult?.id === id) setSelectedResult(null);
+    showSuccess("تم الحذف بنجاح!");
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
+      setHistory([]);
+      setSelectedResult(null);
+      localStorage.removeItem("ai_resize_history");
+      showSuccess("تم حذف جميع الأعمال!");
+    }
+  };
+
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-900/10 via-[#00050a] to-[#00050a]" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80">
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
         <div className="flex items-center gap-6">
-          <Link href="/ask-ai"><Button variant="ghost" size="icon" className="rounded-full bg-white/5 hover:bg-white/10"><ArrowRight className="h-5 w-5 text-white" /></Button></Link>
+          <Link href="/ask-ai">
+            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
+              <ArrowRight className="h-5 w-5 text-white rotate-180" />
+            </Button>
+          </Link>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-300 to-amber-300 bg-clip-text text-transparent">تغيير أبعاد الفيديو الذكي</h1>
         </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5"><Zap size={14} className="text-orange-400" /> <span className="text-sm font-bold font-mono">{stats.remainingCredits}</span></div>}
+        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-orange-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
       </header>
 
       <main className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full">
         <aside className="lg:col-span-4 space-y-6">
           <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
              <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400">الفيديو المستهدف</label>
-                <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden bg-white/5" onClick={() => document.getElementById('file-v-r')?.click()}>
-                   {previewUrl ? <video src={previewUrl} className="w-full h-full object-cover opacity-50" /> : <Upload className="text-gray-700" size={32} />}
+                <label className="text-xs font-bold text-gray-400 block text-right">الفيديو المستهدف</label>
+                <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload" onClick={() => document.getElementById('file-v-r')?.click()}>
+                   {previewUrl ? (
+                     <>
+                        <video src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <FileVideo className="text-orange-400 mb-2" size={32} />
+                          <span className="text-xs font-bold text-white">تغيير الفيديو</span>
+                        </div>
+                     </>
+                   ) : <Upload className="text-gray-700 group-hover/upload:text-orange-400" size={32} />}
                 </div>
                 <input id="file-v-r" type="file" className="hidden" accept="video/*" onChange={e => {
                    const file = e.target.files?.[0];
@@ -116,12 +152,15 @@ export default function ResizePage() {
              </div>
 
              <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">الأبعاد الجديدة</label>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">الأبعاد الجديدة</label>
                 <div className="grid grid-cols-1 gap-2">
                    {RATIOS.map(r => (
-                      <button key={r.id} onClick={() => setSelectedRatio(r.value)} className={clsx("p-4 rounded-2xl text-xs font-bold border transition-all flex justify-between items-center", selectedRatio === r.value ? "bg-orange-600 border-orange-500 shadow-lg shadow-orange-600/20" : "bg-white/5 border-transparent text-gray-400 hover:bg-white/10 text-right")}>
-                         <span>{r.label}</span>
-                         <Maximize size={14} className={clsx(selectedRatio === r.value ? "text-white" : "text-gray-600")} />
+                      <button key={r.id} onClick={() => setSelectedRatio(r.value)} className={clsx("p-4 rounded-2xl text-xs font-bold border transition-all flex justify-between items-center", selectedRatio === r.value ? "bg-orange-600 border-orange-500 shadow-lg shadow-orange-600/20 text-white" : "bg-white/5 border-transparent text-gray-400 hover:bg-white/10 text-right")}>
+                         <div className="flex items-center gap-3">
+                            <Maximize size={14} className={clsx(selectedRatio === r.value ? "text-white" : "text-gray-600")} />
+                            <span>{r.label}</span>
+                         </div>
+                         {selectedRatio === r.value && <Zap size={10} className="fill-white" />}
                       </button>
                    ))}
                 </div>
@@ -136,34 +175,78 @@ export default function ResizePage() {
                 icon={<Maximize />}
                 size="lg"
              >
-                تحميل فيديو جديد
+                تطبيق المقاس الجديد
              </GradientButton>
+          </div>
+          
+          <div className="p-6 bg-orange-500/5 rounded-2xl border border-orange-500/10">
+             <h4 className="text-sm font-bold text-orange-400 mb-2 text-right">مناسب لجميع المنصات</h4>
+             <p className="text-xs text-gray-400 leading-relaxed text-right">حوّل فيديوهاتك العريضة إلى فيديوهات طولية تناسب تيك توك وستوري إنستغرام أو العكس، مع الحفاظ على العناصر الأساسية في منتصف المشهد بذكاء.</p>
           </div>
         </aside>
 
-        <section className="lg:col-span-8 flex flex-col items-center">
-           <div className="min-h-[600px] w-full rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden">
+        <section className="lg:col-span-8 space-y-6">
+           <div className="min-h-[600px] w-full rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
               <AnimatePresence mode="wait">
                  {selectedResult ? (
-                    <motion.div key="res" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                       <video src={selectedResult.url} controls autoPlay loop className={clsx("max-h-[550px] w-auto rounded-2xl shadow-3xl border border-white/5")} />
-                       <div className="mt-8">
-                          <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-orange-600 hover:bg-orange-700 font-bold h-10 px-8"><Download className="mr-2 h-4 w-4" /> تحميل</Button>
+                    <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
+                       {/* Close Button */}
+                       <div className="absolute top-4 left-4 z-30">
+                          <button 
+                            onClick={() => setSelectedResult(null)}
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
+                          >
+                            <X size={14}/>
+                          </button>
+                        </div>
+                       
+                       <video src={selectedResult.url} controls autoPlay loop className={clsx("max-h-[550px] w-auto rounded-2xl shadow-3xl border border-white/5 transition-transform duration-500 hover:scale-[1.01]")} />
+                       <div className="mt-8 flex items-center gap-3">
+                          <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-orange-600 hover:bg-orange-700 font-bold h-10 px-8 transition-all hover:scale-105"><Download className="mr-2 h-4 w-4" /> تحميل الفيديو</Button>
+                          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => handleDeleteItem(selectedResult.id, e)}><Trash2 size={18} /></Button>
                        </div>
                        <BorderBeam colorFrom="#FB923C" colorTo="#F59E0B" />
                     </motion.div>
                  ) : isProcessing ? (
-                    <div className="flex flex-col items-center">
-                       <Loader text="جاري معالجة الأبعاد..." size="lg" variant="warning" />
-                    </div>
+                    <AILoader />
                  ) : (
-                    <div className="text-center opacity-20">
-                       <Maximize size={80} className="mb-4 mx-auto" />
-                       <p className="font-bold">اختر الأبعاد المناسبة لمنصتك</p>
+                    <div className="text-center group">
+                       <Maximize size={80} className="text-orange-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
+                       <p className="text-2xl font-bold text-white mb-2">اختر الأبعاد المناسبة لمنصتك</p>
+                       <p className="text-sm text-gray-500">ارفع الفيديو وسنقوم بإعادة تحجيمه ليلائم مقاسات التواصل.</p>
                     </div>
                  )}
               </AnimatePresence>
            </div>
+           
+           {history.length > 0 && (
+             <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><HistoryIcon size={14} className="text-orange-500" /> الفيديوهات السابقة ({history.length})</h4>
+                   <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 px-2 custom-scrollbar">
+                   {history.map(h => (
+                      <div key={h.id} className="relative group flex-shrink-0" onClick={() => setSelectedResult(h)}>
+                        <div 
+                           className={clsx("w-32 aspect-video rounded-2xl cursor-pointer border-2 transition-all overflow-hidden shadow-lg", selectedResult?.id === h.id ? "border-orange-500 scale-110 opacity-100" : "border-white/5 opacity-50 hover:opacity-100")}
+                        >
+                           <video src={h.url} className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[8px] font-bold text-white bg-orange-600 px-2 py-0.5 rounded-full">{h.ratio}</span>
+                           </div>
+                        </div>
+                        <button
+                           onClick={(e) => { e.stopPropagation(); handleDeleteItem(h.id); }}
+                           className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
+                        >
+                           <X size={10} />
+                        </button>
+                      </div>
+                   ))}
+                </div>
+             </div>
+           )}
         </section>
       </main>
 

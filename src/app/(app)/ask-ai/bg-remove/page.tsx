@@ -11,7 +11,9 @@ import {
   Loader2,
   ArrowRight,
   History,
-  Image as ImageIcon
+  Image as ImageIcon,
+  X,
+  RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -121,11 +123,7 @@ export default function BackgroundRemovalPage() {
 
       setHistory([newImage, ...history]);
       setSelectedResult(newImage);
-      setStats(prev => prev ? {
-        ...prev,
-        remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
-      } : null);
+      setStats(prev => prev ? { ...prev, remainingCredits: response.remainingCredits } : null);
       
       showSuccess("تم إزالة الخلفية بنجاح!");
     } catch (error: any) {
@@ -150,60 +148,67 @@ export default function BackgroundRemovalPage() {
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
+  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!confirm("هل تريد حذف هذه الصورة؟")) return;
+    const newHistory = history.filter(h => h.id !== id);
+    setHistory(newHistory);
+    localStorage.setItem("ai_bg_remove_history", JSON.stringify(newHistory));
+    if (selectedResult?.id === id) setSelectedResult(null);
+    showSuccess("تم الحذف بنجاح!");
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
+      setHistory([]);
+      setSelectedResult(null);
+      localStorage.removeItem("ai_bg_remove_history");
+      showSuccess("تم حذف جميع الأعمال!");
+    }
+  };
+
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden font-sans selection:bg-purple-500/30">
+    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden font-sans selection:bg-purple-500/30" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-950/20 via-[#00050a] to-[#00050a]" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a]/80">
-        <div className="mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/ask-ai">
-              <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-                <ArrowRight className="h-5 w-5 text-white" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-                إزالة خلفية الصور
-              </span>
-            </h1>
-          </div>
-
-          {stats && (
-            <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5">
-               <Zap size={14} className="text-amber-400 fill-amber-400" />
-               <span className="text-sm font-bold font-mono">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
-            </div>
-          )}
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
+        <div className="flex items-center gap-6">
+          <Link href="/ask-ai">
+            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
+              <ArrowRight className="h-5 w-5 text-white rotate-180" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">إزالة خلفية الصور</h1>
         </div>
+        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-amber-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
       </header>
 
-      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px]">
         <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6">
+          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
             <div className="space-y-4">
-              <label className="block text-sm font-bold text-gray-300">الصورة الأصلية</label>
+              <label className="block text-xs font-bold text-gray-400 text-right uppercase tracking-widest">الصورة الأصلية</label>
               <div 
                 className={clsx(
-                  "relative aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group",
-                  previewUrl ? "border-purple-500/50" : "border-white/10 hover:border-purple-500/30 hover:bg-white/5"
+                  "relative aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group/upload",
+                  previewUrl ? "border-purple-500/50" : "border-white/10 hover:border-purple-500/30 bg-white/5"
                 )}
                 onClick={() => document.getElementById('fileInput')?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
+                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <ImageIcon className="text-purple-400 mb-2" size={32} />
-                      <span className="text-xs font-bold">تغيير الصورة</span>
+                      <span className="text-xs font-bold text-white">تغيير الصورة</span>
                     </div>
                   </>
                 ) : (
                   <>
-                    <Upload className="text-gray-500 mb-4 group-hover:text-purple-400 transition-colors" size={40} />
-                    <span className="text-sm text-gray-400 font-medium">اضغط لرفع صورة</span>
+                    <Upload className="text-gray-500 mb-4 group-hover/upload:text-purple-400 transition-colors" size={40} />
+                    <span className="text-sm">اضغط لرفع صورة</span>
                   </>
                 )}
                 <input id="fileInput" type="file" className="hidden" accept="image/*" onChange={handleFileSelect} />
@@ -223,71 +228,73 @@ export default function BackgroundRemovalPage() {
             </GradientButton>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-900/10 to-transparent rounded-3xl p-6 border border-white/5">
-             <h3 className="text-sm font-bold mb-2">دقة متناهية</h3>
-             <p className="text-xs text-gray-400 leading-relaxed">
+          <div className="p-6 bg-purple-500/5 rounded-2xl border border-white/10 shadow-inner">
+             <h4 className="text-sm font-bold text-purple-400 mb-2 text-right">دقة متناهية</h4>
+             <p className="text-xs text-gray-400 leading-relaxed text-right">
                خوارزمياتنا قادرة على تمييز الشعر والتفاصيل الدقيقة بدقة عالية، مما يوفر لك صوراً جاهزة للتصميم بمساحات شفافة مثالية.
              </p>
           </div>
         </aside>
 
-        <section className="lg:col-span-8 flex flex-col gap-6">
-          <div className="relative min-h-[500px] flex flex-col">
-            <AnimatePresence mode="wait">
-              {selectedResult ? (
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="relative flex-1 rounded-[40px] bg-[#0a0c10] border border-white/10 overflow-hidden group"
-                >
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')] opacity-10" />
-                  <div className="relative h-full w-full flex items-center justify-center p-8">
-                    <img src={selectedResult.url} className="max-h-[600px] rounded-xl shadow-2xl relative z-10" />
-                  </div>
-                  
-                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 p-2 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl z-20">
-                    <Button 
-                      onClick={() => downloadImage(selectedResult.url, `no-bg-${selectedResult.id}.png`)}
-                      className="rounded-full bg-purple-600 hover:bg-purple-700 h-10 px-6 font-bold"
-                    >
-                      <Download size={16} className="ml-2" /> تحميل بدون خلفية
-                    </Button>
-                  </div>
-                  <BorderBeam duration={6} colorFrom="#A855F7" colorTo="#EC4899" />
-                </motion.div>
-              ) : isProcessing ? (
-                <AILoader />
-              ) : (
-                <div className="flex-1 rounded-[40px] border-2 border-dashed border-white/5 flex flex-col items-center justify-center p-12 text-center">
-                  <Eraser size={48} className="text-gray-700 mb-6" />
-                  <h3 className="text-xl font-bold mb-2">في انتظار إبداعك</h3>
-                  <p className="text-gray-500 max-w-sm">ارفع صورة وسنقوم بعزل العنصر الأساسي عن الخلفية في ثوانٍ معدودة.</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
+        <section className="lg:col-span-8 space-y-6">
+           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden group">
+              <AnimatePresence mode="wait">
+                {selectedResult ? (
+                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
+                    <div className="absolute top-4 left-4 z-30">
+                        <button 
+                            onClick={() => setSelectedResult(null)}
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
 
-          {history.length > 0 && (
-            <div className="space-y-4">
-              <h4 className="font-bold flex items-center gap-2"><History size={18} className="text-purple-400" /> النتائج السابقة</h4>
-              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {history.map((item) => (
-                  <div 
-                    key={item.id} 
-                    onClick={() => setSelectedResult(item)}
-                    className={clsx(
-                      "aspect-square rounded-xl cursor-pointer overflow-hidden border transition-all relative",
-                      selectedResult?.id === item.id ? "border-purple-500 ring-2 ring-purple-500/20 shadow-lg" : "border-white/5 hover:border-white/20"
-                    )}
-                  >
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')] opacity-5" />
-                    <img src={item.url} className="w-full h-full object-cover relative z-10" />
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')] opacity-10" />
+                    <img src={selectedResult.url} className="max-h-[600px] rounded-2xl shadow-3xl transition-transform duration-500 hover:scale-[1.01] relative z-10" />
+                    <div className="mt-8 flex items-center gap-3 relative z-20">
+                        <Button onClick={() => downloadImage(selectedResult.url, `no-bg-${selectedResult.id}.png`)} className="rounded-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 px-8 transition-all hover:scale-105 shadow-lg shadow-purple-600/30"><Download size={16} className="ml-2" /> تحميل بدون خلفية</Button>
+                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => handleDeleteItem(selectedResult.id, e)}><Trash2 size={18} /></Button>
+                    </div>
+                    <BorderBeam colorFrom="#A855F7" colorTo="#EC4899" />
+                  </motion.div>
+                ) : isProcessing ? (
+                  <AILoader />
+                ) : (
+                  <div className="flex flex-col items-center text-center group">
+                     <Eraser size={80} className="text-purple-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
+                     <h3 className="text-2xl font-bold text-white mb-2">عزل العناصر بذكاء</h3>
+                     <p className="text-sm text-gray-500">ارفع صورة وسنقوم بحذف الخلفية بدقة مذهلة خلال ثوانٍ.</p>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                )}
+              </AnimatePresence>
+           </div>
+           
+           {history.length > 0 && (
+             <div className="space-y-4">
+                <div className="flex items-center justify-between px-2">
+                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><History size={14} className="text-purple-500" /> العمليات السابقة ({history.length})</h4>
+                   <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar px-2">
+                   {history.map(h => (
+                      <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedResult(h)}>
+                        <div 
+                           className={clsx("w-32 aspect-square rounded-2xl border-2 transition-all overflow-hidden shadow-lg cursor-pointer bg-[url('https://www.transparenttextures.com/patterns/checkerboard.png')] bg-white/5", selectedResult?.id === h.id ? "border-purple-500 scale-110 opacity-100" : "border-white/5 opacity-50 hover:opacity-100")}
+                        >
+                           <img src={h.url} className="w-full h-full object-cover" />
+                        </div>
+                        <button
+                           onClick={(e) => { e.stopPropagation(); handleDeleteItem(h.id); }}
+                           className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
+                        >
+                           <X size={10} />
+                        </button>
+                      </div>
+                   ))}
+                </div>
+             </div>
+           )}
         </section>
       </main>
 

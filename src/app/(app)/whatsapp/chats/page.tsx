@@ -26,7 +26,7 @@ import {
 } from "@/lib/escalationApi";
 
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Users } from "lucide-react";
+import { Search, Filter } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { createPortal } from "react-dom";
 
@@ -143,6 +143,7 @@ export default function WhatsAppChatsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingContacts, setLoadingContacts] = useState(true);
 
   // Mobile detection for full-screen chat
   const [isMobile, setIsMobile] = useState(false);
@@ -297,8 +298,8 @@ export default function WhatsAppChatsPage() {
     
     // Refresh contacts list every 15 seconds to keep order updated
     const interval = setInterval(() => {
-      // Don't reload if user is searching or interacting (can be improved later)
-      loadChatContacts();
+      // Don't show loader on background refresh
+      loadChatContacts(false);
     }, 15000);
     
     return () => clearInterval(interval);
@@ -488,8 +489,11 @@ export default function WhatsAppChatsPage() {
     }
   }
 
-  async function loadChatContacts() {
+  async function loadChatContacts(showLoader: boolean = true) {
     try {
+      if (showLoader) {
+        setLoadingContacts(true);
+      }
       const data = await getChatContacts(token);
       console.log('=== getChatContacts API Response ===');
       console.log('Full API response:', data);
@@ -497,9 +501,7 @@ export default function WhatsAppChatsPage() {
       
       if (data.success) {
         // Helper to extract clean number for comparison
-        const getCleanNumber = (num: string, isGroup?: boolean) => {
-          if (isGroup) return num;
-          
+        const getCleanNumber = (num: string) => {
           let clean = num.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '').replace(/\D/g, '');
           // Extract from LID if possible
           if (clean.length >= 15) {
@@ -521,7 +523,7 @@ export default function WhatsAppChatsPage() {
         const uniqueContactsMap = new Map();
         
         data.contacts.forEach((contact: any) => {
-           const cleanNum = getCleanNumber(contact.contactNumber, contact.isGroup);
+           const cleanNum = getCleanNumber(contact.contactNumber);
            
            if (uniqueContactsMap.has(cleanNum)) {
               const existing = uniqueContactsMap.get(cleanNum);
@@ -562,11 +564,11 @@ export default function WhatsAppChatsPage() {
 
         const dedupedContacts = Array.from(uniqueContactsMap.values());
         
-        // FILTER: Remove LID numbers and long internal IDs
-        // User requested to hide numbers like 58858651291839 (14+ digits)
+        // FILTER: Remove groups, LID numbers and long internal IDs
+        // User requested to remove groups due to large size
         const cleanContacts = (dedupedContacts as any[]).filter(c => {
-           // Always allow groups
-           if (c.isGroup) return true;
+           // ❌ FILTER OUT ALL GROUPS - User doesn't want them due to large size
+           if (c.isGroup) return false;
 
            // Explicitly filter LID suffix if user doesn't want them
            if (c.contactNumber.includes('@lid')) return false;
@@ -594,6 +596,10 @@ export default function WhatsAppChatsPage() {
       }
     } catch (e: any) {
       setError(e.message);
+    } finally {
+      if (showLoader) {
+        setLoadingContacts(false);
+      }
     }
   }
 
@@ -1176,7 +1182,34 @@ export default function WhatsAppChatsPage() {
           </CardHeader>
           <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-6">
             <div className={`space-y-2 w-full lg:w-1/3 border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto custom-scrollbar ${selectedContact ? 'hidden lg:block' : 'block'}`}>
-              {filteredContacts.length === 0 ? (
+              {loadingContacts ? (
+                <div className="space-y-3 p-3">
+                  {/* Beautiful Skeleton Loader */}
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-md bg-secondry animate-pulse">
+                      {/* Avatar Skeleton */}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 animate-shimmer"></div>
+                      
+                      {/* Content Skeleton */}
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded w-3/4 animate-shimmer"></div>
+                        <div className="h-3 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded w-1/2 animate-shimmer"></div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Loading Text */}
+                  <div className="text-center py-4">
+                    <div className="inline-flex items-center gap-2 text-blue-400">
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-sm font-medium">جاري تحميل جهات الاتصال...</span>
+                    </div>
+                  </div>
+                </div>
+              ) : filteredContacts.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">لا توجد جهات اتصال مطابقة</div>
               ) : (
                 filteredContacts.map((contact, index) => (
@@ -1198,16 +1231,8 @@ export default function WhatsAppChatsPage() {
                     <div className="flex items-center gap-2">
                       {contact.profilePicture ? (
                         <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
-                      ) : contact.isGroup ? (
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-200">
-                          <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </div>
-                      ) : contact.messageCount > 0 ? (
-                        <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
                       ) : (
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-secondry flex items-center justify-center text-white font-medium">
-                          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
-                        </div>
+                        <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
                       )}
                       
                       <div className="flex flex-col">
@@ -1249,11 +1274,6 @@ export default function WhatsAppChatsPage() {
                   <div className="flex items-center gap-2">
                     {selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? 
                       <img width={40} height={40} className="w-10 h-10 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : 
-                      selectedContact && contacts.find(c => c.contactNumber === selectedContact)?.isGroup ? (
-                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-200">
-                           <Users className="w-6 h-6" />
-                        </div>
-                      ) :
                       <img width={40} height={40} className="w-10 h-10 rounded-full" src="/user.gif" alt="" />
                     }
                     <div className="flex flex-col overflow-hidden">
