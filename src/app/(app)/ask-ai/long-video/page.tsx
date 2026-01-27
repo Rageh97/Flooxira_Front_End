@@ -451,7 +451,7 @@ export default function LongVideoPage() {
                   </div>
                   <div className="flex gap-5 overflow-x-auto pb-6 px-4 custom-scrollbar">
                      {history.map(h => (
-                        <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedResult ? setSelectedVideo(h) : null}>
+                        <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedVideo(h)}>
                            <div className={clsx("w-48 aspect-video rounded-2xl border-2 transition-all overflow-hidden shadow-2xl cursor-pointer", selectedVideo?.id === h.id ? "border-purple-500 scale-105 z-10" : "border-white/5 opacity-50 hover:opacity-100")}>
                               <video src={h.url} className="w-full h-full object-cover" />
                               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

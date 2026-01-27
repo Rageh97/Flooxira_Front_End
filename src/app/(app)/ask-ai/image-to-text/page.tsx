@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Copy, Check, 
-  Loader2, ArrowRight, Zap, Image as ImageIcon, Search, History, X, Trash2
+  Loader2, ArrowRight, Zap, Image as ImageIcon, Search, History, X, Trash2,
+  RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
