@@ -204,6 +204,7 @@ export default function AvatarPage() {
               </AnimatePresence>
            </div>
            
+           
            {history.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between px-2">
