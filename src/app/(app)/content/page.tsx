@@ -1305,15 +1305,16 @@ export default function ContentHomePage() {
 
                 <div className="space-y-2">
                   <label className="text-white text-sm">المرفقات</label>
-                  <label htmlFor="contentAttachments" className="container cursor-pointer block">
-                    <div className="header"> 
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                <div className="space-y-2">
+                  <label className="text-white text-sm">المرفقات</label>
+                  <label htmlFor="contentAttachments" className="w-full cursor-pointer block border border-dashed border-gray-600 rounded-lg p-4 hover:bg-white/5 transition-colors">
+                    <div className="header text-center"> 
+                      <svg className="w-8 h-8 mx-auto mb-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
                         <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg> 
                         <p className="text-white text-sm font-medium">اختر مرفقات</p>
                       </div> 
-                      <div className="footer"> 
-                        <svg fill="#ffffff" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z" fill="white"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z" fill="white"></path></g></svg> 
-                        <p className="text-white text-sm font-medium">
+                      <div className="footer text-center mt-2"> 
+                         <p className="text-gray-400 text-xs text-center mb-1">
                           {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "لا يوجد ملفات محددة"}
                         </p> 
                         {itemAttachments.length > 0 && (
@@ -1326,10 +1327,9 @@ export default function ContentHomePage() {
                               const fileInput = document.getElementById('contentAttachments') as HTMLInputElement;
                               if (fileInput) fileInput.value = '';
                             }}
-                            className="cursor-pointer hover:opacity-80 flex items-center justify-center"
-                            style={{ background: 'none', border: 'none', padding: 0 }}
+                            className="text-red-400 text-xs hover:underline"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white', height: '130%', fill: 'royalblue', backgroundColor: 'rgba(70, 66, 66, 0.103)', borderRadius: '50%', padding: '2px', cursor: 'pointer', boxShadow: '0 2px 30px rgba(0, 0, 0, 0.205)' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="white" strokeWidth="2"></path> <path d="M19.5 5H4.5" stroke="white" strokeWidth="2" strokeLinecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="white" strokeWidth="2"></path> </g></svg>
+                            مسح الكل
                           </button>
                         )}
                       </div> 
@@ -1342,6 +1342,7 @@ export default function ContentHomePage() {
                         onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                       />
                   </label>
+                </div>
                   
                   <div className="flex flex-wrap gap-2">
                     {itemAttachments.map((att, idx) => (
@@ -1595,15 +1596,16 @@ export default function ContentHomePage() {
 
                 <div className="space-y-2">
                   <label className="text-white text-sm">المرفقات</label>
-                  <label htmlFor="contentAttachmentsSecondary" className="container cursor-pointer block">
-                    <div className="header"> 
-                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
+                <div className="space-y-2">
+                  <label className="text-white text-sm">المرفقات</label>
+                  <label htmlFor="contentAttachmentsSecondary" className="w-full cursor-pointer block border border-dashed border-gray-600 rounded-lg p-4 hover:bg-white/5 transition-colors">
+                    <div className="header text-center"> 
+                      <svg className="w-8 h-8 mx-auto mb-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
                         <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg> 
                         <p className="text-white text-sm font-medium">اختر مرفقات</p>
                       </div> 
-                      <div className="footer"> 
-                        <svg fill="#ffffff" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M15.331 6H8.5v20h15V14.154h-8.169z" fill="white"></path><path d="M18.153 6h-.009v5.342H23.5v-.002z" fill="white"></path></g></svg> 
-                        <p className="text-white text-sm font-medium">
+                      <div className="footer text-center mt-2"> 
+                         <p className="text-gray-400 text-xs text-center mb-1">
                           {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "لا يوجد ملفات محددة"}
                         </p> 
                         {itemAttachments.length > 0 && (
@@ -1616,10 +1618,9 @@ export default function ContentHomePage() {
                               const fileInput = document.getElementById('contentAttachmentsSecondary') as HTMLInputElement;
                               if (fileInput) fileInput.value = '';
                             }}
-                            className="cursor-pointer hover:opacity-80 flex items-center justify-center"
-                            style={{ background: 'none', border: 'none', padding: 0 }}
+                            className="text-red-400 text-xs hover:underline"
                           >
-                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white', height: '130%', fill: 'royalblue', backgroundColor: 'rgba(70, 66, 66, 0.103)', borderRadius: '50%', padding: '2px', cursor: 'pointer', boxShadow: '0 2px 30px rgba(0, 0, 0, 0.205)' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.16565 10.1534C5.07629 8.99181 5.99473 8 7.15975 8H16.8402C18.0053 8 18.9237 8.9918 18.8344 10.1534L18.142 19.1534C18.0619 20.1954 17.193 21 16.1479 21H7.85206C6.80699 21 5.93811 20.1954 5.85795 19.1534L5.16565 10.1534Z" stroke="white" strokeWidth="2"></path> <path d="M19.5 5H4.5" stroke="white" strokeWidth="2" strokeLinecap="round"></path> <path d="M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5H10V3Z" stroke="white" strokeWidth="2"></path> </g></svg>
+                           مسح الكل
                           </button>
                         )}
                       </div> 
@@ -1632,6 +1633,7 @@ export default function ContentHomePage() {
                         onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                       />
                   </label>
+                </div>
                   
                   <div className="flex flex-wrap gap-2">
                     {itemAttachments.map((att, idx) => (
@@ -1829,8 +1831,14 @@ export default function ContentHomePage() {
 
         {/* Reminder Modal */}
         {showReminderModal && itemToRemind && (
-          <div className="fixed inset-0 bg-black/70  backdrop-blur-lg  flex items-center justify-center z-999">
-            <div className=" gradient-border rounded-lg p-6 max-w-md w-full mx-4">
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[99999]"
+            onClick={() => closeReminderModal()}
+          >
+            <div 
+              className="gradient-border rounded-lg p-6 max-w-md w-full mx-4 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
               <h3 className="text-lg font-semibold text-white mb-4">إعداد تذكير</h3>
               <div className="space-y-2">
                 

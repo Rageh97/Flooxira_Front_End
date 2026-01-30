@@ -12,6 +12,7 @@ import {
   resolveChatNote,
   listEmployees,
 } from "@/lib/api";
+import React, { useMemo, useCallback } from "react";
 import { listTags, addContactToTag, createTag, listContactsByTag } from "@/lib/tagsApi";
 import { sendWhatsAppMedia } from "@/lib/mediaApi";
 import { getBotStatus, pauseBot, resumeBot, BotStatus } from "@/lib/botControlApi";
@@ -29,6 +30,53 @@ import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { createPortal } from "react-dom";
+
+// Memoized Contact Item Component moved outside to prevent re-creation on render
+const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, tags, onClick }: any) => {
+  return (
+    <div
+      onClick={onClick}
+      className={`p-2 ml-1 lg:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
+        isSelected
+          ? ' inner-shadow'
+          : isEscalated ? 'bg-red-500/30 border border-red-500/30'
+          : isOpenNote ? 'bg-yellow-600/30' : 'bg-secondry'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {contact.profilePicture ? (
+          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} loading="lazy" />
+        ) : (
+          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" loading="lazy" />
+        )}
+        
+        <div className="flex flex-col">
+          <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
+        </div>
+      </div>
+    
+      {tags && tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {tags.slice(0, 2).map((tag: string, index: number) => (
+            <span key={index} className="text-xs bg-secondry border-1 border-blue-300 text-white px-2 py-1 rounded-full">
+              {tag}
+            </span>
+          ))}
+          {tags.length > 2 && <span className="text-xs text-gray-400">+{tags.length - 2}</span>}
+        </div>
+      )}
+    </div>
+  );
+}, (prev, next) => {
+  return prev.contact.contactNumber === next.contact.contactNumber &&
+         prev.contact.lastMessageTime === next.contact.lastMessageTime &&
+         prev.isSelected === next.isSelected &&
+         prev.isEscalated === next.isEscalated &&
+         prev.isOpenNote === next.isOpenNote &&
+         prev.contact.profilePicture === next.contact.profilePicture &&
+         // Deep compare tags length as proxy
+         (prev.tags?.length || 0) === (next.tags?.length || 0);
+});
 
 export default function WhatsAppChatsPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -585,14 +633,31 @@ export default function WhatsAppChatsPage() {
         cleanContacts.sort((a: any, b: any) => {
            const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
            const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-           // Debug logging
-           // console.log(`Sorting: ${a.contactNumber} (${timeA}) vs ${b.contactNumber} (${timeB}) -> ${timeB - timeA}`);
            return timeB - timeA;
         });
 
-        setContacts(cleanContacts);
+        // Optimization: prevent unnecessary state updates if data hasn't changed meaningfully
+        setContacts(prev => {
+          // If length is different, update
+          if (prev.length !== cleanContacts.length) return cleanContacts;
+          
+          // Check if first few items are different (usually enough for chat apps where top items change)
+          const isDifferent = cleanContacts.some((c, i) => {
+             const prevC = prev[i];
+             if (!prevC) return true;
+             return c.contactNumber !== prevC.contactNumber || 
+                    c.lastMessageTime !== prevC.lastMessageTime ||
+                    c.messageCount !== prevC.messageCount || 
+                    c.profilePicture !== prevC.profilePicture;
+          });
+          
+          return isDifferent ? cleanContacts : prev;
+        });
+        
         // Load tags for each contact
-        await loadContactTags(cleanContacts);
+        // Don't await this to speed up UI
+        loadContactTags(cleanContacts);
+
       }
     } catch (e: any) {
       setError(e.message);
@@ -722,22 +787,24 @@ export default function WhatsAppChatsPage() {
   }, [filterTagId]);
 
   // Filter contacts based on search and tag
-  const filteredContacts = contacts.filter(contact => {
-    const searchLower = searchTerm.toLowerCase();
-    const contactName = (contact.contactName || '').toLowerCase();
-    const contactNumber = (contact.contactNumber || '').toLowerCase();
-    
-    // Search filter
-    const matchesSearch = !searchTerm || 
-      contactName.includes(searchLower) || 
-      contactNumber.includes(searchLower);
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(contact => {
+      const searchLower = searchTerm.toLowerCase();
+      const contactName = (contact.contactName || '').toLowerCase();
+      const contactNumber = (contact.contactNumber || '').toLowerCase();
       
-    // Tag filter
-    const matchesTag = !filterTagId || 
-      (contactsInSelectedFilter && contactsInSelectedFilter.has(contact.contactNumber));
+      // Search filter
+      const matchesSearch = !searchTerm || 
+        contactName.includes(searchLower) || 
+        contactNumber.includes(searchLower);
+        
+      // Tag filter
+      const matchesTag = !filterTagId || 
+        (contactsInSelectedFilter && contactsInSelectedFilter.has(contact.contactNumber));
 
-    return matchesSearch && matchesTag;
-  });
+      return matchesSearch && matchesTag;
+    });
+  }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter]);
 
   async function handleSendMessage(phoneNumber?: string, message?: string) {
     const targetPhone = phoneNumber;
@@ -1212,44 +1279,21 @@ export default function WhatsAppChatsPage() {
               ) : filteredContacts.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">لا توجد جهات اتصال مطابقة</div>
               ) : (
-                filteredContacts.map((contact, index) => (
-                  <div
-                    key={contact.contactNumber || `contact-${index}`}
+                filteredContacts.slice(0, 100).map((contact, index) => (
+                  <ContactItem
+                    key={contact.contactNumber}
+                    contact={contact}
+                    isSelected={selectedContact === contact.contactNumber}
+                    isEscalated={escalatedContacts.has(contact.contactNumber)}
+                    isOpenNote={openNoteContacts.has(contact.contactNumber)}
+                    tags={contact.contactNumber ? contactTags[contact.contactNumber] : []}
                     onClick={() => {
                       if (contact.contactNumber) {
                         setSelectedContact(contact.contactNumber);
                         loadChatHistory(contact.contactNumber);
                       }
                     }}
-                    className={`p-2 ml-1 lg:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
-                      selectedContact === contact.contactNumber
-                        ? ' inner-shadow'
-                        : escalatedContacts.has(contact.contactNumber) ? 'bg-red-500/30 border border-red-500/30'
-                        : openNoteContacts.has(contact.contactNumber) ? 'bg-yellow-600/30' : 'bg-secondry'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {contact.profilePicture ? (
-                        <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} />
-                      ) : (
-                        <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" />
-                      )}
-                      
-                      <div className="flex flex-col">
-                        <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
-                      </div>
-                    </div>
-                  
-                    {contact.contactNumber && contactTags[contact.contactNumber] && contactTags[contact.contactNumber].length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {contactTags[contact.contactNumber].map((tag, index) => (
-                          <span key={index} className="text-xs bg-secondry border-1 border-blue-300 text-white px-2 py-1 rounded-full">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  />
                 ))
               )}
 
