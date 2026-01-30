@@ -10,7 +10,7 @@ import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen } from "lucide-react";
+import { BookOpen, X } from "lucide-react";
 
 import { 
   listContentCategories, 
@@ -1305,43 +1305,46 @@ export default function ContentHomePage() {
 
                 <div className="space-y-2">
                   <label className="text-white text-sm">المرفقات</label>
-                <div className="space-y-2">
-                  <label className="text-white text-sm">المرفقات</label>
-                  <label htmlFor="contentAttachments" className="w-full cursor-pointer block border border-dashed border-gray-600 rounded-lg p-4 hover:bg-white/5 transition-colors">
-                    <div className="header text-center"> 
-                      <svg className="w-8 h-8 mx-auto mb-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
-                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg> 
-                        <p className="text-white text-sm font-medium">اختر مرفقات</p>
-                      </div> 
-                      <div className="footer text-center mt-2"> 
-                         <p className="text-gray-400 text-xs text-center mb-1">
-                          {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "لا يوجد ملفات محددة"}
-                        </p> 
-                        {itemAttachments.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setItemAttachments([]);
-                              const fileInput = document.getElementById('contentAttachments') as HTMLInputElement;
-                              if (fileInput) fileInput.value = '';
-                            }}
-                            className="text-red-400 text-xs hover:underline"
-                          >
-                            مسح الكل
-                          </button>
-                        )}
-                      </div> 
-                      <input 
-                        id="contentAttachments"
-                        type="file" 
-                        multiple 
-                        accept="image/*,video/*"
-                        className="hidden"
-                        onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                      />
+                  <label 
+                    htmlFor="contentAttachments" 
+                    className="w-full cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-blue-500/50 rounded-xl p-6 bg-white/5 hover:bg-white/10 transition-all group"
+                  >
+                    <div className="flex flex-col items-center gap-2"> 
+                      <svg className="w-10 h-10 text-blue-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                      </svg> 
+                      <p className="text-white text-sm font-medium">اختر مرفقات</p>
+                      <p className="text-gray-400 text-xs text-center">
+                        {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "اضغط هنا لرفع الصور أو الفيديو"}
+                      </p> 
+                    </div> 
                   </label>
+                  
+                  {itemAttachments.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setItemAttachments([]);
+                        const fileInput = document.getElementById('contentAttachments') as HTMLInputElement;
+                        if (fileInput) fileInput.value = '';
+                      }}
+                      className="text-red-400 text-[10px] hover:underline flex items-center gap-1 mt-1 mr-auto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      مسح الكل
+                    </button>
+                  )}
+                  
+                  <input 
+                    id="contentAttachments"
+                    type="file" 
+                    multiple 
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                  />
                 </div>
                   
                   <div className="flex flex-wrap gap-2">
@@ -1357,7 +1360,6 @@ export default function ContentHomePage() {
                       </div>
                     ))}
                   </div>
-                </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -1596,43 +1598,46 @@ export default function ContentHomePage() {
 
                 <div className="space-y-2">
                   <label className="text-white text-sm">المرفقات</label>
-                <div className="space-y-2">
-                  <label className="text-white text-sm">المرفقات</label>
-                  <label htmlFor="contentAttachmentsSecondary" className="w-full cursor-pointer block border border-dashed border-gray-600 rounded-lg p-4 hover:bg-white/5 transition-colors">
-                    <div className="header text-center"> 
-                      <svg className="w-8 h-8 mx-auto mb-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ color: 'white' }}><g id="SVGRepo_bgCarrier" strokeWidth="0"></g><g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g><g id="SVGRepo_iconCarrier"> 
-                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path> </g></svg> 
-                        <p className="text-white text-sm font-medium">اختر مرفقات</p>
-                      </div> 
-                      <div className="footer text-center mt-2"> 
-                         <p className="text-gray-400 text-xs text-center mb-1">
-                          {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "لا يوجد ملفات محددة"}
-                        </p> 
-                        {itemAttachments.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setItemAttachments([]);
-                              const fileInput = document.getElementById('contentAttachmentsSecondary') as HTMLInputElement;
-                              if (fileInput) fileInput.value = '';
-                            }}
-                            className="text-red-400 text-xs hover:underline"
-                          >
-                           مسح الكل
-                          </button>
-                        )}
-                      </div> 
-                      <input 
-                        id="contentAttachmentsSecondary"
-                        type="file" 
-                        multiple 
-                        accept="image/*,video/*"
-                        className="hidden"
-                        onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
-                      />
+                  <label 
+                    htmlFor="contentAttachmentsSecondary" 
+                    className="w-full cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-blue-500/50 rounded-xl p-6 bg-white/5 hover:bg-white/10 transition-all group"
+                  >
+                    <div className="flex flex-col items-center gap-2"> 
+                      <svg className="w-10 h-10 text-blue-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 10V9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9V10C19.2091 10 21 11.7909 21 14C21 15.4806 20.1956 16.8084 19 17.5M7 10C4.79086 10 3 11.7909 3 14C3 15.4806 3.8044 16.8084 5 17.5M7 10C7.43285 10 7.84965 10.0688 8.24006 10.1959M12 12V21M12 12L15 15M12 12L9 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                      </svg> 
+                      <p className="text-white text-sm font-medium">اختر مرفقات</p>
+                      <p className="text-gray-400 text-xs text-center">
+                        {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "اضغط هنا لرفع الصور أو الفيديو"}
+                      </p> 
+                    </div> 
                   </label>
+                  
+                  {itemAttachments.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setItemAttachments([]);
+                        const fileInput = document.getElementById('contentAttachmentsSecondary') as HTMLInputElement;
+                        if (fileInput) fileInput.value = '';
+                      }}
+                      className="text-red-400 text-[10px] hover:underline flex items-center gap-1 mt-1 mr-auto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      مسح الكل
+                    </button>
+                  )}
+                  
+                  <input 
+                    id="contentAttachmentsSecondary"
+                    type="file" 
+                    multiple 
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                  />
                 </div>
                   
                   <div className="flex flex-wrap gap-2">
@@ -1648,7 +1653,6 @@ export default function ContentHomePage() {
                       </div>
                     ))}
                   </div>
-                </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -1830,93 +1834,84 @@ export default function ContentHomePage() {
         )}
 
         {/* Reminder Modal */}
-        {showReminderModal && itemToRemind && (
-          <div 
-            className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-[99999]"
-            onClick={() => closeReminderModal()}
-          >
-            <div 
-              className="gradient-border rounded-lg p-6 max-w-md w-full mx-4 relative"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold text-white mb-4">إعداد تذكير</h3>
-              <div className="space-y-2">
-                
-                  <div className="flex">
-                    <p className="text-gray-300 mb-2">العنصر:</p>
-                  <p className="text-white font-medium">{itemToRemind.title}</p>
-                  </div>
-                  <p className="text-gray-400 text-sm">
-                    مجدول في: {itemToRemind.scheduledAt ? new Date(itemToRemind.scheduledAt).toLocaleString('en-US') : 'غير محدد'}
-                  </p>
-                
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-white text-sm">رقم الواتساب</label>
-                    {whatsappSessionPhone && reminderWhatsApp === whatsappSessionPhone && (
-                      <span className="text-xs text-green-400 flex items-center gap-1">
-                        <span>✓</span>
-                        <span>تم الملء تلقائياً من الجلسة</span>
-                      </span>
-                    )}
-                  </div>
-                  <Input 
-                    placeholder="مثال: +966501234567" 
-                    value={reminderWhatsApp} 
-                    onChange={(e) => setReminderWhatsApp(e.target.value)}
-                    className="bg-[#011910] border-gray-300 text-white"
-                  />
+        <Dialog open={showReminderModal && !!itemToRemind} onOpenChange={(open) => !open && closeReminderModal()}>
+          <DialogContent className="max-w-md bg-[#0f1827] border-blue-500/30 text-white p-6 z-[9999999]">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-white">إعداد تذكير</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4 mt-4">
+              <div className="bg-white/5 p-3 rounded-lg border border-white/10">
+                <div className="flex gap-2 text-sm">
+                  <span className="text-gray-300">العنصر:</span>
+                  <span className="text-white font-medium">{itemToRemind?.title}</span>
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-white text-sm">رسالة التذكير</label>
-                  <Textarea 
-                    placeholder="اكتب رسالة التذكير..." 
-                    value={reminderMessage} 
-                    onChange={(e) => setReminderMessage(e.target.value)}
-                    className="bg-[#011910] border-gray-300 text-white min-h-[80px]"
-                  />
-                  <p className="text-gray-300 text-xs">
-                    سيتم إرسال هذه الرسالة قبل ساعتين وساعة واحدة من الموعد المحدد
-                  </p>
-                </div>
-
-                {/* WhatsApp Connection Warning */}
-                <div className="bg-yellow-900 border border-yellow-700 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <div className="text-yellow-400 mt-0.5">⚡</div>
-                    <div className="flex-1">
-                      <p className="text-yellow-200 text-sm font-medium mb-1">تلميح</p>
-                      <p className="text-yellow-300 text-xs">
-                        للحصول على التذكيرات، تأكد من أن جلسة الواتساب الخاصة بك نشطة عند موعد إرسال التذكير.
-                        سيتم إرسال التذكيرات تلقائياً إذا كانت الجلسة متصلة.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={onCreateReminder}
-                    disabled={!reminderWhatsApp.trim() || !reminderMessage.trim()}
-                    className="primary-button text-white font-bold text-lg flex-1"
-                  >
-                  
-                    إعداد التذكير
-                  </Button>
-                  <Button 
-                    onClick={closeReminderModal}
-                    variant="secondary"
-                    className="primary-button after:bg-red-600  text-white font-bold text-lg flex-1"
-                  >
-                    إلغاء
-                  </Button>
+                <div className="flex gap-2 text-xs text-gray-400 mt-1">
+                  <span>مجدول في:</span>
+                  <span>{itemToRemind?.scheduledAt ? new Date(itemToRemind.scheduledAt).toLocaleString('en-US') : 'غير محدد'}</span>
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-white text-sm font-medium">رقم الواتساب</label>
+                  {whatsappSessionPhone && reminderWhatsApp === whatsappSessionPhone && (
+                    <span className="text-[10px] text-green-400 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>تم الملء تلقائياً</span>
+                    </span>
+                  )}
+                </div>
+                <Input 
+                  placeholder="مثال: +966501234567" 
+                  value={reminderWhatsApp} 
+                  onChange={(e) => setReminderWhatsApp(e.target.value)}
+                  className="bg-[#011910] border-gray-600 text-white focus:ring-blue-500 focus:border-blue-500 h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="reminderMsgText" className="text-white text-sm block font-medium">رسالة التذكير</label>
+                <Textarea 
+                  id="reminderMsgText"
+                  placeholder="اكتب رسالة التذكير..." 
+                  value={reminderMessage} 
+                  onChange={(e) => setReminderMessage(e.target.value)}
+                  className="bg-[#011910] border-gray-600 focus:border-blue-500 text-white min-h-[100px] text-sm leading-relaxed"
+                />
+                <p className="text-gray-400 text-[10px] leading-tight opacity-70">
+                  سيتم إرسال هذه الرسالة تلقائياً قبل الموعد بمدة (ساعتين وساعة واحدة)
+                </p>
+              </div>
+
+              <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-lg p-3 flex items-start gap-2">
+                <div className="text-yellow-400 text-sm mt-0.5">⚡</div>
+                <div className="flex-1">
+                  <p className="text-yellow-200/90 text-[11px] leading-snug">
+                    تأكد من أن جلسة الواتساب الخاصة بك نشطة عند موعد الإرسال لضمان وصول التذكير.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button 
+                  onClick={onCreateReminder}
+                  disabled={!reminderWhatsApp.trim() || !reminderMessage.trim()}
+                  className="primary-button text-white font-bold flex-1 h-11"
+                >
+                  إعداد التذكير
+                </Button>
+                <Button 
+                  onClick={closeReminderModal}
+                  variant="secondary"
+                  className="primary-button after:bg-red-600 text-white font-bold flex-1 h-11"
+                >
+                  إلغاء
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          </DialogContent>
+        </Dialog>
 
         {/* Message Modal */}
         {showMessageModal && (

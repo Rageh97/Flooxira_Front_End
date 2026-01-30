@@ -33,9 +33,13 @@ import { createPortal } from "react-dom";
 
 // Memoized Contact Item Component moved outside to prevent re-creation on render
 const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, tags, onClick }: any) => {
+  const handleClick = useCallback(() => {
+    onClick(contact.contactNumber);
+  }, [contact.contactNumber, onClick]);
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className={`p-2 ml-1 lg:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
         isSelected
           ? ' inner-shadow'
@@ -74,8 +78,8 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
          prev.isEscalated === next.isEscalated &&
          prev.isOpenNote === next.isOpenNote &&
          prev.contact.profilePicture === next.contact.profilePicture &&
-         // Deep compare tags length as proxy
-         (prev.tags?.length || 0) === (next.tags?.length || 0);
+         prev.onClick === next.onClick &&
+         JSON.stringify(prev.tags) === JSON.stringify(next.tags);
 });
 
 export default function WhatsAppChatsPage() {
@@ -677,24 +681,26 @@ export default function WhatsAppChatsPage() {
       if (tagsRes.success) {
         const tags = tagsRes.data;
         
-        // For each contact, check which tags they belong to
-        for (const contact of contacts) {
-          const contactTags: string[] = [];
-          
-          for (const tag of tags) {
-            const contactsRes = await listContactsByTag(tag.id);
-            if (contactsRes.success) {
-              const hasContact = contactsRes.data.some((c: any) => c.contactNumber === contact.contactNumber);
-              if (hasContact) {
-                contactTags.push(tag.name);
-              }
-            }
+        // OPTIMIZATION: Instead of N*M calls (contacts * tags), we do M calls (tags)
+        // This is much faster and reduces backend load
+        const promises = tags.map(async (tag: any) => {
+          const contactsRes = await listContactsByTag(tag.id);
+          if (contactsRes.success && contactsRes.data) {
+            return { tagName: tag.name, contacts: contactsRes.data };
           }
-          
-          if (contactTags.length > 0) {
-            tagsMap[contact.contactNumber] = contactTags;
+          return null;
+        });
+        
+        const results = await Promise.all(promises);
+        
+        results.forEach(result => {
+          if (result) {
+            result.contacts.forEach((c: any) => {
+              if (!tagsMap[c.contactNumber]) tagsMap[c.contactNumber] = [];
+              tagsMap[c.contactNumber].push(result.tagName);
+            });
           }
-        }
+        });
       }
       
       setContactTags(tagsMap);
@@ -1119,6 +1125,14 @@ export default function WhatsAppChatsPage() {
     }
   }
 
+  // Stable callback for contact item clicks
+  const handleContactItemClick = useCallback((contactNumber: string) => {
+    if (contactNumber) {
+      setSelectedContact(contactNumber);
+      loadChatHistory(contactNumber);
+    }
+  }, [token]); // Dependencies needed for inside loadChatHistory if any, but token is stable enough
+
   return (
     <>
       <div className={`space-y-6 ${(showTagModal || showNoteModal) ? 'blur-sm' : ''}`}>
@@ -1287,12 +1301,7 @@ export default function WhatsAppChatsPage() {
                     isEscalated={escalatedContacts.has(contact.contactNumber)}
                     isOpenNote={openNoteContacts.has(contact.contactNumber)}
                     tags={contact.contactNumber ? contactTags[contact.contactNumber] : []}
-                    onClick={() => {
-                      if (contact.contactNumber) {
-                        setSelectedContact(contact.contactNumber);
-                        loadChatHistory(contact.contactNumber);
-                      }
-                    }}
+                    onClick={handleContactItemClick}
                   />
                 ))
               )}
