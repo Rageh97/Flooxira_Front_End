@@ -70,9 +70,24 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [userName, setUserName] = useState("");
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // دالة للحصول على التحية المناسبة حسب الوقت
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const name = userName || "عزيزي";
+    
+    if (hour >= 5 && hour < 12) {
+      return `صباح الخير ${name} ☀️`;
+    } else if (hour >= 12 && hour < 18) {
+      return `طاب يومك ${name} 🌤️`;
+    } else {
+      return `مساء الخير ${name} 🌙`;
+    }
+  };
 
   useEffect(() => {
     if (inputRef.current && !inputMessage) {
@@ -89,6 +104,16 @@ export default function ChatPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
+      // الحصول على اسم المستخدم من localStorage
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          setUserName(user.name || user.username || "");
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+        }
+      }
     }
   }, []);
 
@@ -572,7 +597,7 @@ export default function ChatPage() {
               <div className="spinner">
                 <div className="spinner1"></div>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">اختر محادثة أو ابدأ محادثة جديدة</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">{getGreeting()}</h3>
               <p className="text-primary mb-6">استخدم AI لإنشاء محتوى رائع لوسائل التواصل الاجتماعي</p>
               <Button onClick={handleCreateConversation} className="primary-button" >
                 بدء محادثة جديدة

@@ -32,10 +32,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { createPortal } from "react-dom";
 
 // Memoized Contact Item Component moved outside to prevent re-creation on render
-const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, tags, onClick }: any) => {
+const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, tags, onClick, cachedProfilePicture }: any) => {
   const handleClick = useCallback(() => {
     onClick(contact.contactNumber);
   }, [contact.contactNumber, onClick]);
+
+  // Use cached profile picture to prevent disappearing
+  const profilePic = cachedProfilePicture || contact.profilePicture;
 
   return (
     <div
@@ -48,8 +51,8 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
       }`}
     >
       <div className="flex items-center gap-2">
-        {contact.profilePicture ? (
-          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={contact.profilePicture} alt={contact.contactName || contact.contactNumber} loading="lazy" />
+        {profilePic ? (
+          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={profilePic} alt={contact.contactName || contact.contactNumber} loading="lazy" />
         ) : (
           <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" loading="lazy" />
         )}
@@ -77,7 +80,7 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
          prev.isSelected === next.isSelected &&
          prev.isEscalated === next.isEscalated &&
          prev.isOpenNote === next.isOpenNote &&
-         prev.contact.profilePicture === next.contact.profilePicture &&
+         prev.cachedProfilePicture === next.cachedProfilePicture &&
          prev.onClick === next.onClick &&
          JSON.stringify(prev.tags) === JSON.stringify(next.tags);
 });
@@ -196,6 +199,15 @@ export default function WhatsAppChatsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
+  
+  // Contacts pagination
+  const [contactsOffset, setContactsOffset] = useState(0);
+  const [hasMoreContacts, setHasMoreContacts] = useState(true);
+  const [loadingMoreContacts, setLoadingMoreContacts] = useState(false);
+  const CONTACTS_PER_PAGE = 50;
+  
+  // Profile picture cache to prevent disappearing
+  const [profilePictureCache, setProfilePictureCache] = useState<{[key: string]: string}>({});
 
   // Mobile detection for full-screen chat
   const [isMobile, setIsMobile] = useState(false);
@@ -271,7 +283,7 @@ export default function WhatsAppChatsPage() {
 
   useEffect(() => {
     if (token) {
-      loadChatContacts();
+      loadChatContacts(true, true); // Initial load with pagination
       loadBotStatus();
       loadEmployees();
       // Load open notes for highlighting
@@ -344,15 +356,15 @@ export default function WhatsAppChatsPage() {
     return () => clearInterval(interval);
   }, [selectedContact, botStatus?.isPaused]);
 
-  // Auto-refresh chat list (contacts)
+  // Auto-refresh chat list (contacts) - Less frequent to reduce load
   useEffect(() => {
     if (!token) return;
     
-    // Refresh contacts list every 15 seconds to keep order updated
+    // Refresh contacts list every 30 seconds (increased from 15) to reduce load
     const interval = setInterval(() => {
-      // Don't show loader on background refresh
-      loadChatContacts(false);
-    }, 15000);
+      // Don't show loader on background refresh, and don't reset pagination
+      loadChatContacts(false, false);
+    }, 30000);
     
     return () => clearInterval(interval);
   }, [token]);
@@ -541,11 +553,16 @@ export default function WhatsAppChatsPage() {
     }
   }
 
-  async function loadChatContacts(showLoader: boolean = true) {
+  async function loadChatContacts(showLoader: boolean = true, isInitialLoad: boolean = false) {
     try {
-      if (showLoader) {
+      if (showLoader && isInitialLoad) {
         setLoadingContacts(true);
+      } else if (!isInitialLoad) {
+        setLoadingMoreContacts(true);
       }
+      
+      const currentOffset = isInitialLoad ? 0 : contactsOffset;
+      
       const data = await getChatContacts(token);
       console.log('=== getChatContacts API Response ===');
       console.log('Full API response:', data);
@@ -617,17 +634,15 @@ export default function WhatsAppChatsPage() {
         const dedupedContacts = Array.from(uniqueContactsMap.values());
         
         // FILTER: Remove groups, LID numbers and long internal IDs
-        // User requested to remove groups due to large size
         const cleanContacts = (dedupedContacts as any[]).filter(c => {
-           // ❌ FILTER OUT ALL GROUPS - User doesn't want them due to large size
+           // ❌ FILTER OUT ALL GROUPS
            if (c.isGroup) return false;
 
            // Explicitly filter LID suffix if user doesn't want them
            if (c.contactNumber.includes('@lid')) return false;
 
            const clean = c.contactNumber.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '').replace(/\D/g, '');
-           // Phone numbers (Egypt/Saudi/etc) are usually <= 13 digits (e.g. 201001234567 = 12 digits)
-           // If number is > 13 digits, it's likely an internal ID or LID
+           // Phone numbers (Egypt/Saudi/etc) are usually <= 13 digits
            if (clean.length > 13) return false;
            
            return true;
@@ -640,34 +655,56 @@ export default function WhatsAppChatsPage() {
            return timeB - timeA;
         });
 
-        // Optimization: prevent unnecessary state updates if data hasn't changed meaningfully
-        setContacts(prev => {
-          // If length is different, update
-          if (prev.length !== cleanContacts.length) return cleanContacts;
-          
-          // Check if first few items are different (usually enough for chat apps where top items change)
-          const isDifferent = cleanContacts.some((c, i) => {
-             const prevC = prev[i];
-             if (!prevC) return true;
-             return c.contactNumber !== prevC.contactNumber || 
-                    c.lastMessageTime !== prevC.lastMessageTime ||
-                    c.messageCount !== prevC.messageCount || 
-                    c.profilePicture !== prevC.profilePicture;
+        // Cache profile pictures to prevent disappearing - MERGE with existing cache
+        setProfilePictureCache(prevCache => {
+          const newCache = {...prevCache}; // Start with existing cache
+          cleanContacts.forEach((contact: any) => {
+            if (contact.profilePicture && contact.contactNumber) {
+              // Only update if new picture exists, preserve old if new is missing
+              newCache[contact.contactNumber] = contact.profilePicture;
+            } else if (!newCache[contact.contactNumber] && contact.contactNumber) {
+              // If no picture in new data but we have it cached, keep the cached one
+              // This prevents disappearing pictures
+            }
           });
+          return newCache;
+        });
+
+        // Apply pagination on frontend for now (backend should handle this ideally)
+        const paginatedContacts = isInitialLoad 
+          ? cleanContacts.slice(0, CONTACTS_PER_PAGE)
+          : cleanContacts.slice(0, currentOffset + CONTACTS_PER_PAGE);
+
+        setHasMoreContacts(paginatedContacts.length < cleanContacts.length);
+        
+        if (isInitialLoad) {
+          setContactsOffset(CONTACTS_PER_PAGE);
+        } else {
+          setContactsOffset(prev => prev + CONTACTS_PER_PAGE);
+        }
+
+        // Optimization: prevent unnecessary state updates
+        setContacts(prev => {
+          if (isInitialLoad) return paginatedContacts;
           
-          return isDifferent ? cleanContacts : prev;
+          // For load more, append new contacts
+          const existingNumbers = new Set(prev.map(c => c.contactNumber));
+          const newContacts = paginatedContacts.filter(c => !existingNumbers.has(c.contactNumber));
+          return [...prev, ...newContacts];
         });
         
-        // Load tags for each contact
-        // Don't await this to speed up UI
-        loadContactTags(cleanContacts);
-
+        // Load tags for contacts (debounced to avoid blocking)
+        if (isInitialLoad) {
+          setTimeout(() => loadContactTags(paginatedContacts), 500);
+        }
       }
     } catch (e: any) {
       setError(e.message);
     } finally {
-      if (showLoader) {
+      if (showLoader && isInitialLoad) {
         setLoadingContacts(false);
+      } else {
+        setLoadingMoreContacts(false);
       }
     }
   }
@@ -683,21 +720,26 @@ export default function WhatsAppChatsPage() {
         
         // OPTIMIZATION: Instead of N*M calls (contacts * tags), we do M calls (tags)
         // This is much faster and reduces backend load
+        // Use Promise.allSettled to prevent one failure from blocking all
         const promises = tags.map(async (tag: any) => {
-          const contactsRes = await listContactsByTag(tag.id);
-          if (contactsRes.success && contactsRes.data) {
-            return { tagName: tag.name, contacts: contactsRes.data };
+          try {
+            const contactsRes = await listContactsByTag(tag.id);
+            if (contactsRes.success && contactsRes.data) {
+              return { tagName: tag.name, contacts: contactsRes.data };
+            }
+          } catch (e) {
+            console.error(`Failed to load contacts for tag ${tag.id}:`, e);
           }
           return null;
         });
         
-        const results = await Promise.all(promises);
+        const results = await Promise.allSettled(promises);
         
-        results.forEach(result => {
-          if (result) {
-            result.contacts.forEach((c: any) => {
+        results.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value) {
+            result.value.contacts.forEach((c: any) => {
               if (!tagsMap[c.contactNumber]) tagsMap[c.contactNumber] = [];
-              tagsMap[c.contactNumber].push(result.tagName);
+              tagsMap[c.contactNumber].push(result.value.tagName);
             });
           }
         });
@@ -1293,17 +1335,45 @@ export default function WhatsAppChatsPage() {
               ) : filteredContacts.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">لا توجد جهات اتصال مطابقة</div>
               ) : (
-                filteredContacts.slice(0, 100).map((contact, index) => (
-                  <ContactItem
-                    key={contact.contactNumber}
-                    contact={contact}
-                    isSelected={selectedContact === contact.contactNumber}
-                    isEscalated={escalatedContacts.has(contact.contactNumber)}
-                    isOpenNote={openNoteContacts.has(contact.contactNumber)}
-                    tags={contact.contactNumber ? contactTags[contact.contactNumber] : []}
-                    onClick={handleContactItemClick}
-                  />
-                ))
+                <>
+                  {filteredContacts.map((contact, index) => (
+                    <ContactItem
+                      key={contact.contactNumber}
+                      contact={contact}
+                      isSelected={selectedContact === contact.contactNumber}
+                      isEscalated={escalatedContacts.has(contact.contactNumber)}
+                      isOpenNote={openNoteContacts.has(contact.contactNumber)}
+                      tags={contact.contactNumber ? contactTags[contact.contactNumber] : []}
+                      cachedProfilePicture={profilePictureCache[contact.contactNumber]}
+                      onClick={handleContactItemClick}
+                    />
+                  ))}
+                  
+                  {/* Load More Button */}
+                  {hasMoreContacts && !searchTerm && !filterTagId && (
+                    <div className="flex justify-center py-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => loadChatContacts(false, false)}
+                        disabled={loadingMoreContacts}
+                        className="text-xs border-text-primary/30 bg-transparent text-white"
+                      >
+                        {loadingMoreContacts ? (
+                          <div className="flex items-center gap-2">
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            جاري التحميل...
+                          </div>
+                        ) : (
+                          'عرض المزيد من جهات الاتصال'
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
 
             </div>

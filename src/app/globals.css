@@ -439,6 +439,21 @@ button {
     animation: heartbeat 1s ease-in-out infinite;
   }
 
+  /* Shimmer animation for skeleton loaders */
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-shimmer {
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
   /* Scrolling text animation */
   @keyframes scroll-text {
     0% {
@@ -1046,6 +1061,30 @@ button {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Custom scrollbar for contacts list */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(116, 226, 255, 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(116, 226, 255, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(116, 226, 255, 0.5);
+}
+
 /* .............................................. */
 @keyframes shine-pulse {
   0% {

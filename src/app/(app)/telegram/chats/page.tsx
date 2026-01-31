@@ -7,6 +7,9 @@ import {
   telegramBotSendMessage,
   telegramBotSendMedia,
   telegramBotSendSticker,
+  telegramBotGetStatus,
+  telegramBotPause,
+  telegramBotResume,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { EmojiPickerModal } from "@/components/AnimatedEmoji";
@@ -53,6 +56,8 @@ export default function TelegramChatsPage() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+  const [botPaused, setBotPaused] = useState(false);
+  const [pauseTimeRemaining, setPauseTimeRemaining] = useState(0);
   const listEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -74,7 +79,51 @@ export default function TelegramChatsPage() {
 
   useEffect(() => {
     loadContacts();
+    loadBotStatus();
   }, [token]);
+
+  const loadBotStatus = async () => {
+    if (!token) return;
+    try {
+      const res = await telegramBotGetStatus(token);
+      if (res.success) {
+        setBotPaused(res.isPaused);
+        setPauseTimeRemaining(res.timeRemaining || 0);
+      }
+    } catch (err) {
+      console.error('Failed to load bot status:', err);
+    }
+  };
+
+  const handlePauseBot = async () => {
+    if (!token) return;
+    try {
+      const res = await telegramBotPause(token, 30);
+      if (res.success) {
+        showSuccess(res.message);
+        loadBotStatus();
+      } else {
+        showError(res.message || 'فشل في إيقاف البوت');
+      }
+    } catch (err: any) {
+      showError(err.message || 'فشل في إيقاف البوت');
+    }
+  };
+
+  const handleResumeBot = async () => {
+    if (!token) return;
+    try {
+      const res = await telegramBotResume(token);
+      if (res.success) {
+        showSuccess(res.message);
+        loadBotStatus();
+      } else {
+        showError(res.message || 'فشل في استئناف البوت');
+      }
+    } catch (err: any) {
+      showError(err.message || 'فشل في استئناف البوت');
+    }
+  };
 
   useEffect(() => {
     if (inputRef.current && !messageText) {
@@ -416,28 +465,77 @@ export default function TelegramChatsPage() {
             </div>
           </div>
           
-          {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
-            <button 
-              onClick={handleResolve}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
-            >
-              علامة كمحلول
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Bot Pause/Resume Button - Mobile */}
+            {botPaused ? (
+              <button 
+                onClick={handleResumeBot}
+                className="bg-green-600 hover:bg-green-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
+                title="استئناف البوت"
+              >
+                ▶ استئناف
+              </button>
+            ) : (
+              <button 
+                onClick={handlePauseBot}
+                className="bg-orange-600 hover:bg-orange-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
+                title="إيقاف البوت"
+              >
+                ⏸ إيقاف
+              </button>
+            )}
+            
+            {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
+              <button 
+                onClick={handleResolve}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
+              >
+                علامة كمحلول
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Desktop Header */}
         <div className="hidden  lg:flex px-4 py-2 border-b items-center justify-between gap-2">
           <div className="font-semibold text-white truncate flex-1">{contacts.find((c) => c.chatId.toString() === activeChatId)?.chatTitle || (activeChatId ? `محادثة ${activeChatId}` : "اختر محادثة")}</div>
           
-          {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
-            <button 
-              onClick={handleResolve}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
-            >
-              تم حل المشكلة (استئناف البوت)
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Bot Pause/Resume Button */}
+            {botPaused ? (
+              <button 
+                onClick={handleResumeBot}
+                className="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1"
+                title="استئناف البوت"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8 5v14l11-7z" fill="currentColor"/>
+                </svg>
+                استئناف البوت {pauseTimeRemaining > 0 && `(${pauseTimeRemaining} دقيقة)`}
+              </button>
+            ) : (
+              <button 
+                onClick={handlePauseBot}
+                className="bg-orange-600 hover:bg-orange-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1"
+                title="إيقاف البوت مؤقتاً"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+                  <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+                </svg>
+                إيقاف البوت
+              </button>
+            )}
+            
+            {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
+              <button 
+                onClick={handleResolve}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+              >
+                تم حل المشكلة (استئناف البوت)
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex-1 custom-scrollbar overflow-auto  px-4 py-3 flex flex-col">
           {loadingHistory ? (

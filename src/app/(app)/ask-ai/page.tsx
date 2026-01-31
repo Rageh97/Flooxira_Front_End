@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Sparkles,
   ImageIcon,
-  Video,
   ArrowUpRight,
   Search,
   Zap,
@@ -20,7 +19,6 @@ export default function AskAIPage() {
   const router = useRouter();
   const [token, setToken] = useState("");
   const [stats, setStats] = useState<AIStats | null>(null);
-  const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [toolSearchQuery, setToolSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const { loading: permissionsLoading } = usePermissions();
@@ -34,7 +32,6 @@ export default function AskAIPage() {
   useEffect(() => {
     if (!token) return;
     loadStats();
-    checkAIPlans();
   }, [token]);
 
   const loadStats = async () => {
@@ -45,16 +42,6 @@ export default function AskAIPage() {
       console.error("Failed to load stats:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const checkAIPlans = async () => {
-    try {
-      const response = await listPlans(token, 'ai');
-      setHasAIPlans(response.plans && response.plans.length > 0);
-    } catch (error: any) {
-      console.error("Failed to check AI plans:", error);
-      setHasAIPlans(false);
     }
   };
 
@@ -145,7 +132,7 @@ export default function AskAIPage() {
         if (feature.status !== 'active') return;
         if (feature.path) router.push(feature.path);
       }}
-      className={`group relative aspect-square rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#1a1c1e] transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 ${
+      className={`group relative aspect-square rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer border border-white/5 bg-[#1a1c1e] transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10 ${
         feature.status === 'soon' ? 'opacity-80' : ''
       }`}
     >
@@ -160,29 +147,29 @@ export default function AskAIPage() {
       </div>
 
       {/* Content */}
-      <div className="absolute inset-0 p-6 flex flex-col justify-end">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+      <div className="absolute inset-0 p-3 md:p-6 flex flex-col justify-end">
+        <div className="flex justify-between items-start mb-1 md:mb-2">
+          <h3 className="text-sm md:text-xl font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-1">
             {feature.title}
           </h3>
         </div>
-        <p className="text-sm text-gray-400 line-clamp-2 mb-4 group-hover:text-gray-300">
+        <p className="text-[10px] md:text-sm text-gray-400 line-clamp-2 mb-2 md:mb-4 group-hover:text-gray-300">
           {feature.desc}
         </p>
         
         <button
           disabled={feature.status === 'soon'}
-          className="relative inline-flex h-7 active:scale-95 transition overflow-hidden rounded-lg p-[1px] focus:outline-none w-25"
+          className="relative inline-flex h-6 md:h-7 active:scale-95 transition overflow-hidden rounded-lg p-[1px] focus:outline-none w-20 md:w-25"
         >
           <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#e7029a_0%,#f472b6_50%,#bd5fff_100%)]"></span>
-          <span className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg px-7 text-sm font-medium backdrop-blur-3xl gap-2 ${
+          <span className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-lg px-3 md:px-7 text-[10px] md:text-sm font-medium backdrop-blur-3xl gap-1 md:gap-2 ${
             feature.status === 'active'
               ? 'bg-slate-950 text-white'
               : 'bg-slate-950 text-gray-500 cursor-not-allowed'
           }`}>
             {feature.status === 'active' ? 'ابدأ ' : 'قريباً'}
             {feature.status === 'active' && (
-              <ArrowUpRight className="h-4 w-4" />
+              <ArrowUpRight className="h-3 w-3 md:h-4 md:w-4" />
             )}
           </span>
         </button>
@@ -201,8 +188,9 @@ export default function AskAIPage() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-4 mt-6 mb-8 px-4">
-        <div className="w-96 hidden xl:block shrink-0">
+      <div className="shrink-0 flex flex-col gap-4 mt-4 md:mt-6 mb-6 md:mb-8 px-3 md:px-4">
+        {/* Search Bar - Mobile First */}
+        <div className="w-full md:hidden">
           <div className="relative rounded-[20px] overflow-hidden">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
             <input 
@@ -215,75 +203,138 @@ export default function AskAIPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex justify-center gap-4">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex items-center justify-between gap-4">
+          <div className="w-96 hidden xl:block shrink-0">
+            <div className="relative rounded-[20px] overflow-hidden">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+              <input 
+                value={toolSearchQuery}
+                onChange={(e) => setToolSearchQuery(e.target.value)}
+                placeholder="ابحث عن أداة..."
+                className="bg-[#1a1c1e]/50 w-full py-4 border border-white/30 text-right pr-9 h-11 rounded-[20px] text-sm focus-visible:ring-text-primary text-white placeholder:text-gray-300 shadow-xl shadow-black/5"
+              /> 
+              <BorderBeam duration={4} delay={9} />
+            </div>
+          </div>
+
+          <div className="flex-1 flex justify-center gap-4">
+            <Button
+              onClick={() => router.push('/ask-ai')}
+              className="flex items-center gap-2 bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-500/30 px-6 py-3 rounded-[20px] transition-all"
+            >
+              <Home className="w-5 h-5" />
+              <span className="font-bold">الرئيسية</span>
+            </Button>
+            <Button
+              onClick={() => router.push('/ask-ai/chat')}
+              className="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span className="font-bold">فلوكسيرا AI</span>
+            </Button>
+            <Button
+              onClick={() => router.push('/ask-ai/media')}
+              className="flex items-center gap-2 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/30 px-6 py-3 rounded-[20px] transition-all"
+            >
+              <ImageIcon className="w-5 h-5" />
+              <span className="font-bold">أدوات الميديا</span>
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0 justify-end">
+            {stats ? (
+              <div className="hidden lg:flex items-center gap-4 bg-purple-600/10 border border-purple-500/30 px-6 py-2 rounded-[50px] backdrop-blur-md whitespace-nowrap">
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">رصيد الكريديت</span>
+                  <span className="text-sm font-black text-purple-400">
+                    {stats.isUnlimited ? 'غير محدود' : `${stats.remainingCredits.toLocaleString()} كريديت`}
+                  </span>
+                </div>
+                <div className="p-2 bg-purple-500/20 rounded-xl border border-purple-500/20 animate-pulse">
+                  <Zap className="w-4 h-4 text-purple-400 fill-purple-400" />
+                </div>
+              </div>
+            ) : (
+              <p></p>
+            )}
+            <button 
+              className="hidden lg:flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all whitespace-nowrap"
+              onClick={() => router.push('/ask-ai/plans')}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span className="font-bold">باقات AI التوفيرية</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Buttons */}
+        <div className="flex md:hidden gap-2 overflow-x-auto pb-2 scrollbar-hide">
           <Button
             onClick={() => router.push('/ask-ai')}
-            className="flex items-center gap-2 bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-500/30 px-6 py-3 rounded-[20px] transition-all"
+            className="flex items-center gap-2 bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-500/30 px-4 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs"
           >
-            <Home className="w-5 h-5" />
+            <Home className="w-4 h-4" />
             <span className="font-bold">الرئيسية</span>
           </Button>
           <Button
             onClick={() => router.push('/ask-ai/chat')}
-            className="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all"
+            className="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
             <span className="font-bold">فلوكسيرا AI</span>
           </Button>
           <Button
             onClick={() => router.push('/ask-ai/media')}
-            className="flex items-center gap-2 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/30 px-6 py-3 rounded-[20px] transition-all"
+            className="flex items-center gap-2 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/30 px-4 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs"
           >
-            <ImageIcon className="w-5 h-5" />
+            <ImageIcon className="w-4 h-4" />
             <span className="font-bold">أدوات الميديا</span>
+          </Button>
+          <Button
+            onClick={() => router.push('/ask-ai/plans')}
+            className="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="font-bold">الباقات</span>
           </Button>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 justify-end">
-          {stats ? (
-            <div className="hidden md:flex items-center gap-4 bg-purple-600/10 border border-purple-500/30 px-6 py-2 rounded-[50px] backdrop-blur-md whitespace-nowrap">
-              <div className="flex flex-col items-start leading-tight">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">رصيد الكريديت</span>
-                <span className="text-sm font-black text-purple-400">
-                  {stats.isUnlimited ? 'غير محدود' : `${stats.remainingCredits.toLocaleString()} كريديت`}
-                </span>
-              </div>
-              <div className="p-2 bg-purple-500/20 rounded-xl border border-purple-500/20 animate-pulse">
-                <Zap className="w-4 h-4 text-purple-400 fill-purple-400" />
-              </div>
+        {/* Mobile Stats */}
+        {stats && (
+          <div className="flex md:hidden items-center justify-center gap-3 bg-purple-600/10 border border-purple-500/30 px-4 py-2 rounded-[20px] backdrop-blur-md">
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">رصيد الكريديت</span>
+              <span className="text-xs font-black text-purple-400">
+                {stats.isUnlimited ? 'غير محدود' : `${stats.remainingCredits.toLocaleString()} كريديت`}
+              </span>
             </div>
-          ) : (
-            <p></p>
-          )}
-          <button 
-            className="hidden md:flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all whitespace-nowrap"
-            onClick={() => router.push('/ask-ai/plans')}
-          >
-            <Sparkles className="w-5 h-5" />
-            <span className="font-bold">باقات AI التوفيرية</span>
-          </button>
-        </div>
+            <div className="p-1.5 bg-purple-500/20 rounded-lg border border-purple-500/20 animate-pulse">
+              <Zap className="w-3 h-3 text-purple-400 fill-purple-400" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-4">
-        <div className="w-full flex flex-col gap-12">
+      <div className="flex-1 px-3 md:px-4">
+        <div className="w-full flex flex-col gap-8 md:gap-12">
           {/* Main Features */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 w-full mx-auto">
             {displayFeatures.map((feature) => renderFeatureCard(feature))}
           </div>
 
           {/* All Tools Section */}
-          <div className="flex flex-col gap-8 mb-20">
-            <div className="flex items-center gap-4">
-              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-text-primary/50 to-transparent" />
-              <h2 className="text-2xl font-bold text-white whitespace-nowrap px-4">
+          <div className="flex flex-col gap-6 md:gap-8 mb-12 md:mb-20">
+            <div className="flex items-center gap-2 md:gap-4">
+              <div className="h-[1px] md:h-[2px] flex-1 bg-gradient-to-r from-transparent via-text-primary/50 to-transparent" />
+              <h2 className="text-lg md:text-2xl font-bold text-white whitespace-nowrap px-2 md:px-4">
                 تصفح جميع الأدوات
               </h2>
-              <div className="h-[2px] flex-1 bg-gradient-to-r from-transparent via-text-primary/50 to-transparent" />
+              <div className="h-[1px] md:h-[2px] flex-1 bg-gradient-to-r from-transparent via-text-primary/50 to-transparent" />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6">
               {displayAllTools.map((tool) => renderFeatureCard(tool))}
             </div>
           </div>

@@ -42,7 +42,7 @@ export default function SignInPage() {
       setTimeout(() => {
         // كلاهما يذهب لنفس الصفحة - النظام سيخفي العناصر حسب الصلاحيات
         router.push("/dashboard");
-      }, 3000);
+      }, 1000);
     },
     onError: () => {
       setIsLoading(false);

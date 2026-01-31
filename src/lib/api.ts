@@ -1445,7 +1445,7 @@ export async function telegramBotSendMedia(token: string, chatId: string, mediaT
   const formData = new FormData();
   formData.append('chatId', chatId);
   formData.append('mediaType', mediaType);
-  formData.append('mediaFile', mediaFile);
+  formData.append('media', mediaFile);
   if (caption) formData.append('text', caption);
   
   return apiFetch<{ success: boolean; message?: any }>("/api/telegram-bot/send", {
@@ -1580,6 +1580,26 @@ export async function telegramBotCreateCampaign(token: string, payload: { target
 
 export async function telegramBotListCampaigns(token: string) {
   return apiFetch<{ success: boolean; jobs: any[] }>("/api/telegram-bot/campaigns", { authToken: token });
+}
+
+// Bot Control (Pause/Resume)
+export async function telegramBotGetStatus(token: string) {
+  return apiFetch<{ success: boolean; isPaused: boolean; pausedUntil?: string | null; timeRemaining?: number }>("/api/telegram-bot/bot-status", { authToken: token });
+}
+
+export async function telegramBotPause(token: string, minutes: number = 30) {
+  return apiFetch<{ success: boolean; message: string; pausedUntil?: string }>("/api/telegram-bot/bot-pause", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ minutes })
+  });
+}
+
+export async function telegramBotResume(token: string) {
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram-bot/bot-resume", {
+    method: 'POST',
+    authToken: token
+  });
 }
 
 export async function telegramMonthlySchedules(token: string, month?: number, year?: number) {
