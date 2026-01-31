@@ -157,7 +157,48 @@ export default function WhatsAppChatsPage() {
     knowledgeBaseMatch: string | null; 
     timestamp: string 
   }>>([]);
-  const [contacts, setContacts] = useState<Array<{ contactNumber: string; messageCount: number; lastMessageTime: string; profilePicture?: string | null; contactName?: string | null; isGroup?: boolean }>>([]);
+  // Contacts state with localStorage persistence
+  const [contacts, setContacts] = useState<Array<{ 
+    contactNumber: string; 
+    messageCount: number; 
+    lastMessageTime: string; 
+    profilePicture?: string | null; 
+    contactName?: string | null; 
+    isGroup?: boolean 
+  }>>(() => {
+    // Load from localStorage on mount
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('whatsapp_contacts_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          // Only use cache if it's less than 5 minutes old
+          if (parsed.timestamp && Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+            console.log('[Cache] Loaded contacts from localStorage:', parsed.data.length);
+            return parsed.data;
+          }
+        }
+      } catch (e) {
+        console.error('[Cache] Failed to load contacts:', e);
+      }
+    }
+    return [];
+  });
+
+  // Save contacts to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined' && contacts.length > 0) {
+      try {
+        localStorage.setItem('whatsapp_contacts_cache', JSON.stringify({
+          data: contacts,
+          timestamp: Date.now()
+        }));
+        console.log('[Cache] Saved contacts to localStorage:', contacts.length);
+      } catch (e) {
+        console.error('[Cache] Failed to save contacts:', e);
+      }
+    }
+  }, [contacts]);
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   
   // Bot control state
@@ -316,7 +357,10 @@ export default function WhatsAppChatsPage() {
 
   useEffect(() => {
     if (token) {
-      loadChatContacts(true, true); // Initial load with pagination
+      // ✅ CRITICAL: Only load if we don't have contacts already
+      if (contacts.length === 0) {
+        loadChatContacts(true, true); // Initial load with pagination
+      }
       loadBotStatus();
       loadEmployees();
       // Load open notes for highlighting
@@ -342,7 +386,7 @@ export default function WhatsAppChatsPage() {
         } catch (_) {}
       })();
     }
-  }, [token]);
+  }, [token]); // ✅ Remove contacts.length from dependencies to prevent re-render loop
 
   async function loadEmployees() {
     try {
@@ -393,13 +437,27 @@ export default function WhatsAppChatsPage() {
   useEffect(() => {
     if (!token) return;
     
-    // Refresh contacts list every 30 seconds (increased from 15) to reduce load
+    // ✅ CRITICAL: Only refresh if user is on the page (not in background)
+    let isActive = true;
+    
+    const handleVisibilityChange = () => {
+      isActive = !document.hidden;
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Refresh contacts list every 30 seconds (only if page is visible)
     const interval = setInterval(() => {
-      // Don't show loader on background refresh, and don't reset pagination
-      loadChatContacts(false, false);
+      if (isActive && !document.hidden) {
+        console.log('[Auto-refresh] Refreshing contacts...');
+        loadChatContacts(false, false);
+      }
     }, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [token]);
 
   // Scroll to bottom when chats are loaded or updated
@@ -689,6 +747,7 @@ export default function WhatsAppChatsPage() {
         });
 
         // Cache profile pictures to prevent disappearing - PRESERVE existing cache
+        let finalCache: {[key: string]: string} = {};
         setProfilePictureCache(prevCache => {
           const newCache = {...prevCache}; // Start with existing cache
           cleanContacts.forEach((contact: any) => {
@@ -699,6 +758,7 @@ export default function WhatsAppChatsPage() {
             // CRITICAL: If no picture in new data, keep the old cached one
             // This prevents disappearing pictures on refresh
           });
+          finalCache = newCache; // Store for use below
           return newCache;
         });
 
@@ -717,12 +777,30 @@ export default function WhatsAppChatsPage() {
 
         // Optimization: prevent unnecessary state updates
         setContacts(prev => {
-          if (isInitialLoad) return paginatedContacts;
+          if (isInitialLoad) {
+            // ✅ CRITICAL: Merge with cached profile pictures
+            return paginatedContacts.map(contact => ({
+              ...contact,
+              profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
+            }));
+          }
           
-          // For load more, append new contacts
+          // For load more, append new contacts with cached pictures
           const existingNumbers = new Set(prev.map(c => c.contactNumber));
-          const newContacts = paginatedContacts.filter(c => !existingNumbers.has(c.contactNumber));
-          return [...prev, ...newContacts];
+          const newContacts = paginatedContacts
+            .filter(c => !existingNumbers.has(c.contactNumber))
+            .map(contact => ({
+              ...contact,
+              profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
+            }));
+          
+          // ✅ CRITICAL: Also update existing contacts with cached pictures
+          const updatedPrev = prev.map(contact => ({
+            ...contact,
+            profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
+          }));
+          
+          return [...updatedPrev, ...newContacts];
         });
         
         // Load tags for contacts (debounced to avoid blocking)
@@ -1337,7 +1415,7 @@ export default function WhatsAppChatsPage() {
           </CardHeader>
           <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-6">
             <div className={`space-y-2 w-full lg:w-1/3 border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto custom-scrollbar ${selectedContact ? 'hidden lg:block' : 'block'}`}>
-              {loadingContacts ? (
+              {loadingContacts && contacts.length === 0 ? (
                 <div className="space-y-3 p-3">
                   {/* Beautiful Skeleton Loader */}
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -1365,7 +1443,9 @@ export default function WhatsAppChatsPage() {
                   </div>
                 </div>
               ) : filteredContacts.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">لا توجد جهات اتصال مطابقة</div>
+                <div className="text-center text-gray-500 py-8">
+                  {contacts.length === 0 ? 'لا توجد محادثات بعد' : 'لا توجد جهات اتصال مطابقة'}
+                </div>
               ) : (
                 <>
                   {filteredContacts.map((contact, index) => (
@@ -1376,7 +1456,7 @@ export default function WhatsAppChatsPage() {
                       isEscalated={escalatedContacts.has(contact.contactNumber)}
                       isOpenNote={openNoteContacts.has(contact.contactNumber)}
                       tags={contact.contactNumber ? contactTags[contact.contactNumber] : []}
-                      cachedProfilePicture={profilePictureCache[contact.contactNumber]}
+                      cachedProfilePicture={contact.profilePicture || profilePictureCache[contact.contactNumber]}
                       onClick={handleContactItemClick}
                     />
                   ))}
