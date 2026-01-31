@@ -263,7 +263,7 @@ export default function AskAIPage() {
               onClick={() => router.push('/ask-ai/plans')}
             >
               <Sparkles className="w-5 h-5" />
-              <span className="font-bold">باقات AI التوفيرية</span>
+              <span className="font-bold">باقات AI </span>
             </button>
           </div>
         </div>
