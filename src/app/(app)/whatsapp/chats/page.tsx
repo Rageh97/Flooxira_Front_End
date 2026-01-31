@@ -206,8 +206,41 @@ export default function WhatsAppChatsPage() {
   const [loadingMoreContacts, setLoadingMoreContacts] = useState(false);
   const CONTACTS_PER_PAGE = 50;
   
-  // Profile picture cache to prevent disappearing
-  const [profilePictureCache, setProfilePictureCache] = useState<{[key: string]: string}>({});
+  // Profile picture cache to prevent disappearing - with localStorage persistence
+  const [profilePictureCache, setProfilePictureCache] = useState<{[key: string]: string}>(() => {
+    // Load from localStorage on mount
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('whatsapp_profile_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          // Only use cache if it's less than 24 hours old
+          if (parsed.timestamp && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+            console.log('[Cache] Loaded profile pictures from localStorage:', Object.keys(parsed.data).length);
+            return parsed.data;
+          }
+        }
+      } catch (e) {
+        console.error('[Cache] Failed to load from localStorage:', e);
+      }
+    }
+    return {};
+  });
+
+  // Save cache to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && Object.keys(profilePictureCache).length > 0) {
+      try {
+        localStorage.setItem('whatsapp_profile_cache', JSON.stringify({
+          data: profilePictureCache,
+          timestamp: Date.now()
+        }));
+        console.log('[Cache] Saved profile pictures to localStorage:', Object.keys(profilePictureCache).length);
+      } catch (e) {
+        console.error('[Cache] Failed to save to localStorage:', e);
+      }
+    }
+  }, [profilePictureCache]);
 
   // Mobile detection for full-screen chat
   const [isMobile, setIsMobile] = useState(false);
@@ -655,17 +688,16 @@ export default function WhatsAppChatsPage() {
            return timeB - timeA;
         });
 
-        // Cache profile pictures to prevent disappearing - MERGE with existing cache
+        // Cache profile pictures to prevent disappearing - PRESERVE existing cache
         setProfilePictureCache(prevCache => {
           const newCache = {...prevCache}; // Start with existing cache
           cleanContacts.forEach((contact: any) => {
             if (contact.profilePicture && contact.contactNumber) {
-              // Only update if new picture exists, preserve old if new is missing
+              // Always update if new picture exists
               newCache[contact.contactNumber] = contact.profilePicture;
-            } else if (!newCache[contact.contactNumber] && contact.contactNumber) {
-              // If no picture in new data but we have it cached, keep the cached one
-              // This prevents disappearing pictures
             }
+            // CRITICAL: If no picture in new data, keep the old cached one
+            // This prevents disappearing pictures on refresh
           });
           return newCache;
         });
