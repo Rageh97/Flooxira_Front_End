@@ -14,12 +14,25 @@ const loadingTexts = [
 
 export default function AILoader() {
   const [textIndex, setTextIndex] = useState(0);
+  const [progress, setProgress] = useState(1);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setTextIndex((prev) => (prev + 1) % loadingTexts.length);
     }, 2000);
-    return () => clearInterval(interval);
+    
+    // التدرج المئوي للانتظار (يصل لـ 99% في حوالي 12 ثانية)
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev < 99) return prev + 1;
+        return prev;
+      });
+    }, 120);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(timer);
+    };
   }, []);
 
   return (
@@ -52,17 +65,15 @@ export default function AILoader() {
               className="absolute inset-[-50%] bg-[conic-gradient(from_0deg,transparent_0deg,rgba(59,130,246,0.5)_180deg,transparent_360deg)] opacity-50"
             />
             
-            <div className="absolute inset-1 bg-[#00050a] rounded-full z-10 flex items-center justify-center">
+            <div className="absolute inset-1 bg-[#00050a] rounded-full z-10 flex items-center justify-center flex-col">
                <motion.div 
                   animate={{ scale: [0.8, 1.1, 0.8] }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 blur-md opacity-80"
+                  className="w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-600 blur-md opacity-80 absolute"
                />
-               <motion.div 
-                  animate={{ scale: [1, 0.8, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="absolute w-8 h-8 rounded-full bg-white blur-sm opacity-90"
-               />
+               <div className="relative z-20 flex flex-col items-center">
+                  <span className="text-2xl font-bold font-mono text-white tabular-nums">{progress}%</span>
+               </div>
             </div>
          </div>
 

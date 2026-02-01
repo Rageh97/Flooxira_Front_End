@@ -47,6 +47,12 @@ const nextConfig: NextConfig = {
         hostname: '**',
         pathname: '/uploads/**',
       },
+      {
+        protocol: "https",
+        hostname: "flooxira.b-cdn.net", 
+        port: "",
+        pathname: "/**",
+      },
     ],
     // السماح أيضاً بالصور من نفس النطاق
     domains: ['localhost'],

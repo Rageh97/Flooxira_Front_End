@@ -13,7 +13,7 @@ import { clsx } from "clsx";
 import Image from "next/image";
 import AuthGuard from "@/components/AuthGuard";
 import RippleGrid from '@/components/RippleGrid';
-import { X, Megaphone, Menu, Home, MessageCircle, Send, LogOut, MessageSquare, Link as LinkIcon, Users as UsersIcon, Settings as SettingsIcon, Bot, LayoutGrid, TagIcon, ChartNoAxesColumn, User, Stars, Webhook } from "lucide-react";
+import { X, Megaphone, Menu, Home, MessageCircle, Send, LogOut, MessageSquare, Link as LinkIcon, Users as UsersIcon, Settings as SettingsIcon, Bot, LayoutGrid, TagIcon, ChartNoAxesColumn, User, Stars, Webhook, PanelRightOpen, PanelRightClose } from "lucide-react";
 import { toast } from "sonner";
 import { getActiveIslamicQuotes, IslamicQuote } from "@/lib/islamicQuoteApi";
 
@@ -537,7 +537,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   onMouseEnter={(e) => handleMouseEnter(e, 'فتح السايدبار')}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <Menu className="w-6 h-6 text-primary" />
+                  <PanelRightOpen className="w-6 h-6 text-primary" />
                 </button>
               </div>
             ) : (
@@ -548,7 +548,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   className="p-2 hover:bg-light-custom/50 rounded-lg transition-colors"
                   title="إغلاق السايدبار"
                 >
-                  <X className="w-5 h-5" />
+                  <PanelRightClose className="w-5 h-5 text-primary" />
                 </button>
               </div>
             )}
@@ -580,7 +580,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                   className="w-10 h-10 rounded-full object-cover cursor-pointer" 
                 />
                 <div className="flex items-center gap-2  ">
-                  {!loading && user && <span className="font-medium text-xs cursor-pointer">{user.name }</span>}
+                  {!loading && user && <span className="font-medium text-xs cursor-pointer">{user.name || user.email || "مستخدم"}</span>}
                   {planName && (
                     <div className="flex flex-col items-start ml-1">
                       <div className="flex items-center gap-1">

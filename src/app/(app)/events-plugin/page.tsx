@@ -284,6 +284,8 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
   const [selectedLog, setSelectedLog] = useState<EventLog | null>(null);
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadDetailedData();
@@ -313,13 +315,16 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
   };
 
   const handleDelete = async () => {
-    if (!confirm("هل أنت متأكد من حذف هذا التكامل؟ سيتم حذف جميع السجلات المتعلقة به.")) return;
     try {
+      setIsDeleting(true);
       await deleteEventsPluginConfig(token, config.id);
       onDelete(config.id);
       showSuccess("تم", "تم حذف التكامل بنجاح");
+      setDeleteDialogOpen(false);
     } catch (e: any) {
       showError("خطأ", e.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -339,7 +344,8 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 border-b border-gray-800 pb-10 last:border-0 last:pb-0">
+    <>
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 border-b border-gray-800 pb-10 last:border-0 last:pb-0">
       <div className="flex items-center gap-2 mb-6">
          <span className="text-2xl font-medium text-primary flex items-center gap-2">
             {PLATFORMS.find(p => p.key === config.platform)?.icon || '🌐'}
@@ -494,11 +500,38 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                   )} */}
                 </>
               )}
-              {/* <Button className="w-full justify-start gap-2 primary-button after:bg-red-500" variant="none" onClick={handleDelete}>
-                <div className="flex items-center gap-2">
+              <Button className="w-full justify-center gap-2 bg-red-500" variant="none" onClick={() => setDeleteDialogOpen(true)}>
+                <div className="flex items-center gap-2 text-white justify-center text-center">
                   <Trash2 className="h-4 w-4" /> حذف التكامل
                 </div>  
-              </Button> */}
+              </Button>
+
+              {/* Delete Confirmation Modal */}
+              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-red-500">
+                      <AlertTriangle className="h-5 w-5" />
+                      تأكيد الحذف
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400 py-3 text-right">
+                      هل أنت متأكد من حذف هذا التكامل؟ سيتم حذف جميع السجلات المتعلقة به نهائياً ولا يمكن التراجع عن هذا الإجراء.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+                    <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+                      إلغاء
+                    </Button>
+                    <Button 
+                      className="bg-red-500 hover:bg-red-600 text-white min-w-[100px]" 
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : "نعم، حذف"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <div className="pt-4 border-t border-gray-800 mt-4">
                 <Label className="text-xs text-primary">حالة التشغيل</Label>
                 <div className="flex items-center justify-between mt-1">
@@ -517,6 +550,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
           </Card>
         </div>
       </div>
+    </div>
 
       {/* Reuse existing Settings Modal with configId support */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -724,7 +758,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
 

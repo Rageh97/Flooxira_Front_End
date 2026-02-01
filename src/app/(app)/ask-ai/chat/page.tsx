@@ -27,9 +27,11 @@ import {
   PanelLeftClose,
   PanelLeft,
   Search,
+  Image as ImageIcon, // أيقونة إرفاق الصور
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useToast } from "@/components/ui/toast-provider";
+import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
 import {
   getAIConversations,
@@ -51,6 +53,7 @@ import { useRouter } from "next/navigation";
 
 export default function ChatPage() {
   const router = useRouter();
+  const { user: authUser } = useAuth();
   const [token, setToken] = useState("");
   const [conversations, setConversations] = useState<AIConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<AIConversation | null>(null);
@@ -58,6 +61,7 @@ export default function ChatPage() {
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [isNewChat, setIsNewChat] = useState(false); // علامة للمحادثة الجديدة التي لم تحفظ بعد
   const [stats, setStats] = useState<AIStats | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<AIConversation | null>(null);
@@ -71,14 +75,16 @@ export default function ChatPage() {
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [userName, setUserName] = useState("");
+  // جديد: دعم المرفقات
+  const [attachments, setAttachments] = useState<{type: 'image'; data: string; mimeType: string; preview: string}[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // دالة للحصول على التحية المناسبة حسب الوقت
   const getGreeting = () => {
     const hour = new Date().getHours();
-    const name = userName || "عزيزي";
+    const name = (userName || "عزيزي").split(' ')[0].trim();
     
     if (hour >= 5 && hour < 12) {
       return `صباح الخير ${name} ☀️`;
@@ -104,18 +110,23 @@ export default function ChatPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      // الحصول على اسم المستخدم من localStorage
+      // محاولة استرجاع الاسم من localStorage فوراً كحل احتياطي سريع
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         try {
           const user = JSON.parse(storedUser);
-          setUserName(user.name || user.username || "");
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-        }
+          const foundName = user.name || user.username || user.user?.name || user.user?.username || "";
+          if (foundName) setUserName(foundName);
+        } catch (e) {}
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (authUser) {
+      setUserName(authUser.name || authUser.email || "");
+    }
+  }, [authUser]);
 
   // Mobile detection
   useEffect(() => {
@@ -214,6 +225,7 @@ export default function ChatPage() {
       const response = await getAIConversation(token, conversationId);
       setSelectedConversation(response.conversation);
       setMessages(response.messages || []);
+      setIsNewChat(false);
       setIsMobileListOpen(false);
     } catch (error: any) {
       showError("خطأ", error.message);
@@ -225,16 +237,59 @@ export default function ChatPage() {
       setSubscriptionModalOpen(true);
       return;
     }
-    try {
-      const response = await createAIConversation(token);
-      await loadConversations();
-      setSelectedConversation(response.conversation);
-      setMessages([]);
-      setIsMobileListOpen(false);
-      showSuccess("تم إنشاء محادثة جديدة!");
-    } catch (error: any) {
-      showError("خطأ", error.message);
+    // بدلاً من الإنشاء في الداتابيز، نصفر الحالة محلياً فقط
+    setSelectedConversation(null);
+    setMessages([]);
+    setIsNewChat(true); // نضع علامة أنها محادثة جديدة لم تحفظ بعد
+    setIsMobileListOpen(false);
+    if (inputRef.current) inputRef.current.focus();
+  };
+
+  // معالجة إرفاق الصور
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newAttachments: typeof attachments = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        showError("خطأ", "يرجى اختيار صورة فقط");
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showError("خطأ", "حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
+        continue;
+      }
+
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      newAttachments.push({
+        type: 'image',
+        data: base64,
+        mimeType: file.type,
+        preview: URL.createObjectURL(file)
+      });
     }
+
+    setAttachments(prev => [...prev, ...newAttachments].slice(0, 4)); // حد أقصى 4 صور
+    if (e.target) e.target.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => {
+      const updated = [...prev];
+      URL.revokeObjectURL(updated[index].preview);
+      updated.splice(index, 1);
+      return updated;
+    });
   };
 
   const handleSendMessage = async () => {
@@ -248,19 +303,42 @@ export default function ChatPage() {
       return;
     }
 
-    if (!selectedConversation) return;
-    
     const userMessageContent = inputMessage.trim();
-    if (!userMessageContent || sending) return;
+    if ((!userMessageContent && attachments.length === 0) || sending) return;
 
+    const currentAttachments = attachments.map(a => ({ 
+      type: a.type, 
+      data: a.data, 
+      mimeType: a.mimeType 
+    }));
+    
     setInputMessage("");
+    setAttachments([]);
     setSending(true);
+
+    let currentConversationId = selectedConversation?.id;
+
+    // إذا كانت محادثة جديدة، ننشئها الآن في قاعدة البيانات قبل إرسال الرسالة
+    if (isNewChat || !currentConversationId) {
+      try {
+        const response = await createAIConversation(token);
+        currentConversationId = response.conversation.id;
+        setSelectedConversation(response.conversation);
+        setIsNewChat(false);
+        // نحدث قائمة المحادثات لظهور الجديدة
+        loadConversations();
+      } catch (error: any) {
+        showError("خطأ", "فشل إنشاء محادثة جديدة");
+        setSending(false);
+        return;
+      }
+    }
 
     try {
       streamRef.current = sendAIMessageStream(
         token,
-        selectedConversation.id,
-        userMessageContent,
+        currentConversationId as number,
+        userMessageContent || "ما هذه الصورة؟", // سؤال افتراضي إذا كانت صورة فقط
         {
           onStart: ({ userMessage }) => {
             setMessages((prev) => [...prev, userMessage]);
@@ -271,7 +349,7 @@ export default function ChatPage() {
             if (!streamingMsgRef.current) {
               const tempMsg: AIMessage = {
                 id: -Date.now(),
-                conversationId: selectedConversation.id,
+                conversationId: (currentConversationId as number),
                 role: 'assistant',
                 content: delta,
                 creditsUsed: 0,
@@ -309,7 +387,8 @@ export default function ChatPage() {
             streamRef.current = null;
             setSending(false);
           }
-        }
+        },
+        currentAttachments.length > 0 ? currentAttachments : undefined
       );
     } catch (error: any) {
       showError("خطأ", error.message);
@@ -398,7 +477,7 @@ export default function ChatPage() {
         <div className={`flex-1 flex flex-col min-w-0 h-full ${
           isMobileListOpen ? 'hidden lg:flex' : 'flex'
         }`}>
-        {selectedConversation ? (
+        {selectedConversation || isNewChat ? (
           <>
             {/* Chat Header */}
             <div className="border-b border-gray-700 p-4 shrink-0">
@@ -440,21 +519,23 @@ export default function ChatPage() {
                 ) : (
                   <>
                     <h2 className="text-lg font-semibold text-white flex items-center gap-2 truncate">
-                      {selectedConversation.title}
+                      {isNewChat ? "محادثة جديدة" : selectedConversation?.title}
                     </h2>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() => {
-                          setEditedTitle(selectedConversation.title);
-                          setEditingTitle(true);
-                        }}
-                        size="icon"
-                        variant="none"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit2 className="h-5 w-5 text-primary" />
-                      </Button>
-                    </div>
+                    {!isNewChat && selectedConversation && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => {
+                            setEditedTitle(selectedConversation.title);
+                            setEditingTitle(true);
+                          }}
+                          size="icon"
+                          variant="none"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit2 className="h-5 w-5 text-primary" />
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -477,22 +558,12 @@ export default function ChatPage() {
                   {messages.map((message) => (
                     <div key={message.id} className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[85%] sm:max-w-[75%] md:max-w-[65%] lg:max-w-[55%] min-w-0 rounded-lg p-4 relative group break-words overflow-hidden ${
-                        message.role === "user" ? "bg-blue-600/20 text-white" : "bg-gray-800 text-white shadow-lg"
+                        message.role === "user" ? "bg-blue-600/20 text-white" : "bg-fixed-40 text-white shadow-lg"
                       }`}>
                         {message.role === "assistant" ? (
-                          <>
-                            <div className="w-full min-w-0 max-w-full overflow-x-auto">
-                              <MarkdownRenderer content={message.content} />
-                            </div>
-                            <Button
-                              onClick={() => handleCopyMessage(message.id, message.content)}
-                              size="sm"
-                              variant="ghost"
-                              className="absolute bottom-2 left-2 transition-opacity bg-gray-700/50 hover:bg-gray-700 p-1.5 h-auto opacity-0 group-hover:opacity-100"
-                            >
-                              {copiedMessageId === message.id ? <CheckCheck className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4 text-gray-300" />}
-                            </Button>
-                          </>
+                          <div className="w-full min-w-0 max-w-full">
+                            <MarkdownRenderer content={message.content} />
+                          </div>
                         ) : (
                           <p className="whitespace-pre-wrap break-words">{message.content}</p>
                         )}
@@ -516,8 +587,53 @@ export default function ChatPage() {
 
             {/* Chat Input */}
             <div className="shrink-0 border-t border-gray-700 p-4">
+              {/* معاينة المرفقات */}
+              {attachments.length > 0 && (
+                <div className="flex gap-2 mb-3 flex-wrap">
+                  {attachments.map((att, idx) => (
+                    <div key={idx} className="relative group">
+                      <img 
+                        src={att.preview} 
+                        alt={`مرفق ${idx + 1}`}
+                        className="w-16 h-16 rounded-xl object-cover border border-blue-500/30"
+                      />
+                      <button
+                        onClick={() => removeAttachment(idx)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <div className="relative flex items-center flex-row gap-2">
                   <div className="w-full relative flex items-center">
+                    {/* زر إرفاق الصور */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button" // نحدد النوع زر لمنع أي تداخل
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      disabled={sending || attachments.length >= 4}
+                      className="absolute right-2 h-9 w-9 rounded-full text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 z-20"
+                    >
+                      <ImageIcon className="h-5 w-5" />
+                    </Button>
+                    
                     <textarea
                       ref={(el) => {
                         inputRef.current = el;
@@ -538,8 +654,8 @@ export default function ChatPage() {
                           handleSendMessage();
                         }
                       }}
-                      placeholder="اكتب رسالتك هنا... "
-                      className="w-full min-h-[56px] max-h-[200px] bg-[#1a1c1e]/40 backdrop-blur-md border border-blue-500/50 text-white pr-4 pl-14 py-4 rounded-3xl outline-none transition-all scrollbar-hide resize-none flex items-center focus:border-text-primary focus:ring-1 focus:ring-blue-500/20"
+                      placeholder={attachments.length > 0 ? "اكتب سؤالك عن الصورة..." : "اكتب رسالتك هنا..."}
+                      className="w-full min-h-[56px] max-h-[200px] bg-[#1a1c1e]/40 backdrop-blur-md border border-blue-500/50 text-white pr-12 pl-14 py-4 rounded-3xl outline-none transition-all scrollbar-hide resize-none flex items-center focus:border-text-primary focus:ring-1 focus:ring-blue-500/20"
                       disabled={sending}
                       rows={1}
                       style={{ lineHeight: '1.5', overflow: 'hidden' }}
@@ -557,10 +673,10 @@ export default function ChatPage() {
                       ) : (
                         <Button
                           onClick={() => handleSendMessage()}
-                          disabled={!inputMessage.trim() || sending}
+                          disabled={(!inputMessage.trim() && attachments.length === 0) || sending}
                           size="icon"
                           className={`h-10 w-10 !rounded-full transition-all duration-300 flex items-center justify-center p-0 ${
-                            inputMessage.trim()
+                            (inputMessage.trim() || attachments.length > 0)
                               ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-100 hover:scale-105 active:scale-95'
                               : 'bg-white/5 text-gray-400 cursor-not-allowed'
                           }`}
@@ -600,7 +716,7 @@ export default function ChatPage() {
               <h3 className="text-xl font-semibold text-white mb-2">{getGreeting()}</h3>
               <p className="text-primary mb-6">استخدم AI لإنشاء محتوى رائع لوسائل التواصل الاجتماعي</p>
               <Button onClick={handleCreateConversation} className="primary-button" >
-                بدء محادثة جديدة
+                {isNewChat ? "اكتب رسالتك الأولى لبدء المحادثة" : "بدء محادثة جديدة"}
               </Button>
             </div>
           </div>
@@ -665,9 +781,18 @@ export default function ChatPage() {
                     </div>
                     <span className="text-xs font-semibold text-gray-400">كريديت AI</span>
                   </div>
-                  <div className="text-lg font-bold text-white tracking-tight">
-                    {stats.isUnlimited ? "غير محدود" : `${stats.remainingCredits.toLocaleString()} / ${stats.totalCredits.toLocaleString()}`}
+                  <div className="flex flex-col">
+                    <div className="text-lg font-bold text-white tracking-tight" dir="ltr">
+                      {stats.isUnlimited ? "غير محدود" : (
+                        <>
+                          {stats.remainingCredits.toLocaleString()}
+                          <span className="text-gray-500 font-normal text-sm"> / {stats.totalCredits.toLocaleString()}</span>
+                        </>
+                      )}
+                    </div>
+                    {!stats.isUnlimited && <span className="text-[10px] text-gray-500 mt-0.5">رصيد متبقي</span>}
                   </div>
+
                   {!stats.isUnlimited && (
                     <>
                       <div className="mt-3 w-full bg-white/5 h-1.5 rounded-full overflow-hidden">

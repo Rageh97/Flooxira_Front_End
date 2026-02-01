@@ -2588,7 +2588,8 @@ export function sendAIMessageStream(
   token: string,
   conversationId: number,
   content: string,
-  handlers: AIStreamHandlers
+  handlers: AIStreamHandlers,
+  attachments?: { type: 'image'; data: string; mimeType: string }[] // جديد: دعم المرفقات
 ): { cancel: () => void } {
   const url = `${API_URL}/api/ai/conversations/${conversationId}/messages/stream`;
   const controller = new AbortController();
@@ -2601,7 +2602,7 @@ export function sendAIMessageStream(
           'Accept': 'text/event-stream',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, attachments }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {

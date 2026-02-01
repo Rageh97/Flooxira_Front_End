@@ -55,7 +55,7 @@ import { BorderBeam } from "@/components/ui/border-beam";
 // --- Configuration Constants ---
 const ASPECT_RATIOS = [
   { id: "1:1", label: "مربع", icon: "square", value: "1:1" },
-  { id: "4:3", label: "أفقي", icon: "landscape", value: "4:3" },
+  // { id: "4:3", label: "أفقي", icon: "landscape", value: "4:3" },
   { id: "3:4", label: "عمودي", icon: "portrait", value: "3:4" },
   { id: "16:9", label: "سينمائي", icon: "wide", value: "16:9" },
   { id: "9:16", label: "ستوري", icon: "tall", value: "9:16" },
@@ -99,6 +99,7 @@ export default function TextToImagePage() {
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [editMode, setEditMode] = useState<'none' | 'inpaint' | 'outpaint' | 'upscale' | 'remove-bg'>('none');
   const [editPrompt, setEditPrompt] = useState("");
+  const textareaRef = typeof window !== "undefined" ?  require("react").useRef<HTMLTextAreaElement>(null) : { current: null };
   const [outpaintDirection, setOutpaintDirection] = useState<'left' | 'right' | 'up' | 'down'>('right');
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
@@ -115,6 +116,18 @@ export default function TextToImagePage() {
       }
     }
   }, []);
+
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [prompt]);
 
   useEffect(() => {
     if (token) {
@@ -402,28 +415,63 @@ export default function TextToImagePage() {
         <aside className="lg:col-span-4 space-y-4">
            <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
               <div className="space-y-4">
-                 <div className="flex items-center gap-2 justify-end mb-2">
-                    <span className="font-bold text-sm text-gray-200">أبعاد اللوحة</span>
+                 <div className="flex items-center gap-2 justify-start mb-2">
                     <Sliders size={18} className="text-blue-400" />
+                    <span className="font-bold text-sm text-gray-200">أبعاد اللوحة</span>
                  </div>
-                 <div className="grid grid-cols-3 gap-2">
+                 <div className="grid grid-cols-2 gap-3">
                     {ASPECT_RATIOS.map(ratio => (
-                       <button key={ratio.id} onClick={() => setSelectedRatio(ratio.value)} className={clsx("flex flex-col items-center p-2 rounded-xl transition-all border", selectedRatio === ratio.value ? "bg-blue-500/10 border-blue-500/50 text-white" : "bg-white/5 border-transparent text-gray-500 hover:bg-white/10")}>
-                          <div className={clsx("border-2 rounded-sm mb-1 transition-all", selectedRatio === ratio.value ? "border-blue-400" : "border-gray-600", ratio.id === "1:1" ? "w-4 h-4" : ratio.id === "16:9" ? "w-6 h-3" : "w-3 h-6")} />
-                          <span className="text-[10px]">{ratio.label}</span>
+                       <button 
+                         key={ratio.id} 
+                         onClick={() => setSelectedRatio(ratio.value)} 
+                         className={clsx(
+                           "group relative flex flex-col items-center p-3 rounded-2xl transition-all duration-300 border overflow-hidden", 
+                           selectedRatio === ratio.value 
+                             ? "bg-blue-600/20 border-blue-400 text-white " 
+                             : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20"
+                         )}
+                       >
+                          <div className={clsx(
+                            "border-2 rounded-sm mb-2 transition-all duration-300", 
+                            selectedRatio === ratio.value ? "border-white scale-110 shadow-sm" : "border-gray-600 group-hover:border-gray-400", 
+                            ratio.id === "1:1" ? "w-5 h-5" : ratio.id === "16:9" ? "w-7 h-4" : "w-4 h-7"
+                          )} />
+                          <span className="text-[11px] font-bold">{ratio.label}</span>
+                          {selectedRatio === ratio.value && (
+                            <motion.div layoutId="ratio-active" className="absolute inset-0 bg-gradient-to-tr from-blue-400/20 to-transparent pointer-none" />
+                          )}
                        </button>
                     ))}
                  </div>
               </div>
 
               <div className="space-y-4">
-                 <div className="flex items-center gap-2 justify-end mb-2">
-                    <span className="font-bold text-sm text-gray-200">النمط الفني</span>
+                 <div className="flex items-center gap-2 justify-start mb-2">
                     <Palette size={18} className="text-cyan-400" />
+                    <span className="font-bold text-sm text-gray-200">النمط الفني</span>
                  </div>
                  <div className="grid grid-cols-2 gap-2">
                     {STYLE_PRESETS.map(style => (
-                       <button key={style.id} onClick={() => setSelectedStyle(style.id)} className={clsx("p-2 rounded-xl text-right transition-all border text-[10px] font-bold", selectedStyle === style.id ? "bg-blue-500/10 border-blue-500/50 text-white" : "bg-white/5 border-transparent text-gray-500 hover:bg-white/10")}>{style.label}</button>
+                       <button 
+                         key={style.id} 
+                         onClick={() => setSelectedStyle(style.id)} 
+                         className={clsx(
+                           "relative h-11 px-3 rounded-xl text-right transition-all duration-300 border text-[11px] font-bold overflow-hidden group", 
+                           selectedStyle === style.id 
+                             ? "bg-gradient-to-l border-transparent text-white shadow-lg" 
+                             : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20",
+                           selectedStyle === style.id ? style.color : ""
+                         )}
+                       >
+                         <span className="relative z-10">{style.label}</span>
+                         {selectedStyle === style.id && (
+                           <div className="absolute inset-0 bg-white/10 animate-pulse" />
+                         )}
+                         <div className={clsx(
+                           "absolute -left-1 -bottom-1 w-6 h-6 rounded-full blur-md transition-all duration-500 group-hover:scale-150", 
+                           style.color.replace('from-', 'bg-').split(' ')[0]
+                         )} />
+                       </button>
                     ))}
                  </div>
               </div>
@@ -443,13 +491,20 @@ export default function TextToImagePage() {
         </aside>
 
         <section className="lg:col-span-8 space-y-6">
-           <div className="relative bg-[#0a0c10] rounded-[32px] p-4 border border-white/10 shadow-2xl group">
-              <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="أطلق عنان خيالك واكتب وصفاً للصورة بانتظار إبداعك..." className="w-full min-h-[120px] bg-transparent text-white p-4 text-xl placeholder:text-gray-700 outline-none resize-none text-right" dir="rtl" />
+            <div className="relative bg-[#0a0c10] rounded-[32px] p-4 border border-white/10 shadow-2xl group transition-all focus-within:border-blue-500/50">
+              <textarea 
+                ref={textareaRef}
+                value={prompt} 
+                onChange={(e) => setPrompt(e.target.value)} 
+                placeholder="أطلق عنان خيالك واكتب وصفاً للصورة بانتظار إبداعك..." 
+                className="w-full min-h-[60px] bg-transparent text-white p-4 text-xl placeholder:text-gray-700 outline-none resize-none text-right transition-all" 
+                dir="rtl" 
+              />
               <div className="flex justify-between items-center px-4 pb-4">
-                 <div className="flex gap-2">
+                 {/* <div className="flex gap-2">
                     <Button variant="ghost" size="icon" onClick={() => setPrompt("")} className="text-gray-500 hover:text-white"><RefreshCw size={16} /></Button>
-                 </div>
-                 <GradientButton onClick={handleGenerate} disabled={!prompt.trim()} loading={isGenerating} loadingText="جاري الرسم..." icon={<Sparkles />} size="lg" className="rounded-2xl px-8">ابدأ الخلق</GradientButton>
+                 </div> */}
+                 <GradientButton onClick={handleGenerate} disabled={!prompt.trim()} loading={isGenerating} loadingText="جاري الأنشاء..." icon={<Sparkles />} size="lg" className="rounded-2xl px-8">ابدأ التوليد</GradientButton>
               </div>
               <BorderBeam size={100} duration={8} />
            </div>
@@ -471,8 +526,8 @@ export default function TextToImagePage() {
                     </motion.div>
                  ) : isGenerating || isProcessing ? <AILoader /> : (
                     <div className="text-center group">
-                       <ImageIcon size={100} className="text-blue-500/5 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
-                       <h3 className="text-2xl font-bold text-white mb-2">أهلاً بك في استوديو الخيال</h3>
+                       <ImageIcon size={100} className="text-blue-500/20 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
+                       {/* <h3 className="text-2xl font-bold text-white mb-2">أهلاً بك في استوديو الخيال</h3> */}
                        <p className="text-sm text-gray-500 max-w-sm">صف ما تريده وسنقوم بتحويله إلى لوحة فنية فريدة في ثوانٍ.</p>
                     </div>
                  )}
