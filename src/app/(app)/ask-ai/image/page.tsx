@@ -180,6 +180,11 @@ export default function TextToImagePage() {
 
       clearInterval(progressInterval);
 
+      // Validate response
+      if (!response || !response.imageUrl) {
+        throw new Error("لم يتم استلام رابط الصورة من السيرفر");
+      }
+
       const newImage: GeneratedImage = {
         id: placeholderId,
         url: response.imageUrl,
@@ -202,7 +207,12 @@ export default function TextToImagePage() {
     } catch (error: any) {
       clearInterval(progressInterval);
       setHistory(prev => prev.filter(img => img.id !== placeholderId));
-      showError("خطأ", error.message || "حدث خطأ أثناء الرسم");
+      
+      // Better error handling
+      const errorMessage = error.message || "حدث خطأ أثناء الرسم";
+      console.error("Image generation error:", error);
+      
+      showError("خطأ", errorMessage);
     } finally {
       setIsGenerating(false);
     }

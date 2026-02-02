@@ -2652,11 +2652,26 @@ export function sendAIMessageStream(
 }
 
 export async function generateAIImage(token: string, payload: { prompt: string; aspectRatio?: string; safetySetting?: string; model?: string }) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image", {
-    method: "POST",
-    authToken: token,
-    body: JSON.stringify(payload),
-  });
+  // Increase timeout for production image generation (can take 30-60 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
+  
+  try {
+    const result = await apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image", {
+      method: "POST",
+      authToken: token,
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('انتهت مهلة توليد الصورة. يرجى المحاولة مرة أخرى.');
+    }
+    throw error;
+  }
 }
 
 export async function generateAIVideo(token: string, payload: { prompt: string; aspectRatio?: string; includeAudio?: boolean }) {
