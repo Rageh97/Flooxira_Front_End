@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Sparkles, Upload, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Image as ImageIcon, Zap, Move, Trash2, X, RefreshCw
+  Loader2, ArrowRight, Image as ImageIcon, Zap, Move, Trash2, X, Eye, Play
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,21 @@ import { usePermissions } from "@/lib/permissions";
 import { getAIStats, processAIVideo, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
-import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 import { listPlans } from "@/lib/api";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
+
+interface GeneratedVideo {
+  id: string;
+  url: string;
+  prompt: string;
+  original: string;
+  timestamp: string;
+  isProcessing?: boolean;
+  progress?: number;
+}
 
 export default function MotionPage() {
   const [token, setToken] = useState("");
@@ -25,10 +35,11 @@ export default function MotionPage() {
   const [prompt, setPrompt] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [selectedResult, setSelectedResult] = useState<any | null>(null);
+  const [history, setHistory] = useState<GeneratedVideo[]>([]);
+  const [selectedResult, setSelectedResult] = useState<GeneratedVideo | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -37,20 +48,28 @@ export default function MotionPage() {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
       const saved = localStorage.getItem("ai_motion_history");
-      if (saved) setHistory(JSON.parse(saved));
+      if (saved) {
+        try { setHistory(JSON.parse(saved)); } catch (e) { console.error(e); }
+      }
     }
   }, []);
 
   useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { localStorage.setItem("ai_motion_history", JSON.stringify(history)); }, [history]);
+  useEffect(() => { if (history.length > 0) localStorage.setItem("ai_motion_history", JSON.stringify(history)); }, [history]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  }, [prompt]);
 
   const loadStats = async () => {
     try {
       const res = await getAIStats(token);
       setStats(res.stats);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const checkAIPlans = async () => {
@@ -63,14 +82,73 @@ export default function MotionPage() {
     }
   };
 
+  const handleProcess = async () => {
+    if (!hasActiveSubscription) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    
+    if (!previewUrl) return showError("تنبيه", "ارفع صورة أولاً!");
+
+    const placeholderId = Date.now().toString();
+    const placeholder: GeneratedVideo = {
+      id: placeholderId,
+      url: "",
+      prompt: prompt.trim() || "Natural cinematic motion",
+      original: previewUrl,
+      timestamp: new Date().toISOString(),
+      isProcessing: true,
+      progress: 0,
+    };
+
+    setHistory([placeholder, ...history]);
+    setIsProcessing(true);
+
+    const progressInterval = setInterval(() => {
+      setHistory(prev => prev.map(vid => 
+        vid.id === placeholderId && vid.isProcessing
+          ? { ...vid, progress: Math.min((vid.progress || 0) + Math.random() * 10, 90) }
+          : vid
+      ));
+    }, 800);
+
+    try {
+      const res = await processAIVideo(token, {
+        operation: 'motion',
+        inputUrl: previewUrl,
+        prompt: prompt.trim() || "Natural cinematic motion, zoom in slowly"
+      });
+
+      clearInterval(progressInterval);
+
+      const newItem: GeneratedVideo = {
+        id: placeholderId,
+        url: res.videoUrl,
+        prompt: prompt.trim() || "Natural cinematic motion",
+        original: previewUrl,
+        timestamp: new Date().toISOString(),
+        isProcessing: false,
+        progress: 100,
+      };
+
+      setHistory(prev => prev.map(vid => vid.id === placeholderId ? newItem : vid));
+      showSuccess("تم إضافة الحركة بنجاح!");
+    } catch (e: any) {
+      clearInterval(progressInterval);
+      setHistory(prev => prev.filter(vid => vid.id !== placeholderId));
+      showError("خطأ", e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleDeleteHistory = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل أنت متأكد من حذف هذا الفيديو؟")) return;
     const newHistory = history.filter(h => h.id !== id);
     setHistory(newHistory);
-    if (selectedResult?.id === id) {
-      setSelectedResult(null);
-    }
+    localStorage.setItem("ai_motion_history", JSON.stringify(newHistory));
+    if (selectedResult?.id === id) setSelectedResult(null);
     showSuccess("تم الحذف بنجاح!");
   };
 
@@ -82,163 +160,315 @@ export default function MotionPage() {
     showSuccess("تم مسح السجل بالكامل.");
   };
 
-  const handleProcess = async () => {
-    if (!hasActiveSubscription) {
-      setSubscriptionModalOpen(true);
-      return;
-    }
-    
-    if (!previewUrl) return showError("تنبيه", "ارفع صورة أولاً!");
-    setIsProcessing(true);
+  const downloadVideo = async (url: string, filename: string) => {
     try {
-      const res = await processAIVideo(token, {
-        operation: 'motion',
-        inputUrl: previewUrl,
-        prompt: prompt.trim() || "Natural cinematic motion, zoom in slowly"
-      });
-      const newItem = { id: Date.now().toString(), url: res.videoUrl, original: previewUrl };
-      setHistory([newItem, ...history]);
-      setSelectedResult(newItem);
-      showSuccess("تم إضافة الحركة بنجاح!");
-    } catch (e: any) { showError("خطأ", e.message); }
-    finally { setIsProcessing(false); }
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      showSuccess("تم التحميل بنجاح!");
+    } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
-  if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
+  if (permissionsLoading) return <div className="h-screen  flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-[#00050a] to-[#00050a]" />
+    <div className="min-h-screen  text-white font-sans rounded-xl" dir="rtl">
+      {/* Background Effects */}
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-[#00050a] to-[#00050a]" />
+      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-900/10 via-indigo-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <Link href="/ask-ai">
-            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-              <ArrowRight className="h-5 w-5 rotate-180 text-white" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-300 to-indigo-300 bg-clip-text text-transparent">محاكاة الحركة (Image to Video)</h1>
-        </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-amber-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
-      </header>
-
-      <main className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full">
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
-            <div className="space-y-4">
-               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">الصورة الأصلية</label>
-               <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload" onClick={() => document.getElementById('file-m')?.click()}>
-                  {previewUrl ? (
-                    <>
-                      <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
-                      <div className="absolute inset-x-0 flex flex-col items-center justify-center">
-                        <ImageIcon className="text-blue-400 mb-2" size={32} />
-                        <span className="text-xs font-bold text-white">تغيير الصورة</span>
-                      </div>
-                    </>
-                  ) : <ImageIcon className="text-gray-700 group-hover/upload:text-blue-400" size={48} />}
-               </div>
-               <input id="file-m" type="file" className="hidden" accept="image/*" onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const r = new FileReader(); r.onload = () => setPreviewUrl(r.result as string); r.readAsDataURL(file);
-                  }
-               }} />
+     {/* Header */}
+      <AskAIToolHeader 
+        title="محاكاة الحركة  "
+        modelBadge="IMAGE TO VIDEO"
+        stats={stats}
+      />
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Upload Image */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Upload size={14} className="text-blue-400" />
+                الصورة الأصلية
+              </label>
+              <div 
+                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
+                onClick={() => document.getElementById('file-m')?.click()}
+              >
+                {previewUrl ? (
+                  <>
+                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <ImageIcon className="text-blue-400 mb-2" size={32} />
+                      <span className="text-xs font-bold text-white">تغيير الصورة</span>
+                    </div>
+                  </>
+                ) : (
+                  <ImageIcon className="text-gray-700 group-hover/upload:text-blue-400 transition-colors" size={48} />
+                )}
+              </div>
+              <input id="file-m" type="file" className="hidden" accept="image/*" onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const r = new FileReader();
+                  r.onload = () => setPreviewUrl(r.result as string);
+                  r.readAsDataURL(file);
+                }
+              }} />
             </div>
             
-            <div className="space-y-4">
-               <label className="text-xs font-bold text-gray-400 block text-right">طبيعة الحركة (اختياري)</label>
-               <textarea 
-                 value={prompt} 
-                 onChange={e => setPrompt(e.target.value)} 
-                 placeholder="مثال: اجعل الأمواج تتحرك، حرك السحب ببطء، زووم سينمائي على الوجه..." 
-                 className="w-full h-24 bg-white/5 border border-white/5 rounded-2xl p-4 text-sm placeholder:text-gray-600 outline-none resize-none focus:border-blue-500/30 transition-all text-right"
-                 dir="rtl"
-               />
+            {/* Motion Prompt */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Sparkles size={14} className="text-blue-400" />
+                طبيعة الحركة (اختياري)
+              </label>
+              <textarea
+                ref={textareaRef}
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                placeholder="مثال: اجعل الأمواج تتحرك، حرك السحب ببطء، زووم سينمائي على الوجه..."
+                className="w-full min-h-[80px] max-h-[200px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-blue-500/50 resize-none transition-all overflow-y-auto scrollbar-hide"
+                dir="rtl"
+                rows={3}
+              />
             </div>
 
-            <GradientButton 
+            {/* Process Button */}
+            <GradientButton
               onClick={handleProcess}
-              disabled={!previewUrl}
+              disabled={!previewUrl || isProcessing}
               loading={isProcessing}
-              loadingText="جاري التحرير..."
-              loadingIcon={<Loader2 className="animate-spin" />}
+              loadingText="جاري التحريك..."
               icon={<Move />}
               size="lg"
+              className="w-full rounded-xl h-11"
             >
               إضافة حركة
             </GradientButton>
-          </div>
-          
-          <div className="p-6 bg-blue-500/5 rounded-2xl border border-blue-500/10 shadow-inner">
-             <h4 className="text-sm font-bold text-blue-400 mb-2 text-right">كيف تعمل تقنية التحريك؟</h4>
-             <p className="text-xs text-gray-400 leading-relaxed text-right">ارفع صورة ثابتة وسيقوم الذكاء الاصطناعي بتحليل العناصر داخلها وإضافة حركة واقعية (Cinematic Motion) لتحويلها إلى فيديو قصير مبهر.</p>
+
+            {/* Info Box */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <Move className="text-blue-400 flex-shrink-0 mt-0.5" size={18} />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-blue-300">كيف تعمل؟</h3>
+                  <p className="text-xs text-gray-400">
+                    ارفع صورة ثابتة وسيقوم الذكاء الاصطناعي بتحليل العناصر وإضافة حركة واقعية
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear History Button */}
+            {history.length > 0 && (
+              <Button
+                variant="ghost"
+                onClick={clearHistory}
+                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
+              >
+                <Trash2 size={12} className="ml-2" />
+                مسح جميع الأعمال
+              </Button>
+            )}
           </div>
         </aside>
 
-        <section className="lg:col-span-8 space-y-6">
-           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
-              <AnimatePresence mode="wait">
-                {selectedResult ? (
-                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                    {/* Close Button */}
-                    <div className="absolute top-4 left-4 z-30">
-                        <button 
-                            onClick={() => setSelectedResult(null)}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
-                        >
-                            <X size={14} />
-                        </button>
-                    </div>
-
-                    <video src={selectedResult.url} controls autoPlay loop className="max-h-[550px] w-auto rounded-[30px] shadow-3xl border border-white/10 transition-transform duration-500 hover:scale-[1.01]" />
-                    <div className="mt-8 flex gap-4">
-                        <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 transition-all hover:scale-105 shadow-lg shadow-indigo-600/30"><Download className="ml-2 h-4 w-4" /> تحميل الفيديو</Button>
-                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => handleDeleteHistory(selectedResult.id, e)}><Trash2 size={18} /></Button>
-                    </div>
-                    <BorderBeam duration={6} colorFrom="#3b82f6" colorTo="#6366f1" />
-                  </motion.div>
-                ) : isProcessing ? (
-                  <AILoader />
-                ) : (
-                  <div className="flex flex-col items-center text-center group">
-                     <Move size={80} className="text-blue-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
-                     <h3 className="text-2xl font-bold text-white mb-2">لبث الروح في صورك</h3>
-                     <p className="text-sm text-gray-500">ارفع صورة ثابتة لنحولها إلى فيديو سينمائي مذهل بلمسة ذكاء.</p>
-                  </div>
-                )}
-              </AnimatePresence>
-           </div>
-           
-           {history.length > 0 && (
-             <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><HistoryIcon size={14} className="text-blue-500" /> الفيديوهات السابقة ({history.length})</h4>
-                   <Button variant="ghost" size="sm" onClick={clearHistory} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6">
+            {history.length === 0 ? (
+              // Empty State
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <Move size={80} className="text-blue-500/20 mb-4 mx-auto" />
+                  <h3 className="text-xl font-bold text-white mb-2">حرك صورك الثابتة</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    ارفع صورة ثابتة لنحولها إلى فيديو سينمائي مذهل بلمسة ذكاء
+                  </p>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar px-2">
-                   {history.map(h => (
-                      <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedResult(h)}>
-                        <div 
-                           className={clsx("w-32 aspect-square rounded-2xl border-2 transition-all overflow-hidden shadow-lg cursor-pointer", selectedResult?.id === h.id ? "border-blue-500 scale-110 opacity-100" : "border-white/5 opacity-50 hover:opacity-100")}
-                        >
-                           <video src={h.url} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              // Gallery Grid
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <HistoryIcon size={18} className="text-blue-400" />
+                    أعمالك ({history.length})
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                  {history.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all"
+                    >
+                      {item.isProcessing ? (
+                        // Loading State with Progress
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${item.progress || 0}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">جاري التحريك...</p>
                         </div>
-                        <button
-                           onClick={(e) => { e.stopPropagation(); handleDeleteHistory(h.id); }}
-                           className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
-                        >
-                           <X size={10} />
-                        </button>
-                      </div>
-                   ))}
-                </div>
-             </div>
-           )}
-        </section>
-      </main>
+                      ) : (
+                        <>
+                          {/* Video */}
+                          <video
+                            src={item.url}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => setSelectedResult(item)}
+                            muted
+                            loop
+                          />
 
-      {/* Subscription Required Modal */}
+                          {/* Play Icon Overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                              <Play size={20} className="text-white fill-white ml-1" />
+                            </div>
+                          </div>
+
+                          {/* Overlay on Hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+                              <p className="text-xs text-white line-clamp-1">{item.prompt}</p>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedResult(item);
+                                  }}
+                                  className="flex-1 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-xs"
+                                >
+                                  <Eye size={12} className="ml-1" />
+                                  عرض
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadVideo(item.url, `motion-${item.id}.mp4`);
+                                  }}
+                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                >
+                                  <Download size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => handleDeleteHistory(item.id, e)}
+                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Selected Indicator */}
+                          {selectedResult?.id === item.id && (
+                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <Eye size={14} className="text-white" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Video Preview Modal */}
+      <AnimatePresence>
+        {selectedResult && !selectedResult.isProcessing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedResult(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedResult(null)}
+                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Video */}
+              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                <video
+                  src={selectedResult.url}
+                  controls
+                  autoPlay
+                  loop
+                  className="w-full max-h-[80vh] object-contain"
+                />
+                <BorderBeam />
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-400 line-clamp-1">{selectedResult.prompt}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => downloadVideo(selectedResult.url, `motion-${selectedResult.id}.mp4`)}
+                    className="rounded-xl bg-blue-500 hover:bg-blue-600 h-10 px-6"
+                  >
+                    <Download size={16} className="ml-2" />
+                    تحميل
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => handleDeleteHistory(selectedResult.id, e)}
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Subscription Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}

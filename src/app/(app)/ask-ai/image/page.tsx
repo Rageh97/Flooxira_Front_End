@@ -1,39 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Sparkles, 
   Image as ImageIcon, 
   Download, 
-  Share2, 
-  RefreshCw, 
-  Maximize2, 
   Trash2,
-  ChevronRight,
-  Settings2,
   Sliders,
   Palette,
-  Layers,
   Zap,
   Loader2,
-  AlertCircle,
   Wand2,
-  Cpu,
   History,
-  ArrowRight,
   X,
   Expand,
   ArrowUpCircle,
   Eraser,
-  Copy,
-  Scissors
+  Scissors,
+  Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
 import { 
   getAIStats, 
   generateAIImage, 
@@ -46,19 +37,16 @@ import {
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
-import AILoader from "@/components/AILoader";
-import Link from "next/link";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import Image from "next/image";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { useRouter } from "next/navigation";
 
 // --- Configuration Constants ---
 const ASPECT_RATIOS = [
-  { id: "1:1", label: "مربع", icon: "square", value: "1:1" },
-  // { id: "4:3", label: "أفقي", icon: "landscape", value: "4:3" },
-  { id: "3:4", label: "عمودي", icon: "portrait", value: "3:4" },
-  { id: "16:9", label: "سينمائي", icon: "wide", value: "16:9" },
-  { id: "9:16", label: "ستوري", icon: "tall", value: "9:16" },
+  { id: "1:1", label: "1:1", value: "1:1" },
+  { id: "3:4", label: "3:4", value: "3:4" },
+  { id: "16:9", label: "16:9", value: "16:9" },
+  { id: "9:16", label: "9:16", value: "9:16" },
 ];
 
 const STYLE_PRESETS = [
@@ -78,32 +66,27 @@ interface GeneratedImage {
   timestamp: string;
   aspectRatio: string;
   style: string;
+  isGenerating?: boolean;
+  progress?: number;
 }
 
-const MODEL_OPTIONS = [
-  { id: "imagen-4.0", label: "Imagen 4.0 Pro", value: "imagen-4.0-generate-001", description: "الأحدث والأكثر دقة" },
-  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر" },
-  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-001", description: "سرعة مضاعفة" },
-];
-
 export default function TextToImagePage() {
+  const router = useRouter();
+
   const [token, setToken] = useState("");
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("1:1");
   const [selectedStyle, setSelectedStyle] = useState("none");
-  const [selectedModel, setSelectedModel] = useState("imagen-4.0-generate-001");
+  const [selectedModel] = useState("imagen-4.0-generate-001");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
-  const [editMode, setEditMode] = useState<'none' | 'inpaint' | 'outpaint' | 'upscale' | 'remove-bg'>('none');
-  const [editPrompt, setEditPrompt] = useState("");
-  const textareaRef = typeof window !== "undefined" ?  require("react").useRef<HTMLTextAreaElement>(null) : { current: null };
-  const [outpaintDirection, setOutpaintDirection] = useState<'left' | 'right' | 'up' | 'down'>('right');
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
-  
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
 
@@ -117,18 +100,6 @@ export default function TextToImagePage() {
     }
   }, []);
 
-  const adjustTextareaHeight = () => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  };
-
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [prompt]);
-
   useEffect(() => {
     if (token) {
       loadStats();
@@ -139,6 +110,15 @@ export default function TextToImagePage() {
   useEffect(() => {
     if (history.length > 0) localStorage.setItem("ai_image_history", JSON.stringify(history));
   }, [history]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  }, [prompt]);
 
   const loadStats = async () => {
     try {
@@ -165,7 +145,29 @@ export default function TextToImagePage() {
     }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 10) return showError("تنبيه", "رصيدك غير كافٍ");
 
+    const placeholderId = Date.now().toString();
+    const placeholder: GeneratedImage = {
+      id: placeholderId,
+      url: "",
+      prompt: prompt.trim(),
+      timestamp: new Date().toISOString(),
+      aspectRatio: selectedRatio,
+      style: selectedStyle,
+      isGenerating: true,
+      progress: 0,
+    };
+
+    setHistory([placeholder, ...history]);
     setIsGenerating(true);
+
+    const progressInterval = setInterval(() => {
+      setHistory(prev => prev.map(img => 
+        img.id === placeholderId && img.isGenerating
+          ? { ...img, progress: Math.min((img.progress || 0) + Math.random() * 15, 90) }
+          : img
+      ));
+    }, 500);
+
     try {
       const styleConfig = STYLE_PRESETS.find(s => s.id === selectedStyle);
       const finalPrompt = prompt.trim() + (styleConfig?.prompt || "");
@@ -176,25 +178,30 @@ export default function TextToImagePage() {
         model: selectedModel
       });
 
+      clearInterval(progressInterval);
+
       const newImage: GeneratedImage = {
-        id: Date.now().toString(),
+        id: placeholderId,
         url: response.imageUrl,
         prompt: prompt.trim(),
         timestamp: new Date().toISOString(),
         aspectRatio: selectedRatio,
         style: selectedStyle,
+        isGenerating: false,
+        progress: 100,
       };
 
-      setHistory([newImage, ...history]);
-      setSelectedImage(newImage);
+      setHistory(prev => prev.map(img => img.id === placeholderId ? newImage : img));
       setStats(prev => prev ? {
         ...prev,
         remainingCredits: response.remainingCredits,
         usedCredits: prev.usedCredits + response.creditsUsed
       } : null);
       
-      showSuccess("تم بناء خيالك بنجاح!");
+      showSuccess("تم بناء الصورة بنجاح!");
     } catch (error: any) {
+      clearInterval(progressInterval);
+      setHistory(prev => prev.filter(img => img.id !== placeholderId));
       showError("خطأ", error.message || "حدث خطأ أثناء الرسم");
     } finally {
       setIsGenerating(false);
@@ -235,91 +242,8 @@ export default function TextToImagePage() {
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
-  const handleRegenerate = async () => {
-    if (!selectedImage) return;
-    setPrompt(selectedImage.prompt);
-    setSelectedRatio(selectedImage.aspectRatio);
-    setSelectedStyle(selectedImage.style);
-    await handleGenerate();
-  };
-
-  const handleInpaint = async () => {
-    if (!selectedImage || !editPrompt.trim()) return showError("تنبيه", "يرجى كتابة وصف للتعديل المطلوب");
-    if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
-
-    setIsProcessing(true);
-    try {
-      const response = await editImageInpainting(token, {
-        imageUrl: selectedImage.url,
-        prompt: editPrompt.trim(),
-      });
-
-      const editedImage: GeneratedImage = {
-        id: Date.now().toString(),
-        url: response.imageUrl,
-        prompt: `${selectedImage.prompt} (تعديل: ${editPrompt})`,
-        timestamp: new Date().toISOString(),
-        aspectRatio: selectedImage.aspectRatio,
-        style: selectedImage.style,
-      };
-
-      setHistory([editedImage, ...history]);
-      setSelectedImage(editedImage);
-      setStats(prev => prev ? {
-        ...prev,
-        remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
-      } : null);
-      
-      setEditMode('none');
-      setEditPrompt("");
-      showSuccess("تم تعديل الصورة بنجاح!");
-    } catch (error: any) {
-      showError("خطأ", error.message || "حدث خطأ أثناء التعديل");
-    } finally { setIsProcessing(false); }
-  };
-
-  const handleOutpaint = async () => {
-    if (!selectedImage) return;
-    if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
-
-    setIsProcessing(true);
-    try {
-      const response = await editImageOutpainting(token, {
-        imageUrl: selectedImage.url,
-        direction: outpaintDirection,
-        prompt: editPrompt.trim() || selectedImage.prompt,
-      });
-
-      const expandedImage: GeneratedImage = {
-        id: Date.now().toString(),
-        url: response.imageUrl,
-        prompt: `${selectedImage.prompt} (توسيع ${outpaintDirection})`,
-        timestamp: new Date().toISOString(),
-        aspectRatio: selectedImage.aspectRatio,
-        style: selectedImage.style,
-      };
-
-      setHistory([expandedImage, ...history]);
-      setSelectedImage(expandedImage);
-      setStats(prev => prev ? {
-        ...prev,
-        remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
-      } : null);
-      
-      setEditMode('none');
-      setEditPrompt("");
-      showSuccess("تم توسيع الصورة بنجاح!");
-    } catch (error: any) {
-      showError("خطأ", error.message || "حدث خطأ أثناء التوسيع");
-    } finally { setIsProcessing(false); }
-  };
-
   const handleUpscale = async () => {
-    if (!selectedImage) return;
+    if (!selectedImage || selectedImage.isGenerating) return;
     if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 20) return showError("تنبيه", "رصيدك غير كافٍ");
 
@@ -347,7 +271,6 @@ export default function TextToImagePage() {
         usedCredits: prev.usedCredits + response.creditsUsed
       } : null);
       
-      setEditMode('none');
       showSuccess("تم تحسين جودة الصورة بنجاح!");
     } catch (error: any) {
       showError("خطأ", error.message || "حدث خطأ أثناء التحسين");
@@ -355,7 +278,7 @@ export default function TextToImagePage() {
   };
 
   const handleRemoveBackground = async () => {
-    if (!selectedImage) return;
+    if (!selectedImage || selectedImage.isGenerating) return;
     if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 10) return showError("تنبيه", "رصيدك غير كافٍ");
 
@@ -380,179 +303,334 @@ export default function TextToImagePage() {
         usedCredits: prev.usedCredits + response.creditsUsed
       } : null);
       
-      setEditMode('none');
       showSuccess("تم إزالة الخلفية بنجاح!");
     } catch (error: any) {
       showError("خطأ", error.message || "حدث خطأ أثناء إزالة الخلفية");
     } finally { setIsProcessing(false); }
   };
 
-  if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
+  if (permissionsLoading) return <div className="h-screen  flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden selection:bg-blue-500/30 selection:text-blue-200 font-sans" dir="rtl">
+    <div className="min-h-screen  text-white font-sans rounded-xl" dir="rtl">
+      {/* Background Effects */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-[#00050a] to-[#00050a]" />
       <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-900/10 via-cyan-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a]/80 shadow-2xl">
-        <div className="mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/ask-ai">
-              <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-                <ArrowRight className="h-5 w-5 rotate-180" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <span className="bg-gradient-to-r from-blue-300 to-indigo-300 bg-clip-text text-transparent">نص الى صورة</span>
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-300 font-mono tracking-widest">IMAGEN 4.0</span>
-            </h1>
-          </div>
-          {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-amber-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
-        </div>
-      </header>
+      {/* Header */}
+      <AskAIToolHeader 
+        title="نص إلى صورة"
+        modelBadge="IMAGEN 4.0"
+        stats={stats}
+      />
 
-      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px]">
-        <aside className="lg:col-span-4 space-y-4">
-           <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
-              <div className="space-y-4">
-                 <div className="flex items-center gap-2 justify-start mb-2">
-                    <Sliders size={18} className="text-blue-400" />
-                    <span className="font-bold text-sm text-gray-200">أبعاد اللوحة</span>
-                 </div>
-                 <div className="grid grid-cols-2 gap-3">
-                    {ASPECT_RATIOS.map(ratio => (
-                       <button 
-                         key={ratio.id} 
-                         onClick={() => setSelectedRatio(ratio.value)} 
-                         className={clsx(
-                           "group relative flex flex-col items-center p-3 rounded-2xl transition-all duration-300 border overflow-hidden", 
-                           selectedRatio === ratio.value 
-                             ? "bg-blue-600/20 border-blue-400 text-white " 
-                             : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20"
-                         )}
-                       >
-                          <div className={clsx(
-                            "border-2 rounded-sm mb-2 transition-all duration-300", 
-                            selectedRatio === ratio.value ? "border-white scale-110 shadow-sm" : "border-gray-600 group-hover:border-gray-400", 
-                            ratio.id === "1:1" ? "w-5 h-5" : ratio.id === "16:9" ? "w-7 h-4" : "w-4 h-7"
-                          )} />
-                          <span className="text-[11px] font-bold">{ratio.label}</span>
-                          {selectedRatio === ratio.value && (
-                            <motion.div layoutId="ratio-active" className="absolute inset-0 bg-gradient-to-tr from-blue-400/20 to-transparent pointer-none" />
-                          )}
-                       </button>
-                    ))}
-                 </div>
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Prompt Input */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Sparkles size={14} className="text-blue-400" />
+                وصف الصورة
+              </label>
+              <textarea
+                ref={textareaRef}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="اكتب وصفاً تفصيلياً للصورة التي تريد إنشاءها..."
+                className="w-full min-h-[80px] max-h-[200px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-blue-500/50 resize-none transition-all overflow-y-auto scrollbar-hide"
+                dir="rtl"
+                rows={3}
+              />
+            </div>
+
+            {/* Generate Button */}
+            <GradientButton
+              onClick={handleGenerate}
+              disabled={!prompt.trim() || isGenerating}
+              loading={isGenerating}
+              loadingText="جاري الإنشاء..."
+              icon={<Sparkles />}
+              size="lg"
+              className="w-full rounded-xl h-11"
+            >
+              إنشاء صورة
+            </GradientButton>
+
+            {/* Aspect Ratio */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Sliders size={14} className="text-cyan-400" />
+                أبعاد الصورة
+              </label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {ASPECT_RATIOS.map(ratio => (
+                  <button
+                    key={ratio.id}
+                    onClick={() => setSelectedRatio(ratio.value)}
+                    className={clsx(
+                      "relative flex flex-col items-center justify-center p-2 rounded-lg transition-all border",
+                      selectedRatio === ratio.value
+                        ? "bg-blue-500/20 border-blue-400 text-white"
+                        : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                    )}
+                  >
+                    <div
+                      className={clsx(
+                        "border-2 rounded-sm mb-1",
+                        selectedRatio === ratio.value ? "border-white" : "border-gray-600",
+                        ratio.id === "1:1" ? "w-4 h-4" : ratio.id === "16:9" ? "w-5 h-3" : ratio.id === "9:16" ? "w-3 h-5" : "w-4 h-3"
+                      )}
+                    />
+                    <span className="text-[10px] font-medium">{ratio.label}</span>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="space-y-4">
-                 <div className="flex items-center gap-2 justify-start mb-2">
-                    <Palette size={18} className="text-cyan-400" />
-                    <span className="font-bold text-sm text-gray-200">النمط الفني</span>
-                 </div>
-                 <div className="grid grid-cols-2 gap-2">
-                    {STYLE_PRESETS.map(style => (
-                       <button 
-                         key={style.id} 
-                         onClick={() => setSelectedStyle(style.id)} 
-                         className={clsx(
-                           "relative h-11 px-3 rounded-xl text-right transition-all duration-300 border text-[11px] font-bold overflow-hidden group", 
-                           selectedStyle === style.id 
-                             ? "bg-gradient-to-l border-transparent text-white shadow-lg" 
-                             : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20",
-                           selectedStyle === style.id ? style.color : ""
-                         )}
-                       >
-                         <span className="relative z-10">{style.label}</span>
-                         {selectedStyle === style.id && (
-                           <div className="absolute inset-0 bg-white/10 animate-pulse" />
-                         )}
-                         <div className={clsx(
-                           "absolute -left-1 -bottom-1 w-6 h-6 rounded-full blur-md transition-all duration-500 group-hover:scale-150", 
-                           style.color.replace('from-', 'bg-').split(' ')[0]
-                         )} />
-                       </button>
-                    ))}
-                 </div>
+            {/* Style Presets */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Palette size={14} className="text-purple-400" />
+                النمط الفني
+              </label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {STYLE_PRESETS.map(style => (
+                  <button
+                    key={style.id}
+                    onClick={() => setSelectedStyle(style.id)}
+                    className={clsx(
+                      "w-full text-center px-2 py-1.5 rounded-lg transition-all border text-[10px] font-medium",
+                      selectedStyle === style.id
+                        ? "bg-gradient-to-l border-transparent text-white shadow-lg " + style.color
+                        : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                    )}
+                  >
+                    {style.label}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {selectedImage && (
-                <div className="space-y-3 pt-4 border-t border-white/5">
-                   <h4 className="text-xs font-bold text-purple-400 flex items-center gap-2 justify-end">أدوات تعديل احترافية <Wand2 size={14} /></h4>
-                   <div className="grid grid-cols-2 gap-2">
-                      <Button onClick={handleUpscale} disabled={isProcessing} className="rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] h-10 gap-2"><ArrowUpCircle size={14} /> تحسين</Button>
-                      <Button onClick={handleRemoveBackground} disabled={isProcessing} className="rounded-xl bg-pink-500/10 text-pink-300 border border-pink-500/20 text-[10px] h-10 gap-2"><Eraser size={14} /> إزالة خلفية</Button>
-                      <Button onClick={() => setEditMode('inpaint')} className={clsx("rounded-xl border text-[10px] h-10 gap-2", editMode === 'inpaint' ? "bg-blue-500 font-white" : "bg-blue-500/10 text-blue-300 border-blue-500/20")}><Scissors size={14} /> تعديل جزء</Button>
-                      <Button onClick={() => setEditMode('outpaint')} className={clsx("rounded-xl border text-[10px] h-10 gap-2", editMode === 'outpaint' ? "bg-violet-500 text-white" : "bg-violet-500/10 text-violet-300 border-violet-500/20")}><Expand size={14} /> توسيع</Button>
-                   </div>
+            {/* Edit Tools */}
+            {selectedImage && !selectedImage.isGenerating && (
+              <div className="space-y-2 pt-4 border-t border-white/10">
+                <label className="text-xs font-bold text-purple-400 flex items-center gap-2">
+                  <Wand2 size={14} />
+                  أدوات التعديل
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Button
+                    onClick={handleUpscale}
+                    disabled={isProcessing}
+                    className="rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] h-8"
+                  >
+                    <ArrowUpCircle size={12} className="ml-1" />
+                    تحسين
+                  </Button>
+                  <Button
+                    onClick={handleRemoveBackground}
+                    disabled={isProcessing}
+                    className="rounded-lg bg-pink-500/10 text-pink-300 border border-pink-500/20 text-[10px] h-8"
+                  >
+                    <Eraser size={12} className="ml-1" />
+                    إزالة خلفية
+                  </Button>
                 </div>
-              )}
-           </div>
+              </div>
+            )}
+
+            {/* Clear History */}
+            {history.length > 0 && (
+              <Button
+                variant="ghost"
+                onClick={clearAllHistory}
+                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
+              >
+                <Trash2 size={12} className="ml-2" />
+                مسح جميع الأعمال
+              </Button>
+            )}
+          </div>
         </aside>
 
-        <section className="lg:col-span-8 space-y-6">
-            <div className="relative bg-[#0a0c10] rounded-[32px] p-4 border border-white/10 shadow-2xl group transition-all focus-within:border-blue-500/50">
-              <textarea 
-                ref={textareaRef}
-                value={prompt} 
-                onChange={(e) => setPrompt(e.target.value)} 
-                placeholder="أطلق عنان خيالك واكتب وصفاً للصورة بانتظار إبداعك..." 
-                className="w-full min-h-[60px] bg-transparent text-white p-4 text-xl placeholder:text-gray-700 outline-none resize-none text-right transition-all" 
-                dir="rtl" 
-              />
-              <div className="flex justify-between items-center px-4 pb-4">
-                 {/* <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setPrompt("")} className="text-gray-500 hover:text-white"><RefreshCw size={16} /></Button>
-                 </div> */}
-                 <GradientButton onClick={handleGenerate} disabled={!prompt.trim()} loading={isGenerating} loadingText="جاري الأنشاء..." icon={<Sparkles />} size="lg" className="rounded-2xl px-8">ابدأ التوليد</GradientButton>
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6">
+            {history.length === 0 ? (
+              // Empty State
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <ImageIcon size={80} className="text-blue-500/20 mb-4 mx-auto" />
+                  <h3 className="text-xl font-bold text-white mb-2">ابدأ في إنشاء صورك</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    اكتب وصفاً للصورة التي تريدها في الجانب الأيمن وسنقوم بإنشائها لك في ثوانٍ
+                  </p>
+                </div>
               </div>
-              <BorderBeam size={100} duration={8} />
-           </div>
-
-           <div className="relative min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 overflow-hidden group/result">
-              <AnimatePresence mode="wait">
-                 {selectedImage ? (
-                    <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                       {/* Close Button */}
-                       <div className="absolute top-0 left-0 z-30">
-                          <button onClick={() => setSelectedImage(null)} className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"><X size={14} /></button>
-                       </div>
-                       <img src={selectedImage.url} className="max-h-[650px] rounded-2xl shadow-3xl transition-transform duration-500 hover:scale-[1.01]" />
-                       <div className="mt-8 flex items-center gap-3">
-                          <Button onClick={() => downloadImage(selectedImage.url, `ai-art-${selectedImage.id}.png`)} className="rounded-full bg-blue-500 hover:bg-blue-600 font-bold h-10 px-8"><Download size={16} className="ml-2" /> تحميل الصورة</Button>
-                          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 h-10 w-10 border border-red-500/20" onClick={(e) => deleteFromHistory(selectedImage.id, e)}><Trash2 size={18} /></Button>
-                       </div>
-                       <BorderBeam />
-                    </motion.div>
-                 ) : isGenerating || isProcessing ? <AILoader /> : (
-                    <div className="text-center group">
-                       <ImageIcon size={100} className="text-blue-500/20 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
-                       {/* <h3 className="text-2xl font-bold text-white mb-2">أهلاً بك في استوديو الخيال</h3> */}
-                       <p className="text-sm text-gray-500 max-w-sm">صف ما تريده وسنقوم بتحويله إلى لوحة فنية فريدة في ثوانٍ.</p>
-                    </div>
-                 )}
-              </AnimatePresence>
-           </div>
-
-           {history.length > 0 && (
+            ) : (
+              // Gallery Grid
               <div className="space-y-4">
-                 <div className="flex items-center justify-between px-2">
-                    <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><History size={14} className="text-blue-500" /> معرض الأعمال ({history.length})</h4>
-                    <Button variant="ghost" size="sm" onClick={clearAllHistory} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
-                 </div>
-                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-4">
-                    {history.map(img => (
-                       <div key={img.id} className="relative group aspect-square rounded-2xl cursor-pointer overflow-hidden border border-white/5 hover:border-blue-500/50 transition-all shadow-lg" onClick={() => setSelectedImage(img)}>
-                          <img src={img.url} className={clsx("w-full h-full object-cover transition-all", selectedImage?.id === img.id ? "scale-110 opacity-100 border-2 border-blue-500" : "opacity-40 hover:opacity-100")} />
-                          <button onClick={(e) => deleteFromHistory(img.id, e)} className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"><X size={10} /></button>
-                       </div>
-                    ))}
-                 </div>
-              </div>
-           )}
-        </section>
-      </main>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <History size={18} className="text-blue-400" />
+                    أعمالك ({history.length})
+                  </h2>
+                </div>
 
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                  {history.map((img) => (
+                    <motion.div
+                      key={img.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all"
+                    >
+                      {img.isGenerating ? (
+                        // Loading State with Progress
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${img.progress || 0}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">جاري الإنشاء...</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Image */}
+                          <img
+                            src={img.url}
+                            alt={img.prompt}
+                            className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                            onClick={() => setSelectedImage(img)}
+                          />
+
+                          {/* Overlay on Hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+                              <p className="text-xs text-white line-clamp-2">{img.prompt}</p>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedImage(img);
+                                  }}
+                                  className="flex-1 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-xs"
+                                >
+                                  <Eye size={12} className="ml-1" />
+                                  عرض
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadImage(img.url, `ai-art-${img.id}.png`);
+                                  }}
+                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                >
+                                  <Download size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => deleteFromHistory(img.id, e)}
+                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Selected Indicator */}
+                          {selectedImage?.id === img.id && (
+                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <Eye size={14} className="text-white" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {selectedImage && !selectedImage.isGenerating && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Image */}
+              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                <img
+                  src={selectedImage.url}
+                  alt={selectedImage.prompt}
+                  className="w-full max-h-[80vh] object-contain"
+                />
+                <BorderBeam />
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-400 line-clamp-2">{selectedImage.prompt}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => downloadImage(selectedImage.url, `ai-art-${selectedImage.id}.png`)}
+                    className="rounded-xl bg-blue-500 hover:bg-blue-600 h-10 px-6"
+                  >
+                    <Download size={16} className="ml-2" />
+                    تحميل
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => deleteFromHistory(selectedImage.id, e)}
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Subscription Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}

@@ -19,6 +19,7 @@ import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 import { listPlans } from "@/lib/api";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 export default function ImageToTextPage() {
   const [token, setToken] = useState("");
@@ -128,24 +129,22 @@ export default function ImageToTextPage() {
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen  rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-teal-900/10 via-[#00050a] to-[#00050a]" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80">
-        <div className="flex items-center gap-6">
-          <Link href="/ask-ai">
-            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-              <ArrowRight className="h-5 w-5 text-white rotate-180" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-300 to-emerald-300 bg-clip-text text-transparent">تحويل الصورة إلى نص (Prompt Engineering)</h1>
-        </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-teal-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
-      </header>
+      {/* Header */}
+      <AskAIToolHeader 
+        title="تحويل الصورة إلى نص (Prompt Engineering)"
+        modelBadge="IMAGEN 4.0"
+        stats={stats}
+      />
 
-      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px]">
-        <aside className="lg:col-span-12 xl:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            <div className="space-y-4">
             <div className="space-y-4">
                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">الصورة المراد تحليلها</label>
                <div 
@@ -185,11 +184,14 @@ export default function ImageToTextPage() {
 
           <div className="p-6 bg-teal-500/5 rounded-[24px] border border-white/5 space-y-3">
              <h4 className="text-sm font-bold text-teal-400 mb-1 flex items-center gap-2 italic text-right"><Sparkles size={16} /> هندسة الأوامر الذكية</h4>
-             <p className="text-xs text-gray-400 leading-relaxed text-right">ارفع أي صورة تعجبك وسيقوم الذكاء الاصطناعي باستخراج وصف دقيق جداً (Prompt) يمكنك استخدامه لإعادة توليد صور مشابهة أو تعديلها.</p>
+             <p className="text-[10px] text-gray-400 leading-relaxed text-right">ارفع أي صورة تعجبك وسيقوم الذكاء الاصطناعي باستخراج وصف دقيق جداً (Prompt) يمكنك استخدامه لإعادة توليد صور مشابهة أو تعديلها.</p>
+          </div>
           </div>
         </aside>
 
-        <section className="lg:col-span-12 xl:col-span-8 space-y-6">
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6 space-y-6">
            <div className="min-h-[500px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden">
               <AnimatePresence mode="wait">
                  {description ? (
@@ -268,8 +270,9 @@ export default function ImageToTextPage() {
                 </div>
              </div>
            )}
-        </section>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* Subscription Required Modal */}
       <SubscriptionRequiredModal

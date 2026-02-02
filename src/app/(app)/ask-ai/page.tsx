@@ -48,7 +48,7 @@ export default function AskAIPage() {
   const features = [
     {
       id: 'ask-ai',
-      title: 'فلوكسيرا AI',
+      title: 'شات GPT',
       desc: 'مساعدك الشخصي للدردشة والإجابة على الأسئلة',
       image: '/gpt فلوكسيرا.png',
       status: 'active',
@@ -105,11 +105,11 @@ export default function AskAIPage() {
     { id: 'vgen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
     { id: 'long-video', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'active' },
     { id: 'motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
-    { id: 'ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'active' },
-    { id: 'effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'active' },
-    { id: 'lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'active' },
-    { id: 'resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'active' },
-    { id: 'vupscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'active' },
+    { id: 'ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'soon' },
+    { id: 'effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'soon' },
+    { id: 'lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'soon' },
+    { id: 'resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'soon' },
+    { id: 'vupscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'soon' },
   ];
 
   const filterTools = (tools: any[]) => {
@@ -231,7 +231,7 @@ export default function AskAIPage() {
               className="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all"
             >
               <Sparkles className="w-5 h-5" />
-              <span className="font-bold">فلوكسيرا AI</span>
+              <span className="font-bold">شات GPT</span>
             </Button>
             <Button
               onClick={() => router.push('/ask-ai/media')}

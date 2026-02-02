@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Sparkles, Upload, Download, Palette, 
-  Loader2, ArrowRight, Zap, History, Layout, X, Trash2
+  Loader2, ArrowRight, Zap, History, X, Trash2, Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,21 @@ import { usePermissions } from "@/lib/permissions";
 import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
-import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 import { listPlans } from "@/lib/api";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
+
+interface ProcessedImage {
+  id: string;
+  url: string;
+  original: string;
+  prompt?: string;
+  timestamp: string;
+  isProcessing?: boolean;
+  progress?: number;
+}
 
 export default function SketchPage() {
   const [token, setToken] = useState("");
@@ -25,10 +35,11 @@ export default function SketchPage() {
   const [prompt, setPrompt] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [selectedResult, setSelectedResult] = useState<any | null>(null);
+  const [history, setHistory] = useState<ProcessedImage[]>([]);
+  const [selectedResult, setSelectedResult] = useState<ProcessedImage | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -37,12 +48,24 @@ export default function SketchPage() {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
       const saved = localStorage.getItem("ai_sketch_history");
-      if (saved) setHistory(JSON.parse(saved));
+      if (saved) {
+        try { setHistory(JSON.parse(saved)); } catch (e) { console.error(e); }
+      }
     }
   }, []);
 
   useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { localStorage.setItem("ai_sketch_history", JSON.stringify(history)); }, [history]);
+  useEffect(() => { 
+    if (history.length > 0) localStorage.setItem("ai_sketch_history", JSON.stringify(history)); 
+  }, [history]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  }, [prompt]);
 
   const loadStats = async () => {
     try {
@@ -68,19 +91,58 @@ export default function SketchPage() {
     }
     
     if (!previewUrl) return showError("تنبيه", "ارفع رسمتك اليدوية أولاً!");
+
+    const placeholderId = Date.now().toString();
+    const placeholder: ProcessedImage = {
+      id: placeholderId,
+      url: "",
+      original: previewUrl,
+      prompt: prompt.trim() || "Realistic detailed masterpiece",
+      timestamp: new Date().toISOString(),
+      isProcessing: true,
+      progress: 0,
+    };
+
+    setHistory([placeholder, ...history]);
     setIsProcessing(true);
+
+    const progressInterval = setInterval(() => {
+      setHistory(prev => prev.map(img => 
+        img.id === placeholderId && img.isProcessing
+          ? { ...img, progress: Math.min((img.progress || 0) + Math.random() * 15, 90) }
+          : img
+      ));
+    }, 500);
+
     try {
       const res = await processAIImage(token, {
         operation: 'sketch',
         imageUrl: previewUrl,
         prompt: prompt.trim() || "Realistic detailed masterpiece, high quality"
       });
-      const newItem = { id: Date.now().toString(), url: res.imageUrl, original: previewUrl };
-      setHistory([newItem, ...history]);
-      setSelectedResult(newItem);
+
+      clearInterval(progressInterval);
+
+      const newItem: ProcessedImage = {
+        id: placeholderId,
+        url: res.imageUrl,
+        original: previewUrl,
+        prompt: prompt.trim(),
+        timestamp: new Date().toISOString(),
+        isProcessing: false,
+        progress: 100,
+      };
+
+      setHistory(prev => prev.map(img => img.id === placeholderId ? newItem : img));
+      await loadStats();
       showSuccess("تم تحويل الرسمة بنجاح!");
-    } catch (e: any) { showError("خطأ", e.message); }
-    finally { setIsProcessing(false); }
+    } catch (e: any) {
+      clearInterval(progressInterval);
+      setHistory(prev => prev.filter(img => img.id !== placeholderId));
+      showError("خطأ", e.message);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
@@ -101,136 +163,321 @@ export default function SketchPage() {
     showSuccess("تم مسح السجل.");
   };
 
+  const downloadImage = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      showSuccess("تم التحميل بنجاح!");
+    } catch (error) { showError("خطأ", "تعذر التحميل"); }
+  };
+
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/10 via-[#00050a] to-[#00050a]" />
+    <div className="min-h-screen  text-white font-sans rounded-xl" dir="rtl">
+      {/* Background Effects */}
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-950 via-[#00050a] to-[#00050a]" />
+      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-purple-900/10 via-pink-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <Link href="/ask-ai">
-            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-              <ArrowRight className="h-5 w-5 rotate-180" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">رسم إلى صور واقعية</h1>
-        </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5"><Zap size={14} className="text-purple-400" /> <span className="text-sm font-bold font-mono">{stats.remainingCredits}</span></div>}
-      </header>
+     {/* Header */}
+      <AskAIToolHeader 
+        title=" حول رسمك الى واقع  "
+        modelBadge="SKETCH AI"
+        stats={stats}
+      />
 
-      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px]">
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
-            <div className="space-y-4">
-               <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">ارفع رسمك اليدوي</label>
-               <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-purple-500/30 transition-all bg-white/5 group" onClick={() => document.getElementById('file-s')?.click()}>
-                  {previewUrl ? <img src={previewUrl} className="w-full h-full object-contain" /> : <Palette className="text-gray-700 group-hover:text-purple-400" size={48} />}
-               </div>
-               <input id="file-s" type="file" className="hidden" accept="image/*" onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const r = new FileReader(); r.onload = () => setPreviewUrl(r.result as string); r.readAsDataURL(file);
-                  }
-               }} />
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Upload Image */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Upload size={14} className="text-purple-400" />
+                ارفع رسمك اليدوي
+              </label>
+              <div 
+                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-purple-500/30 transition-all"
+                onClick={() => document.getElementById('file-s')?.click()}
+              >
+                {previewUrl ? (
+                  <>
+                    <img src={previewUrl} className="w-full h-full object-contain opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <Palette className="text-purple-400 mb-2" size={32} />
+                      <span className="text-xs font-bold text-white">تغيير الصورة</span>
+                    </div>
+                  </>
+                ) : (
+                  <Palette className="text-gray-700 group-hover/upload:text-purple-400 transition-colors" size={48} />
+                )}
+              </div>
+              <input id="file-s" type="file" className="hidden" accept="image/*" onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const r = new FileReader();
+                  r.onload = () => setPreviewUrl(r.result as string);
+                  r.readAsDataURL(file);
+                }
+              }} />
             </div>
             
-            <div className="space-y-4">
-               <label className="text-xs font-bold text-gray-400 block text-right">وصف النتيجة النهائية</label>
-               <textarea 
-                 value={prompt} 
-                 onChange={e => setPrompt(e.target.value)} 
-                 placeholder="مثال: منظر طبيعي للجبال وقت الغروب، جودة سينمائية، تفاصيل دقيقة..." 
-                 className="w-full h-32 bg-white/5 border border-white/5 rounded-2xl p-4 text-sm placeholder:text-gray-600 outline-none resize-none focus:border-purple-500/30 transition-all text-right" 
-                 dir="rtl"
-               />
+            {/* Prompt Input */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Sparkles size={14} className="text-purple-400" />
+                وصف النتيجة النهائية
+              </label>
+              <textarea
+                ref={textareaRef}
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                placeholder="مثال: منظر طبيعي للجبال وقت الغروب، جودة سينمائية، تفاصيل دقيقة..."
+                className="w-full min-h-[100px] max-h-[200px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-purple-500/50 resize-none transition-all overflow-y-auto scrollbar-hide"
+                dir="rtl"
+                rows={4}
+              />
             </div>
 
-            <GradientButton 
+            {/* Process Button */}
+            <GradientButton
               onClick={handleProcess}
-              disabled={!previewUrl}
+              disabled={!previewUrl || isProcessing}
               loading={isProcessing}
               loadingText="جاري التحويل..."
-              loadingIcon={<Loader2 className="animate-spin" />}
               icon={<Sparkles />}
               size="lg"
+              className="w-full rounded-xl h-11"
             >
               حول الرسمة لصورة
             </GradientButton>
-          </div>
-          
-          <div className="p-6 bg-purple-500/5 rounded-[24px] border border-purple-500/10 space-y-3">
-             <h4 className="text-sm font-bold text-purple-400 mb-2">من خربشة إلى إبداع</h4>
-             <p className="text-xs text-gray-400 leading-relaxed text-right">حوّل أبسط الرسومات اليدوية إلى صور واقعية مذهلة. استخدم الأوامر النصية لتوجيه الذكاء الاصطناعي نحو الألوان والستايل الذي تفضله.</p>
+
+            {/* Info Box */}
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <Palette className="text-purple-400 flex-shrink-0 mt-0.5" size={18} />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-purple-300">من خربشة إلى إبداع</h3>
+                  <p className="text-xs text-gray-400">
+                    حوّل أبسط الرسومات اليدوية إلى صور واقعية مذهلة بتوجيه نصي
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear History Button */}
+            {history.length > 0 && (
+              <Button
+                variant="ghost"
+                onClick={clearHistory}
+                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
+              >
+                <Trash2 size={12} className="ml-2" />
+                مسح جميع الأعمال
+              </Button>
+            )}
           </div>
         </aside>
 
-        <section className="lg:col-span-8 space-y-6">
-           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden group">
-              <AnimatePresence mode="wait">
-                {selectedResult ? (
-                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                    {/* Close Button */}
-                    <div className="absolute top-0 left-0 z-30">
-                        <button 
-                            onClick={() => setSelectedResult(null)}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
-                        >
-                            <X size={14} />
-                        </button>
-                    </div>
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6">
+            {history.length === 0 ? (
+              // Empty State
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <Palette size={80} className="text-purple-500/20 mb-4 mx-auto" />
+                  <h3 className="text-xl font-bold text-white mb-2">في انتظار لمستك الفنية</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    ارفع رسمك اليدوي وسنقوم بتحويله إلى واقع ملموس بدقة عالية
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // Gallery Grid
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <History size={18} className="text-purple-400" />
+                    أعمالك ({history.length})
+                  </h2>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center w-full">
-                       <div className="space-y-2">
-                          <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">الرسم الأصلي</span>
-                          <img src={selectedResult.original} className="rounded-xl border border-white/5 opacity-50 grayscale" />
-                       </div>
-                       <div className="space-y-2 relative group/img">
-                          <span className="text-[10px] text-purple-400 uppercase tracking-widest font-bold">النتيجة النهائية</span>
-                          <img src={selectedResult.url} className="rounded-2xl shadow-3xl border border-white/10" />
-                          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
-                            <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-white text-black font-bold h-10 px-6"><Download className="ml-2 h-4 w-4" /> تحميل</Button>
-                            <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => deleteFromHistory(selectedResult.id, e)}><Trash2 size={18} /></Button>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                  {history.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all"
+                    >
+                      {item.isProcessing ? (
+                        // Loading State with Progress
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                          <Loader2 className="w-8 h-8 text-purple-400 animate-spin mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${item.progress || 0}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
                           </div>
-                       </div>
-                    </div>
-                    <BorderBeam colorFrom="#A855F7" colorTo="#EC4899" />
-                  </motion.div>
-                ) : isProcessing ? <AILoader /> : (
-                  <div className="text-center">
-                     <Palette size={80} className="text-purple-500/10 mb-6 mx-auto animate-pulse" />
-                     <h3 className="text-xl font-bold mb-2 text-gray-300">في انتظار لمستك الفنية</h3>
-                     <p className="text-sm text-gray-600 max-w-sm mx-auto">ارفع رسمك اليدوي وسنقوم بتحويله إلى واقع ملموس بدقة عالية.</p>
-                  </div>
-                )}
-              </AnimatePresence>
-           </div>
-           
-           {history.length > 0 && (
-             <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2"><History size={14} className="text-purple-500" /> التصميمات السابقة ({history.length})</h4>
-                   <Button variant="ghost" size="sm" onClick={clearHistory} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
-                </div>
-                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-2">
-                   {history.map(img => (
-                      <div key={img.id} className="relative group aspect-square rounded-xl cursor-pointer overflow-hidden border transition-all" onClick={() => setSelectedResult(img)}>
-                         <img src={img.url} className={clsx("w-full h-full object-cover transition-all", selectedResult?.id === img.id ? "scale-110 opacity-100 border-2 border-purple-500" : "opacity-40 hover:opacity-100")} />
-                         <button 
-                           onClick={(e) => deleteFromHistory(img.id, e)}
-                           className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                         >
-                           <X size={8} />
-                         </button>
-                      </div>
-                   ))}
-                </div>
-             </div>
-           )}
-        </section>
-      </main>
+                          <p className="text-xs text-gray-400 mt-2">جاري التحويل...</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Image */}
+                          <img
+                            src={item.url}
+                            alt={item.prompt}
+                            className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                            onClick={() => setSelectedResult(item)}
+                          />
 
-      {/* Subscription Required Modal */}
+                          {/* Overlay on Hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+                              <p className="text-xs text-white line-clamp-1">{item.prompt || "رسم محول"}</p>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedResult(item);
+                                  }}
+                                  className="flex-1 h-8 rounded-lg bg-purple-500 hover:bg-purple-600 text-xs"
+                                >
+                                  <Eye size={12} className="ml-1" />
+                                  عرض
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadImage(item.url, `sketch-${item.id}.png`);
+                                  }}
+                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                >
+                                  <Download size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => deleteFromHistory(item.id, e)}
+                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Selected Indicator */}
+                          {selectedResult?.id === item.id && (
+                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                              <Eye size={14} className="text-white" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {selectedResult && !selectedResult.isProcessing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedResult(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedResult(null)}
+                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Before/After Comparison */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <span className="text-xs text-gray-500 uppercase tracking-widest font-bold">الرسم الأصلي</span>
+                  <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                    <img
+                      src={selectedResult.original}
+                      alt="Original"
+                      className="w-full max-h-[70vh] object-contain opacity-50 grayscale"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs text-purple-400 uppercase tracking-widest font-bold">النتيجة النهائية</span>
+                  <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                    <img
+                      src={selectedResult.url}
+                      alt="Result"
+                      className="w-full max-h-[70vh] object-contain"
+                    />
+                    <BorderBeam />
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-400 line-clamp-1">{selectedResult.prompt || "رسم محول"}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => downloadImage(selectedResult.url, `sketch-${selectedResult.id}.png`)}
+                    className="rounded-xl bg-purple-500 hover:bg-purple-600 h-10 px-6"
+                  >
+                    <Download size={16} className="ml-2" />
+                    تحميل
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => deleteFromHistory(selectedResult.id, e)}
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Subscription Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}

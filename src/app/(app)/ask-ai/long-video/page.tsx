@@ -1,121 +1,96 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
-  Film, 
-  Sparkles, 
-  Plus, 
-  Trash2, 
-  Play,
-  Download,
-  Loader2,
-  FileText,
-  Wand2,
-  Zap,
-  ArrowRight,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  History as HistoryIcon,
-  X,
-  Settings
+  Sparkles, Video, Download, Trash2, Sliders, Loader2, History, X, Eye, Play,
+  Plus, Minus, Film, ArrowRight, Zap, FileText, Layers
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, type AIStats } from "@/lib/api";
+import { getAIStats, listPlans, type AIStats } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
-import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
 
-const ASPECT_RATIOS = [
-  { id: "16:9", label: "سينمائي", value: "16:9" },
-  { id: "9:16", label: "ستوري", value: "9:16" },
-  { id: "1:1", label: "مربع", value: "1:1" },
-];
+interface Scene {
+  id: string;
+  description: string;
+  duration: number;
+}
 
-const RESOLUTIONS = [
-  { id: "720p", label: "HD (720p)", value: "720p", cost: 50 },
-  { id: "1080p", label: "FHD (1080p)", value: "1080p", cost: 75 },
-  { id: "2k", label: "2K (1440p)", value: "1440p", cost: 150 },
-  { id: "4k", label: "4K (2160p)", value: "2160p", cost: 250 },
-];
-
-const TRANSITIONS = [
-  { id: "fade", label: "تلاشي" },
-  { id: "dissolve", label: "ذوبان" },
-  { id: "none", label: "بدون" },
-];
-
-interface GeneratedLongVideo {
+interface GeneratedVideo {
   id: string;
   url: string;
-  duration: number;
+  prompt: string;
   timestamp: string;
-  mode: string;
+  mode: 'script' | 'scenes';
+  isGenerating?: boolean;
+  progress?: number;
+  status?: string;
 }
 
 export default function LongVideoPage() {
   const [token, setToken] = useState("");
-  const [mode, setMode] = useState<"scenes" | "script">("scenes");
-  const [scenes, setScenes] = useState<string[]>([""]);
-  const [script, setScript] = useState("");
-  const [selectedRatio, setSelectedRatio] = useState("16:9");
-  const [selectedResolution, setSelectedResolution] = useState("720p");
-  const [selectedTransition, setSelectedTransition] = useState("fade");
-  const [includeAudio, setIncludeAudio] = useState(true);
+  const [mode, setMode] = useState<'script' | 'scenes'>('script');
+  const [scriptText, setScriptText] = useState("");
+  const [scenes, setScenes] = useState<Scene[]>([{ id: '1', description: '', duration: 5 }]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState<any>(null);
-  const [selectedVideo, setSelectedVideo] = useState<GeneratedLongVideo | null>(null);
-  const [history, setHistory] = useState<GeneratedLongVideo[]>([]);
   const [stats, setStats] = useState<AIStats | null>(null);
+  const [history, setHistory] = useState<GeneratedVideo[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<GeneratedVideo | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const [currentStatus, setCurrentStatus] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   
   const { showSuccess, showError } = useToast();
-  const { hasActiveSubscription, loading: permissionsLoading, isAIToolAllowed } = usePermissions();
+  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_long_video_history");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) setHistory(parsed);
-        } catch (e) {
-          console.error("History parse error:", e);
-        }
+      const savedHistory = localStorage.getItem("ai_long_video_history");
+      if (savedHistory) {
+        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
       }
     }
   }, []);
 
-  useEffect(() => {
-    if (history.length > 0) {
-      localStorage.setItem("ai_long_video_history", JSON.stringify(history));
-    }
+  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
+  useEffect(() => { 
+    if (history.length > 0) localStorage.setItem("ai_long_video_history", JSON.stringify(history)); 
   }, [history]);
 
   useEffect(() => {
-    if (token) {
-      loadStats();
-      checkAIPlans();
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
     }
-  }, [token]);
+  }, [scriptText]);
+
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  }, []);
 
   const loadStats = async () => {
     try {
       const response = await getAIStats(token);
       setStats(response.stats);
-    } catch (error) {
-      console.error("Failed to load stats:", error);
-    }
+    } catch (error) { console.error("Failed to load stats:", error); }
   };
 
   const checkAIPlans = async () => {
@@ -129,350 +104,583 @@ export default function LongVideoPage() {
   };
 
   const addScene = () => {
-    if (scenes.length >= 10) {
-      showError("تنبيه", "الحد الأقصى 10 مشاهد");
-      return;
+    setScenes([...scenes, { id: Date.now().toString(), description: '', duration: 5 }]);
+  };
+
+  const removeScene = (id: string) => {
+    if (scenes.length > 1) {
+      setScenes(scenes.filter(s => s.id !== id));
     }
-    setScenes([...scenes, ""]);
   };
 
-  const removeScene = (index: number) => {
-    if (scenes.length === 1) return;
-    setScenes(scenes.filter((_, i) => i !== index));
-  };
-
-  const updateScene = (index: number, value: string) => {
-    const newScenes = [...scenes];
-    newScenes[index] = value;
-    setScenes(newScenes);
+  const updateScene = (id: string, field: 'description' | 'duration', value: string | number) => {
+    setScenes(scenes.map(s => s.id === id ? { ...s, [field]: value } : s));
   };
 
   const handleGenerate = async () => {
-    if (!hasActiveSubscription || !isAIToolAllowed('video_long')) {
+    if (mode === 'script' && !scriptText.trim()) {
+      return showError("تنبيه", "اكتب نص السيناريو أولاً!");
+    }
+    if (mode === 'scenes' && scenes.some(s => !s.description.trim())) {
+      return showError("تنبيه", "املأ وصف جميع المشاهد!");
+    }
+    if (!hasActiveSubscription) {
       setSubscriptionModalOpen(true);
       return;
     }
-
-    if (mode === "scenes") {
-      const validScenes = scenes.filter(s => s.trim());
-      if (validScenes.length === 0) {
-        showError("تنبيه", "يجب إضافة مشهد واحد على الأقل");
-        return;
-      }
-    } else {
-      if (!script.trim()) {
-        showError("تنبيه", "يجب كتابة السيناريو");
-        return;
-      }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 100) {
+      return showError("تنبيه", "رصيدك غير كافٍ");
     }
 
-    const resObj = RESOLUTIONS.find(r => r.value === selectedResolution);
-    const sceneCost = resObj ? resObj.cost : 50;
-    const totalCost = mode === "scenes" ? scenes.filter(s => s.trim()).length * sceneCost : 500 * (sceneCost / 50);
-    if (stats && !stats.isUnlimited && stats.remainingCredits < totalCost) {
-      showError("تنبيه", `رصيد غير كافٍ. تحتاج ${totalCost} كريديت`);
-      return;
-    }
+    const placeholderId = Date.now().toString();
+    const placeholder: GeneratedVideo = {
+      id: placeholderId,
+      url: "",
+      prompt: mode === 'script' ? scriptText.trim() : `${scenes.length} مشاهد`,
+      timestamp: new Date().toISOString(),
+      mode,
+      isGenerating: true,
+      progress: 0,
+      status: "جاري التحضير...",
+    };
 
+    setHistory([placeholder, ...history]);
     setIsGenerating(true);
-    setProgress(null);
-    setSelectedVideo(null);
+    setCurrentProgress(0);
+    setCurrentStatus("جاري التحضير...");
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-      const validScenes = mode === "scenes" ? scenes.filter(s => s.trim()) : [];
-      let url = `${API_URL}/api/ai/video/long?token=${encodeURIComponent(token)}&mode=${mode}&aspectRatio=${selectedRatio}&resolution=${selectedResolution}&includeAudio=${includeAudio}&transition=${selectedTransition}&transitionDuration=0.5`;
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const endpoint = `${API_URL}/api/ai/long-video`;
       
-      if (mode === "scenes") {
-        url += `&scenes=${encodeURIComponent(JSON.stringify(validScenes))}`;
-      } else {
-        url += `&script=${encodeURIComponent(script)}`;
+      const body = mode === 'script' 
+        ? { script: scriptText.trim() }
+        : { scenes: scenes.map(s => ({ description: s.description, duration: s.duration })) };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'فشل في إنشاء الفيديو');
       }
-      
-      const eventSource = new EventSource(url);
+
+      const data = await response.json();
+      const jobId = data.jobId;
+
+      // Setup SSE for progress tracking
+      const eventSource = new EventSource(`${API_URL}/api/ai/long-video/progress/${jobId}?token=${token}`);
+      eventSourceRef.current = eventSource;
 
       eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.event === 'progress') {
-            setProgress(data);
-          } else if (data.event === 'complete') {
-            const newVideo: GeneratedLongVideo = {
-              id: Date.now().toString(),
-              url: data.videoUrl,
-              duration: data.duration,
-              timestamp: new Date().toISOString(),
-              mode: mode
-            };
-            const newHistory = [newVideo, ...history];
-            setHistory(newHistory);
-            localStorage.setItem("ai_long_video_history", JSON.stringify(newHistory));
-            setSelectedVideo(newVideo);
+        const data = JSON.parse(event.data);
+        
+        setCurrentProgress(data.progress || 0);
+        setCurrentStatus(data.status || "جاري المعالجة...");
+        
+        setHistory(prev => prev.map(vid => 
+          vid.id === placeholderId 
+            ? { ...vid, progress: data.progress, status: data.status }
+            : vid
+        ));
+
+        if (data.status === 'completed' && data.videoUrl) {
+          const newVideo: GeneratedVideo = {
+            id: placeholderId,
+            url: data.videoUrl,
+            prompt: mode === 'script' ? scriptText.trim() : `${scenes.length} مشاهد`,
+            timestamp: new Date().toISOString(),
+            mode,
+            isGenerating: false,
+            progress: 100,
+            status: "مكتمل",
+          };
+
+          setHistory(prev => prev.map(vid => vid.id === placeholderId ? newVideo : vid));
+          setSelectedVideo(newVideo);
+          
+          if (data.remainingCredits !== undefined) {
             setStats(prev => prev ? {
               ...prev,
               remainingCredits: data.remainingCredits,
-              usedCredits: (prev.usedCredits || 0) + data.creditsUsed
+              usedCredits: prev.usedCredits + (data.creditsUsed || 0)
             } : null);
-            showSuccess("تم توليد الفيديو الطويل بنجاح!");
-            eventSource.close();
-            setIsGenerating(false);
-          } else if (data.event === 'error') {
-            showError("خطأ", data.message);
-            eventSource.close();
-            setIsGenerating(false);
           }
-        } catch (parseError) {
-          console.error(parseError);
+          
+          showSuccess("تم إنشاء الفيديو بنجاح!");
+          eventSource.close();
+          eventSourceRef.current = null;
+          setIsGenerating(false);
         }
       };
 
       eventSource.onerror = (error) => {
+        console.error('SSE Error:', error);
         eventSource.close();
+        eventSourceRef.current = null;
+        setHistory(prev => prev.filter(vid => vid.id !== placeholderId));
         setIsGenerating(false);
+        showError("خطأ", "حدث خطأ أثناء الإنتاج");
       };
 
     } catch (error: any) {
-      showError("خطأ", error.message || "حدث خطأ أثناء التوليد");
+      setHistory(prev => prev.filter(vid => vid.id !== placeholderId));
       setIsGenerating(false);
+      showError("خطأ", error.message || "حدث خطأ أثناء الإنتاج");
     }
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
+    const newHistory = history.filter(vid => vid.id !== id);
     setHistory(newHistory);
     localStorage.setItem("ai_long_video_history", JSON.stringify(newHistory));
     if (selectedVideo?.id === id) setSelectedVideo(null);
     showSuccess("تم الحذف بنجاح!");
   };
 
-  const clearHistory = () => {
-    if (!confirm("هل تريد مسح السجل بالكامل؟")) return;
-    setHistory([]);
-    localStorage.removeItem("ai_long_video_history");
-    setSelectedVideo(null);
-    showSuccess("تم مسح السجل بالكامل.");
+  const clearAllHistory = () => {
+    if (window.confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة؟")) {
+      setHistory([]);
+      localStorage.removeItem("ai_long_video_history");
+      setSelectedVideo(null);
+      showSuccess("تم إخلاء السجل بالكامل.");
+    }
   };
 
-  const downloadVideo = async (url: string) => {
+  const downloadVideo = async (url: string, filename: string) => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `long-video-${Date.now()}.mp4`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      showError("خطأ", "تعذر التحميل");
-    }
+      showSuccess("تم التحميل بنجاح!");
+    } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
-  if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل..." size="lg" variant="warning" /></div>;
+  if (permissionsLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#00050a]">
+        <Loader text="جاري التحميل ..." size="lg" variant="warning" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#00050a] text-white overflow-x-hidden rounded-2xl selection:bg-purple-500/30 font-sans" dir="rtl">
+    <div className="min-h-screen  text-white font-sans rounded-xl" dir="rtl">
+      {/* Background Effects */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-950 via-[#00050a] to-[#00050a]" />
+      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-purple-900/10 via-indigo-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <Link href="/ask-ai">
-            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-              <ArrowRight className="h-5 w-5 rotate-180 text-white" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-300 via-indigo-300 to-blue-300 bg-clip-text text-transparent">فيديو طويل</h1>
-        </div>
-        {stats && (
-          <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5 font-mono">
-            <Zap size={14} className="text-amber-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
-          </div>
-        )}
-      </header>
+     {/* Header */}
+      <AskAIToolHeader 
+        title="انتاج فيديو طويل "
+        modelBadge="LONG VIDEO"
+        stats={stats}
+      />
 
-      <main className="p-4 md:p-8 max-w-[1600px] mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <aside className="lg:col-span-1 space-y-6">
-            <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 shadow-2xl space-y-6">
-              <div className="flex items-center gap-2 text-purple-400 justify-end">
-                <span className="text-sm font-bold">طريقة الإنشاء</span>
-                <Wand2 size={18} />
-              </div>
-              
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Mode Selector */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Sliders size={14} className="text-purple-400" />
+                طريقة الإنشاء
+              </label>
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setMode("scenes")} className={clsx("p-4 rounded-2xl transition-all flex flex-col items-center gap-2", mode === "scenes" ? "bg-purple-500/20 border border-purple-500/50 text-white shadow-[0_0_20px_rgba(168,85,247,0.1)]" : "bg-white/5 hover:bg-white/10 text-gray-400")}>
-                  <Film size={20} /> <span className="text-xs font-bold">مشاهد متعددة</span>
+                <button
+                  onClick={() => setMode('script')}
+                  className={clsx(
+                    "flex flex-col items-center justify-center p-3 rounded-xl transition-all border",
+                    mode === 'script'
+                      ? "bg-purple-500/20 border-purple-400 text-white"
+                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                  )}
+                >
+                  <FileText size={20} className="mb-1" />
+                  <span className="text-xs font-medium">سيناريو</span>
                 </button>
-                <button onClick={() => setMode("script")} className={clsx("p-4 rounded-2xl transition-all flex flex-col items-center gap-2", mode === "script" ? "bg-purple-500/20 border border-purple-500/50 text-white shadow-[0_0_20px_rgba(168,85,247,0.1)]" : "bg-white/5 hover:bg-white/10 text-gray-400")}>
-                  <FileText size={20} /> <span className="text-xs font-bold">من سيناريو</span>
+                <button
+                  onClick={() => setMode('scenes')}
+                  className={clsx(
+                    "flex flex-col items-center justify-center p-3 rounded-xl transition-all border",
+                    mode === 'scenes'
+                      ? "bg-indigo-500/20 border-indigo-400 text-white"
+                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                  )}
+                >
+                  <Layers size={20} className="mb-1" />
+                  <span className="text-xs font-medium">مشاهد</span>
                 </button>
               </div>
-
-              <div className="space-y-6 pt-4 border-t border-white/5">
-                <div className="flex items-center gap-2 text-gray-400 justify-end">
-                   <span className="text-xs font-bold uppercase tracking-widest">إعدادات الإخراج</span>
-                   <Settings size={14} />
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[10px] uppercase font-bold text-gray-500 block text-right font-mono">ASPECT RATIO / الأبعاد</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {ASPECT_RATIOS.map((ratio) => (
-                      <button key={ratio.id} onClick={() => setSelectedRatio(ratio.value)} className={clsx("p-2.5 rounded-xl text-xs transition-all border font-bold", selectedRatio === ratio.value ? "bg-white/10 border-white/20 text-white" : "bg-white/5 border-transparent text-gray-500 hover:bg-white/[0.07]")}>{ratio.label}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[10px] uppercase font-bold text-gray-500 block text-right font-mono">QUALITY / الجودة</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {RESOLUTIONS.map((res) => (
-                      <button key={res.id} onClick={() => setSelectedResolution(res.value)} className={clsx("p-2.5 rounded-xl text-xs transition-all border font-bold", selectedResolution === res.value ? "bg-purple-500/10 border-purple-500/20 text-purple-300" : "bg-white/5 border-transparent text-gray-500")}>{res.label}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-[10px] uppercase font-bold text-gray-500 block text-right font-mono">TRANSITIONS / الانتقالات</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {TRANSITIONS.map((trans) => (
-                      <button key={trans.id} onClick={() => setSelectedTransition(trans.id)} className={clsx("p-2.5 rounded-xl text-xs transition-all border font-bold", selectedTransition === trans.id ? "bg-indigo-500/10 border-indigo-500/20 text-indigo-300" : "bg-white/5 border-transparent text-gray-500")}>{trans.label}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <button onClick={() => setIncludeAudio(!includeAudio)} className={clsx("w-12 h-6 rounded-full transition-all p-1 relative", includeAudio ? "bg-purple-600" : "bg-white/10")}>
-                    <motion.div animate={{ x: includeAudio ? 24 : 0 }} className="w-4 h-4 bg-white rounded-full shadow-lg" />
-                  </button>
-                  <span className="text-xs text-gray-300 font-bold">تضمين موسيقى خلفية</span>
-                </div>
-              </div>
-              
-              <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 shadow-inner">
-                <div className="flex items-center gap-2 justify-end mb-1">
-                   <span className="text-[10px] font-bold text-amber-500/70 uppercase">Estimated Cost</span>
-                   <Zap size={14} className="text-amber-500" />
-                </div>
-                <p className="text-2xl font-bold text-amber-500 text-right">
-                  {(() => {
-                    const resObj = RESOLUTIONS.find(r => r.value === selectedResolution);
-                    const sceneCost = resObj ? resObj.cost : 50;
-                    return mode === "scenes" ? scenes.filter(s => s.trim()).length * sceneCost : 500 * (sceneCost / 50);
-                  })()}
-                  <span className="text-xs mr-2 opacity-60">كريديت</span>
-                </p>
-              </div>
-
-              <GradientButton onClick={handleGenerate} disabled={isGenerating} loading={isGenerating} loadingText="جاري الإنتاج..." icon={<Film />} size="lg" className="w-full h-14 text-base">بدء إنتاج الفيديو</GradientButton>
-            </div>
-          </aside>
-
-          <section className="lg:col-span-2 space-y-6">
-            <div className="relative min-h-[600px] rounded-[48px] bg-[#0a0c10] border border-white/10 flex flex-col items-center justify-center p-8 overflow-hidden group shadow-2xl">
-               <AnimatePresence mode="wait">
-                 {selectedVideo ? (
-                    <motion.div key="vid" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                       <button onClick={() => setSelectedVideo(null)} className="absolute top-0 left-0 z-30 flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20">
-                          <X size={14}/>
-                       </button>
-                       <video src={selectedVideo.url} controls autoPlay className="max-h-[550px] w-auto rounded-3xl shadow-3xl border border-white/5" />
-                       <div className="mt-8 flex items-center gap-3">
-                          <Button onClick={() => downloadVideo(selectedVideo.url)} className="rounded-full bg-white opacity-90 hover:opacity-100 text-black font-bold h-11 px-10 transition-all hover:scale-105"><Download size={18} className="ml-2" /> حفظ الفيديو</Button>
-                          <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 h-11 w-11 border border-red-500/20 hover:bg-red-500/20" onClick={(e) => handleDeleteItem(selectedVideo.id, e)}><Trash2 size={20} /></Button>
-                       </div>
-                       <BorderBeam duration={10} colorFrom="#8b5cf6" colorTo="#3b82f6" />
-                    </motion.div>
-                 ) : isGenerating ? (
-                    <div className="w-full max-w-md text-center">
-                       <AILoader />
-                       {progress && (
-                          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-12 space-y-4">
-                             <div className="flex justify-between items-center text-sm font-bold text-gray-400 px-1">
-                                <span className="bg-white/5 px-3 py-1 rounded-full text-[10px] font-mono border border-white/5">{progress.current} / {progress.total}</span>
-                                <span className="text-xs">{progress.message}</span>
-                             </div>
-                             <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5 p-0.5">
-                                <motion.div className="bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500 h-full rounded-full" animate={{ width: `${(progress.current / progress.total) * 100}%` }} transition={{ type: "spring", stiffness: 50 }} />
-                             </div>
-                          </motion.div>
-                       )}
-                    </div>
-                 ) : (
-                    <div className="w-full h-full flex flex-col">
-                       {mode === "scenes" ? (
-                          <div className="space-y-6">
-                             <div className="flex items-center justify-between px-4">
-                                <Button onClick={addScene} disabled={scenes.length >= 10} className="rounded-full bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 h-10 px-6 font-bold" size="sm"><Plus size={18} className="ml-2" /> إدراج مشهد جديد</Button>
-                                <h2 className="text-xl font-bold bg-gradient-to-l from-white to-gray-500 bg-clip-text text-transparent">هيكل المشاهد ({scenes.length}/10)</h2>
-                             </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[600px] overflow-y-auto custom-scrollbar p-2">
-                                {scenes.map((scene, index) => (
-                                   <motion.div key={index} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#0f1115] rounded-[24px] border border-white/5 p-5 group/scene relative hover:border-purple-500/30 transition-colors shadow-lg">
-                                      <div className="flex items-center justify-between mb-3">
-                                         {scenes.length > 1 && <button onClick={() => removeScene(index)} className="w-7 h-7 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center opacity-0 group-hover/scene:opacity-100 transition-all hover:bg-red-500/20"><Trash2 size={14} /></button>}
-                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-bold text-gray-500 uppercase font-mono">Scene</span>
-                                            <span className="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs font-black">{index + 1}</span>
-                                         </div>
-                                      </div>
-                                      <textarea value={scene} onChange={(e) => updateScene(index, e.target.value)} placeholder="اكتب وصفاً تفصيلياً للمشهد، مثلاً: رائد فضاء يسير على سطح المريخ تحت سماء أرجوانية مع انعكاس النجوم على خوذته..." className="w-full bg-transparent text-sm text-gray-300 placeholder:text-gray-700 outline-none resize-none min-h-[120px] leading-relaxed text-right" dir="rtl" />
-                                   </motion.div>
-                                ))}
-                             </div>
-                          </div>
-                       ) : (
-                          <div className="h-full flex flex-col space-y-4">
-                             <div className="flex items-center justify-end gap-2 px-2">
-                                <h2 className="text-xl font-bold text-white">السيناريو القصصي</h2>
-                                <FileText size={20} className="text-purple-400" />
-                             </div>
-                             <div className="flex-1 bg-white/[0.02] rounded-[32px] p-8 border border-white/5 shadow-inner">
-                                <textarea value={script} onChange={(e) => setScript(e.target.value)} placeholder="ابدأ بكتابة قصتك هنا... 
-
-مثال: تبدأ القصة في مدينة غارقة تحت الماء في عام 2150. تسبح الأسماك المضيئة حول ناطحات السحاب الصدئة. تظهر بطلة القصة ببدلة غوص متطورة تستكشف مكتبة قديمة..." className="w-full h-full bg-transparent text-white placeholder:text-gray-700 outline-none resize-none min-h-[450px] text-lg leading-relaxed text-right scrollbar-hide" dir="rtl" />
-                             </div>
-                          </div>
-                       )}
-                    </div>
-                 )}
-               </AnimatePresence>
             </div>
 
-            {history.length > 0 && (
-               <div className="space-y-5 pt-8">
-                  <div className="flex items-center justify-between px-4">
-                     <Button variant="ghost" size="sm" onClick={clearHistory} className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-full px-4 border border-transparent hover:border-red-500/20 transition-all">مسح السجل</Button>
-                     <h4 className="text-[10px] font-bold text-gray-500 flex items-center gap-2 uppercase tracking-[3px]"><HistoryIcon size={14} className="text-purple-500" /> Recent Productions ({history.length})</h4>
-                  </div>
-                  <div className="flex gap-5 overflow-x-auto pb-6 px-4 custom-scrollbar">
-                     {history.map(h => (
-                        <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedVideo(h)}>
-                           <div className={clsx("w-48 aspect-video rounded-2xl border-2 transition-all overflow-hidden shadow-2xl cursor-pointer", selectedVideo?.id === h.id ? "border-purple-500 scale-105 z-10" : "border-white/5 opacity-50 hover:opacity-100")}>
-                              <video src={h.url} className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                 <Play size={24} className="text-white fill-white scale-75 group-hover:scale-100 transition-transform" />
-                              </div>
-                           </div>
-                           <button onClick={(e) => { e.stopPropagation(); handleDeleteItem(h.id); }} className="absolute -top-2 -right-2 h-7 w-7 flex items-center justify-center rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:bg-red-500 z-20"><X size={12} /></button>
-                        </div>
-                     ))}
-                  </div>
-               </div>
+            {/* Script Mode */}
+            {mode === 'script' && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                  <Sparkles size={14} className="text-purple-400" />
+                  نص السيناريو
+                </label>
+                <textarea
+                  ref={textareaRef}
+                  value={scriptText}
+                  onChange={(e) => setScriptText(e.target.value)}
+                  placeholder="اكتب سيناريو الفيديو بالتفصيل... سيتم تحويله تلقائياً إلى مشاهد متتابعة"
+                  className="w-full min-h-[150px] max-h-[300px] bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-purple-500/50 resize-none transition-all overflow-y-auto scrollbar-hide"
+                  dir="rtl"
+                  rows={6}
+                />
+              </div>
             )}
-          </section>
-        </div>
-      </main>
 
+            {/* Scenes Mode */}
+            {mode === 'scenes' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                    <Film size={14} className="text-indigo-400" />
+                    المشاهد ({scenes.length})
+                  </label>
+                  <Button
+                    onClick={addScene}
+                    size="sm"
+                    className="h-7 px-3 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30"
+                  >
+                    <Plus size={12} className="ml-1" />
+                    إضافة
+                  </Button>
+                </div>
+                
+                <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-hide">
+                  {scenes.map((scene, index) => (
+                    <div key={scene.id} className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-300">مشهد {index + 1}</span>
+                        {scenes.length > 1 && (
+                          <button
+                            onClick={() => removeScene(scene.id)}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            <Minus size={14} />
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        value={scene.description}
+                        onChange={(e) => updateScene(scene.id, 'description', e.target.value)}
+                        placeholder="وصف المشهد..."
+                        className="w-full bg-transparent border border-white/10 rounded-lg p-2 text-xs text-white placeholder:text-gray-600 outline-none focus:border-indigo-500/50 resize-none"
+                        dir="rtl"
+                        rows={2}
+                      />
+                      <div className="flex items-center gap-2">
+                        <label className="text-[10px] text-gray-500">المدة (ثانية):</label>
+                        <input
+                          type="number"
+                          value={scene.duration}
+                          onChange={(e) => updateScene(scene.id, 'duration', parseInt(e.target.value) || 5)}
+                          min="3"
+                          max="10"
+                          className="w-16 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white outline-none focus:border-indigo-500/50"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generate Button */}
+            <GradientButton
+              onClick={handleGenerate}
+              disabled={isGenerating || (mode === 'script' && !scriptText.trim()) || (mode === 'scenes' && scenes.some(s => !s.description.trim()))}
+              loading={isGenerating}
+              loadingText="جاري الإنتاج..."
+              icon={<Video />}
+              size="lg"
+              className="w-full rounded-xl h-11"
+            >
+              إنشاء فيديو طويل
+            </GradientButton>
+
+            {/* Progress Display */}
+            {isGenerating && (
+              <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-purple-300 font-medium">{currentStatus}</span>
+                  <span className="text-purple-400 font-bold">{currentProgress}%</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${currentProgress}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Info Box */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <Film className="text-blue-400 flex-shrink-0 mt-0.5" size={18} />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-blue-300">فيديو طويل احترافي</h3>
+                  <p className="text-xs text-gray-400">
+                    أنشئ فيديوهات طويلة من سيناريو أو مشاهد متعددة بجودة سينمائية
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear History */}
+            {history.length > 0 && (
+              <Button
+                variant="ghost"
+                onClick={clearAllHistory}
+                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
+              >
+                <Trash2 size={12} className="ml-2" />
+                مسح جميع الأعمال
+              </Button>
+            )}
+          </div>
+        </aside>
+
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6">
+            {history.length === 0 ? (
+              // Empty State
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <Film size={80} className="text-purple-500/20 mb-4 mx-auto" />
+                  <h3 className="text-xl font-bold text-white mb-2">استديو الفيديو الطويل</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    أنشئ فيديوهات طويلة احترافية من سيناريو كامل أو مشاهد متعددة
+                  </p>
+                </div>
+              </div>
+            ) : (
+              // Gallery Grid
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <History size={18} className="text-purple-400" />
+                    أعمالك ({history.length})
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                  {history.map((vid) => (
+                    <motion.div
+                      key={vid.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group relative aspect-video rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all"
+                    >
+                      {vid.isGenerating ? (
+                        // Loading State with Progress
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                          <Loader2 className="w-8 h-8 text-purple-400 animate-spin mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden mb-2">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${vid.progress || 0}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 text-center">{vid.status || "جاري الإنتاج..."}</p>
+                          <p className="text-[10px] text-gray-500 mt-1">{vid.progress}%</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Video */}
+                          <video
+                            src={vid.url}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => setSelectedVideo(vid)}
+                            muted
+                            loop
+                          />
+
+                          {/* Play Icon Overlay */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                              <Play size={20} className="text-white fill-white ml-1" />
+                            </div>
+                          </div>
+
+                          {/* Mode Badge */}
+                          <div className="absolute top-2 left-2">
+                            <span className={clsx(
+                              "px-2 py-0.5 rounded-full text-[10px] font-medium border",
+                              vid.mode === 'script' 
+                                ? "bg-purple-500/20 border-purple-500/30 text-purple-300"
+                                : "bg-indigo-500/20 border-indigo-500/30 text-indigo-300"
+                            )}>
+                              {vid.mode === 'script' ? 'سيناريو' : 'مشاهد'}
+                            </span>
+                          </div>
+
+                          {/* Overlay on Hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+                              <p className="text-xs text-white line-clamp-1">{vid.prompt}</p>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedVideo(vid);
+                                  }}
+                                  className="flex-1 h-8 rounded-lg bg-purple-500 hover:bg-purple-600 text-xs"
+                                >
+                                  <Eye size={12} className="ml-1" />
+                                  عرض
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadVideo(vid.url, `long-video-${vid.id}.mp4`);
+                                  }}
+                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                >
+                                  <Download size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => deleteFromHistory(vid.id, e)}
+                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Selected Indicator */}
+                          {selectedVideo?.id === vid.id && (
+                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                              <Eye size={14} className="text-white" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Video Preview Modal */}
+      <AnimatePresence>
+        {selectedVideo && !selectedVideo.isGenerating && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedVideo(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedVideo(null)}
+                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Video */}
+              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                <video
+                  src={selectedVideo.url}
+                  controls
+                  autoPlay
+                  loop
+                  className="w-full max-h-[80vh] object-contain"
+                />
+                <BorderBeam />
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm text-gray-400 line-clamp-1">{selectedVideo.prompt}</p>
+                  <div className="flex items-center gap-2">
+                    <span className={clsx(
+                      "px-2 py-0.5 rounded-full text-[10px] font-medium border",
+                      selectedVideo.mode === 'script' 
+                        ? "bg-purple-500/20 border-purple-500/30 text-purple-300"
+                        : "bg-indigo-500/20 border-indigo-500/30 text-indigo-300"
+                    )}>
+                      {selectedVideo.mode === 'script' ? 'سيناريو' : 'مشاهد'}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(selectedVideo.timestamp).toLocaleDateString('ar-SA')}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => downloadVideo(selectedVideo.url, `long-video-${selectedVideo.id}.mp4`)}
+                    className="rounded-xl bg-purple-500 hover:bg-purple-600 h-10 px-6"
+                  >
+                    <Download size={16} className="ml-2" />
+                    تحميل
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => deleteFromHistory(selectedVideo.id, e)}
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Subscription Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}
-        title="باقة الفيديو الطويل مطلوبة"
-        description="لإنشاء فيديوهات سينمائية طويلة تصل لعدة دقائق مع تقنية الدمج الذكي، تحتاج للاشتراك في باقة PRO."
+        title="اشتراك مطلوب لإنشاء فيديو طويل"
+        description="للاستفادة من تقنية إنشاء الفيديوهات الطويلة الاحترافية من السيناريوهات والمشاهد المتعددة، تحتاج إلى اشتراك نشط."
         hasAIPlans={hasAIPlans}
       />
     </div>

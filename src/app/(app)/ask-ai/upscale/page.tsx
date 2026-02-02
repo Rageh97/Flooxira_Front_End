@@ -2,18 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { 
-  Sparkles, 
-  Upload,
-  Download, 
-  Trash2,
-  Maximize2,
-  Zap,
-  Loader2,
-  ArrowRight,
-  History,
-  Image as ImageIcon,
-  X,
-  RefreshCw
+  Sparkles, Upload, Download, Trash2, Maximize2, Zap, Loader2, ArrowRight,
+  History, Image as ImageIcon, X, Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -21,12 +11,11 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
 import { getAIStats, processAIImage, listPlans, type AIStats } from "@/lib/api";
-import { clsx } from "clsx";
 import Loader from "@/components/Loader";
-import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 interface ProcessedImage {
   id: string;
@@ -34,6 +23,8 @@ interface ProcessedImage {
   originalUrl?: string;
   timestamp: string;
   operation: string;
+  isProcessing?: boolean;
+  progress?: number;
 }
 
 export default function UpscalePage() {
@@ -106,36 +97,59 @@ export default function UpscalePage() {
     }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
 
-    setIsProcessing(true);
-    try {
-      if (selectedFile) {
-        const maxSize = 5 * 1024 * 1024;
-        if (selectedFile.size > maxSize) {
-          setIsProcessing(false);
-          return showError("تنبيه", "حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
-        }
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        if (!allowedTypes.includes(selectedFile.type)) {
-          setIsProcessing(false);
-          return showError("تنبيه", "نوع الصورة غير مدعوم. يرجى استخدام JPG, PNG, أو WebP");
-        }
+    if (selectedFile) {
+      const maxSize = 5 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        return showError("تنبيه", "حجم الصورة يجب أن يكون أقل من 5 ميجابايت");
       }
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        return showError("تنبيه", "نوع الصورة غير مدعوم. يرجى استخدام JPG, PNG, أو WebP");
+      }
+    }
 
+    const placeholderId = Date.now().toString();
+    const placeholder: ProcessedImage = {
+      id: placeholderId,
+      url: "",
+      originalUrl: previewUrl,
+      timestamp: new Date().toISOString(),
+      operation: 'upscale',
+      isProcessing: true,
+      progress: 0,
+    };
+
+    setHistory([placeholder, ...history]);
+    setIsProcessing(true);
+
+    const progressInterval = setInterval(() => {
+      setHistory(prev => prev.map(img => 
+        img.id === placeholderId && img.isProcessing
+          ? { ...img, progress: Math.min((img.progress || 0) + Math.random() * 15, 90) }
+          : img
+      ));
+    }, 500);
+
+    try {
       const response = await processAIImage(token, {
         operation: 'upscale',
         imageUrl: previewUrl,
         prompt: "Highly detailed, sharp, 4k, professional photography"
       });
 
+      clearInterval(progressInterval);
+
       const newImage: ProcessedImage = {
-        id: Date.now().toString(),
+        id: placeholderId,
         url: response.imageUrl,
         originalUrl: previewUrl,
         timestamp: new Date().toISOString(),
-        operation: 'upscale'
+        operation: 'upscale',
+        isProcessing: false,
+        progress: 100,
       };
 
-      setHistory([newImage, ...history]);
+      setHistory(prev => prev.map(img => img.id === placeholderId ? newImage : img));
       setSelectedResult(newImage);
       setStats(prev => prev ? {
         ...prev,
@@ -145,6 +159,8 @@ export default function UpscalePage() {
       
       showSuccess("تم تحسين جودة الصورة بنجاح!");
     } catch (error: any) {
+      clearInterval(progressInterval);
+      setHistory(prev => prev.filter(img => img.id !== placeholderId));
       showError("خطأ", error.message || "حدث خطأ أثناء المعالجة");
     } finally {
       setIsProcessing(false);
@@ -181,48 +197,38 @@ export default function UpscalePage() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
+      showSuccess("تم التحميل بنجاح!");
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white overflow-x-hidden font-sans selection:bg-blue-500/30" dir="rtl">
+    <div className="min-h-screen  text-white font-sans rounded-xl" dir="rtl">
+      {/* Background Effects */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-[#00050a] to-[#00050a]" />
+      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-900/10 via-cyan-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a]/80 shadow-2xl">
-        <div className="mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/ask-ai">
-              <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-                <ArrowRight className="h-5 w-5 text-white rotate-180" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <span className="bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">
-                تحسين جودة الصور
-              </span>
-            </h1>
-          </div>
-          {stats && (
-            <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5 font-mono">
-               <Zap size={14} className="text-amber-400 fill-amber-400" />
-               <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
-            </div>
-          )}
-        </div>
-      </header>
+      {/* Header */}
+      <AskAIToolHeader 
+        title="تحسين جودة الصور"
+        modelBadge="UPSCALE AI"
+        stats={stats}
+      />
 
-      <main className="mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px]">
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
-            <div className="space-y-4">
-              <label className="block text-xs font-bold text-gray-400 text-right uppercase tracking-widest">اختر الصورة</label>
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Upload Image */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Upload size={14} className="text-blue-400" />
+                اختر الصورة
+              </label>
               <div 
-                className={clsx(
-                  "relative aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group/upload",
-                  previewUrl ? "border-blue-500/50" : "border-white/10 hover:border-blue-500/30 bg-white/5"
-                )}
+                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
                 onClick={() => document.getElementById('fileInput')?.click()}
               >
                 {previewUrl ? (
@@ -244,88 +250,215 @@ export default function UpscalePage() {
               </div>
             </div>
 
+            {/* Process Button */}
             <GradientButton 
               onClick={handleProcess}
-              disabled={!previewUrl}
+              disabled={!previewUrl || isProcessing}
               loading={isProcessing}
               loadingText="جاري التحسين..."
-              loadingIcon={<Loader2 className="animate-spin" />}
               icon={<Sparkles />}
               size="lg"
+              className="w-full rounded-xl h-11"
             >
               ابدأ التحسين
             </GradientButton>
-          </div>
 
-          <div className="p-6 bg-blue-500/5 rounded-2xl border border-blue-500/10 shadow-inner">
-             <h4 className="text-sm font-bold text-blue-400 mb-2 text-right">كيف يعمل؟</h4>
-             <p className="text-xs text-gray-400 leading-relaxed text-right">
-               يستخدم أحدث تقنيات الذكاء الاصطناعي لإعادة بناء التفاصيل المفقودة، إزالة التشويش، وزيادة دقة الصورة حتى 4 أضعاف مع الحفاظ على الملامح الطبيعية.
-             </p>
+            {/* Info Box */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <Maximize2 className="text-blue-400 flex-shrink-0 mt-0.5" size={18} />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-blue-300">كيف يعمل؟</h3>
+                  <p className="text-xs text-gray-400">
+                    يستخدم أحدث تقنيات الذكاء الاصطناعي لإعادة بناء التفاصيل المفقودة وزيادة دقة الصورة حتى 4 أضعاف
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear History Button */}
+            {history.length > 0 && (
+              <Button
+                variant="ghost"
+                onClick={clearHistory}
+                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
+              >
+                <Trash2 size={12} className="ml-2" />
+                مسح جميع الأعمال
+              </Button>
+            )}
           </div>
         </aside>
 
-        <section className="lg:col-span-8 space-y-6">
-           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden group">
-              <AnimatePresence mode="wait">
-                {selectedResult ? (
-                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                    <div className="absolute top-4 left-4 z-30">
-                        <button 
-                            onClick={() => setSelectedResult(null)}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
-                        >
-                            <X size={14} />
-                        </button>
-                    </div>
-
-                    <img src={selectedResult.url} className="max-h-[600px] rounded-2xl shadow-3xl transition-transform duration-500 hover:scale-[1.01]" />
-                    <div className="mt-8 flex items-center gap-3">
-                        <Button onClick={() => downloadImage(selectedResult.url, `upscaled-${selectedResult.id}.png`)} className="rounded-full bg-blue-600 hover:bg-blue-700 h-10 px-8 font-bold transition-all hover:scale-105 shadow-lg shadow-blue-600/30"><Download size={16} className="ml-2" /> حفظ النتيجة</Button>
-                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => deleteFromHistory(selectedResult.id, e)}><Trash2 size={18} /></Button>
-                    </div>
-                    <BorderBeam />
-                  </motion.div>
-                ) : isProcessing ? (
-                  <AILoader />
-                ) : (
-                  <div className="flex flex-col items-center text-center group">
-                     <Maximize2 size={80} className="text-blue-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
-                     <h3 className="text-2xl font-bold text-white mb-2">وضوح فائق الدقة</h3>
-                     <p className="text-sm text-gray-500">ارفع الصورة التي تريد تحسينها وسنقوم بمضاعفة جودتها بذكاء.</p>
-                  </div>
-                )}
-              </AnimatePresence>
-           </div>
-           
-           {history.length > 0 && (
-             <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                   <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><History size={14} className="text-blue-500" /> العمليات السابقة ({history.length})</h4>
-                   <Button variant="ghost" size="sm" onClick={clearHistory} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6">
+            {history.length === 0 ? (
+              // Empty State
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <Maximize2 size={80} className="text-blue-500/20 mb-4 mx-auto" />
+                  <h3 className="text-xl font-bold text-white mb-2">وضوح فائق الدقة</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    ارفع الصورة التي تريد تحسينها وسنقوم بمضاعفة جودتها بذكاء
+                  </p>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar px-2">
-                   {history.map(h => (
-                      <div key={h.id} className="relative group shrink-0" onClick={() => setSelectedResult(h)}>
-                        <div 
-                           className={clsx("w-32 aspect-square rounded-2xl border-2 transition-all overflow-hidden shadow-lg cursor-pointer", selectedResult?.id === h.id ? "border-blue-500 scale-110 opacity-100" : "border-white/5 opacity-50 hover:opacity-100")}
-                        >
-                           <img src={h.url} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              // Gallery Grid
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <History size={18} className="text-blue-400" />
+                    أعمالك ({history.length})
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                  {history.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all"
+                    >
+                      {item.isProcessing ? (
+                        // Loading State with Progress
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${item.progress || 0}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">جاري التحسين...</p>
                         </div>
-                        <button
-                           onClick={(e) => { e.stopPropagation(); deleteFromHistory(h.id); }}
-                           className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-red-600 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
-                        >
-                           <X size={10} />
-                        </button>
-                      </div>
-                   ))}
-                </div>
-             </div>
-           )}
-        </section>
-      </main>
+                      ) : (
+                        <>
+                          {/* Image */}
+                          <img
+                            src={item.url}
+                            alt="Upscaled"
+                            className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                            onClick={() => setSelectedResult(item)}
+                          />
 
+                          {/* Overlay on Hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedResult(item);
+                                  }}
+                                  className="flex-1 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-xs"
+                                >
+                                  <Eye size={12} className="ml-1" />
+                                  عرض
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadImage(item.url, `upscaled-${item.id}.png`);
+                                  }}
+                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                >
+                                  <Download size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => deleteFromHistory(item.id, e)}
+                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Selected Indicator */}
+                          {selectedResult?.id === item.id && (
+                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <Eye size={14} className="text-white" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* Image Preview Modal */}
+      <AnimatePresence>
+        {selectedResult && !selectedResult.isProcessing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedResult(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedResult(null)}
+                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Image */}
+              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                <img
+                  src={selectedResult.url}
+                  alt="Upscaled"
+                  className="w-full max-h-[80vh] object-contain"
+                />
+                <BorderBeam />
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <Button
+                  onClick={() => downloadImage(selectedResult.url, `upscaled-${selectedResult.id}.png`)}
+                  className="rounded-xl bg-blue-500 hover:bg-blue-600 h-10 px-6"
+                >
+                  <Download size={16} className="ml-2" />
+                  تحميل
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={(e) => deleteFromHistory(selectedResult.id, e)}
+                  className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Subscription Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}

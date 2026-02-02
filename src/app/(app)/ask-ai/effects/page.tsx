@@ -132,9 +132,12 @@ export default function EffectsPage() {
         {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5"><Zap size={14} className="text-cyan-400" /> <span className="text-sm font-bold font-mono">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
       </header>
 
-      <main className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full">
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            <div className="space-y-4">
              <div className="space-y-4">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">رفع الفيديو</label>
                 <div 
@@ -185,11 +188,14 @@ export default function EffectsPage() {
 
           <div className="p-6 bg-cyan-500/5 rounded-2xl border border-cyan-500/10">
              <h4 className="text-sm font-bold text-cyan-400 mb-2">اللمسة السحرية</h4>
-             <p className="text-xs text-gray-400 leading-relaxed text-right">حوّل فيديوهاتك البسيطة إلى قطع فنية بضغطة زر. استخدم الأوامر النصية لوصف التغييرات التي تريدها وسيقوم الذكاء الاصطناعي بتنفيذها بدقة عالية.</p>
+             <p className="text-[10px] text-gray-400 leading-relaxed text-right">حوّل فيديوهاتك البسيطة إلى قطع فنية بضغطة زر. استخدم الأوامر النصية لوصف التغييرات التي تريدها وسيقوم الذكاء الاصطناعي بتنفيذها بدقة عالية.</p>
+          </div>
           </div>
         </aside>
 
-        <section className="lg:col-span-8 space-y-6">
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6 space-y-6">
            <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
               <AnimatePresence mode="wait">
                  {selectedResult ? (
@@ -242,8 +248,9 @@ export default function EffectsPage() {
                 </div>
              </div>
            )}
-        </section>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* Subscription Required Modal */}
       <SubscriptionRequiredModal

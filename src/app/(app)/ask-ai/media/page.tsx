@@ -63,7 +63,7 @@ export default function MediaPage() {
   ];
 
   const renderMediaNav = () => (
-    <div className="flex flex-wrap justify-center mb-10 gap-3 px-4">
+    <div className="flex flex-wrap justify-center mb-5 gap-3 px-4">
       {[
         { id: 'all', label: 'الكل', icon: LayoutGrid },
         { id: 'images', label: 'الصور', icon: ImageIcon },
@@ -169,7 +169,7 @@ export default function MediaPage() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
       {/* Header */}
-      <div className="shrink-0 flex items-center justify-between gap-4 mt-6 mb-8 px-4">
+      <div className="shrink-0 flex items-center justify-between gap-4 mt-0 mb-8 px-4">
         <div className="w-96 hidden xl:block shrink-0">
           <div className="relative rounded-[20px] overflow-hidden">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
@@ -183,7 +183,10 @@ export default function MediaPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex justify-center">
+  {/* Media Navigation */}
+      {renderMediaNav()}
+
+        <div className="flex justify-center">
           <Button
             variant="ghost"
             onClick={() => router.push('/ask-ai')}
@@ -194,11 +197,10 @@ export default function MediaPage() {
           </Button>
         </div>
 
-        <div className="w-96 shrink-0" />
+    
+        {/* <div className="w-96 shrink-0" /> */}
       </div>
 
-      {/* Media Navigation */}
-      {renderMediaNav()}
 
       {/* Content */}
       <div className="flex-1 px-4">

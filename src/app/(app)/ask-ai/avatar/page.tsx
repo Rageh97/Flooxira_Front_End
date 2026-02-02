@@ -1,40 +1,62 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
-  Sparkles, Upload, Download, UserCircle, 
-  Loader2, ArrowRight, Image as ImageIcon, Zap, PersonStanding, X, Trash2, 
-  History
+  Sparkles, 
+  Download, 
+  Trash2,
+  Loader2,
+  History,
+  ArrowRight,
+  X,
+  Zap,
+  User,
+  Eye,
+  Upload,
+  UserCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIImage,
+  listPlans,
+  type AIStats 
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
-import AILoader from "@/components/AILoader";
 import Link from "next/link";
-import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+import { BorderBeam } from "@/components/ui/border-beam";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 const AVATAR_STYLES = [
-  { id: "3d", label: "3D ستايل", prompt: "3D stylized character, Pixar style, highly detailed render, vibrant colors" },
-  { id: "anime", label: "أنمي", prompt: "Modern anime style, studio ghibli aesthetic, clean line art" },
-  { id: "cyber", label: "سايبربانك", prompt: "Cyberpunk aesthetic, neon lighting, futuristic tech details, synthwave style" },
-  { id: "oil", label: "زيتي", prompt: "Classical oil painting, museum quality art, brush strokes" },
+  { id: "3d", label: "3D ستايل", prompt: "3D stylized character, Pixar style, highly detailed render, vibrant colors", color: "from-blue-500 to-cyan-500" },
+  { id: "anime", label: "أنمي", prompt: "Modern anime style, studio ghibli aesthetic, clean line art", color: "from-pink-500 to-rose-500" },
+  { id: "cyber", label: "سايبربانك", prompt: "Cyberpunk aesthetic, neon lighting, futuristic tech details, synthwave style", color: "from-purple-500 to-indigo-500" },
+  { id: "oil", label: "زيتي", prompt: "Classical oil painting, museum quality art, brush strokes", color: "from-amber-500 to-orange-500" },
 ];
+
+interface GeneratedAvatar {
+  id: string;
+  url: string;
+  style: string;
+  timestamp: string;
+  isGenerating?: boolean;
+  progress?: number;
+}
 
 export default function AvatarPage() {
   const [token, setToken] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState(AVATAR_STYLES[0].id);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState("3d");
+  const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
-  const [selectedResult, setSelectedResult] = useState<any | null>(null);
+  const [history, setHistory] = useState<GeneratedAvatar[]>([]);
+  const [selectedAvatar, setSelectedAvatar] = useState<GeneratedAvatar | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   
@@ -44,24 +66,29 @@ export default function AvatarPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_avatar_history");
-      if (saved) setHistory(JSON.parse(saved));
+      const savedHistory = localStorage.getItem("ai_avatar_history");
+      if (savedHistory) {
+        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
+      }
     }
   }, []);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (token) {
       loadStats();
       checkAIPlans();
     }
   }, [token]);
-  useEffect(() => { localStorage.setItem("ai_avatar_history", JSON.stringify(history)); }, [history]);
+
+  useEffect(() => {
+    if (history.length > 0) localStorage.setItem("ai_avatar_history", JSON.stringify(history));
+  }, [history]);
 
   const loadStats = async () => {
     try {
-      const res = await getAIStats(token);
-      setStats(res.stats);
-    } catch (e) { console.error(e); }
+      const response = await getAIStats(token);
+      setStats(response.stats);
+    } catch (error) { console.error("Failed to load stats:", error); }
   };
 
   const checkAIPlans = async () => {
@@ -74,173 +101,398 @@ export default function AvatarPage() {
     }
   };
 
-  const handleProcess = async () => {
+  const handleGenerate = async () => {
+    if (!previewUrl) return showError("تنبيه", "ارفع صورة واضحة لوجهك!");
     if (!hasActiveSubscription) {
       setSubscriptionModalOpen(true);
       return;
     }
-    
-    if (!previewUrl) return showError("تنبيه", "ارفع صورة واضحة لوجهك!");
-    setIsProcessing(true);
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
+
+    const placeholderId = Date.now().toString();
+    const styleConfig = AVATAR_STYLES.find(s => s.id === selectedStyle);
+    const placeholder: GeneratedAvatar = {
+      id: placeholderId,
+      url: "",
+      style: styleConfig?.label || "",
+      timestamp: new Date().toISOString(),
+      isGenerating: true,
+      progress: 0,
+    };
+
+    setHistory([placeholder, ...history]);
+    setIsGenerating(true);
+
+    const progressInterval = setInterval(() => {
+      setHistory(prev => prev.map(img => 
+        img.id === placeholderId && img.isGenerating
+          ? { ...img, progress: Math.min((img.progress || 0) + Math.random() * 15, 90) }
+          : img
+      ));
+    }, 500);
+
     try {
-      const style = AVATAR_STYLES.find(s => s.id === selectedStyle);
-      const res = await processAIImage(token, {
+      const response = await processAIImage(token, {
         operation: 'avatar',
         imageUrl: previewUrl,
-        prompt: `Convert this person into: ${style?.prompt}`
+        prompt: `Convert this person into: ${styleConfig?.prompt}`
       });
-      const newItem = { id: Date.now().toString(), url: res.imageUrl, style: style?.label };
-      setHistory([newItem, ...history]);
-      setSelectedResult(newItem);
+
+      clearInterval(progressInterval);
+
+      const newAvatar: GeneratedAvatar = {
+        id: placeholderId,
+        url: response.imageUrl,
+        style: styleConfig?.label || "",
+        timestamp: new Date().toISOString(),
+        isGenerating: false,
+        progress: 100,
+      };
+
+      setHistory(prev => prev.map(img => img.id === placeholderId ? newAvatar : img));
       await loadStats();
+      
       showSuccess("تم إنشاء الأفاتار بنجاح!");
-    } catch (e: any) { showError("خطأ", e.message); }
-    finally { setIsProcessing(false); }
+    } catch (error: any) {
+      clearInterval(progressInterval);
+      setHistory(prev => prev.filter(img => img.id !== placeholderId));
+      showError("خطأ", error.message || "حدث خطأ أثناء الإنشاء");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا الأفاتار؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
+    const newHistory = history.filter(img => img.id !== id);
     setHistory(newHistory);
-    if (selectedResult?.id === id) setSelectedResult(null);
+    localStorage.setItem("ai_avatar_history", JSON.stringify(newHistory));
+    if (selectedAvatar?.id === id) setSelectedAvatar(null);
     showSuccess("تم الحذف بنجاح!");
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
+  const clearAllHistory = () => {
+    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال؟")) {
       setHistory([]);
-      setSelectedResult(null);
       localStorage.removeItem("ai_avatar_history");
+      setSelectedAvatar(null);
       showSuccess("تم حذف جميع الأعمال!");
     }
   };
 
-  if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
+  const downloadAvatar = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      showSuccess("تم التحميل بنجاح!");
+    } catch (error) { showError("خطأ", "تعذر التحميل"); }
+  };
+
+  if (permissionsLoading) return <div className="h-screen  flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/20 via-[#00050a] to-[#00050a]" />
+    <div className="min-h-screen  text-white font-sans rounded-xl" dir="rtl">
+      {/* Background Effects */}
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-950 via-[#00050a] to-[#00050a]" />
+      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-purple-900/10 via-pink-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <Link href="/ask-ai">
-            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-              <ArrowRight className="h-5 w-5 rotate-180" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-300 to-pink-300 bg-clip-text text-transparent">انشاء الأفاتار الشخصي</h1>
-        </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5"><Zap size={14} className="text-blue-400" /> <span className="text-sm font-bold font-mono">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
-      </header>
+     {/* Header */}
+          <AskAIToolHeader 
+            title="  انشاء أفاتار"
+            modelBadge=" AI AVATAR"
+            stats={stats}
+          />
 
-      <main className="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto">
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-8 shadow-2xl">
-            <div className="space-y-4">
-               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] block text-right">الخطوة 1: صورة الوجه</label>
-               <div className="aspect-square rounded-full border-4 border-dashed border-white/5 flex items-center justify-center cursor-pointer overflow-hidden hover:border-indigo-500/30 transition-all p-2 bg-white/5 group" onClick={() => document.getElementById('file-a')?.click()}>
-                  {previewUrl ? <img src={previewUrl} className="w-full h-full object-cover rounded-full" /> : <UserCircle className="text-gray-700 group-hover:text-indigo-400" size={60} />}
-               </div>
-               <input id="file-a" type="file" className="hidden" accept="image/*" onChange={e => {
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Upload Image */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Upload size={14} className="text-purple-400" />
+                صورة الوجه
+              </label>
+              <div 
+                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-purple-500/50 transition-all bg-white/5 group"
+                onClick={() => document.getElementById('file-upload')?.click()}
+              >
+                {previewUrl ? (
+                  <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                ) : (
+                  <div className="text-center p-4">
+                    <UserCircle className="text-gray-600 group-hover:text-purple-400 mx-auto mb-2 transition-colors" size={48} />
+                    <p className="text-xs text-gray-500">اضغط لرفع صورة</p>
+                  </div>
+                )}
+              </div>
+              <input 
+                id="file-upload" 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={e => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    const r = new FileReader(); r.onload = () => setPreviewUrl(r.result as string); r.readAsDataURL(file);
+                    const reader = new FileReader();
+                    reader.onload = () => setPreviewUrl(reader.result as string);
+                    reader.readAsDataURL(file);
                   }
-               }} />
-            </div>
-            
-            <div className="space-y-4">
-               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[2px] block text-right">الخطوة 2: اختيار الستايل</label>
-               <div className="grid grid-cols-2 gap-2">
-                  {AVATAR_STYLES.map(style => (
-                    <button key={style.id} onClick={() => setSelectedStyle(style.id)} className={clsx("p-3 rounded-2xl text-[10px] font-bold border transition-all", selectedStyle === style.id ? "bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-600/30 text-white" : "bg-white/5 border-transparent hover:bg-white/10 text-gray-400")}>{style.label}</button>
-                  ))}
-               </div>
+                }} 
+              />
             </div>
 
-            <GradientButton 
-              onClick={handleProcess}
-              disabled={!previewUrl}
-              loading={isProcessing}
-              loadingText="جاري التشكيل..."
-              loadingIcon={<Loader2 className="animate-spin" />}
-              icon={<PersonStanding />}
+            {/* Style Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Sparkles size={14} className="text-purple-400" />
+                النمط الفني
+              </label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {AVATAR_STYLES.map(style => (
+                  <button
+                    key={style.id}
+                    onClick={() => setSelectedStyle(style.id)}
+                    className={clsx(
+                      "w-full text-center px-2 py-2 rounded-lg transition-all border text-[10px] font-medium",
+                      selectedStyle === style.id
+                        ? "bg-gradient-to-l border-transparent text-white shadow-lg " + style.color
+                        : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                    )}
+                  >
+                    {style.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <GradientButton
+              onClick={handleGenerate}
+              disabled={!previewUrl || isGenerating}
+              loading={isGenerating}
+              loadingText="جاري الإنشاء..."
+              icon={<Sparkles />}
               size="lg"
+              className="w-full rounded-xl h-11"
             >
-              صمم شخصيتي الآن
+              إنشاء أفاتار
             </GradientButton>
-          </div>
 
-          <div className="p-6 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
-             <h4 className="text-sm font-bold text-indigo-400 mb-2">كيف تعمل؟</h4>
-             <p className="text-xs text-gray-400 leading-relaxed text-right">ارفع صورة واضحة لوجهك، واختر النمط الفني الذي تفضله. سيقوم الذكاء الاصطناعي بتحويل ملامحك إلى شخصية رقمية فريدة تحافظ على هويتك بلمسة فنية مبهرة.</p>
+            {/* Info Box */}
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <User className="text-purple-400 flex-shrink-0 mt-0.5" size={18} />
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-purple-300">نصائح للحصول على أفضل نتيجة</h3>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li>• استخدم صورة واضحة للوجه</li>
+                    <li>• تأكد من الإضاءة الجيدة</li>
+                    <li>• جرب أساليب مختلفة</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear History Button */}
+            {history.length > 0 && (
+              <Button
+                variant="ghost"
+                onClick={clearAllHistory}
+                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
+              >
+                <Trash2 size={12} className="ml-2" />
+                مسح جميع الأعمال
+              </Button>
+            )}
           </div>
         </aside>
 
-        <section className="lg:col-span-8 space-y-6">
-           <div className="min-h-[500px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden group">
-              <AnimatePresence mode="wait">
-                {selectedResult ? (
-                  <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 text-center w-full flex flex-col items-center">
-                    {/* Close Button */}
-                    <div className="absolute top-0 left-0 z-30">
-                        <button 
-                            onClick={() => setSelectedResult(null)}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
-                        >
-                            <X size={14} />
-                        </button>
-                    </div>
-
-                    <img src={selectedResult.url} className="max-h-[600px] rounded-[40px] shadow-3xl border border-white/10 mx-auto transition-transform duration-500 hover:scale-[1.01]" />
-                    <div className="mt-8 flex items-center gap-3">
-                        <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-indigo-500 hover:bg-indigo-600 font-bold h-10 px-8 transition-all hover:scale-105"><Download className="ml-2 h-4 w-4" /> حفظ الأفاتار</Button>
-                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => handleDeleteItem(selectedResult.id, e)}><Trash2 size={18} /></Button>
-                    </div>
-                    <BorderBeam colorFrom="#818CF8" colorTo="#F472B6" />
-                  </motion.div>
-                ) : isProcessing ? <AILoader /> : <div className="text-gray-800 flex flex-col items-center"><UserCircle size={100} className="mb-4 opacity-10 animate-pulse" /><p className="font-medium text-gray-500">انتظر حتى ترى شخصيتك الرقمية الجديدة</p></div>}
-              </AnimatePresence>
-           </div>
-           
-           
-           {history.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                  <h3 className="text-sm font-bold text-gray-400 flex items-center gap-2"><History className="h-4 w-4 text-indigo-500" /> الأعمال السابقة ({history.length})</h3>
-                  <Button 
-                    onClick={handleClearAll}
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-full text-xs"
-                  >
-                    <Trash2 className="h-4 w-4 ml-2" />
-                    حذف الكل
-                  </Button>
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6">
+            {history.length === 0 ? (
+              // Empty State
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <User size={80} className="text-purple-500/20 mb-4 mx-auto" />
+                  <h3 className="text-xl font-bold text-white mb-2">ابدأ في إنشاء أفاتاراتك</h3>
+                  <p className="text-sm text-gray-500 max-w-md">
+                    ارفع صورة واختر النمط الفني وسنقوم بإنشاء أفاتار مذهل لك
+                  </p>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-4 px-2 custom-scrollbar">
-                  {history.map(h => (
-                    <div key={h.id} className="relative group flex-shrink-0" onClick={() => setSelectedResult(h)}>
-                      <img 
-                        src={h.url} 
-                        className={clsx("w-20 h-20 rounded-full cursor-pointer border-2 transition-all object-cover shadow-lg", selectedResult?.id === h.id ? "border-indigo-500 scale-110" : "border-white/10 opacity-60 hover:opacity-100")} 
-                      />
-                      <button
-                        onClick={(e) => handleDeleteItem(h.id, e)}
-                        className="absolute -top-1 -right-1 flex items-center justify-center h-6 w-6 p-0 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-md"
-                      >
-                        <X size={10} />
-                      </button>
-                    </div>
+              </div>
+            ) : (
+              // Gallery Grid
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <History size={18} className="text-purple-400" />
+                    أعمالك ({history.length})
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                  {history.map((avatar) => (
+                    <motion.div
+                      key={avatar.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all"
+                    >
+                      {avatar.isGenerating ? (
+                        // Loading State with Progress
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                          <Loader2 className="w-8 h-8 text-purple-400 animate-spin mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                            <motion.div
+                              className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${avatar.progress || 0}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-2">جاري الإنشاء...</p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Avatar Image */}
+                          <img
+                            src={avatar.url}
+                            alt={avatar.style}
+                            className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                            onClick={() => setSelectedAvatar(avatar)}
+                          />
+
+                          {/* Overlay on Hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
+                              <p className="text-xs text-white line-clamp-1">{avatar.style}</p>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedAvatar(avatar);
+                                  }}
+                                  className="flex-1 h-8 rounded-lg bg-purple-500 hover:bg-purple-600 text-xs"
+                                >
+                                  <Eye size={12} className="ml-1" />
+                                  عرض
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadAvatar(avatar.url, `avatar-${avatar.id}.png`);
+                                  }}
+                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                >
+                                  <Download size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => deleteFromHistory(avatar.id, e)}
+                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Selected Indicator */}
+                          {selectedAvatar?.id === avatar.id && (
+                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                              <Eye size={14} className="text-white" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
                   ))}
                 </div>
               </div>
-           )}
-        </section>
-      </main>
+            )}
+          </div>
+        </main>
+      </div>
 
-      {/* Subscription Required Modal */}
+      {/* Avatar Preview Modal */}
+      <AnimatePresence>
+        {selectedAvatar && !selectedAvatar.isGenerating && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setSelectedAvatar(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-5xl w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedAvatar(null)}
+                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              {/* Image */}
+              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+                <img
+                  src={selectedAvatar.url}
+                  alt={selectedAvatar.style}
+                  className="w-full max-h-[80vh] object-contain"
+                />
+                <BorderBeam />
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-400">{selectedAvatar.style}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => downloadAvatar(selectedAvatar.url, `avatar-${selectedAvatar.id}.png`)}
+                    className="rounded-xl bg-purple-500 hover:bg-purple-600 h-10 px-6"
+                  >
+                    <Download size={16} className="ml-2" />
+                    تحميل
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => deleteFromHistory(selectedAvatar.id, e)}
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Subscription Modal */}
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}

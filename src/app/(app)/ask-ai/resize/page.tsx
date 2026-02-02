@@ -18,6 +18,7 @@ import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
 import { listPlans } from "@/lib/api";
+import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 const RATIOS = [
   { id: "9:16", label: "TikTok / Reels (9:16)", value: "9:16" },
@@ -117,21 +118,18 @@ export default function ResizePage() {
     <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-900/10 via-[#00050a] to-[#00050a]" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <Link href="/ask-ai">
-            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-              <ArrowRight className="h-5 w-5 text-white rotate-180" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-300 to-amber-300 bg-clip-text text-transparent">تغيير أبعاد الفيديو الذكي</h1>
-        </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-orange-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
-      </header>
-
-      <main className="p-4 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-[1600px] mx-auto w-full">
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-[#0a0c10] rounded-[32px] p-6 border border-white/10 space-y-6 shadow-2xl">
+     {/* Header */}
+      <AskAIToolHeader 
+        title="تغيير أبعاد الفيديو الذكي "
+        modelBadge="IMAGEN 4.0"
+        stats={stats}
+      />
+      {/* Main Layout */}
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+        {/* Sidebar - Settings (Fixed) */}
+        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            <div className="space-y-4">
              <div className="space-y-4">
                 <label className="text-xs font-bold text-gray-400 block text-right">الفيديو المستهدف</label>
                 <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload" onClick={() => document.getElementById('file-v-r')?.click()}>
@@ -181,11 +179,14 @@ export default function ResizePage() {
           
           <div className="p-6 bg-orange-500/5 rounded-2xl border border-orange-500/10">
              <h4 className="text-sm font-bold text-orange-400 mb-2 text-right">مناسب لجميع المنصات</h4>
-             <p className="text-xs text-gray-400 leading-relaxed text-right">حوّل فيديوهاتك العريضة إلى فيديوهات طولية تناسب تيك توك وستوري إنستغرام أو العكس، مع الحفاظ على العناصر الأساسية في منتصف المشهد بذكاء.</p>
+             <p className="text-[10px] text-gray-400 leading-relaxed text-right">حوّل فيديوهاتك العريضة إلى فيديوهات طولية تناسب تيك توك وستوري إنستغرام أو العكس، مع الحفاظ على العناصر الأساسية في منتصف المشهد بذكاء.</p>
+          </div>
           </div>
         </aside>
 
-        <section className="lg:col-span-8 space-y-6">
+        {/* Main Content - Gallery (Scrollable) */}
+        <main className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="p-6 space-y-6">
            <div className="min-h-[600px] w-full rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
               <AnimatePresence mode="wait">
                  {selectedResult ? (
@@ -247,8 +248,9 @@ export default function ResizePage() {
                 </div>
              </div>
            )}
-        </section>
-      </main>
+          </div>
+        </main>
+      </div>
 
       {/* Subscription Required Modal */}
       <SubscriptionRequiredModal
