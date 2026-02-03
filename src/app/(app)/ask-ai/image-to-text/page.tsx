@@ -11,14 +11,23 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, describeAIImage, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  describeAIImage, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats, 
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 export default function ImageToTextPage() {
@@ -38,13 +47,35 @@ export default function ImageToTextPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_describe_history");
-      if (saved) setHistory(JSON.parse(saved));
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { localStorage.setItem("ai_describe_history", JSON.stringify(history)); }, [history]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'IMAGE');
+      // Filter for describe operations only
+      const mappedHistory: any[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'describe')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          text: item.outputText || "",
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
+  useEffect(() => { 
+    if (token) {
+      loadStats();
+      checkAIPlans();
+      loadHistory();
+    }
+  }, [token]);
+
 
   const loadStats = async () => {
     try {
@@ -85,11 +116,19 @@ export default function ImageToTextPage() {
     try {
       const res = await describeAIImage(token, previewUrl);
       setDescription(res.description);
-      const newItem = { id: Date.now().toString(), url: previewUrl, text: res.description };
+      const newItem = { 
+        id: (res as any).historyId?.toString() || Date.now().toString(), 
+        url: previewUrl, 
+        text: res.description 
+      };
       setHistory([newItem, ...history]);
       showSuccess("تم تحليل الصورة بنجاح!");
       if (res.remainingCredits !== undefined) {
-         setStats(prev => prev ? { ...prev, remainingCredits: res.remainingCredits } : null);
+         setStats(prev => prev ? { 
+           ...prev, 
+           remainingCredits: res.remainingCredits,
+           usedCredits: prev.usedCredits + (res as any).creditsUsed
+         } : null);
       }
     } catch (e: any) { showError("خطأ", e.message); }
     finally { setIsAnalyzing(false); }
@@ -103,26 +142,46 @@ export default function ImageToTextPage() {
     showSuccess("تم النسخ!");
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteItem = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا التحليل؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_describe_history", JSON.stringify(newHistory));
-    if (description === history.find(h => h.id === id)?.text) {
-      setDescription(null);
-      setPreviewUrl(null);
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (description === history.find(h => h.id === id)?.text) {
+        setDescription(null);
+        setPreviewUrl(null);
+      }
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف التحليل من السجل السحابي");
     }
-    showSuccess("تم الحذف بنجاح!");
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
-      setHistory([]);
-      setDescription(null);
-      setPreviewUrl(null);
-      localStorage.removeItem("ai_describe_history");
-      showSuccess("تم حذف جميع الأعمال!");
+  const handleClearAll = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'IMAGE');
+      if (description) {
+         setDescription(null);
+         setPreviewUrl(null);
+      }
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 

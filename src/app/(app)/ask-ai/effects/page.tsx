@@ -10,14 +10,23 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIVideo, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIVideo, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 
 export default function EffectsPage() {
   const [token, setToken] = useState("");
@@ -37,13 +46,35 @@ export default function EffectsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_effects_history");
-      if (saved) setHistory(JSON.parse(saved));
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { localStorage.setItem("ai_effects_history", JSON.stringify(history)); }, [history]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'VIDEO');
+      // Filter for effects operations only
+      const mappedHistory: any[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'effects')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          original: (item.options as any)?.inputUrl,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
+  useEffect(() => { 
+    if (token) {
+      loadStats();
+      checkAIPlans();
+      loadHistory();
+    }
+  }, [token]);
+
 
   const loadStats = async () => {
     try {
@@ -87,30 +118,58 @@ export default function EffectsPage() {
         inputUrl: previewUrl,
         prompt: prompt.trim() || "Add cinematic glow, professional color grading, sharp details"
       });
-      const newItem = { id: Date.now().toString(), url: res.videoUrl, original: previewUrl };
+      const newItem = { 
+        id: (res as any).historyId?.toString() || Date.now().toString(), 
+        url: res.videoUrl, 
+        original: previewUrl 
+      };
       setHistory([newItem, ...history]);
       setSelectedResult(newItem);
+      await loadStats();
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: res.remainingCredits,
+        usedCredits: prev.usedCredits + (res as any).creditsUsed
+      } : null);
       showSuccess("تم إضافة التأثيرات بنجاح!");
     } catch (e: any) { showError("خطأ", e.message); }
     finally { setIsProcessing(false); }
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteItem = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_effects_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
+    }
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
-      setHistory([]);
+  const handleClearAll = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'VIDEO');
       setSelectedResult(null);
-      localStorage.removeItem("ai_effects_history");
-      showSuccess("تم حذف جميع الأعمال!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 

@@ -10,12 +10,21 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIVideo, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIVideo, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
+} from "@/lib/api";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 
 interface ProcessedVideo {
   id: string;
@@ -41,17 +50,26 @@ export default function VideoUpscalePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_vupscale_history");
-      if (saved) {
-        try { setHistory(JSON.parse(saved)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { 
-    if (history.length > 0) localStorage.setItem("ai_vupscale_history", JSON.stringify(history)); 
-  }, [history]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'VIDEO');
+      // Filter for vupscale operations only
+      const mappedHistory: ProcessedVideo[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'vupscale')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          timestamp: item.createdAt,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -61,6 +79,14 @@ export default function VideoUpscalePage() {
       console.error(e);
     }
   };
+
+  useEffect(() => { 
+    if (token) {
+      loadStats();
+      checkAIPlans();
+      loadHistory();
+    }
+  }, [token]);
 
   const checkAIPlans = async () => {
     try {
@@ -110,7 +136,7 @@ export default function VideoUpscalePage() {
       clearInterval(progressInterval);
 
       const newItem: ProcessedVideo = {
-        id: placeholderId,
+        id: (res as any).historyId?.toString() || placeholderId,
         url: res.videoUrl,
         timestamp: new Date().toISOString(),
         isProcessing: false,
@@ -120,6 +146,11 @@ export default function VideoUpscalePage() {
       setHistory(prev => prev.map(vid => vid.id === placeholderId ? newItem : vid));
       await loadStats();
       showSuccess("تم رفع جودة الفيديو بنجاح!");
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: res.remainingCredits,
+        usedCredits: prev.usedCredits + (res as any).creditsUsed
+      } : null);
     } catch (e: any) {
       clearInterval(progressInterval);
       setHistory(prev => prev.filter(vid => vid.id !== placeholderId));
@@ -129,22 +160,40 @@ export default function VideoUpscalePage() {
     }
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteItem = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا المقطع؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_vupscale_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
+    }
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
-      setHistory([]);
+  const handleClearAll = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'VIDEO');
       setSelectedResult(null);
-      localStorage.removeItem("ai_vupscale_history");
-      showSuccess("تم حذف جميع الأعمال!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 

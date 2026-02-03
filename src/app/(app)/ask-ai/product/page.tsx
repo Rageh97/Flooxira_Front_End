@@ -11,13 +11,22 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIImage, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats, 
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 interface ProcessedImage {
@@ -47,17 +56,37 @@ export default function ProductModelPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_product_history");
-      if (saved) {
-        try { setHistory(JSON.parse(saved)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'IMAGE');
+      // Filter for product operations only
+      const mappedHistory: ProcessedImage[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'product')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          prompt: item.prompt,
+          timestamp: item.createdAt,
+          isProcessing: false,
+          progress: 100,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
   useEffect(() => { 
-    if (history.length > 0) localStorage.setItem("ai_product_history", JSON.stringify(history)); 
-  }, [history]);
+    if (token) {
+      loadStats();
+      checkAIPlans();
+      loadHistory();
+    }
+  }, [token]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -125,7 +154,7 @@ export default function ProductModelPage() {
       clearInterval(progressInterval);
 
       const newItem: ProcessedImage = {
-        id: placeholderId,
+        id: (res as any).historyId?.toString() || placeholderId,
         url: res.imageUrl,
         prompt: prompt.trim(),
         timestamp: new Date().toISOString(),
@@ -145,22 +174,41 @@ export default function ProductModelPage() {
     }
   };
 
-  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذه الصورة؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_product_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الصورة من السجل السحابي");
+    }
   };
 
-  const clearHistory = () => {
-    if (!confirm("هل تريد مسح السجل بالكامل؟")) return;
+  const clearHistory = async () => {
+    if (!confirm("هل تريد مسح السجل بالكامل من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
     setHistory([]);
-    localStorage.removeItem("ai_product_history");
-    setSelectedResult(null);
-    showSuccess("تم مسح السجل بالكامل.");
+
+    try {
+      await clearAIHistory(token, 'IMAGE');
+      setSelectedResult(null);
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
+    }
   };
 
   const downloadImage = async (url: string, filename: string) => {

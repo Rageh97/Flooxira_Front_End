@@ -33,7 +33,11 @@ import {
   upscaleImage,
   removeImageBackground,
   listPlans,
-  type AIStats 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
@@ -60,7 +64,7 @@ const STYLE_PRESETS = [
 ];
 
 interface GeneratedImage {
-  id: string;
+  id: string; // Database ID or placeholder
   url: string;
   prompt: string;
   timestamp: string;
@@ -93,23 +97,36 @@ export default function TextToImagePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const savedHistory = localStorage.getItem("ai_image_history");
-      if (savedHistory) {
-        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
+
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'IMAGE');
+      const mappedHistory: GeneratedImage[] = response.history.map((item: AIHistoryItem) => ({
+        id: item.id.toString(),
+        url: item.outputUrl,
+        prompt: item.prompt,
+        timestamp: item.createdAt,
+        aspectRatio: (item.options as any)?.aspectRatio || "1:1",
+        style: (item.options as any)?.style || "none",
+      }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
 
   useEffect(() => {
     if (token) {
       loadStats();
       checkAIPlans();
+      loadHistory();
     }
   }, [token]);
 
-  useEffect(() => {
-    if (history.length > 0) localStorage.setItem("ai_image_history", JSON.stringify(history));
-  }, [history]);
+
 
   // Auto-resize textarea
   useEffect(() => {
@@ -186,7 +203,7 @@ export default function TextToImagePage() {
       }
 
       const newImage: GeneratedImage = {
-        id: placeholderId,
+        id: response.historyId?.toString() || placeholderId,
         url: response.imageUrl,
         prompt: prompt.trim(),
         timestamp: new Date().toISOString(),
@@ -200,7 +217,7 @@ export default function TextToImagePage() {
       setStats(prev => prev ? {
         ...prev,
         remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
       } : null);
       
       showSuccess("تم بناء الصورة بنجاح!");
@@ -218,22 +235,41 @@ export default function TextToImagePage() {
     }
   };
 
-  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذه الصورة؟")) return;
-    const newHistory = history.filter(img => img.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_image_history", JSON.stringify(newHistory));
-    if (selectedImage?.id === id) setSelectedImage(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic UI update
+    const originalHistory = [...history];
+    setHistory(history.filter(img => img.id !== id));
+    
+    try {
+      if (id.length < 15) { // Assuming DB IDs are numeric/short, and placeholder IDs are timestamps (long)
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedImage?.id === id) setSelectedImage(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الصورة من السجل السحابي");
+    }
   };
 
-  const clearAllHistory = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال؟")) {
-      setHistory([]);
-      localStorage.removeItem("ai_image_history");
+  const clearAllHistory = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال؟ لا يمكن التراجع عن هذه الخطوة من السحابة.")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+    localStorage.removeItem("ai_image_history");
+
+    try {
+      await clearAIHistory(token, 'IMAGE');
       setSelectedImage(null);
-      showSuccess("تم حذف جميع الأعمال!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 
@@ -265,7 +301,7 @@ export default function TextToImagePage() {
       });
 
       const upscaledImage: GeneratedImage = {
-        id: Date.now().toString(),
+        id: (response as any).historyId?.toString() || Date.now().toString(),
         url: response.imageUrl,
         prompt: `${selectedImage.prompt} (جودة عالية)`,
         timestamp: new Date().toISOString(),
@@ -278,7 +314,7 @@ export default function TextToImagePage() {
       setStats(prev => prev ? {
         ...prev,
         remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
       } : null);
       
       showSuccess("تم تحسين جودة الصورة بنجاح!");
@@ -297,7 +333,7 @@ export default function TextToImagePage() {
       const response = await removeImageBackground(token, selectedImage.url);
 
       const noBgImage: GeneratedImage = {
-        id: Date.now().toString(),
+        id: (response as any).historyId?.toString() || Date.now().toString(),
         url: response.imageUrl,
         prompt: `${selectedImage.prompt} (بدون خلفية)`,
         timestamp: new Date().toISOString(),
@@ -310,7 +346,7 @@ export default function TextToImagePage() {
       setStats(prev => prev ? {
         ...prev,
         remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
       } : null);
       
       showSuccess("تم إزالة الخلفية بنجاح!");

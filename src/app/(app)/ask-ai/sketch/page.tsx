@@ -10,13 +10,22 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIImage, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 interface ProcessedImage {
@@ -47,17 +56,31 @@ export default function SketchPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_sketch_history");
-      if (saved) {
-        try { setHistory(JSON.parse(saved)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { 
-    if (history.length > 0) localStorage.setItem("ai_sketch_history", JSON.stringify(history)); 
-  }, [history]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'IMAGE');
+      // Filter for sketch operations only
+      const mappedHistory: ProcessedImage[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'sketch')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          original: (item.options as any)?.originalImageUrl || "",
+          prompt: item.prompt,
+          timestamp: item.createdAt,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
+  useEffect(() => { if (token) { loadStats(); checkAIPlans(); loadHistory(); } }, [token]);
+
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -124,7 +147,7 @@ export default function SketchPage() {
       clearInterval(progressInterval);
 
       const newItem: ProcessedImage = {
-        id: placeholderId,
+        id: (res as any).historyId?.toString() || placeholderId,
         url: res.imageUrl,
         original: previewUrl,
         prompt: prompt.trim(),
@@ -136,6 +159,11 @@ export default function SketchPage() {
       setHistory(prev => prev.map(img => img.id === placeholderId ? newItem : img));
       await loadStats();
       showSuccess("تم تحويل الرسمة بنجاح!");
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: res.remainingCredits,
+        usedCredits: prev.usedCredits + (res as any).creditsUsed
+      } : null);
     } catch (e: any) {
       clearInterval(progressInterval);
       setHistory(prev => prev.filter(img => img.id !== placeholderId));
@@ -145,22 +173,41 @@ export default function SketchPage() {
     }
   };
 
-  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا التصميم؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_sketch_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف.");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف التصميم من السجل السحابي");
+    }
   };
 
-  const clearHistory = () => {
-    if (!confirm("هل تريد مسح سجل التصميمات بالكامل؟")) return;
+  const clearHistory = async () => {
+    if (!confirm("هل تريد مسح سجل التصميمات بالكامل من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
     setHistory([]);
-    localStorage.removeItem("ai_sketch_history");
-    setSelectedResult(null);
-    showSuccess("تم مسح السجل.");
+
+    try {
+      await clearAIHistory(token, 'IMAGE');
+      setSelectedResult(null);
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
+    }
   };
 
   const downloadImage = async (url: string, filename: string) => {

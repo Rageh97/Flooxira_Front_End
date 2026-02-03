@@ -11,7 +11,16 @@ import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
 import { 
-  getAIStats, generateAIVideo, addVideoAudio, enhanceVideo, listPlans, type AIStats 
+  getAIStats, 
+  generateAIVideo, 
+  addVideoAudio, 
+  enhanceVideo, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
@@ -70,17 +79,29 @@ export default function TextToVideoPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const savedHistory = localStorage.getItem("ai_video_history");
-      if (savedHistory) {
-        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { 
-    if (history.length > 0) localStorage.setItem("ai_video_history", JSON.stringify(history)); 
-  }, [history]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'VIDEO');
+      const mappedHistory: GeneratedVideo[] = response.history.map((item: AIHistoryItem) => ({
+        id: item.id.toString(),
+        url: item.outputUrl,
+        prompt: item.prompt,
+        timestamp: item.createdAt,
+        aspectRatio: (item.options as any)?.aspectRatio || "16:9",
+        style: (item.options as any)?.style || "none",
+      }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
+  useEffect(() => { if (token) { loadStats(); checkAIPlans(); loadHistory(); } }, [token]);
+
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -140,7 +161,9 @@ export default function TextToVideoPage() {
       clearInterval(progressInterval);
 
       const newVideo: GeneratedVideo = {
-        id: placeholderId, url: response.videoUrl, prompt: prompt.trim(),
+        id: (response as any).historyId?.toString() || placeholderId, 
+        url: response.videoUrl, 
+        prompt: prompt.trim(),
         timestamp: new Date().toISOString(), aspectRatio: selectedRatio, style: selectedStyle,
         isGenerating: false, progress: 100,
       };
@@ -149,7 +172,7 @@ export default function TextToVideoPage() {
       setSelectedVideo(newVideo);
       setStats(prev => prev ? {
         ...prev, remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
       } : null);
       
       showSuccess("تم بناء الفيديو بنجاح!");
@@ -160,22 +183,39 @@ export default function TextToVideoPage() {
     } finally { setIsGenerating(false); }
   };
 
-  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
-    const newHistory = history.filter(vid => vid.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_video_history", JSON.stringify(newHistory));
-    if (selectedVideo?.id === id) setSelectedVideo(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(vid => vid.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedVideo?.id === id) setSelectedVideo(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
+    }
   };
 
-  const clearAllHistory = () => {
-    if (window.confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة؟")) {
-      setHistory([]);
-      localStorage.removeItem("ai_video_history");
+  const clearAllHistory = async () => {
+    if (!window.confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة من السحابة؟")) return;
+
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'VIDEO');
       setSelectedVideo(null);
       showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 
@@ -208,7 +248,8 @@ export default function TextToVideoPage() {
       });
 
       const videoWithAudio: GeneratedVideo = {
-        id: Date.now().toString(), url: response.videoUrl,
+        id: (response as any).historyId?.toString() || Date.now().toString(), 
+        url: response.videoUrl,
         prompt: `${selectedVideo.prompt} (مع صوت)`, timestamp: new Date().toISOString(),
         aspectRatio: selectedVideo.aspectRatio, style: selectedVideo.style,
       };
@@ -217,7 +258,7 @@ export default function TextToVideoPage() {
       setSelectedVideo(videoWithAudio);
       setStats(prev => prev ? {
         ...prev, remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
       } : null);
       
       setAudioText("");
@@ -239,7 +280,8 @@ export default function TextToVideoPage() {
       });
 
       const enhancedVideo: GeneratedVideo = {
-        id: Date.now().toString(), url: response.videoUrl,
+        id: (response as any).historyId?.toString() || Date.now().toString(), 
+        url: response.videoUrl,
         prompt: `${selectedVideo.prompt} (محسّن)`, timestamp: new Date().toISOString(),
         aspectRatio: selectedVideo.aspectRatio, style: selectedVideo.style,
       };
@@ -248,7 +290,7 @@ export default function TextToVideoPage() {
       setSelectedVideo(enhancedVideo);
       setStats(prev => prev ? {
         ...prev, remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
       } : null);
       
       showSuccess("تم تحسين الفيديو بنجاح!");

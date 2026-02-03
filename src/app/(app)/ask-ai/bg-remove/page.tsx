@@ -10,7 +10,16 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, listPlans, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIImage, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
@@ -43,23 +52,37 @@ export default function BackgroundRemovalPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const savedHistory = localStorage.getItem("ai_bg_remove_history");
-      if (savedHistory) {
-        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
+
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'IMAGE');
+      // Filter for bg-remove operations only
+      const mappedHistory: ProcessedImage[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'bg-remove' || (item.options as any)?.operation === 'remove-bg')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          originalUrl: (item.options as any)?.originalImageUrl,
+          timestamp: item.createdAt,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
 
   useEffect(() => {
     if (token) {
       loadStats();
       checkAIPlans();
+      loadHistory();
     }
   }, [token]);
 
-  useEffect(() => {
-    if (history.length > 0) localStorage.setItem("ai_bg_remove_history", JSON.stringify(history));
-  }, [history]);
+
 
   const loadStats = async () => {
     try {
@@ -125,7 +148,7 @@ export default function BackgroundRemovalPage() {
       clearInterval(progressInterval);
 
       const newImage: ProcessedImage = {
-        id: placeholderId,
+        id: (response as any).historyId?.toString() || placeholderId,
         url: response.imageUrl,
         originalUrl: previewUrl,
         timestamp: new Date().toISOString(),
@@ -134,7 +157,11 @@ export default function BackgroundRemovalPage() {
       };
 
       setHistory(prev => prev.map(img => img.id === placeholderId ? newImage : img));
-      setStats(prev => prev ? { ...prev, remainingCredits: response.remainingCredits } : null);
+      setStats(prev => prev ? { 
+        ...prev, 
+        remainingCredits: response.remainingCredits,
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
+      } : null);
       
       showSuccess("تم إزالة الخلفية بنجاح!");
     } catch (error: any) {
@@ -162,22 +189,40 @@ export default function BackgroundRemovalPage() {
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteItem = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذه الصورة؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_bg_remove_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الصورة من السجل السحابي");
+    }
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
-      setHistory([]);
+  const handleClearAll = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'IMAGE');
       setSelectedResult(null);
-      localStorage.removeItem("ai_bg_remove_history");
-      showSuccess("تم حذف جميع الأعمال!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 

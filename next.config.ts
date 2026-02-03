@@ -53,15 +53,9 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        port: "",
-        pathname: "/**",
-      },
     ],
     // السماح أيضاً بالصور من نفس النطاق
-    domains: ['localhost', 'flooxira.b-cdn.net', 'res.cloudinary.com'],
+    domains: ['localhost', 'flooxira.b-cdn.net'],
   },
 };
 

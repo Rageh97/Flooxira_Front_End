@@ -22,7 +22,16 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, generateAILogo, listPlans, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  generateAILogo, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
@@ -57,23 +66,34 @@ export default function LogoMakerPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const savedHistory = localStorage.getItem("ai_logo_history");
-      if (savedHistory) {
-        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
+
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'LOGO');
+      const mappedHistory: GeneratedImage[] = response.history.map((item: AIHistoryItem) => ({
+        id: item.id.toString(),
+        url: item.outputUrl,
+        prompt: item.prompt,
+        timestamp: item.createdAt,
+      }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
 
   useEffect(() => {
     if (token) {
       loadStats();
       checkAIPlans();
+      loadHistory();
     }
   }, [token]);
 
-  useEffect(() => {
-    if (history.length > 0) localStorage.setItem("ai_logo_history", JSON.stringify(history));
-  }, [history]);
+
 
   // Auto-resize textarea
   useEffect(() => {
@@ -139,7 +159,7 @@ export default function LogoMakerPage() {
       clearInterval(progressInterval);
 
       const newImage: GeneratedImage = {
-        id: placeholderId,
+        id: (response as any).historyId?.toString() || placeholderId,
         url: response.imageUrl,
         prompt: prompt.trim(),
         timestamp: new Date().toISOString(),
@@ -151,7 +171,7 @@ export default function LogoMakerPage() {
       setStats(prev => prev ? {
         ...prev,
         remainingCredits: response.remainingCredits,
-        usedCredits: prev.usedCredits + response.creditsUsed
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
       } : null);
       
       showSuccess("تم تصميم الشعار بنجاح!");
@@ -164,22 +184,40 @@ export default function LogoMakerPage() {
     }
   };
 
-  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا التصميم؟")) return;
-    const newHistory = history.filter(img => img.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_logo_history", JSON.stringify(newHistory));
-    if (selectedImage?.id === id) setSelectedImage(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(img => img.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedImage?.id === id) setSelectedImage(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف التصميم من السجل السحابي");
+    }
   };
 
-  const clearAllHistory = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع التصميمات؟")) {
-      setHistory([]);
-      localStorage.removeItem("ai_logo_history");
+  const clearAllHistory = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع التصميمات من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'LOGO');
       setSelectedImage(null);
-      showSuccess("تم إخلاء سجل التصميمات كلياً!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 
@@ -249,20 +287,7 @@ export default function LogoMakerPage() {
               صمم شعاري الآن
             </GradientButton>
 
-            {/* Info Box */}
-            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Palette className="text-indigo-400 flex-shrink-0 mt-0.5" size={18} />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-indigo-300">نصائح لنتائج أفضل</h3>
-                  <ul className="text-xs text-gray-400 space-y-1">
-                    <li>• حدد نمط الشعار (مينيمال، كلاسيكي، تجريدي)</li>
-                    <li>• اذكر الألوان المفضلة بوضوح</li>
-                    <li>• صف الرمز الذي تريده (مثلاً: ريشة، جبل، مكوك)</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+          
 
             {/* Clear History Button */}
             {history.length > 0 && (

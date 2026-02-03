@@ -103,7 +103,7 @@ export default function ProfilePage() {
       if (result.success) {
         showSuccess('نجح', 'تم تحديث الملف الشخصي بنجاح');
         
-        // Update user avatar from response if available (Cloudinary URL)
+        // Update user avatar from response if available (Bunny CDN URL)
         if (result.user?.avatar) {
           setUserAvatar(result.user.avatar);
           setAvatarPreview(result.user.avatar);

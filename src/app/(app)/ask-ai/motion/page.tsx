@@ -10,13 +10,22 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIVideo, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIVideo, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats, 
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 interface GeneratedVideo {
@@ -47,15 +56,38 @@ export default function MotionPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_motion_history");
-      if (saved) {
-        try { setHistory(JSON.parse(saved)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { if (history.length > 0) localStorage.setItem("ai_motion_history", JSON.stringify(history)); }, [history]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'VIDEO');
+      // Filter for motion operations only
+      const mappedHistory: GeneratedVideo[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'motion')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          prompt: item.prompt,
+          original: (item.options as any)?.inputUrl || "",
+          timestamp: item.createdAt,
+          isProcessing: false,
+          progress: 100,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
+  useEffect(() => { 
+    if (token) {
+      loadStats();
+      checkAIPlans();
+      loadHistory();
+    }
+  }, [token]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -122,7 +154,7 @@ export default function MotionPage() {
       clearInterval(progressInterval);
 
       const newItem: GeneratedVideo = {
-        id: placeholderId,
+        id: (res as any).historyId?.toString() || placeholderId,
         url: res.videoUrl,
         prompt: prompt.trim() || "Natural cinematic motion",
         original: previewUrl,
@@ -132,6 +164,12 @@ export default function MotionPage() {
       };
 
       setHistory(prev => prev.map(vid => vid.id === placeholderId ? newItem : vid));
+      await loadStats();
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: res.remainingCredits,
+        usedCredits: prev.usedCredits + (res as any).creditsUsed
+      } : null);
       showSuccess("تم إضافة الحركة بنجاح!");
     } catch (e: any) {
       clearInterval(progressInterval);
@@ -142,22 +180,41 @@ export default function MotionPage() {
     }
   };
 
-  const handleDeleteHistory = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل أنت متأكد من حذف هذا الفيديو؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_motion_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
+    }
   };
 
-  const clearHistory = () => {
-    if (!confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة؟")) return;
+  const clearHistory = async () => {
+    if (!confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
     setHistory([]);
-    setSelectedResult(null);
-    localStorage.removeItem("ai_motion_history");
-    showSuccess("تم مسح السجل بالكامل.");
+
+    try {
+      await clearAIHistory(token, 'VIDEO');
+      setSelectedResult(null);
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
+    }
   };
 
   const downloadVideo = async (url: string, filename: string) => {

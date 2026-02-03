@@ -10,14 +10,23 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIVideo, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIVideo, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats, 
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 
 export default function UGCPage() {
   const [token, setToken] = useState("");
@@ -35,13 +44,34 @@ export default function UGCPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_ugc_history");
-      if (saved) setHistory(JSON.parse(saved));
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
-  useEffect(() => { localStorage.setItem("ai_ugc_history", JSON.stringify(history)); }, [history]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'VIDEO');
+      // Filter for ugc operations only
+      const mappedHistory = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'ugc')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          prompt: item.prompt,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
+  useEffect(() => { 
+    if (token) {
+      loadStats();
+      checkAIPlans();
+      loadHistory();
+    }
+  }, [token]);
 
   const loadStats = async () => {
     try {
@@ -73,33 +103,56 @@ export default function UGCPage() {
     try {
       const res = await processAIVideo(token, {
         operation: 'ugc',
-        inputUrl: "https://res.cloudinary.com/demo/image/upload/v1312461204/sample.jpg", 
+        inputUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop", 
         prompt: `UGC (User Generated Content) style, handheld camera, natural lighting, relatable person, ${prompt.trim()}`
       });
-      const newItem = { id: Date.now().toString(), url: res.videoUrl, prompt: prompt.trim() };
+      const newItem = { 
+        id: (res as any).historyId?.toString() || Date.now().toString(), 
+        url: res.videoUrl, 
+        prompt: prompt.trim() 
+      };
       setHistory([newItem, ...history]);
       setSelectedResult(newItem);
       showSuccess("تم إنشاء محتوى UGC بنجاح!");
+      await loadStats();
     } catch (e: any) { showError("خطأ", e.message); }
     finally { setIsGenerating(false); }
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteItem = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا المقطع؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_ugc_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
+    }
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
-      setHistory([]);
+  const handleClearAll = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'VIDEO');
       setSelectedResult(null);
-      localStorage.removeItem("ai_ugc_history");
-      showSuccess("تم حذف جميع الأعمال!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 

@@ -24,7 +24,11 @@ import {
   getAIStats, 
   processAIImage,
   listPlans,
-  type AIStats 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
@@ -66,23 +70,39 @@ export default function AvatarPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const savedHistory = localStorage.getItem("ai_avatar_history");
-      if (savedHistory) {
-        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
+
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'IMAGE');
+      // Filter for avatar operations only
+      const mappedHistory: GeneratedAvatar[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'avatar')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          style: (item.options as any)?.style || "3d",
+          timestamp: item.createdAt,
+          isGenerating: false,
+          progress: 100,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
 
   useEffect(() => {
     if (token) {
       loadStats();
       checkAIPlans();
+      loadHistory();
     }
   }, [token]);
 
-  useEffect(() => {
-    if (history.length > 0) localStorage.setItem("ai_avatar_history", JSON.stringify(history));
-  }, [history]);
+
 
   const loadStats = async () => {
     try {
@@ -141,7 +161,7 @@ export default function AvatarPage() {
       clearInterval(progressInterval);
 
       const newAvatar: GeneratedAvatar = {
-        id: placeholderId,
+        id: (response as any).historyId?.toString() || placeholderId,
         url: response.imageUrl,
         style: styleConfig?.label || "",
         timestamp: new Date().toISOString(),
@@ -151,6 +171,11 @@ export default function AvatarPage() {
 
       setHistory(prev => prev.map(img => img.id === placeholderId ? newAvatar : img));
       await loadStats();
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: response.remainingCredits,
+        usedCredits: prev.usedCredits + (response as any).creditsUsed
+      } : null);
       
       showSuccess("تم إنشاء الأفاتار بنجاح!");
     } catch (error: any) {
@@ -162,22 +187,40 @@ export default function AvatarPage() {
     }
   };
 
-  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا الأفاتار؟")) return;
-    const newHistory = history.filter(img => img.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_avatar_history", JSON.stringify(newHistory));
-    if (selectedAvatar?.id === id) setSelectedAvatar(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(img => img.id !== id));
+    
+    try {
+      if (id.length < 15) { // Assuming DB IDs are numeric/short
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedAvatar?.id === id) setSelectedAvatar(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الأفاتار من السجل السحابي");
+    }
   };
 
-  const clearAllHistory = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال؟")) {
-      setHistory([]);
-      localStorage.removeItem("ai_avatar_history");
+  const clearAllHistory = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'IMAGE');
       setSelectedAvatar(null);
-      showSuccess("تم حذف جميع الأعمال!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 

@@ -10,13 +10,22 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, processAIImage, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  processAIImage, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
-import { listPlans } from "@/lib/api";
+
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 interface EditedImage {
@@ -46,23 +55,37 @@ export default function ImageEditPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const saved = localStorage.getItem("ai_edit_history");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) setHistory(parsed);
-        } catch (e) { console.error("History parse error:", e); }
-      }
     }
   }, []);
 
-  useEffect(() => {
-    if (history.length > 0) {
-      localStorage.setItem("ai_edit_history", JSON.stringify(history));
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'IMAGE');
+      // Filter for edit operations only
+      const mappedHistory: EditedImage[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'edit')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          prompt: item.prompt,
+          timestamp: item.createdAt,
+          isProcessing: false,
+          progress: 100,
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
     }
-  }, [history]);
+  };
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
+  useEffect(() => { 
+    if (token) { 
+      loadStats(); 
+      checkAIPlans(); 
+      loadHistory();
+    } 
+  }, [token]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -128,7 +151,7 @@ export default function ImageEditPage() {
       clearInterval(progressInterval);
 
       const newItem: EditedImage = {
-        id: placeholderId,
+        id: (res as any).historyId?.toString() || placeholderId,
         url: res.imageUrl,
         prompt: prompt.trim(),
         timestamp: new Date().toISOString(),
@@ -139,6 +162,11 @@ export default function ImageEditPage() {
       setHistory(prev => prev.map(img => img.id === placeholderId ? newItem : img));
       await loadStats();
       showSuccess("تم تعديل الصورة بنجاح!");
+      setStats(prev => prev ? {
+        ...prev,
+        remainingCredits: res.remainingCredits,
+        usedCredits: prev.usedCredits + (res as any).creditsUsed
+      } : null);
     } catch (e: any) {
       clearInterval(progressInterval);
       setHistory(prev => prev.filter(img => img.id !== placeholderId));
@@ -148,22 +176,40 @@ export default function ImageEditPage() {
     }
   };
 
-  const handleDeleteItem = (id: string, e?: React.MouseEvent) => {
+  const handleDeleteItem = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذه الصورة؟")) return;
-    const newHistory = history.filter(h => h.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_edit_history", JSON.stringify(newHistory));
-    if (selectedResult?.id === id) setSelectedResult(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(h => h.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedResult?.id === id) setSelectedResult(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الصورة من السجل السحابي");
+    }
   };
 
-  const handleClearAll = () => {
-    if (window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة؟")) {
-      setHistory([]);
-      localStorage.removeItem("ai_edit_history");
+  const handleClearAll = async () => {
+    if (!window.confirm("هل أنت متأكد من حذف جميع الأعمال السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'IMAGE');
       setSelectedResult(null);
-      showSuccess("تم حذف جميع الأعمال!");
+      showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 

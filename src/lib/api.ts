@@ -2576,6 +2576,41 @@ export async function getAIStats(token: string) {
   });
 }
 
+export interface AIHistoryItem {
+  id: number;
+  userId: number;
+  type: 'IMAGE' | 'VIDEO' | 'TEXT' | 'AUDIO' | 'LOGO' | 'NANO';
+  prompt: string;
+  outputUrl: string;
+  outputText?: string;
+  options: any;
+  creditsUsed: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getAIHistory(token: string, type?: string) {
+  const qs = type ? `?type=${type}` : '';
+  return apiFetch<{ success: boolean; history: AIHistoryItem[] }>(`/api/ai/history${qs}`, {
+    authToken: token,
+  });
+}
+
+export async function deleteAIHistoryItem(token: string, id: number) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/ai/history/${id}`, {
+    method: 'DELETE',
+    authToken: token,
+  });
+}
+
+export async function clearAIHistory(token: string, type?: string) {
+  const qs = type ? `?type=${type}` : '';
+  return apiFetch<{ success: boolean; message: string }>(`/api/ai/history/clear${qs}`, {
+    method: 'DELETE',
+    authToken: token,
+  });
+}
+
 // Streaming AI message (SSE over POST)
 export type AIStreamHandlers = {
   onStart?: (payload: { userMessage: AIMessage }) => void;
@@ -2657,7 +2692,7 @@ export async function generateAIImage(token: string, payload: { prompt: string; 
   const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes timeout
   
   try {
-    const result = await apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image", {
+    const result = await apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/image", {
       method: "POST",
       authToken: token,
       body: JSON.stringify(payload),
@@ -2675,7 +2710,7 @@ export async function generateAIImage(token: string, payload: { prompt: string; 
 }
 
 export async function generateAIVideo(token: string, payload: { prompt: string; aspectRatio?: string; includeAudio?: boolean }) {
-  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video", {
+  return apiFetch<{ success: boolean; videoUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/video", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2683,7 +2718,7 @@ export async function generateAIVideo(token: string, payload: { prompt: string; 
 }
 
 export async function generateAILogo(token: string, payload: { prompt: string; aspectRatio?: string }) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/logo", {
+  return apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/logo", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2691,7 +2726,7 @@ export async function generateAILogo(token: string, payload: { prompt: string; a
 }
 
 export async function generateAINano(token: string, payload: { prompt: string; aspectRatio?: string; model?: string }) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/nano", {
+  return apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/nano", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2699,7 +2734,7 @@ export async function generateAINano(token: string, payload: { prompt: string; a
 }
 
 export async function processAIImage(token: string, payload: { operation: string; imageUrl: string; prompt?: string }) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/process", {
+  return apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/process", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2707,7 +2742,7 @@ export async function processAIImage(token: string, payload: { operation: string
 }
 
 export async function processAIVideo(token: string, payload: { operation: string; inputUrl: string; prompt?: string; aspectRatio?: string }) {
-  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video/process", {
+  return apiFetch<{ success: boolean; videoUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/video/process", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2715,7 +2750,7 @@ export async function processAIVideo(token: string, payload: { operation: string
 }
 
 export async function describeAIImage(token: string, imageUrl: string) {
-  return apiFetch<{ success: boolean; description: string; remainingCredits: number; creditsUsed: number }>("/api/ai/describe", {
+  return apiFetch<{ success: boolean; description: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/describe", {
     method: "POST",
     authToken: token,
     body: JSON.stringify({ imageUrl }),
@@ -2724,7 +2759,7 @@ export async function describeAIImage(token: string, imageUrl: string) {
 
 // Advanced Image Editing
 export async function editImageInpainting(token: string, payload: { imageUrl: string; maskUrl?: string; prompt: string }) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/inpaint", {
+  return apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/image/inpaint", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2732,7 +2767,7 @@ export async function editImageInpainting(token: string, payload: { imageUrl: st
 }
 
 export async function editImageOutpainting(token: string, payload: { imageUrl: string; direction: 'left' | 'right' | 'up' | 'down'; prompt?: string }) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/outpaint", {
+  return apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/image/outpaint", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2740,7 +2775,7 @@ export async function editImageOutpainting(token: string, payload: { imageUrl: s
 }
 
 export async function upscaleImage(token: string, payload: { imageUrl: string; scale?: number }) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/upscale", {
+  return apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/image/upscale", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2748,7 +2783,7 @@ export async function upscaleImage(token: string, payload: { imageUrl: string; s
 }
 
 export async function removeImageBackground(token: string, imageUrl: string) {
-  return apiFetch<{ success: boolean; imageUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/image/remove-bg", {
+  return apiFetch<{ success: boolean; imageUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/image/remove-bg", {
     method: "POST",
     authToken: token,
     body: JSON.stringify({ imageUrl }),
@@ -2757,7 +2792,7 @@ export async function removeImageBackground(token: string, imageUrl: string) {
 
 // Advanced Video Editing
 export async function addVideoAudio(token: string, payload: { videoUrl: string; audioText: string; voice?: string; language?: string }) {
-  return apiFetch<{ success: boolean; videoUrl: string; remainingCredits: number; creditsUsed: number }>("/api/ai/video/add-audio", {
+  return apiFetch<{ success: boolean; videoUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/video/add-audio", {
     method: "POST",
     authToken: token,
     body: JSON.stringify(payload),
@@ -2960,7 +2995,7 @@ export type EventsPluginConfig = {
   isActive: boolean;
   enabledEvents: Record<string, boolean>;
   webhookUrl?: string;
-  platform?: 'woocommerce' | 'salla' | 'zid' | 'shopify' | 'iapp_cloud' | 'custom' | 'other';
+  platform?: 'woocommerce' | 'salla' | 'zid' | 'shopify' | 'iapp_cloud' | 'custom' | 'wordpress' | 'other';
   platformName?: string;
   totalEventsReceived: number;
   lastEventAt?: string;

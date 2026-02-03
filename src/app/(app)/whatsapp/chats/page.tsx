@@ -57,8 +57,11 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
           <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" loading="lazy" />
         )}
         
-        <div className="flex flex-col">
+        <div className="flex flex-col items-start">
           <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
+          <div className="text-xs text-white/60 truncate max-w-[120px] sm:max-w-none text-right" dir="ltr">
+            {contact.contactNumber?.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '')}
+          </div>
         </div>
       </div>
     

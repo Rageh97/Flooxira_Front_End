@@ -10,7 +10,15 @@ import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
 import { usePermissions } from "@/lib/permissions";
-import { getAIStats, listPlans, type AIStats } from "@/lib/api";
+import { 
+  getAIStats, 
+  listPlans, 
+  getAIHistory,
+  deleteAIHistoryItem,
+  clearAIHistory,
+  type AIStats,
+  type AIHistoryItem
+} from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
@@ -57,17 +65,39 @@ export default function LongVideoPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
-      const savedHistory = localStorage.getItem("ai_long_video_history");
-      if (savedHistory) {
-        try { setHistory(JSON.parse(savedHistory)); } catch (e) { console.error(e); }
-      }
     }
   }, []);
 
-  useEffect(() => { if (token) { loadStats(); checkAIPlans(); } }, [token]);
+  const loadHistory = async () => {
+    if (!token) return;
+    try {
+      const response = await getAIHistory(token, 'VIDEO');
+      // Filter for long-video operations only
+      const mappedHistory: GeneratedVideo[] = response.history
+        .filter((item: AIHistoryItem) => (item.options as any)?.operation === 'long-video')
+        .map((item: AIHistoryItem) => ({
+          id: item.id.toString(),
+          url: item.outputUrl,
+          prompt: item.prompt,
+          timestamp: item.createdAt,
+          mode: (item.options as any)?.mode || 'script',
+          isGenerating: false,
+          progress: 100,
+          status: "مكتمل",
+        }));
+      setHistory(mappedHistory);
+    } catch (error) {
+      console.error("Failed to load history:", error);
+    }
+  };
+
   useEffect(() => { 
-    if (history.length > 0) localStorage.setItem("ai_long_video_history", JSON.stringify(history)); 
-  }, [history]);
+    if (token) {
+      loadStats();
+      checkAIPlans();
+      loadHistory();
+    }
+  }, [token]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -192,7 +222,7 @@ export default function LongVideoPage() {
 
         if (data.status === 'completed' && data.videoUrl) {
           const newVideo: GeneratedVideo = {
-            id: placeholderId,
+            id: data.historyId?.toString() || placeholderId,
             url: data.videoUrl,
             prompt: mode === 'script' ? scriptText.trim() : `${scenes.length} مشاهد`,
             timestamp: new Date().toISOString(),
@@ -236,22 +266,40 @@ export default function LongVideoPage() {
     }
   };
 
-  const deleteFromHistory = (id: string, e?: React.MouseEvent) => {
+  const deleteFromHistory = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
-    const newHistory = history.filter(vid => vid.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem("ai_long_video_history", JSON.stringify(newHistory));
-    if (selectedVideo?.id === id) setSelectedVideo(null);
-    showSuccess("تم الحذف بنجاح!");
+    
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory(history.filter(vid => vid.id !== id));
+    
+    try {
+      if (id.length < 15) {
+        await deleteAIHistoryItem(token, parseInt(id));
+      }
+      if (selectedVideo?.id === id) setSelectedVideo(null);
+      showSuccess("تم الحذف بنجاح!");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
+    }
   };
 
-  const clearAllHistory = () => {
-    if (window.confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة؟")) {
-      setHistory([]);
-      localStorage.removeItem("ai_long_video_history");
+  const clearAllHistory = async () => {
+    if (!window.confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة من السحابة؟")) return;
+
+    // Optimistic update
+    const originalHistory = [...history];
+    setHistory([]);
+
+    try {
+      await clearAIHistory(token, 'VIDEO');
       setSelectedVideo(null);
       showSuccess("تم إخلاء السجل بالكامل.");
+    } catch (error: any) {
+      setHistory(originalHistory);
+      showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
 
