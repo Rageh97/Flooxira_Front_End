@@ -417,6 +417,70 @@ useEffect(() => {
     }
   };
 
+  // Export active subscriptions contacts - أرقام الاشتراكات النشطة فقط
+  const handleExportActiveSubscriptions = () => {
+    try {
+      const activePhoneNumbers = customers
+        .filter(customer => {
+          const status = getSubscriptionStatus(customer);
+          return status === 'active' && customer.phone && customer.phone.trim() !== '';
+        })
+        .map(customer => ({
+          'الاسم': customer.name,
+          'رقم الهاتف': customer.phone
+        }));
+
+      if (activePhoneNumbers.length === 0) {
+        toast.error('لا توجد أرقام هواتف للاشتراكات النشطة');
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(activePhoneNumbers);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'الاشتراكات النشطة');
+      
+      const fileName = `أرقام_الاشتراكات_النشطة_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      
+      toast.success(`تم تصدير ${activePhoneNumbers.length} رقم هاتف للاشتراكات النشطة`);
+    } catch (error) {
+      console.error('Error exporting active subscriptions:', error);
+      toast.error('فشل في تصدير أرقام الاشتراكات النشطة');
+    }
+  };
+
+  // Export expired subscriptions contacts - أرقام الاشتراكات المنتهية فقط
+  const handleExportExpiredSubscriptions = () => {
+    try {
+      const expiredPhoneNumbers = customers
+        .filter(customer => {
+          const status = getSubscriptionStatus(customer);
+          return status === 'expired' && customer.phone && customer.phone.trim() !== '';
+        })
+        .map(customer => ({
+          'الاسم': customer.name,
+          'رقم الهاتف': customer.phone
+        }));
+
+      if (expiredPhoneNumbers.length === 0) {
+        toast.error('لا توجد أرقام هواتف للاشتراكات المنتهية');
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(expiredPhoneNumbers);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'الاشتراكات المنتهية');
+      
+      const fileName = `أرقام_الاشتراكات_المنتهية_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      
+      toast.success(`تم تصدير ${expiredPhoneNumbers.length} رقم هاتف للاشتراكات المنتهية`);
+    } catch (error) {
+      console.error('Error exporting expired subscriptions:', error);
+      toast.error('فشل في تصدير أرقام الاشتراكات المنتهية');
+    }
+  };
+
   // Handle invoice image upload
   const handleInvoiceImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -961,6 +1025,12 @@ useEffect(() => {
           </Button>
           <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(handleExportContacts)}>
             تصدير جهات الاتصال
+          </Button>
+          <Button className='primary-button after:bg-green-600' variant="secondary" onClick={() => handleRestrictedAction(handleExportActiveSubscriptions)}>
+            تصدير الاشتراكات النشطة
+          </Button>
+          <Button className='primary-button after:bg-red-600' variant="secondary" onClick={() => handleRestrictedAction(handleExportExpiredSubscriptions)}>
+            تصدير الاشتراكات المنتهية
           </Button>
           <Button variant="secondary" className='primary-button after:bg-[#03132c]' onClick={() => handleRestrictedAction(() => setIsCustomFieldsDialogOpen(true))}>
             

@@ -51,7 +51,7 @@ import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 const PLATFORMS = [
   { key: "salla", label: "سلة", icon: <img className="w-10 h-10 flex items-center justify-center" src="/salla.png"/> },
-  // { key: "wordpress", label: "ووردبريس", icon: "📝" },
+  { key: "wordpress", label: "ووردبريس", icon: <img className="w-8 h-8 flex items-center justify-center" src="/wordpress.png"/> },
   { key: "iapp_cloud", label: "IAPP Cloud", icon: "☁️" },
   { key: "custom", label: "مخصص", icon: "⚙️" },
 ];
@@ -657,22 +657,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
                   </div>
                 )}
 
-                {/* Instructions for WordPress */}
-                {config.platform === "wordpress" && (
-                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl space-y-3">
-                    <h4 className="text-sm font-bold text-primary flex items-center gap-2">
-                       خطوات الربط مع ووردبريس
-                    </h4>
-                    <div className="text-[10px] text-gray-300 space-y-1">
-                      <p>1. اذهب إلى إعدادات WooCommerce {'>'} الإعدادات المتقدمة {'>'} Webhooks.</p>
-                      <p>2. اضغط على "إضافة Webhook".</p>
-                      <p>3. الحالة: "نشط" (Active).</p>
-                      <p>4. الموضوع: اختر "تم إنشاء الطلب" أو أي حدث آخر.</p>
-                      <p>5. رابط التسليم: انسخ الرابط أعلاه وضعه هنا.</p>
-                      <p>6. اضغط حفظ.</p>
-                    </div>
-                  </div>
-                )}
+             
               </div>
             )}
 

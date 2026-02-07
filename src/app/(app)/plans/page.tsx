@@ -298,17 +298,17 @@ export default function PlansPage() {
                           enabled: (permissions as any).canManageTelegram,
                           render: () => (
                             <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 flex-wrap">
                                 {(permissions as any).canManageTelegram ? (
                                   <>
                                     <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
                                     <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span>
-                                    {(permissions as any).telegramMessagesPerMonth > 0 && (
-                                      <span className="text-xs text-primary">
-                                        ({(permissions as any).telegramMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).telegramMessagesPerMonth} رسالة/شهر)
-                                      </span>
+                                    {(permissions as any).canUseTelegramAI ? (
+                                      <span className="text-xs text-green-400">(مدعوم بالذكاء الاصطناعي)</span>
+                                    ) : (
+                                      <span className="text-xs text-red-400">(غير مدعوم بالذكاء الاصطناعي)</span>
                                     )}
                                   </>
                                 ) : (
@@ -359,35 +359,7 @@ export default function PlansPage() {
                             </div>
                           )
                         },
-                        {
-                          enabled: (permissions as any).canUseTelegramAI,
-                          render: () => (
-                            <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
-                                {(permissions as any).canUseTelegramAI ? (
-                                  <>
-                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <Check className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs font-medium text-gray-200">الذكاء الاصطناعي لتليجرام</span>
-                                    {(permissions as any).telegramAiCredits > 0 && (
-                                      <span className="text-xs text-primary">
-                                        ({(permissions as any).telegramAiCredits === -1 ? 'غير محدود' : (permissions as any).telegramAiCredits} كريديت/شهر)
-                                      </span>
-                                    )}
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
-                                      <X className="h-3 w-3 text-black font-bold" />
-                                    </div>
-                                    <span className="text-xs text-white line-through font-medium">الذكاء الاصطناعي لتليجرام</span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          )
-                        },
+
                         {
                           enabled: (permissions as any).canManageCustomers,
                           render: () => (
@@ -488,25 +460,17 @@ export default function PlansPage() {
                           enabled: (permissions as any).canUseLiveChat,
                           render: () => (
                             <div className="flex items-center gap-2">
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 flex-wrap">
                                 {(permissions as any).canUseLiveChat ? (
                                   <>
                                     <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
-                                    <span className="text-xs text-white font-medium"> ادارة التذاكر & لايف شات</span>
-                                    {(permissions as any).canUseLiveChatAI && (
-                                      <>
-                                        {((permissions as any).liveChatAiResponses ?? 0) > 0 ? (
-                                          <span className="text-xs text-primary">
-                                            ({(permissions as any).liveChatAiResponses} رد/شهر)
-                                          </span>
-                                        ) : (
-                                          <span className="text-xs text-primary">
-                                            (غير محدود)
-                                          </span>
-                                        )}
-                                      </>
+                                    <span className="text-xs text-white font-medium">ادارة التذاكر & لايف شات</span>
+                                    {(permissions as any).canUseLiveChatAI ? (
+                                      <span className="text-xs text-green-400">(مدعوم بالذكاء الاصطناعي)</span>
+                                    ) : (
+                                      <span className="text-xs text-red-400">(غير مدعوم بالذكاء الاصطناعي)</span>
                                     )}
                                   </>
                                 ) : (
@@ -514,7 +478,7 @@ export default function PlansPage() {
                                     <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
                                       <X className="h-3 w-3 text-black font-bold" />
                                     </div>
-                                    <span className="text-xs font-medium line-through text-gray-200">Live Chat & Tickets</span>
+                                    <span className="text-xs font-medium line-through text-gray-200">ادارة التذاكر & لايف شات</span>
                                   </>
                                 )}
                               </div>

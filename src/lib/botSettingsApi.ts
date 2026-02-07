@@ -45,17 +45,43 @@ export interface BotSettings {
   // WhatsApp welcome auto message settings
   welcomeAutoMessageEnabled?: boolean;
   welcomeAutoMessageTemplate?: string;
-  // Order auto message settings
-  orderAutoMessageEnabled?: boolean;
+  
+  // Order auto message settings - Platform Controls
+  orderAutoMessageEnabled?: boolean; // Legacy
+  orderAutoMessageSallaEnabled?: boolean;
+  orderAutoMessageWordpressEnabled?: boolean;
+  orderAutoMessageIappCloudEnabled?: boolean;
+  
+  // Order message templates with individual controls
+  orderCreatedEnabled?: boolean;
   orderCreatedTemplate?: string;
+  orderPaidEnabled?: boolean;
   orderPaidTemplate?: string;
+  orderShippedEnabled?: boolean;
   orderShippedTemplate?: string;
+  orderDeliveredEnabled?: boolean;
   orderDeliveredTemplate?: string;
+  orderCancelledEnabled?: boolean;
   orderCancelledTemplate?: string;
+  orderStatusEnabled?: boolean;
   orderStatusTemplate?: string;
-  // Cart auto message settings
+  
+  // Cart auto message settings - Platform Controls
+  cartAutoMessageSallaEnabled?: boolean;
+  cartAutoMessageWordpressEnabled?: boolean;
+  cartAutoMessageIappCloudEnabled?: boolean;
+  
+  // Cart message templates with individual controls
+  cartCreatedEnabled?: boolean;
   cartCreatedTemplate?: string;
+  cartAbandonedEnabled?: boolean;
   cartAbandonedTemplate?: string;
+  
+  // Subscription message templates
+  subscriptionExpiringEnabled?: boolean;
+  subscriptionExpiringTemplate?: string;
+  subscriptionExpiredEnabled?: boolean;
+  subscriptionExpiredTemplate?: string;
   enableContextMemory: boolean;
   contextWindow: number;
   enableFallback: boolean;

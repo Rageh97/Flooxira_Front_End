@@ -631,85 +631,183 @@ export default function AISettingsPage() {
             {/* Order Auto Messages Section */}
             <div className="border-t border-gray-700 pt-4 mt-4">
               <div className="space-y-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={!!settings.orderAutoMessageEnabled}
-                    onChange={(e) => setSettings({ ...settings, orderAutoMessageEnabled: e.target.checked })}
-                    className="mx-2"
-                  />
-                  تفعيل رسائل الطلبات التلقائية في واتساب (سلة / تكامل الأحداث)
-                </label>
+                <h3 className="text-lg font-medium text-white mb-3">رسائل الطلبات التلقائية</h3>
                 
-                {settings.orderAutoMessageEnabled && (
+                {/* Platform Selection */}
+                <div className="bg-[#01191080] p-4 rounded-lg border border-blue-300/20">
+                  <label className="block text-sm font-medium mb-3 text-blue-300">اختر المنصات المفعلة:</label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label className="flex items-center p-3 rounded-md border border-blue-300/30 hover:bg-blue-500/10 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.orderAutoMessageSallaEnabled}
+                        onChange={(e) => setSettings({ ...settings, orderAutoMessageSallaEnabled: e.target.checked })}
+                        className="mx-2"
+                      />
+                      <span className="font-medium">سلة</span>
+                    </label>
+                    
+                    <label className="flex items-center p-3 rounded-md border border-blue-300/30 hover:bg-blue-500/10 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.orderAutoMessageWordpressEnabled}
+                        onChange={(e) => setSettings({ ...settings, orderAutoMessageWordpressEnabled: e.target.checked })}
+                        className="mx-2"
+                      />
+                      <span className="font-medium">ووردبريس</span>
+                    </label>
+                    
+                    <label className="flex items-center p-3 rounded-md border border-blue-300/30 hover:bg-blue-500/10 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.orderAutoMessageIappCloudEnabled}
+                        onChange={(e) => setSettings({ ...settings, orderAutoMessageIappCloudEnabled: e.target.checked })}
+                        className="mx-2"
+                      />
+                      <span className="font-medium">iAppCloud</span>
+                    </label>
+                  </div>
+                </div>
+                
+                {(settings.orderAutoMessageSallaEnabled || settings.orderAutoMessageWordpressEnabled || settings.orderAutoMessageIappCloudEnabled) && (
                   <div className="space-y-4 pr-6">
                     {/* Order Created Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة الطلب الجديد</label>
-                      <textarea
-                        value={settings.orderCreatedTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, orderCreatedTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="مرحباً {name}! تم استلام طلبك رقم #{order_id} بنجاح.قيمة الطلب: {amount} {currency}"
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.orderCreatedEnabled}
+                            onChange={(e) => setSettings({ ...settings, orderCreatedEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة الطلب الجديد</span>
+                        </label>
+                      </div>
+                      {settings.orderCreatedEnabled && (
+                        <textarea
+                          value={settings.orderCreatedTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, orderCreatedTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="مرحباً {name}! تم استلام طلبك رقم #{order_id} بنجاح.قيمة الطلب: {amount} {currency}"
+                        />
+                      )}
                     </div>
 
                     {/* Order Paid Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة تأكيد الدفع</label>
-                      <textarea
-                        value={settings.orderPaidTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, orderPaidTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="شكراً {name}! تم تأكيد الدفع لطلبك رقم #{order_id}.جاري تجهيز طلبك للشحن."
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.orderPaidEnabled}
+                            onChange={(e) => setSettings({ ...settings, orderPaidEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة تأكيد الدفع</span>
+                        </label>
+                      </div>
+                      {settings.orderPaidEnabled && (
+                        <textarea
+                          value={settings.orderPaidTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, orderPaidTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="شكراً {name}! تم تأكيد الدفع لطلبك رقم #{order_id}.جاري تجهيز طلبك للشحن."
+                        />
+                      )}
                     </div>
 
                     {/* Order Shipped Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة الشحن</label>
-                      <textarea
-                        value={settings.orderShippedTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, orderShippedTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="مرحباً {name}! تم شحن طلبك رقم #{order_id}. تتبع الشحنة من خلال الرابط المرفق."
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.orderShippedEnabled}
+                            onChange={(e) => setSettings({ ...settings, orderShippedEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة الشحن</span>
+                        </label>
+                      </div>
+                      {settings.orderShippedEnabled && (
+                        <textarea
+                          value={settings.orderShippedTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, orderShippedTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="مرحباً {name}! تم شحن طلبك رقم #{order_id}. تتبع الشحنة من خلال الرابط المرفق."
+                        />
+                      )}
                     </div>
 
                     {/* Order Delivered Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة التوصيل</label>
-                      <textarea
-                        value={settings.orderDeliveredTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, orderDeliveredTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="مرحباً {name}! تم توصيل طلبك رقم #{order_id} بنجاح.نتمنى أن تكون راضياً عن تجربتك معنا!"
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.orderDeliveredEnabled}
+                            onChange={(e) => setSettings({ ...settings, orderDeliveredEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة التوصيل</span>
+                        </label>
+                      </div>
+                      {settings.orderDeliveredEnabled && (
+                        <textarea
+                          value={settings.orderDeliveredTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, orderDeliveredTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="مرحباً {name}! تم توصيل طلبك رقم #{order_id} بنجاح.نتمنى أن تكون راضياً عن تجربتك معنا!"
+                        />
+                      )}
                     </div>
 
                     {/* Order Cancelled Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة الإلغاء</label>
-                      <textarea
-                        value={settings.orderCancelledTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, orderCancelledTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="مرحباً {name}،تم إلغاء طلبك رقم #{order_id}.إذا كان لديك أي استفسار، لا تتردد في التواصل معنا."
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.orderCancelledEnabled}
+                            onChange={(e) => setSettings({ ...settings, orderCancelledEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة الإلغاء</span>
+                        </label>
+                      </div>
+                      {settings.orderCancelledEnabled && (
+                        <textarea
+                          value={settings.orderCancelledTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, orderCancelledTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="مرحباً {name}،تم إلغاء طلبك رقم #{order_id}.إذا كان لديك أي استفسار، لا تتردد في التواصل معنا."
+                        />
+                      )}
                     </div>
 
                     {/* Order Status Update Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة تحديث الحالة</label>
-                      <textarea
-                        value={settings.orderStatusTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, orderStatusTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="مرحباً {name}! تم تحديث حالة طلبك رقم #{order_id}.الحالة الجديدة: {status}"
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.orderStatusEnabled}
+                            onChange={(e) => setSettings({ ...settings, orderStatusEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة تحديث الحالة</span>
+                        </label>
+                      </div>
+                      {settings.orderStatusEnabled && (
+                        <textarea
+                          value={settings.orderStatusTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, orderStatusTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="مرحباً {name}! تم تحديث حالة طلبك رقم #{order_id}.الحالة الجديدة: {status}"
+                        />
+                      )}
                     </div>
-
-                   
                   </div>
                 )}
               </div>
@@ -718,34 +816,159 @@ export default function AISettingsPage() {
             {/* Cart Auto Messages Section */}
             <div className="border-t border-gray-700 pt-4 mt-4">
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-white mb-2">رسائل السلة التلقائية</h3>
-                <p className="text-sm text-gray-400 mb-4">يتم استخدام نفس إعداد التفعيل أعلاه (تفعيل رسائل الطلبات) لتفعيل هذه الرسائل أيضاً.</p>
+                <h3 className="text-lg font-medium text-white mb-3">رسائل السلة التلقائية</h3>
                 
-                {settings.orderAutoMessageEnabled && (
+                {/* Platform Selection for Cart */}
+                <div className="bg-[#01191080] p-4 rounded-lg border border-blue-300/20">
+                  <label className="block text-sm font-medium mb-3 text-blue-300">اختر المنصات المفعلة:</label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label className="flex items-center p-3 rounded-md border border-blue-300/30 hover:bg-blue-500/10 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.cartAutoMessageSallaEnabled}
+                        onChange={(e) => setSettings({ ...settings, cartAutoMessageSallaEnabled: e.target.checked })}
+                        className="mx-2"
+                      />
+                      <span className="font-medium">سلة</span>
+                    </label>
+                    
+                    <label className="flex items-center p-3 rounded-md border border-blue-300/30 hover:bg-blue-500/10 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.cartAutoMessageWordpressEnabled}
+                        onChange={(e) => setSettings({ ...settings, cartAutoMessageWordpressEnabled: e.target.checked })}
+                        className="mx-2"
+                      />
+                      <span className="font-medium">ووردبريس</span>
+                    </label>
+                    
+                    <label className="flex items-center p-3 rounded-md border border-blue-300/30 hover:bg-blue-500/10 cursor-pointer transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.cartAutoMessageIappCloudEnabled}
+                        onChange={(e) => setSettings({ ...settings, cartAutoMessageIappCloudEnabled: e.target.checked })}
+                        className="mx-2"
+                      />
+                      <span className="font-medium">iAppCloud</span>
+                    </label>
+                  </div>
+                </div>
+                
+                {(settings.cartAutoMessageSallaEnabled || settings.cartAutoMessageWordpressEnabled || settings.cartAutoMessageIappCloudEnabled) && (
                   <div className="space-y-4 pr-6">
                     {/* Cart Created Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة إضافة للسلة</label>
-                      <textarea
-                        value={settings.cartCreatedTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, cartCreatedTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="مرحباً {name}! 🛒 تم إضافة '{product}' إلى سلتك. هل تريد إتمام الطلب؟"
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.cartCreatedEnabled}
+                            onChange={(e) => setSettings({ ...settings, cartCreatedEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة إضافة للسلة</span>
+                        </label>
+                      </div>
+                      {settings.cartCreatedEnabled && (
+                        <textarea
+                          value={settings.cartCreatedTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, cartCreatedTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="مرحباً {name}! 🛒 تم إضافة '{product}' إلى سلتك. هل تريد إتمام الطلب؟"
+                        />
+                      )}
                     </div>
 
                     {/* Cart Abandoned Template */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2"> رسالة السلة المتروكة</label>
-                      <textarea
-                        value={settings.cartAbandonedTemplate || ''}
-                        onChange={(e) => setSettings({ ...settings, cartAbandonedTemplate: e.target.value })}
-                        className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
-                        placeholder="مرحباً {name}! 👋 لاحظنا أنك تركت '{product}' في سلتك. هل تحتاج مساعدة؟"
-                      />
+                    <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={!!settings.cartAbandonedEnabled}
+                            onChange={(e) => setSettings({ ...settings, cartAbandonedEnabled: e.target.checked })}
+                            className="mx-2"
+                          />
+                          <span className="font-medium">رسالة السلة المتروكة</span>
+                        </label>
+                      </div>
+                      {settings.cartAbandonedEnabled && (
+                        <textarea
+                          value={settings.cartAbandonedTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, cartAbandonedTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-24 bg-[#01191040]"
+                          placeholder="مرحباً {name}! 👋 لاحظنا أنك تركت '{product}' في سلتك. هل تحتاج مساعدة؟"
+                        />
+                      )}
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Subscription Messages Section */}
+            <div className="border-t border-gray-700 pt-4 mt-4">
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-white mb-3">رسائل الاشتراكات التلقائية</h3>
+                <p className="text-sm text-gray-400 mb-4">رسائل تلقائية لتذكير المستخدمين بانتهاء اشتراكاتهم</p>
+                
+                <div className="space-y-4">
+                  {/* Subscription Expiring Soon Template */}
+                  <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={!!settings.subscriptionExpiringEnabled}
+                          onChange={(e) => setSettings({ ...settings, subscriptionExpiringEnabled: e.target.checked })}
+                          className="mx-2"
+                        />
+                        <span className="font-medium">رسالة الاشتراك سينتهي قريباً (قبل 3 أيام)</span>
+                      </label>
+                    </div>
+                    {settings.subscriptionExpiringEnabled && (
+                      <>
+                        <textarea
+                          value={settings.subscriptionExpiringTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, subscriptionExpiringTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-32 bg-[#01191040]"
+                          placeholder="مرحباً {name}! ⏰ نود تذكيرك بأن اشتراكك في {plan_name} سينتهي بعد 3 أيام."
+                        />
+                        <div className="text-xs text-gray-400 mt-2">
+                          المتغيرات المتاحة: {'{name}'} اسم المستخدم، {'{plan_name}'} اسم الباقة، {'{expiry_date}'} تاريخ الانتهاء، {'{renewal_link}'} رابط التجديد
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Subscription Expired Template */}
+                  <div className="bg-[#01191040] p-4 rounded-lg border border-blue-300/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={!!settings.subscriptionExpiredEnabled}
+                          onChange={(e) => setSettings({ ...settings, subscriptionExpiredEnabled: e.target.checked })}
+                          className="mx-2"
+                        />
+                        <span className="font-medium">رسالة الاشتراك منتهي</span>
+                      </label>
+                    </div>
+                    {settings.subscriptionExpiredEnabled && (
+                      <>
+                        <textarea
+                          value={settings.subscriptionExpiredTemplate || ''}
+                          onChange={(e) => setSettings({ ...settings, subscriptionExpiredTemplate: e.target.value })}
+                          className="w-full p-2 border-1 border-blue-300 rounded-md h-32 bg-[#01191040]"
+                          placeholder="مرحباً {name}! 📋 نأسف لإبلاغك بأن اشتراكك في {plan_name} قد انتهى."
+                        />
+                        <div className="text-xs text-gray-400 mt-2">
+                          المتغيرات المتاحة: {'{name}'} اسم المستخدم، {'{plan_name}'} اسم الباقة، {'{expiry_date}'} تاريخ الانتهاء، {'{renewal_link}'} رابط التجديد
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
