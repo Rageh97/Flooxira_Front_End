@@ -51,6 +51,7 @@ import Loader from '@/components/Loader';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import NoActiveSubscription from '@/components/NoActiveSubscription';
 import AnimatedTutorialButton from '@/components/YoutubeButton';
+import { Select } from '@/components/ui/select';
 
 interface CustomField {
   id: number;
@@ -999,11 +1000,10 @@ useEffect(() => {
       )}
       <div className={showBlurOverlay ? "opacity-60 pointer-events-none select-none grayscale-[0.3] blur-[2px] space-y-3" : "space-y-3"}>
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start mx-2 md:mx-0 md:items-center gap-3">
+      <div className="flex flex-col lg:flex-row justify-between items-start mx-2 md:mx-0 md:items-center gap-1">
         <div >
-          <h1 className="text-3xl font-bold text-white ">إدارة العملاء</h1>
+          <h1 className="text-2xl font-bold text-white ">إدارة العملاء</h1>
           <p className="text-gray-300">إدارة قاعدة بيانات العملاء واشتراكاتهم</p>
-          <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); })}>
@@ -1090,6 +1090,8 @@ useEffect(() => {
               </div>
             </DialogContent>
           </Dialog>
+                    <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
+
         </div>
       </div>
 
@@ -1364,7 +1366,7 @@ useEffect(() => {
                       // variant={filters.storeName === storeName ? 'default' : 'secondary'}
                       size="sm"
                       onClick={() => setFilters(prev => ({ ...prev, storeName: storeName || '' }))}
-                      className={`${filters.storeName === storeName ? 'bg-blue-500  ' : 'bg-gray-600 text-black '}`}
+                      className={`${filters.storeName === storeName ? 'bg-blue-500  ' : 'bg-[#190237]'}`}
                     >
                       {storeName}
                     </Button>
@@ -1480,20 +1482,20 @@ useEffect(() => {
                 <TableBody >
                   {customers.map((customer, index) => (
                     <TableRow key={customer.id} className={`border-b text-white border-green-100  transition-all duration-200 ${index % 2 === 0 ? '' : ''} group`}>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         <div className="font-medium">{customer.name}</div>
                         {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {customer.tags.map((tag, index) => (
+                            {/* {customer.tags.map((tag, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
                                 <Tag className="w-2 h-2 mr-1" />
                                 {tag}
                               </Badge>
-                            ))}
+                            ))} */}
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         <div className="space-y-1 text-sm">
                           {customer.email && (
                             <div className="flex items-center gap-1">
@@ -1509,7 +1511,7 @@ useEffect(() => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {customer.storeName ? (
                           <div className="flex items-center gap-1">
                             <span className="text-white">{customer.storeName}</span>
@@ -1518,7 +1520,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {(customer as any).platformName ? (
                           <div className="flex items-center gap-1">
                             <span className="text-white">{(customer as any).platformName}</span>
@@ -1527,7 +1529,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {customer.category ? (
                           <Badge style={{ backgroundColor: customer.category.color, color: 'white' }} className="shadow-sm">
                             {customer.category.name}
@@ -1536,7 +1538,7 @@ useEffect(() => {
                           <span className="text-green-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {customer.productName ? (
                           <div className="flex items-center gap-1">
                             <Package className="w-3 h-3 text-white" />
@@ -1547,7 +1549,7 @@ useEffect(() => {
                         )}
                       </TableCell>
                     
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {(customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
                             {parseFloat((customer as any).purchasePrice || 0)} ر.س
@@ -1556,7 +1558,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {(customer as any).salePrice !== null && (customer as any).salePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
                             {parseFloat((customer as any).salePrice || 0).toFixed(2)} ر.س
@@ -1565,7 +1567,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {((customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined) || 
                          ((customer as any).salePrice !== null && (customer as any).salePrice !== undefined) ? (
                           <span className={`text-sm font-bold px-2 py-1 rounded ${
@@ -1579,7 +1581,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {(() => {
                           const invoiceImage = (customer as any).invoiceImage;
                           console.log('Customer:', customer.name, 'Invoice Image:', invoiceImage);
@@ -1641,14 +1643,14 @@ useEffect(() => {
                           }
                         })()}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {customer.subscriptionType ? (
                           <span className="text-green-700 bg-green-50 px-2 py-1 rounded text-sm">{customer.subscriptionType}</span>
                         ) : (
                           <span className="text-green-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         <div className="text-sm">
                           {customer.subscriptionStartDate && (
                             <div className="flex items-center gap-1">
@@ -1667,13 +1669,13 @@ useEffect(() => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         {getSubscriptionStatusBadge(customer)}
                       </TableCell>
                       {customFields.map((field) => {
                         const value = customer.customFields?.[field.name];
                         return (
-                          <TableCell key={field.id} className="p-4 border-r border-green-100">
+                          <TableCell key={field.id} className="p-2 border-r border-green-100">
                             <div className="text-sm">
                               {value ? (
                                 <span className="text-white">{value}</span>
@@ -1684,12 +1686,12 @@ useEffect(() => {
                           </TableCell>
                         );
                       })}
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         <div className="text-sm text-white">
                           {formatDate(customer.createdAt)}
                         </div>
                       </TableCell>
-                      <TableCell className="p-4 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100">
                         <div className="flex items-center gap-2">
                           <Button 
                             variant="none" 
@@ -1990,7 +1992,7 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
             value={formData.platformName}
             onChange={(e) => setFormData({ ...formData, platformName: e.target.value })}
           >
-            <option value="">اختر المنصة</option>
+            <option  value="">اختر المنصة</option>
             {platforms.map((p: { id: number; name: string }) => (
               <option key={p.id} value={p.name}>{p.name}</option>
             ))}

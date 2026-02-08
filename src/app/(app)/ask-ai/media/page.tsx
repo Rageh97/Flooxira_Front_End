@@ -53,13 +53,13 @@ export default function MediaPage() {
 
   const videoTools = [
     { id: 'vgen', permId: 'video_gen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', icon: Video, path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
-    { id: 'long-video', permId: 'video_gen', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', icon: Film, path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'active' },
     { id: 'motion', permId: 'video_motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', icon: Move, path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
     { id: 'ugc', permId: 'video_ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', icon: Users, path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'active' },
     { id: 'effects', permId: 'video_effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', icon: Wand2, path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'active' },
     { id: 'lipsync', permId: 'video_lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', icon: MessageSquare, path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'active' },
     { id: 'resize', permId: 'video_resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', icon: Maximize, path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'active' },
     { id: 'vupscale', permId: 'video_upscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', icon: FileVideo, path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'active' },
+    { id: 'long-video', permId: 'video_gen', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', icon: Film, path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'soon' },
   ];
 
   const renderMediaNav = () => (

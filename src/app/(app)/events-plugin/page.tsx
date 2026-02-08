@@ -891,7 +891,7 @@ function EventPayloadDisplay({ payload, eventType }: { payload: any; eventType: 
           {/* Shipping Info */}
           {data.shipping && (
             <div className="p-4 bg-purple-500/5 border border-purple-500/20 rounded-2xl">
-              <h4 className="text-sm font-medium text-purple-400 mb-3">🚚 الشحن</h4>
+              {/* <h4 className="text-sm font-medium text-purple-400 mb-3">🚚 الشحن</h4> */}
               <div className="grid grid-cols-2 gap-3">
                 <InfoField label="شركة الشحن" value={data.shipping.company?.name || data.shipment?.courier_name} />
                 <InfoField label="رقم التتبع" value={data.shipping.tracking_number || data.shipment?.tracking_number} />

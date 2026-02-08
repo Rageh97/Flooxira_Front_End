@@ -103,13 +103,13 @@ export default function AskAIPage() {
 
   const videoTools = [
     { id: 'vgen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
-    { id: 'long-video', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'active' },
     { id: 'motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
     { id: 'ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'soon' },
     { id: 'effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'soon' },
     { id: 'lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'soon' },
     { id: 'resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'soon' },
     { id: 'vupscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'soon' },
+    { id: 'long-video', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'soon' },
   ];
 
   const filterTools = (tools: any[]) => {
@@ -141,7 +141,9 @@ export default function AskAIPage() {
         <img
           src={feature.image}
           alt={feature.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${
+            feature.status === 'soon' ? 'blur-[10px]' : ''
+          }`}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b0d] via-[#0a0b0d]/40 to-transparent" />
       </div>

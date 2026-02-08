@@ -14,6 +14,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       default: "bg-none text-white hover:bg-black/90",
       secondary: "bg-gray-200  text-gray-900",
       none: "",
+      filter:"bg-blue-600 text-white",
       ghost: "bg-blue-900 text-white",
       destructive: "bg-red-600 text-white hover:bg-red-700",
       outline: "border border-gray-300 bg-transparent  text-gray-700",
