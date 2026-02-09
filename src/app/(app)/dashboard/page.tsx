@@ -385,7 +385,7 @@ export default function DashboardPage() {
 
           <div className="flex  items-center justify-center gap-1 font-bold">
           <div className="text-xs md:text-md text-gray-300 mt-1">
-             الاشتراكات الفعالة
+             الاشتراكات النشطة
           </div>
           <div>
             {/* <div className="text-sm text-gray-300 mt-1">
@@ -399,7 +399,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xl font-bold text-primary">{customerStats?.totalCustomers }</div>
+           <div className="text-xl font-bold text-primary">{customerStats?.activeCustomers }</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}

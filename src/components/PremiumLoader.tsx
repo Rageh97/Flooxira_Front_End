@@ -4,7 +4,7 @@ import Image from "next/image";
 
 const PremiumLoader: FunctionComponent = () => {
   return (
-    <div className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-[#0a0118]">
+    <div className="fixed inset-0 z-[999999] flex flex-col items-center justify-center bg-[#0a0118] ">
       {/* Background radial glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:w-[500px] w-[300px] h-[500px] bg-[#0072FF]/10 blur-[120px] rounded-full"></div>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:w-[300px] w-[300px] h-[300px] bg-[#00C6FF]/10 blur-[100px] rounded-full delay-3000"></div>

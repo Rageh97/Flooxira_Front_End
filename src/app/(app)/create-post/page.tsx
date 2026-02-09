@@ -1212,7 +1212,7 @@ export default function CreatePostPage() {
                           {telegramGroups.map(group => (
                             <div 
                               key={group.id}
-                              className="flex items-center gap-4 p-5 bg-light-custom rounded-xl  inner-shadow transition-all"
+                              className="flex items-center gap-4 p-5 bg-fixed-40 rounded-xl  inner-shadow transition-all"
                             >
                               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-2xl shadow-md">
                                 {group.type === 'channel' ? '📢' : '👥'}
@@ -1221,7 +1221,7 @@ export default function CreatePostPage() {
                                 <div className="text-base font-bold text-white truncate">
                                   {group.name}
                                 </div>
-                                <div className="text-sm text-gray-400 font-medium">
+                                <div className="text-sm text-gray-200 font-medium">
                                   {group.type === 'channel' ? 'قناة Telegram' : 'مجموعة Telegram'}
                                 </div>
                               </div>
