@@ -905,8 +905,16 @@ useEffect(() => {
         return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />نشط</Badge>;
       case 'expired':
         return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />منتهي</Badge>;
+      case 'pending':
+        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />قيد الانتظار</Badge>;
+      case 'failed':
+        return <Badge className="bg-orange-100 text-orange-800"><XCircle className="w-3 h-3 mr-1" />فشل</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-gray-100 text-gray-800"><XCircle className="w-3 h-3 mr-1" />ملغي</Badge>;
+      case 'refunded':
+        return <Badge className="bg-purple-100 text-purple-800"><AlertCircle className="w-3 h-3 mr-1" />مسترد</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800"><AlertCircle className="w-3 h-3 mr-1" />غير نشط</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />قيد الانتظار</Badge>;
     }
   };
 
@@ -1299,12 +1307,20 @@ useEffect(() => {
                     منتهي
                   </Button>
                   <Button
-                    variant={filters.subscriptionStatus === 'inactive' ? 'default' : 'secondary'}
+                    variant={filters.subscriptionStatus === 'pending' ? 'default' : 'secondary'}
                     size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'inactive' }))}
+                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'pending' }))}
                     className="bg-yellow-600 text-white"
                   >
-                    غير نشط
+                    قيد الانتظار
+                  </Button>
+                  <Button
+                    variant={filters.subscriptionStatus === 'failed' ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'failed' }))}
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    فشل
                   </Button>
                    {/* Clear Filters */}
             <div className="flex justify-end">
@@ -1506,7 +1522,7 @@ useEffect(() => {
                           {customer.phone && (
                             <div className="flex items-center gap-1">
                               <Phone className="w-3 h-3 text-white" />
-                              <span className="text-white">{customer.phone}</span>
+                              <span className="text-white">{customer.phone.startsWith('+') ? customer.phone : `+${customer.phone}`}</span>
                             </div>
                           )}
                         </div>
