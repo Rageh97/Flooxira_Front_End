@@ -2078,19 +2078,20 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
         </div>
         <div>
           <Label htmlFor="subscriptionStatus">حالة الاشتراك</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="subscriptionStatus"
-              checked={formData.subscriptionStatus === 'active'}
-              onCheckedChange={(checked) => setFormData({ 
-                ...formData, 
-                subscriptionStatus: checked ? 'active' : 'inactive' 
-              })}
-            />
-            <Label htmlFor="subscriptionStatus">
-              {formData.subscriptionStatus === 'active' ? 'نشط' : 'غير نشط'}
-            </Label>
-          </div>
+          <select
+            id="subscriptionStatus"
+            className="w-full p-2 mt-2 text-white rounded-md border border-blue-300 bg-[#01191040]"
+            value={formData.subscriptionStatus}
+            onChange={(e) => setFormData({ ...formData, subscriptionStatus: e.target.value })}
+          >
+            <option value="active">نشط</option>
+            <option value="pending">قيد الانتظار</option>
+            <option value="expired">منتهي</option>
+            <option value="failed">فشل</option>
+            <option value="cancelled">ملغي</option>
+            <option value="refunded">مسترد</option>
+            <option value="inactive">غير نشط</option>
+          </select>
         </div>
       </div>
       
