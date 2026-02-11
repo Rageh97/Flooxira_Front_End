@@ -2713,7 +2713,7 @@ export async function generateAIImage(token: string, payload: { prompt: string; 
   }
 }
 
-export async function generateAIVideo(token: string, payload: { prompt: string; aspectRatio?: string; includeAudio?: boolean }) {
+export async function generateAIVideo(token: string, payload: { prompt: string; aspectRatio?: string; includeAudio?: boolean; model?: string }) {
   return apiFetch<{ success: boolean; videoUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/video", {
     method: "POST",
     authToken: token,
@@ -2745,7 +2745,7 @@ export async function processAIImage(token: string, payload: { operation: string
   });
 }
 
-export async function processAIVideo(token: string, payload: { operation: string; inputUrl: string; prompt?: string; aspectRatio?: string }) {
+export async function processAIVideo(token: string, payload: { operation: string; inputUrl: string; prompt?: string; aspectRatio?: string; model?: string }) {
   return apiFetch<{ success: boolean; videoUrl: string; historyId?: number; remainingCredits: number; creditsUsed: number }>("/api/ai/video/process", {
     method: "POST",
     authToken: token,

@@ -51,7 +51,7 @@ const MOTION_MODELS = [
   { id: "veo-3.1-fast", label: "Veo 3.1 Fast Motion ⚡", value: "veo-3.1-fast-generate-preview", description: "سرعة مضاعفة مع جودة ممتازة", badge: "سريع" },
   { id: "veo-3.0", label: "Veo 3.0 Pro Motion", value: "veo-3.0-generate-001", description: "جودة احترافية وحركة متوازنة" },
   { id: "veo-3.0-fast", label: "Veo 3.0 Fast Motion", value: "veo-3.0-fast-generate-001", description: "توازن بين السرعة والجودة" },
-  { id: "veo-2.0", label: "Veo 2.0 Legacy Motion", value: "veo-2.0-generate-001", description: "حركة سلسة ومستقرة - اقتصادي" },
+  // { id: "veo-2.0", label: "Veo 2.0 Legacy Motion", value: "veo-2.0-generate-001", description: "حركة سلسة ومستقرة - اقتصادي" },
 ];
 
 export default function MotionPage() {
@@ -313,7 +313,7 @@ export default function MotionPage() {
                 نموذج التحريك
               </label>
               <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
-                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3 py-6">
                   <div className="flex items-center gap-2 w-full overflow-hidden text-right">
                     <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
                       <div className="flex items-center gap-2 w-full">

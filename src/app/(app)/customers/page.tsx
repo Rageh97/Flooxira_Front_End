@@ -548,7 +548,6 @@ useEffect(() => {
         search: searchTerm,
         category: filters.category,
         product: filters.product,
-        product: filters.product,
         subscriptionStatus: filters.subscriptionStatus,
         storeName: filters.storeName,
         platformName: filters.platformName,
@@ -1005,7 +1004,8 @@ useEffect(() => {
       product: '',
       subscriptionStatus: 'all',
       storeName: '',
-      platformName: ''
+      platformName: '',
+      deliveryStatus: ''
     });
     setSearchTerm('');
     setPagination(prev => ({ ...prev, page: 1 }));

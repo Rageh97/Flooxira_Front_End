@@ -46,16 +46,16 @@ import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 const ASPECT_RATIOS = [
   { id: "1:1", label: "مربع", value: "1:1" },
-  { id: "16:9", label: "واسع", value: "16:9" },
-  { id: "9:16", label: "طولي", value: "9:16" },
+  { id: "16:9", label: "أفقي", value: "16:9" },
+  { id: "9:16", label: "ستوري", value: "9:16" },
 ];
 
 const MODEL_OPTIONS = [
-  { id: "imagen-4.0-ultra", label: "Imagen 4.0 Ultra ✨", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
-  { id: "imagen-4.0", label: "Imagen 4.0 Pro", value: "imagen-4.0-generate-001", description: "الأحدث والأكثر دقة" },
-  { id: "imagen-4.0-fast", label: "Imagen 4.0 Fast ⚡", value: "imagen-4.0-fast-generate-001", description: "سرعة فائقة مع جودة ممتازة" },
-  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر" },
-  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي " },
+  { id: "imagen-4.0-ultra", label: "Nano Banana Pro 🍌", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
+  { id: "imagen-4.0", label: "Nano Banana Creative", value: "imagen-4.0-generate-001", description: "  " },
+  { id: "imagen-4.0-fast", label: "Nano Banana Standard ⚡", value: "imagen-4.0-fast-generate-001", description: "  " },
+  // { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر" },
+  // { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي " },
 ];
 
 interface GeneratedImage {
@@ -345,10 +345,10 @@ export default function NanoPage() {
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Cpu size={14} className="text-yellow-400" />
-                المحرك
+                النموذج
               </label>
               <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
-                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3 py-6">
                   <div className="flex items-center gap-2 w-full overflow-hidden text-right">
                     <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
                       <div className="flex items-center gap-2 w-full">

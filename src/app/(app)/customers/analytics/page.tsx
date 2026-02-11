@@ -39,6 +39,11 @@ interface CustomerStats {
       name: string;
     };
   }>;
+  financial?: {
+    totalRevenue: string;
+    totalCapital: string;
+    netProfit: string;
+  };
 }
 
 export default function CustomerAnalyticsPage() {
@@ -269,7 +274,7 @@ export default function CustomerAnalyticsPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white mt-1">{(stats as any).financial.netProfit} <span className="text-xs font-normal">ر.س</span></p>
+                  <p className="text-2xl font-bold text-white mt-1">{stats.financial.netProfit} <span className="text-xs font-normal">ر.س</span></p>
                   <p className="text-[10px] text-green-500 mt-0.5">ربح صافي</p>
                 </div>
               </CardContent>
@@ -279,7 +284,7 @@ export default function CustomerAnalyticsPage() {
       )}
 
       {/* Financial Details Row */}
-      {stats && (stats as any).financial && (
+      {stats && stats.financial && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
           <Card className="gradient-border border-none w-full bg-white/5">
             <CardContent className="!p-2 flex items-center justify-between">
@@ -289,7 +294,7 @@ export default function CustomerAnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs">رأس المال الكلي</p>
-                  <p className="text-lg font-bold text-white">{(stats as any).financial.totalCapital} ر.س</p>
+                  <p className="text-lg font-bold text-white">{stats.financial.totalCapital} ر.س</p>
                 </div>
               </div>
               <div className="h-8 w-[1px] bg-white/10 mx-1"></div>
@@ -299,7 +304,7 @@ export default function CustomerAnalyticsPage() {
                 </div>
                 <div>
                   <p className="text-gray-400 text-xs">الإيرادات الكلية</p>
-                  <p className="text-lg font-bold text-white">{(stats as any).financial.totalRevenue} ر.س</p>
+                  <p className="text-lg font-bold text-white">{stats.financial.totalRevenue} ر.س</p>
                 </div>
               </div>
             </CardContent>

@@ -62,11 +62,11 @@ const ASPECT_RATIOS = [
 ];
 
 const MODEL_OPTIONS = [
-  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر ", badge: "الافتراضي" },
-  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي " },
   { id: "imagen-4.0-fast", label: "Imagen 4.0 Fast ⚡", value: "imagen-4.0-fast-generate-001", description: "سرعة فائقة مع جودة ممتازة" },
   { id: "imagen-4.0", label: "Imagen 4.0 Pro", value: "imagen-4.0-generate-001", description: "الأحدث والأكثر دقة" },
-  { id: "imagen-4.0-ultra", label: "Imagen 4.0 Ultra ✨", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
+  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي " },
+  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر ", badge: "الافتراضي" },
+  // { id: "imagen-4.0-ultra", label: "Imagen 4.0 Ultra ✨", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
 ];
 
 const STYLE_PRESETS = [
@@ -96,7 +96,7 @@ export default function TextToImagePage() {
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("1:1");
   const [selectedStyle, setSelectedStyle] = useState("none");
-  const [selectedModel, setSelectedModel] = useState("imagen-3.0-generate-001");
+  const [selectedModel, setSelectedModel] = useState("imagen-4.0-fast-generate-001");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
@@ -431,12 +431,12 @@ export default function TextToImagePage() {
                 <Zap size={14} className="text-yellow-400" />
                 نموذج الذكاء الاصطناعي
               </label>
-              <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
-                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+              <Select  value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
+                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 py-6">
                   <div className="flex items-center gap-2 w-full overflow-hidden text-right">
-                    <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
-                      <div className="flex items-center gap-2 w-full">
-                        <span className="font-bold text-sm truncate text-white">
+                    <div className="flex flex-col items-start gap-0.5  flex-1 min-w-0 text-right">
+                      <div className="flex items-center gap-2 w-full ">
+                        <span className="font-bold text-sm truncate text-white ">
                           {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.label}
                         </span>
                         {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.badge && (
@@ -566,17 +566,7 @@ export default function TextToImagePage() {
               </div>
             )}
 
-            {/* Clear History */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearAllHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+           
           </div>
         </aside>
 

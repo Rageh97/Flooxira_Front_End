@@ -372,7 +372,7 @@ export default function TextToVideoPage() {
  {/* Model Selection */}
               <div className="mb-4 space-y-2">
                 <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
-                  <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+                  <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3 py-6">
                     <div className="flex items-center gap-2 w-full overflow-hidden text-right">
                       <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
                         <div className="flex items-center gap-2 w-full">
@@ -536,16 +536,7 @@ export default function TextToVideoPage() {
               </div>
             )}
 
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearAllHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+            
           </div>
         </aside>
 
