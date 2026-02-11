@@ -194,7 +194,7 @@ export default function ImageToTextPage() {
       {/* Header */}
       <AskAIToolHeader 
         title="تحويل الصورة إلى نص (Prompt Engineering)"
-        modelBadge="IMAGEN 4.0"
+        modelBadge="GEMINI 2.5"
         stats={stats}
       />
 

@@ -138,7 +138,8 @@ export default function CustomersPage() {
     product: '',
     subscriptionStatus: 'all', // all, active, expired, inactive
     storeName: '',
-    platformName: ''
+    platformName: '',
+    deliveryStatus: '' // all, delivered, undelivered
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -482,6 +483,38 @@ useEffect(() => {
     }
   };
 
+  // Export failed subscriptions contacts - أرقام الاشتراكات الفاشلة فقط
+  const handleExportFailedSubscriptions = () => {
+    try {
+      const failedPhoneNumbers = customers
+        .filter(customer => {
+          const status = getSubscriptionStatus(customer);
+          return status === 'failed' && customer.phone && customer.phone.trim() !== '';
+        })
+        .map(customer => ({
+          'الاسم': customer.name,
+          'رقم الهاتف': customer.phone
+        }));
+
+      if (failedPhoneNumbers.length === 0) {
+        toast.error('لا توجد أرقام هواتف للاشتراكات الفاشلة');
+        return;
+      }
+
+      const worksheet = XLSX.utils.json_to_sheet(failedPhoneNumbers);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'الاشتراكات الفاشلة');
+      
+      const fileName = `أرقام_الاشتراكات_الفاشلة_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      
+      toast.success(`تم تصدير ${failedPhoneNumbers.length} رقم هاتف للاشتراكات الفاشلة`);
+    } catch (error) {
+      console.error('Error exporting failed subscriptions:', error);
+      toast.error('فشل في تصدير أرقام الاشتراكات الفاشلة');
+    }
+  };
+
   // Handle invoice image upload
   const handleInvoiceImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -515,9 +548,11 @@ useEffect(() => {
         search: searchTerm,
         category: filters.category,
         product: filters.product,
+        product: filters.product,
         subscriptionStatus: filters.subscriptionStatus,
         storeName: filters.storeName,
-        platformName: filters.platformName
+        platformName: filters.platformName,
+        deliveryStatus: filters.deliveryStatus
       });
 
       if (response.success) {
@@ -834,6 +869,39 @@ useEffect(() => {
     setInvoiceImagePreview(null);
   };
 
+  const handleConfirmDelivery = async (customer: Customer) => {
+    try {
+      if (!customer) return;
+      
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      const updatedCustomFields = {
+        ...(customer.customFields || {}),
+        deliveryStatus: 'delivered'
+      };
+
+      const response = await updateCustomer(token, customer.id, {
+        customFields: updatedCustomFields
+      });
+
+      if (response.success) {
+        toast.success('تم تأكيد التسليم بنجاح');
+        // Update local state to reflect change immediately without refetch
+        setCustomers(prev => prev.map(c => 
+          c.id === customer.id 
+            ? { ...c, customFields: updatedCustomFields } 
+            : c
+        ));
+      } else {
+        toast.error('فشل تأكيد التسليم');
+      }
+    } catch (error) {
+      console.error('Error confirming delivery:', error);
+      toast.error('حدث خطأ أثناء تأكيد التسليم');
+    }
+  };
+
   const openEditDialog = (customer: Customer) => {
     setSelectedCustomer(customer);
     setFormData({
@@ -1039,6 +1107,9 @@ useEffect(() => {
           </Button>
           <Button className='primary-button after:bg-red-600' variant="secondary" onClick={() => handleRestrictedAction(handleExportExpiredSubscriptions)}>
             تصدير الاشتراكات المنتهية
+          </Button>
+          <Button className='primary-button after:bg-orange-600' variant="secondary" onClick={() => handleRestrictedAction(handleExportFailedSubscriptions)}>
+            تصدير الطلبات الخاطئة
           </Button>
           <Button variant="secondary" className='primary-button after:bg-[#03132c]' onClick={() => handleRestrictedAction(() => setIsCustomFieldsDialogOpen(true))}>
             
@@ -1322,14 +1393,45 @@ useEffect(() => {
                   >
                     فشل
                   </Button>
-                   {/* Clear Filters */}
-            <div className="flex justify-end">
+                </div>
+              </div>
+
+              {/* Delivery Status Filter */}
+              <div className="flex-1">
+                <Label className="text-white">حالة التسليم (wordpress)</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  <Button
+                    variant={filters.deliveryStatus === '' ? 'default' : 'none'}
+                    size="sm"
+                    onClick={() => setFilters(prev => ({ ...prev, deliveryStatus: '' }))}
+                    className="bg-blue-600 text-white"
+                  >
+                    الكل
+                  </Button>
+                  <Button
+                    variant={filters.deliveryStatus === 'delivered' ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => setFilters(prev => ({ ...prev, deliveryStatus: 'delivered' }))}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    تم التسليم
+                  </Button>
+                  <Button
+                    variant={filters.deliveryStatus === 'undelivered' ? 'default' : 'none'}
+                    size="sm"
+                    onClick={() => setFilters(prev => ({ ...prev, deliveryStatus: 'undelivered' }))}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    لم يتم التسليم
+                  </Button>
+                </div>
+              </div>
+            </div>
+             {/* Clear Filters */}
+            <div className="flex justify-end mt-4">
               <Button variant="secondary" size="sm" onClick={clearFilters}>
                 مسح الفلاتر
               </Button>
-            </div>
-                </div>
-              </div>
             </div>
 
             {/* Category Quick Filters */}
@@ -1481,6 +1583,7 @@ useEffect(() => {
                     <TableHead className='border-r '>اسم المنصة</TableHead>
                     <TableHead className='border-r '>التصنيف</TableHead>
                     <TableHead className='border-r '>المنتج</TableHead>
+                    <TableHead className='border-r '>رقم الطلب</TableHead>
                     <TableHead className='border-r '>سعر التكلفة</TableHead>
                     <TableHead className='border-r '>سعر البيع</TableHead>
                     <TableHead className='border-r '>الربح</TableHead>
@@ -1488,6 +1591,7 @@ useEffect(() => {
                     <TableHead className='border-r '>نوع الاشتراك</TableHead>
                     <TableHead className='border-r '>فترة الاشتراك</TableHead>
                     <TableHead className='border-r '>حالة الاشتراك</TableHead>
+                    <TableHead className='border-r '>حالة التسليم</TableHead>
                     {customFields.map((field) => (
                       <TableHead className='border-r' key={field.id} >{field.label}</TableHead>
                     ))}
@@ -1563,6 +1667,15 @@ useEffect(() => {
                         ) : (
                           <span className="text-white">-</span>
                         )}
+                      </TableCell>
+                       <TableCell className="p-2 border-r border-green-100">
+                        <div className="text-sm font-medium">
+                          {customer.customFields && (customer.customFields as any).lastOrderId ? (
+                            <span className="text-white font-mono">{(customer.customFields as any).lastOrderId}</span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </div>
                       </TableCell>
                     
                       <TableCell className="p-2 border-r border-green-100">
@@ -1687,6 +1800,38 @@ useEffect(() => {
                       </TableCell>
                       <TableCell className="p-2 border-r border-green-100">
                         {getSubscriptionStatusBadge(customer)}
+                      </TableCell>
+                      <TableCell className="p-2 border-r border-green-100 text-center">
+                        {/* Delivery Status for WordPress/WooCommerce only */}
+                        {((customer as any).platformName === 'wordpress' || (customer as any).platformName === 'woocommerce' || 
+                           customer.tags?.includes('woocommerce') || customer.tags?.includes('wordpress')) && 
+                         customer.subscriptionStatus === 'active' ? (
+                          <div className="flex flex-col items-center gap-2">
+                             {customer.customFields && (customer.customFields as any).deliveryStatus === 'delivered' ? (
+                               <Badge className="bg-green-100 text-green-800 border-green-200">
+                                 <CheckCircle className="w-3 h-3 mr-1" />
+                                 تم تأكيد التسليم
+                               </Badge>
+                             ) : (
+                               <>
+                                 <Badge className="bg-amber-100 text-amber-800 border-amber-200 animate-pulse">
+                                   <AlertCircle className="w-3 h-3 mr-1" />
+                                   لم يتم تأكيد التسليم
+                                 </Badge>
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline" 
+                                   className="h-6 text-xs bg-white text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800"
+                                   onClick={() => handleConfirmDelivery(customer)}
+                                 >
+                                   تأكيد التسليم
+                                 </Button>
+                               </>
+                             )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </TableCell>
                       {customFields.map((field) => {
                         const value = customer.customFields?.[field.name];

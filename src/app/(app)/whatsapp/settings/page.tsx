@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Notebook } from "lucide-react";
 
 interface BotSettings {
   workingHoursEnabled: boolean;
@@ -340,8 +341,9 @@ export default function WhatsAppSettingsPage() {
           </div>
         </CardContent>
       </Card>
-
-      <Card className="gradient-border mt-6">
+      <div className="flex items-center lg:flex-row flex-col gap-2 w-full mx-auto ">
+        
+      <Card className="gradient-border mt-2 w-full mx-auto ">
         <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-white text-xs md:text-xl">إعدادات الموظف البشري</CardTitle>
           <div className="flex items-center gap-2">
@@ -375,7 +377,7 @@ export default function WhatsAppSettingsPage() {
                 <Input
                   id="escalation-number"
                   type="text"
-                  placeholder="مثال: 01xxxxxxxxx"
+                  placeholder="ضع الرقم مع كود الدولة | مثال: 96687498347+"
                   value={settings.escalationNotificationNumber || ''}
                   onChange={(e) => 
                     setSettings(prev => ({ ...prev, escalationNotificationNumber: e.target.value }))
@@ -413,7 +415,7 @@ export default function WhatsAppSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="gradient-border mt-6">
+      <Card className="gradient-border mt-2 w-full mx-auto ">
         <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-white text-xs md:text-xl">إشعارات الجروبات (إدارية)</CardTitle>
           <div className="flex items-center gap-2">
@@ -465,7 +467,14 @@ export default function WhatsAppSettingsPage() {
               </div>
             </>
           )}
-
+<div className="text-gray-400 flex  gap-2 mb-9">
+            <Notebook className="text-yellow-500 w-[55px] "/>
+            <p className="text-lg text-italic">            عند تفعيل هذا الخيار سيتم إرسال جميع الإشعارات والتنبيهات مباشرة داخل كروب الواتساب الذي قمت باختياره.
+تأكد من تحديد الكروب الصحيح لأن النظام سيعتمد عليه بالكامل في استقبال التحديثات والرسائل.
+يجب أن يمتلك البوت أو النظام صلاحية الإرسال داخل الكروب حتى تصل الإشعارات بدون مشاكل.
+في حال رغبت بتغيير الكروب لاحقاً يمكنك تعديل الإعدادات من لوحة التحكم وتحديث مسار الإشعارات.
+</p>
+          </div>
           <div className="flex justify-end items-center gap-5">
             <Button 
               onClick={saveSettings}
@@ -475,8 +484,10 @@ export default function WhatsAppSettingsPage() {
               {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
             </Button>
           </div>
+          
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

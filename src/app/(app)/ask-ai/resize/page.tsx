@@ -174,7 +174,7 @@ export default function ResizePage() {
      {/* Header */}
       <AskAIToolHeader 
         title="تغيير أبعاد الفيديو الذكي "
-        modelBadge="IMAGEN 4.0"
+        modelBadge="VEO 3.1"
         stats={stats}
       />
       {/* Main Layout */}

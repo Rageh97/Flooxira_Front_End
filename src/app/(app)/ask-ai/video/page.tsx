@@ -20,7 +20,8 @@ import {
   deleteAIHistoryItem,
   clearAIHistory,
   type AIStats,
-  type AIHistoryItem
+  type AIHistoryItem,
+  getAIConfig
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
@@ -33,6 +34,11 @@ const ASPECT_RATIOS = [
   { id: "16:9", label: "سينمائي", value: "16:9" },
   { id: "9:16", label: "ستوري", value: "9:16" },
   { id: "1:1", label: "مربع", value: "1:1" },
+];
+
+const VIDEO_MODELS = [
+  { id: "veo-3.1", label: "Veo 3.1 Preview ✨", value: "veo-3.1-preview", description: "أحدث تقنية - واقعية مذهلة", badge: "جديد" },
+  { id: "veo-2.0", label: "Veo 2.0", value: "veo-2.0-generate-001", description: "ثابت ومستقر - جودة عالية" },
 ];
 
 const STYLE_PRESETS = [
@@ -60,6 +66,7 @@ export default function TextToVideoPage() {
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("16:9");
   const [selectedStyle, setSelectedStyle] = useState("none");
+  const [selectedModel, setSelectedModel] = useState("veo-3.1-preview");
   const [includeAudio, setIncludeAudio] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -71,6 +78,7 @@ export default function TextToVideoPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("ar");
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -78,7 +86,13 @@ export default function TextToVideoPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setToken(localStorage.getItem("auth_token") || "");
+      const t = localStorage.getItem("auth_token") || "";
+      setToken(t);
+      if (t) {
+        getAIConfig(t).then(data => {
+          if (data?.models) setModelCosts(data.models);
+        }).catch(console.error);
+      }
     }
   }, []);
 
@@ -155,7 +169,7 @@ export default function TextToVideoPage() {
       const finalPrompt = prompt.trim() + (styleConfig?.prompt || "");
 
       const response = await generateAIVideo(token, {
-        prompt: finalPrompt, aspectRatio: selectedRatio, includeAudio: includeAudio,
+        prompt: finalPrompt, aspectRatio: selectedRatio, includeAudio: includeAudio, model: selectedModel
       });
 
       clearInterval(progressInterval);
@@ -309,7 +323,7 @@ export default function TextToVideoPage() {
       {/* Header */}
       <AskAIToolHeader 
         title="نص إلى فيديو"
-        modelBadge="VEO 3.0"
+        modelBadge="VEO 3.1 PREVIEW"
         stats={stats}
       />
       <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
@@ -320,6 +334,43 @@ export default function TextToVideoPage() {
                 <Sparkles size={14} className="text-purple-400" />
                 وصف الفيديو
               </label>
+              
+              {/* Model Selection */}
+              <div className="mb-4 space-y-2">
+                 <div className="grid grid-cols-1 gap-2">
+                    {VIDEO_MODELS.map((model) => (
+                      <div
+                        key={model.id}
+                        onClick={() => setSelectedModel(model.value)}
+                        className={clsx(
+                          "cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden flex items-center justify-between",
+                          selectedModel === model.value
+                            ? "bg-purple-500/10 border-purple-500/50"
+                            : "bg-white/5 border-white/10 hover:border-white/20"
+                        )}
+                      >
+                         <div className="flex flex-col">
+                            <span className={clsx("text-xs font-bold mb-0.5", selectedModel === model.value ? "text-purple-400" : "text-gray-300")}>{model.label}</span>
+                            <span className="text-[9px] text-gray-500">{model.description}</span>
+                         </div>
+                         <div className="flex items-center gap-2">
+                           {modelCosts[model.value] !== undefined && (
+                             <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/20 font-mono">
+                               {modelCosts[model.value].toLocaleString()} كريديت
+                             </span>
+                           )}
+                           {model.badge && (
+                              <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/20">{model.badge}</span>
+                           )}
+                         </div>
+                         {selectedModel === model.value && (
+                            <div className="absolute inset-0 border-2 border-purple-500/20 rounded-xl pointer-events-none" />
+                          )}
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -477,7 +528,7 @@ export default function TextToVideoPage() {
                   <Play size={80} className="text-purple-500/20 mb-4 mx-auto" />
                   <h3 className="text-xl font-bold text-white mb-2">استديو الفيديو الاحترافي</h3>
                   <p className="text-sm text-gray-500 max-w-md">
-                    صف المشهد وسنقوم بتحويله إلى فيديو سينمائي احترافي باستخدام Veo 2.0
+                    صف المشهد وسنقوم بتحويله إلى فيديو سينمائي احترافي باستخدام Veo 3.1
                   </p>
                 </div>
               </div>
@@ -645,7 +696,7 @@ export default function TextToVideoPage() {
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}
         title="اشتراك مطلوب لتحويل النص لفيديو"
-        description="للاستفادة من تقنية توليد الفيديوهات الاحترافية بدقة عالية واستخدام نماذج Veo 2.0 المتطورة، تحتاج إلى اشتراك نشط."
+        description="للاستفادة من تقنية توليد الفيديوهات الاحترافية بدقة عالية واستخدام نماذج Veo 3.1 المتطورة، تحتاج إلى اشتراك نشط."
         hasAIPlans={hasAIPlans}
       />
     </div>

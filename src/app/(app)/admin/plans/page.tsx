@@ -91,6 +91,34 @@ const AI_TOOLS_LIST = [
   { id: 'video_upscale', label: 'تحسين جودة الفيديو', category: 'الفيديو' },
 ];
 
+const AI_MODEL_CATEGORIES = {
+  image: 'نماذج توليد الصور',
+  video: 'نماذج الفيديو',
+  motion: 'نماذج التحريك',
+  chat: 'نماذج الدردشة'
+};
+
+const MODEL_PRICING_OPTIONS: Record<string, { label: string, defaultCost: number, type: string }> = {
+  // Image Models
+  'imagen-3.0-generate-001': { label: 'Imagen 3.0', defaultCost: 1, type: 'image' },
+  'imagen-3.0-fast-generate-001': { label: 'Imagen 3.0 Fast', defaultCost: 1, type: 'image' },
+  'imagen-4.0-fast-generate-001': { label: 'Imagen 4.0 Fast', defaultCost: 2, type: 'image' },
+  'imagen-4.0-generate-001': { label: 'Imagen 4.0 Pro', defaultCost: 4, type: 'image' },
+  'imagen-4.0-ultra-generate-001': { label: 'Imagen 4.0 Ultra', defaultCost: 8, type: 'image' },
+  
+  // Video Models
+  'veo-2.0-generate-001': { label: 'Veo 2.0', defaultCost: 40, type: 'video' },
+  'veo-3.1-preview': { label: 'Veo 3.1', defaultCost: 80, type: 'video' },
+  
+  // Motion Models
+  'veo-2.0-motion': { label: 'Veo 2.0 Motion', defaultCost: 30, type: 'motion' },
+  'veo-3.1-motion': { label: 'Veo 3.1 Motion', defaultCost: 60, type: 'motion' },
+
+  // Chat Models 
+  'gemini-1.5-flash': { label: 'Gemini 1.5 Flash', defaultCost: 1, type: 'chat' },
+  'gemini-2.0-flash': { label: 'Gemini 2.0 Flash', defaultCost: 2, type: 'chat' }
+};
+
 export default function PlansAdminPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -138,7 +166,12 @@ export default function PlansAdminPage() {
       eventsPerMonth: 0,
       canUseTelegramAI: false,
       telegramAiCredits: 0,
-      allowedAITools: [] as string[]
+      allowedAITools: [] as string[],
+      modelPricing: {} as Record<string, number>,
+      creditMarkupPercent: 30,
+      markupChat: 30,
+      markupImage: 30,
+      markupVideo: 30
     },
     type: 'standard' as 'standard' | 'ai'
   });
@@ -178,7 +211,12 @@ export default function PlansAdminPage() {
       eventsPerMonth: 0,
       canUseTelegramAI: false,
       telegramAiCredits: 0,
-      allowedAITools: [] as string[]
+      allowedAITools: [] as string[],
+      modelPricing: {} as Record<string, number>,
+      creditMarkupPercent: 30,
+      markupChat: 30,
+      markupImage: 30,
+      markupVideo: 30
     },
     type: 'standard' as 'standard' | 'ai'
   });
@@ -256,7 +294,12 @@ export default function PlansAdminPage() {
           eventsPerMonth: 0,
           canUseTelegramAI: false,
           telegramAiCredits: 0,
-          allowedAITools: []
+          allowedAITools: [],
+          modelPricing: {},
+          creditMarkupPercent: 30,
+          markupChat: 30,
+          markupImage: 30,
+          markupVideo: 30
         },
         type: 'standard'
       });
@@ -339,7 +382,12 @@ export default function PlansAdminPage() {
         eventsPerMonth: (plan.permissions as any)?.eventsPerMonth || 0,
         canUseTelegramAI: (plan.permissions as any)?.canUseTelegramAI || false,
         telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0,
-        allowedAITools: (plan.permissions as any)?.allowedAITools || []
+        allowedAITools: (plan.permissions as any)?.allowedAITools || [],
+        modelPricing: (plan.permissions as any)?.modelPricing || {},
+        creditMarkupPercent: (plan.permissions as any)?.creditMarkupPercent ?? 30,
+        markupChat: (plan.permissions as any)?.markupChat ?? 30,
+        markupImage: (plan.permissions as any)?.markupImage ?? 30,
+        markupVideo: (plan.permissions as any)?.markupVideo ?? 30
       },
       type: plan.type || 'standard'
     });
@@ -361,6 +409,166 @@ export default function PlansAdminPage() {
     { key: 'tiktok', name: 'TikTok', icon: '🎵' },
     { key: 'youtube', name: 'YouTube', icon: '▶️' }
   ];
+
+  const renderModelPricingSection = (
+    currentPermissions: any,
+    onChange: (permissions: any) => void
+  ) => {
+    // Group models by type
+    const groupedModels: Record<string, string[]> = {};
+    Object.keys(MODEL_PRICING_OPTIONS).forEach(modelId => {
+      const type = MODEL_PRICING_OPTIONS[modelId].type;
+      if (!groupedModels[type]) groupedModels[type] = [];
+      groupedModels[type].push(modelId);
+    });
+
+    const handlePriceChange = (modelId: string, value: string) => {
+      const numValue = parseInt(value);
+      const newPricing = { ...currentPermissions.modelPricing };
+      
+      if (!isNaN(numValue) && numValue >= 0) {
+        newPricing[modelId] = numValue;
+      } else {
+        delete newPricing[modelId];
+      }
+      
+      onChange({
+        ...currentPermissions,
+        modelPricing: newPricing
+      });
+    };
+
+    return (
+      <div className="space-y-6 border-t pt-6 mt-6">
+        <h3 className="font-semibold text-primary flex items-center gap-2 text-lg">
+          <DollarSign className="w-5 h-5" />
+          تسعير نماذج الذكاء الاصطناعي
+        </h3>
+        
+        {/* Profit Markup Section */}
+        <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
+           <Label className="text-sm font-bold text-primary mb-1 block">نسب الربح الإضافية (%)</Label>
+           <p className="text-xs text-gray-400 mb-4">
+             تتم إضافة هذه النسب كربح فوق التكلفة الأساسية (أو التكلفة المحددة أدناه) لكل فئة من الخدمات.
+           </p>
+           
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-500"> ربح الصور</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={currentPermissions.markupImage !== undefined ? currentPermissions.markupImage : 30}
+                    onChange={(e) => onChange({ ...currentPermissions, markupImage: parseInt(e.target.value) || 0 })}
+                    className="bg-fixed-40   text-gray-900 border-gray-300 h-9"
+                    placeholder="30"
+                  />
+                  <span className="text-gray-400 font-bold">%</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-500"> ربح الفيديو والتحريك</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={currentPermissions.markupVideo !== undefined ? currentPermissions.markupVideo : 30}
+                    onChange={(e) => onChange({ ...currentPermissions, markupVideo: parseInt(e.target.value) || 0 })}
+                    className="bg-fixed-40   text-gray-900 border-gray-300 h-9"
+                    placeholder="30"
+                  />
+                  <span className="text-gray-400 font-bold">%</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-500"> ربح الدردشة</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={currentPermissions.markupChat !== undefined ? currentPermissions.markupChat : 30}
+                    onChange={(e) => onChange({ ...currentPermissions, markupChat: parseInt(e.target.value) || 0 })}
+                    className="bg-fixed-40   text-gray-900 border-gray-300 h-9"
+                    placeholder="30"
+                  />
+                  <span className="text-gray-400 font-bold">%</span>
+                </div>
+              </div>
+           </div>
+        </div>
+
+        <p className="text-sm text-gray-400">
+          حدد التكلفة الأساسية (Base Cost) لكل نموذج بـ "الكريديت". سيتم تطبيق نسبة الربح أعلاه على هذا السعر.
+          <br />
+          إذا تركت الحقل فارغاً، سيتم استخدام التكلفة الافتراضية للنظام.
+        </p>
+
+        <div className="space-y-6">
+          {Object.entries(groupedModels).map(([type, models]) => (
+            <div key={type} className="bg-[#1a1d24] p-4 rounded-xl border border-white/5">
+              <h4 className="font-medium text-gray-200 mb-4 border-b border-white/5 pb-2 flex items-center justify-between">
+                <span>{AI_MODEL_CATEGORIES[type as keyof typeof AI_MODEL_CATEGORIES]}</span>
+                <span className="text-xs font-normal text-gray-500 bg-white/5 px-2 py-1 rounded">
+                  {models.length} نموذج
+                </span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {models.map(modelId => {
+                  const modelInfo = MODEL_PRICING_OPTIONS[modelId];
+                  const currentPrice = currentPermissions.modelPricing?.[modelId];
+                  
+                  // Calculate total cost (Base + Markup)
+                  const costBasis = currentPrice !== undefined ? currentPrice : modelInfo.defaultCost;
+                  
+                  // Determine which markup to use
+                  let markup = 30;
+                  if (modelInfo.type === 'image') markup = (currentPermissions.markupImage !== undefined) ? currentPermissions.markupImage : 30;
+                  else if (modelInfo.type === 'video' || modelInfo.type === 'motion') markup = (currentPermissions.markupVideo !== undefined) ? currentPermissions.markupVideo : 30;
+                  else if (modelInfo.type === 'chat') markup = (currentPermissions.markupChat !== undefined) ? currentPermissions.markupChat : 30;
+                  
+                  const markupAmount = (costBasis * (markup / 100));
+                  const totalCost = Math.ceil(costBasis + markupAmount);
+
+                  return (
+                    <div key={modelId} className="flex items-center justify-between gap-3 bg-black/20 p-3 rounded-lg border border-white/5 hover:border-white/10 transition-colors">
+                      <div className="flex flex-col">
+                        <Label htmlFor={`price-${modelId}`} className="text-xs font-bold text-gray-300 mb-1 cursor-pointer">
+                          {modelInfo.label}
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[9px] text-gray-500 font-mono">
+                            الافتراضي: {modelInfo.defaultCost}C
+                          </span>
+                          <span className="text-[10px] bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded border border-green-500/20 font-bold whitespace-nowrap">
+                            الإجمالي للعميل: {totalCost}C
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id={`price-${modelId}`}
+                          type="number"
+                          min="0"
+                          className="w-20 h-8 text-xs bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-primary/50"
+                          placeholder={modelInfo.defaultCost.toString()}
+                          value={currentPrice !== undefined ? currentPrice : ''}
+                          onChange={(e) => handlePriceChange(modelId, e.target.value)}
+                        />
+                        <span className="text-[10px] text-gray-500 w-4">C</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -989,6 +1197,9 @@ export default function PlansAdminPage() {
                       </div>
                   </>
                 )}
+              
+              {/* MODEL PRICING - Create */}
+              {renderModelPricingSection(newPlan.permissions, (p) => setNewPlan({ ...newPlan, permissions: p }))}
               </div>
             </div>
 
@@ -1592,6 +1803,9 @@ export default function PlansAdminPage() {
                     </div>
                   </>
                 )}
+              
+              {/* MODEL PRICING - Edit */}
+              {renderModelPricingSection(editPlan.permissions, (p) => setEditPlan({ ...editPlan, permissions: p }))}
               </div>
             </div>
             <div>

@@ -37,7 +37,8 @@ import {
   deleteAIHistoryItem,
   clearAIHistory,
   type AIStats,
-  type AIHistoryItem
+  type AIHistoryItem,
+  getAIConfig
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
@@ -51,6 +52,14 @@ const ASPECT_RATIOS = [
   { id: "3:4", label: "3:4", value: "3:4" },
   { id: "16:9", label: "16:9", value: "16:9" },
   { id: "9:16", label: "9:16", value: "9:16" },
+];
+
+const MODEL_OPTIONS = [
+  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر (Vertex)", badge: "الافتراضي" },
+  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي (Vertex)" },
+  { id: "imagen-4.0-fast", label: "Imagen 4.0 Fast ⚡", value: "imagen-4.0-fast-generate-001", description: "سرعة فائقة مع جودة ممتازة" },
+  { id: "imagen-4.0", label: "Imagen 4.0 Pro", value: "imagen-4.0-generate-001", description: "الأحدث والأكثر دقة" },
+  { id: "imagen-4.0-ultra", label: "Imagen 4.0 Ultra ✨", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
 ];
 
 const STYLE_PRESETS = [
@@ -81,7 +90,7 @@ export default function TextToImagePage() {
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("1:1");
   const [selectedStyle, setSelectedStyle] = useState("none");
-  const [selectedModel] = useState("imagen-4.0-generate-001");
+  const [selectedModel, setSelectedModel] = useState("imagen-3.0-generate-001");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
@@ -89,6 +98,7 @@ export default function TextToImagePage() {
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { showSuccess, showError } = useToast();
@@ -123,6 +133,9 @@ export default function TextToImagePage() {
       loadStats();
       checkAIPlans();
       loadHistory();
+      getAIConfig(token).then(data => {
+        if (data?.models) setModelCosts(data.models);
+      }).catch(console.error);
     }
   }, [token]);
 
@@ -366,7 +379,7 @@ export default function TextToImagePage() {
       {/* Header */}
       <AskAIToolHeader 
         title="نص إلى صورة"
-        modelBadge="IMAGEN 4.0"
+        modelBadge="IMAGEN 4.0 ULTRA"
         stats={stats}
       />
 
@@ -375,6 +388,48 @@ export default function TextToImagePage() {
         {/* Sidebar - Settings (Fixed) */}
         <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Model Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Zap size={14} className="text-yellow-400" />
+                نموذج الذكاء الاصطناعي
+              </label>
+              <div className="space-y-2">
+                {MODEL_OPTIONS.map((model) => (
+                  <div
+                    key={model.id}
+                    onClick={() => setSelectedModel(model.value)}
+                    className={clsx(
+                      "cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden",
+                      selectedModel === model.value
+                        ? "border-primary bg-primary/10 shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)]"
+                        : "border-white/5 bg-[#12141a] hover:border-white/10 hover:bg-[#1a1d24]"
+                    )}
+                  >
+                    <div className="flex justify-between items-center mb-1 relative z-10">
+                      <span className={clsx("font-bold text-sm", selectedModel === model.value ? "text-primary-foreground" : "text-gray-300")}>{model.label}</span>
+                      <div className="flex items-center gap-1">
+                        {modelCosts[model.value] !== undefined && (
+                          <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded font-mono border border-yellow-500/30">
+                            {modelCosts[model.value].toLocaleString()} كريديت
+                          </span>
+                        )}
+                        {model.badge && (
+                          <span className="text-[9px] bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">
+                            {model.badge}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-gray-500 relative z-10 font-medium">{model.description}</p>
+                    {selectedModel === model.value && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Prompt Input */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
@@ -681,7 +736,7 @@ export default function TextToImagePage() {
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}
         title="اشتراك مطلوب لتحويل النص لصور"
-        description="للاستفادة من تقنية التوليد المستمر للصور الاحترافية بدقة عالية واستخدام نماذج Imagen 4.0 المتطورة, تحتاج إلى اشتراك نشط."
+        description="للاستفادة من تقنية التوليد المستمر للصور الاحترافية بدقة عالية واستخدام نماذج Imagen 4.0 Ultra المتطورة, تحتاج إلى اشتراك نشط."
         hasAIPlans={hasAIPlans}
       />
     </div>

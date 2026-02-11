@@ -18,7 +18,8 @@ import {
   deleteAIHistoryItem,
   clearAIHistory,
   type AIStats, 
-  type AIHistoryItem
+  type AIHistoryItem,
+  getAIConfig
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
@@ -38,16 +39,23 @@ interface GeneratedVideo {
   progress?: number;
 }
 
+const MOTION_MODELS = [
+  { id: "veo-3.1-motion", label: "Veo 3.1 Motion ✨", value: "veo-3.1-motion", description: "حركة سينمائية فائقة الواقعية", badge: "جديد" },
+  { id: "veo-2.0-motion", label: "Veo 2.0 Motion", value: "veo-2.0-motion", description: "حركة سلسة ومستقرة" },
+];
+
 export default function MotionPage() {
   const [token, setToken] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
+  const [selectedModel, setSelectedModel] = useState("veo-3.1-motion");
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedVideo[]>([]);
   const [selectedResult, setSelectedResult] = useState<GeneratedVideo | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -86,6 +94,9 @@ export default function MotionPage() {
       loadStats();
       checkAIPlans();
       loadHistory();
+      getAIConfig(token).then(data => {
+        if (data?.models) setModelCosts(data.models);
+      }).catch(console.error);
     }
   }, [token]);
 
@@ -148,7 +159,8 @@ export default function MotionPage() {
       const res = await processAIVideo(token, {
         operation: 'motion',
         inputUrl: previewUrl,
-        prompt: prompt.trim() || "Natural cinematic motion, zoom in slowly"
+        prompt: prompt.trim() || "Natural cinematic motion, zoom in slowly",
+        model: selectedModel
       });
 
       clearInterval(progressInterval);
@@ -244,7 +256,7 @@ export default function MotionPage() {
      {/* Header */}
       <AskAIToolHeader 
         title="محاكاة الحركة  "
-        modelBadge="IMAGE TO VIDEO"
+        modelBadge="VEO MOTION"
         stats={stats}
       />
       {/* Main Layout */}
@@ -282,6 +294,46 @@ export default function MotionPage() {
                   r.readAsDataURL(file);
                 }
               }} />
+            </div>
+
+            {/* Model Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Zap size={14} className="text-blue-400" />
+                نموذج التحريك
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {MOTION_MODELS.map((model) => (
+                  <div
+                    key={model.id}
+                    onClick={() => setSelectedModel(model.value)}
+                    className={clsx(
+                      "cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden flex items-center justify-between",
+                      selectedModel === model.value
+                        ? "bg-blue-500/10 border-blue-500/50"
+                        : "bg-white/5 border-white/10 hover:border-white/20"
+                    )}
+                  >
+                     <div className="flex flex-col">
+                        <span className={clsx("text-xs font-bold mb-0.5", selectedModel === model.value ? "text-blue-400" : "text-gray-300")}>{model.label}</span>
+                        <span className="text-[9px] text-gray-500">{model.description}</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       {modelCosts[model.value] && (
+                         <span className="text-[9px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/20 font-mono">
+                           {modelCosts[model.value].toLocaleString()} كريديت
+                         </span>
+                       )}
+                       {model.badge && (
+                          <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20">{model.badge}</span>
+                       )}
+                     </div>
+                     {selectedModel === model.value && (
+                        <div className="absolute inset-0 border-2 border-blue-500/20 rounded-xl pointer-events-none" />
+                      )}
+                  </div>
+                ))}
+              </div>
             </div>
             
             {/* Motion Prompt */}
@@ -530,7 +582,7 @@ export default function MotionPage() {
         isOpen={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}
         title="اشتراك مطلوب لمحاكاة الحركة"
-        description="للاستفادة من تقنية تحويل الصور الثابتة لفيديوهات متحركة وإضافة الحركة السينمائية الواقعية، تحتاج إلى اشتراك نشط."
+        description="للاستفادة من تقنية تحويل الصور الثابتة لفيديوهات متحركة وإضافة الحركة السينمائية الواقعية باستخدام تقنية Veo Motion، تحتاج إلى اشتراك نشط."
         hasAIPlans={hasAIPlans}
       />
     </div>

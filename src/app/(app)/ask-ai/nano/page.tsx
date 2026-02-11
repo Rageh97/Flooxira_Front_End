@@ -27,7 +27,8 @@ import {
   deleteAIHistoryItem,
   clearAIHistory,
   type AIStats,
-  type AIHistoryItem
+  type AIHistoryItem,
+  getAIConfig
 } from "@/lib/api";
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
@@ -43,9 +44,11 @@ const ASPECT_RATIOS = [
 ];
 
 const MODEL_OPTIONS = [
+  { id: "imagen-4.0-ultra", label: "Imagen 4.0 Ultra ✨", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
   { id: "imagen-4.0", label: "Imagen 4.0 Pro", value: "imagen-4.0-generate-001", description: "الأحدث والأكثر دقة" },
-  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر" },
-  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-001", description: "سرعة مضاعفة" },
+  { id: "imagen-4.0-fast", label: "Imagen 4.0 Fast ⚡", value: "imagen-4.0-fast-generate-001", description: "سرعة فائقة مع جودة ممتازة" },
+  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر (Vertex)" },
+  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي (Vertex)" },
 ];
 
 interface GeneratedImage {
@@ -62,13 +65,14 @@ export default function NanoPage() {
   const [token, setToken] = useState("");
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("1:1");
-  const [selectedModel, setSelectedModel] = useState("imagen-4.0-generate-001");
+  const [selectedModel, setSelectedModel] = useState("imagen-4.0-ultra-generate-001");
   const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -76,7 +80,13 @@ export default function NanoPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setToken(localStorage.getItem("auth_token") || "");
+      const t = localStorage.getItem("auth_token") || "";
+      setToken(t);
+      if (t) {
+        getAIConfig(t).then(data => {
+          if (data?.models) setModelCosts(data.models);
+        }).catch(console.error);
+      }
     }
   }, []);
 
@@ -261,7 +271,7 @@ export default function NanoPage() {
    {/* Header */}
       <AskAIToolHeader 
         title=" NANO BANANA PRO 🍌 "
-        modelBadge="IMAGEN 4.0"
+        modelBadge={MODEL_OPTIONS.find(m => m.value === selectedModel)?.label?.toUpperCase() || "IMAGEN 4.0 ULTRA"}
         stats={stats}
       />
 
@@ -336,14 +346,27 @@ export default function NanoPage() {
                     key={model.id}
                     onClick={() => setSelectedModel(model.value)}
                     className={clsx(
-                      "w-full p-2.5 rounded-lg transition-all border text-right",
+                      "w-full p-2.5 rounded-lg transition-all border text-right relative overflow-hidden",
                       selectedModel === model.value
                         ? "bg-yellow-500/20 border-yellow-400 text-white"
                         : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
                     )}
                   >
-                    <div className="text-[10px] font-bold">{model.label}</div>
-                    <div className="text-[8px] opacity-60">{model.description}</div>
+                    <div className="flex items-center justify-between mb-0.5 relative z-10">
+                      <div className="flex items-center gap-2">
+                        <div className="text-[10px] font-bold">{model.label}</div>
+                        {model.badge && (
+                          <span className="text-[7px] bg-yellow-500/30 text-yellow-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{model.badge}</span>
+                        )}
+                      </div>
+                      
+                      {modelCosts[model.value] !== undefined && (
+                        <span className="text-[8px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/20 font-bold whitespace-nowrap">
+                           {modelCosts[model.value].toLocaleString()} كريديت
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[8px] opacity-60 relative z-10">{model.description}</div>
                   </button>
                 ))}
               </div>
