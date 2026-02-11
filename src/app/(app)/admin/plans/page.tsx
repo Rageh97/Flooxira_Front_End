@@ -107,12 +107,17 @@ const MODEL_PRICING_OPTIONS: Record<string, { label: string, defaultCost: number
   'imagen-4.0-ultra-generate-001': { label: 'Imagen 4.0 Ultra', defaultCost: 8, type: 'image' },
   
   // Video Models
-  'veo-2.0-generate-001': { label: 'Veo 2.0', defaultCost: 40, type: 'video' },
-  'veo-3.1-preview': { label: 'Veo 3.1', defaultCost: 80, type: 'video' },
+  'veo-3.1-generate-preview': { label: 'Veo 3.1 Pro', defaultCost: 80, type: 'video' },
+  'veo-3.1-fast-generate-preview': { label: 'Veo 3.1 Fast', defaultCost: 60, type: 'video' },
+  'veo-3.0-generate-001': { label: 'Veo 3.0 Pro', defaultCost: 50, type: 'video' },
+  'veo-3.0-fast-generate-001': { label: 'Veo 3.0 Fast', defaultCost: 40, type: 'video' },
+  'veo-2.0-generate-001': { label: 'Veo 2.0 Legacy', defaultCost: 30, type: 'video' },
   
   // Motion Models
-  'veo-2.0-motion': { label: 'Veo 2.0 Motion', defaultCost: 30, type: 'motion' },
-  'veo-3.1-motion': { label: 'Veo 3.1 Motion', defaultCost: 60, type: 'motion' },
+  'veo-3.1-motion': { label: 'Veo 3.1 Pro Motion', defaultCost: 60, type: 'motion' },
+  'veo-3.1-fast-motion': { label: 'Veo 3.1 Fast Motion', defaultCost: 45, type: 'motion' },
+  'veo-3.0-motion': { label: 'Veo 3.0 Pro Motion', defaultCost: 40, type: 'motion' },
+  'veo-2.0-motion': { label: 'Veo 2.0 Legacy Motion', defaultCost: 30, type: 'motion' },
 
   // Chat Models 
   'gemini-1.5-flash': { label: 'Gemini 1.5 Flash', defaultCost: 1, type: 'chat' },

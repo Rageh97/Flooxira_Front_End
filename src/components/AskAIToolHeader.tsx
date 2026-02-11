@@ -28,7 +28,7 @@ export default function AskAIToolHeader({
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a80] rounded-xl shadow-2xl">
+    <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a80] rounded-t-xl shadow-2xl">
       <div className="mx-auto px-6 h-16 flex items-center justify-between max-w-[2000px]">
         <div className="flex items-center gap-4">
           <Link href="/ask-ai">

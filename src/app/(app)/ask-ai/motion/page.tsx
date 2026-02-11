@@ -9,6 +9,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { usePermissions } from "@/lib/permissions";
 import { 
   getAIStats, 
@@ -40,15 +47,18 @@ interface GeneratedVideo {
 }
 
 const MOTION_MODELS = [
-  { id: "veo-3.1-motion", label: "Veo 3.1 Motion ✨", value: "veo-3.1-motion", description: "حركة سينمائية فائقة الواقعية", badge: "جديد" },
-  { id: "veo-2.0-motion", label: "Veo 2.0 Motion", value: "veo-2.0-motion", description: "حركة سلسة ومستقرة" },
+  { id: "veo-3.1", label: "Veo 3.1 Pro Motion ✨", value: "veo-3.1-generate-preview", description: "أعلى جودة - واقعية سينمائية فائقة", badge: "جديد" },
+  { id: "veo-3.1-fast", label: "Veo 3.1 Fast Motion ⚡", value: "veo-3.1-fast-generate-preview", description: "سرعة مضاعفة مع جودة ممتازة", badge: "سريع" },
+  { id: "veo-3.0", label: "Veo 3.0 Pro Motion", value: "veo-3.0-generate-001", description: "جودة احترافية وحركة متوازنة" },
+  { id: "veo-3.0-fast", label: "Veo 3.0 Fast Motion", value: "veo-3.0-fast-generate-001", description: "توازن بين السرعة والجودة" },
+  { id: "veo-2.0", label: "Veo 2.0 Legacy Motion", value: "veo-2.0-generate-001", description: "حركة سلسة ومستقرة - اقتصادي" },
 ];
 
 export default function MotionPage() {
   const [token, setToken] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
-  const [selectedModel, setSelectedModel] = useState("veo-3.1-motion");
+  const [selectedModel, setSelectedModel] = useState("veo-3.1-generate-preview");
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedVideo[]>([]);
@@ -271,7 +281,7 @@ export default function MotionPage() {
                 الصورة الأصلية
               </label>
               <div 
-                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
+                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all relative"
                 onClick={() => document.getElementById('file-m')?.click()}
               >
                 {previewUrl ? (
@@ -302,38 +312,57 @@ export default function MotionPage() {
                 <Zap size={14} className="text-blue-400" />
                 نموذج التحريك
               </label>
-              <div className="grid grid-cols-1 gap-2">
-                {MOTION_MODELS.map((model) => (
-                  <div
-                    key={model.id}
-                    onClick={() => setSelectedModel(model.value)}
-                    className={clsx(
-                      "cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden flex items-center justify-between",
-                      selectedModel === model.value
-                        ? "bg-blue-500/10 border-blue-500/50"
-                        : "bg-white/5 border-white/10 hover:border-white/20"
-                    )}
-                  >
-                     <div className="flex flex-col">
-                        <span className={clsx("text-xs font-bold mb-0.5", selectedModel === model.value ? "text-blue-400" : "text-gray-300")}>{model.label}</span>
-                        <span className="text-[9px] text-gray-500">{model.description}</span>
-                     </div>
-                     <div className="flex items-center gap-2">
-                       {modelCosts[model.value] && (
-                         <span className="text-[9px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/20 font-mono">
-                           {modelCosts[model.value].toLocaleString()} كريديت
-                         </span>
-                       )}
-                       {model.badge && (
-                          <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20">{model.badge}</span>
-                       )}
-                     </div>
-                     {selectedModel === model.value && (
-                        <div className="absolute inset-0 border-2 border-blue-500/20 rounded-xl pointer-events-none" />
-                      )}
+              <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
+                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+                  <div className="flex items-center gap-2 w-full overflow-hidden text-right">
+                    <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="font-bold text-sm truncate text-white">
+                          {MOTION_MODELS.find((m) => m.value === selectedModel)?.label}
+                        </span>
+                        {MOTION_MODELS.find((m) => m.value === selectedModel)?.badge && (
+                          <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20 font-bold whitespace-nowrap">
+                            {MOTION_MODELS.find((m) => m.value === selectedModel)?.badge}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="text-[10px] text-gray-500 truncate">
+                          {MOTION_MODELS.find((m) => m.value === selectedModel)?.description}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </SelectTrigger>
+                <SelectContent className="bg-[#12141a] border-white/10 text-white max-w-[280px]" align="end">
+                  {MOTION_MODELS.map((model) => (
+                    <SelectItem
+                      key={model.id}
+                      value={model.value}
+                      className="focus:bg-white/5 focus:text-white cursor-pointer py-2 px-3 border-b border-white/5 last:border-0"
+                    >
+                      <div className="flex flex-col gap-1 w-full text-right">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-sm">{model.label}</span>
+                          {modelCosts[model.value] !== undefined && (
+                            <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded font-mono border border-yellow-500/20">
+                              {modelCosts[model.value].toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-gray-500">{model.description}</span>
+                          {model.badge && (
+                            <span className="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20 font-bold uppercase tracking-wider shadow-sm">
+                              {model.badge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             
             {/* Motion Prompt */}

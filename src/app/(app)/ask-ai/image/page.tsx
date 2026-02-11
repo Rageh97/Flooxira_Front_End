@@ -23,6 +23,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { usePermissions } from "@/lib/permissions";
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 import { 
@@ -55,8 +62,8 @@ const ASPECT_RATIOS = [
 ];
 
 const MODEL_OPTIONS = [
-  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر (Vertex)", badge: "الافتراضي" },
-  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي (Vertex)" },
+  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر ", badge: "الافتراضي" },
+  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي " },
   { id: "imagen-4.0-fast", label: "Imagen 4.0 Fast ⚡", value: "imagen-4.0-fast-generate-001", description: "سرعة فائقة مع جودة ممتازة" },
   { id: "imagen-4.0", label: "Imagen 4.0 Pro", value: "imagen-4.0-generate-001", description: "الأحدث والأكثر دقة" },
   { id: "imagen-4.0-ultra", label: "Imagen 4.0 Ultra ✨", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
@@ -69,7 +76,6 @@ const STYLE_PRESETS = [
   { id: "anime", label: "أنمي", prompt: ", anime style, vibrant colors, studio ghibli aesthetic, detailed line art", color: "from-blue-400 to-indigo-500" },
   { id: "cyberpunk", label: "سايبر بانك", prompt: ", cyberpunk theme, neon lights, futuristic city, high tech, dark atmosphere", color: "from-cyan-500 to-blue-600" },
   { id: "3d-render", label: "3D", prompt: ", 3d render, octane render, unreal engine 5, pixar style, clay material", color: "from-violet-500 to-indigo-600" },
-  { id: "oil", label: "زيتي", prompt: ", oil painting, thick brush strokes, museum quality, classic art", color: "from-yellow-600 to-amber-700" },
 ];
 
 interface GeneratedImage {
@@ -388,47 +394,7 @@ export default function TextToImagePage() {
         {/* Sidebar - Settings (Fixed) */}
         <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
-            {/* Model Selection */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
-                <Zap size={14} className="text-yellow-400" />
-                نموذج الذكاء الاصطناعي
-              </label>
-              <div className="space-y-2">
-                {MODEL_OPTIONS.map((model) => (
-                  <div
-                    key={model.id}
-                    onClick={() => setSelectedModel(model.value)}
-                    className={clsx(
-                      "cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden",
-                      selectedModel === model.value
-                        ? "border-primary bg-primary/10 shadow-[0_0_20px_-5px_rgba(59,130,246,0.3)]"
-                        : "border-white/5 bg-[#12141a] hover:border-white/10 hover:bg-[#1a1d24]"
-                    )}
-                  >
-                    <div className="flex justify-between items-center mb-1 relative z-10">
-                      <span className={clsx("font-bold text-sm", selectedModel === model.value ? "text-primary-foreground" : "text-gray-300")}>{model.label}</span>
-                      <div className="flex items-center gap-1">
-                        {modelCosts[model.value] !== undefined && (
-                          <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded font-mono border border-yellow-500/30">
-                            {modelCosts[model.value].toLocaleString()} كريديت
-                          </span>
-                        )}
-                        {model.badge && (
-                          <span className="text-[9px] bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">
-                            {model.badge}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-gray-500 relative z-10 font-medium">{model.description}</p>
-                    {selectedModel === model.value && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+           
 
             {/* Prompt Input */}
             <div className="space-y-2">
@@ -459,7 +425,64 @@ export default function TextToImagePage() {
             >
               إنشاء صورة
             </GradientButton>
-
+            {/* Model Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Zap size={14} className="text-yellow-400" />
+                نموذج الذكاء الاصطناعي
+              </label>
+              <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
+                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+                  <div className="flex items-center gap-2 w-full overflow-hidden text-right">
+                    <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="font-bold text-sm truncate text-white">
+                          {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.label}
+                        </span>
+                        {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.badge && (
+                          <span className="text-[9px] bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm whitespace-nowrap">
+                            {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.badge}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="text-[10px] text-gray-500 truncate">
+                          {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.description}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-[#12141a] border-white/10 text-white max-w-[280px]" align="end">
+                  {MODEL_OPTIONS.map((model) => (
+                    <SelectItem
+                      key={model.id}
+                      value={model.value}
+                      className="focus:bg-white/5 focus:text-white cursor-pointer py-2 px-3 border-b border-white/5 last:border-0"
+                    >
+                      <div className="flex flex-col gap-1 w-full text-right">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-sm">{model.label}</span>
+                          {modelCosts[model.value] !== undefined && (
+                            <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded font-mono border border-yellow-500/30">
+                              {modelCosts[model.value].toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-gray-500">{model.description}</span>
+                          {model.badge && (
+                            <span className="text-[9px] bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">
+                              {model.badge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {/* Aspect Ratio */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">

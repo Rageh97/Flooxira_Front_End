@@ -9,6 +9,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { usePermissions } from "@/lib/permissions";
 import { 
   getAIStats, 
@@ -37,8 +44,11 @@ const ASPECT_RATIOS = [
 ];
 
 const VIDEO_MODELS = [
-  { id: "veo-3.1", label: "Veo 3.1 Preview ✨", value: "veo-3.1-preview", description: "أحدث تقنية - واقعية مذهلة", badge: "جديد" },
-  { id: "veo-2.0", label: "Veo 2.0", value: "veo-2.0-generate-001", description: "ثابت ومستقر - جودة عالية" },
+  { id: "veo-3.1", label: "Veo 3.1 Pro ✨", value: "veo-3.1-generate-preview", description: "أعلى جودة - واقعية سينمائية مع صوت", badge: "الأفضل" },
+  { id: "veo-3.1-fast", label: "Veo 3.1 Fast ⚡", value: "veo-3.1-fast-generate-preview", description: "سرعة مضاعفة مع جودة ممتازة وصوت", badge: "سريع" },
+  { id: "veo-3.0", label: "Veo 3.0 Pro", value: "veo-3.0-generate-001", description: "جودة احترافية مع دعم الصوت" },
+  { id: "veo-3.0-fast", label: "Veo 3.0 Fast", value: "veo-3.0-fast-generate-001", description: "توازن بين السرعة والجودة" },
+  { id: "veo-2.0", label: "Veo 2.0 Legacy", value: "veo-2.0-generate-001", description: "ثابت ومستقر - بدون صوت" },
 ];
 
 const STYLE_PRESETS = [
@@ -66,7 +76,7 @@ export default function TextToVideoPage() {
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("16:9");
   const [selectedStyle, setSelectedStyle] = useState("none");
-  const [selectedModel, setSelectedModel] = useState("veo-3.1-preview");
+  const [selectedModel, setSelectedModel] = useState("veo-3.1-generate-preview");
   const [includeAudio, setIncludeAudio] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -335,41 +345,7 @@ export default function TextToVideoPage() {
                 وصف الفيديو
               </label>
               
-              {/* Model Selection */}
-              <div className="mb-4 space-y-2">
-                 <div className="grid grid-cols-1 gap-2">
-                    {VIDEO_MODELS.map((model) => (
-                      <div
-                        key={model.id}
-                        onClick={() => setSelectedModel(model.value)}
-                        className={clsx(
-                          "cursor-pointer rounded-xl p-3 border transition-all relative overflow-hidden flex items-center justify-between",
-                          selectedModel === model.value
-                            ? "bg-purple-500/10 border-purple-500/50"
-                            : "bg-white/5 border-white/10 hover:border-white/20"
-                        )}
-                      >
-                         <div className="flex flex-col">
-                            <span className={clsx("text-xs font-bold mb-0.5", selectedModel === model.value ? "text-purple-400" : "text-gray-300")}>{model.label}</span>
-                            <span className="text-[9px] text-gray-500">{model.description}</span>
-                         </div>
-                         <div className="flex items-center gap-2">
-                           {modelCosts[model.value] !== undefined && (
-                             <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded border border-yellow-500/20 font-mono">
-                               {modelCosts[model.value].toLocaleString()} كريديت
-                             </span>
-                           )}
-                           {model.badge && (
-                              <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/20">{model.badge}</span>
-                           )}
-                         </div>
-                         {selectedModel === model.value && (
-                            <div className="absolute inset-0 border-2 border-purple-500/20 rounded-xl pointer-events-none" />
-                          )}
-                      </div>
-                    ))}
-                 </div>
-              </div>
+             
 
               <textarea
                 ref={textareaRef}
@@ -393,7 +369,60 @@ export default function TextToVideoPage() {
             >
               توليد الفيديو
             </GradientButton>
-
+ {/* Model Selection */}
+              <div className="mb-4 space-y-2">
+                <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
+                  <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+                    <div className="flex items-center gap-2 w-full overflow-hidden text-right">
+                      <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="font-bold text-sm truncate text-white">
+                            {VIDEO_MODELS.find((m) => m.value === selectedModel)?.label}
+                          </span>
+                          {VIDEO_MODELS.find((m) => m.value === selectedModel)?.badge && (
+                            <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/20 font-bold whitespace-nowrap">
+                              {VIDEO_MODELS.find((m) => m.value === selectedModel)?.badge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="text-[10px] text-gray-500 truncate">
+                            {VIDEO_MODELS.find((m) => m.value === selectedModel)?.description}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#12141a] border-white/10 text-white max-w-[280px]" align="end">
+                    {VIDEO_MODELS.map((model) => (
+                      <SelectItem
+                        key={model.id}
+                        value={model.value}
+                        className="focus:bg-white/5 focus:text-white cursor-pointer py-2 px-3 border-b border-white/5 last:border-0"
+                      >
+                        <div className="flex flex-col gap-1 w-full text-right">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-sm">{model.label}</span>
+                            {modelCosts[model.value] !== undefined && (
+                              <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded font-mono border border-yellow-500/20">
+                                {modelCosts[model.value].toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-gray-500">{model.description}</span>
+                            {model.badge && (
+                              <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/20 font-bold uppercase tracking-wider shadow-sm">
+                                {model.badge}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Sliders size={14} className="text-purple-400" />
@@ -447,7 +476,7 @@ export default function TextToVideoPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
+            {/* <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/10">
               <button
                 onClick={() => setIncludeAudio(!includeAudio)}
                 className={clsx(
@@ -461,7 +490,7 @@ export default function TextToVideoPage() {
                 />
               </button>
               <span className="text-xs text-gray-400 font-medium">تضمين الصوت</span>
-            </div>
+            </div> */}
 
             {selectedVideo && !selectedVideo.isGenerating && (
               <div className="space-y-2 pt-4 border-t border-white/10">

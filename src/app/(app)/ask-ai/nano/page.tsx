@@ -18,6 +18,13 @@ import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { GradientButton } from "@/components/ui/gradient-button";
 import { useToast } from "@/components/ui/toast-provider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { usePermissions } from "@/lib/permissions";
 import { 
   getAIStats, 
@@ -47,8 +54,8 @@ const MODEL_OPTIONS = [
   { id: "imagen-4.0-ultra", label: "Imagen 4.0 Ultra ✨", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
   { id: "imagen-4.0", label: "Imagen 4.0 Pro", value: "imagen-4.0-generate-001", description: "الأحدث والأكثر دقة" },
   { id: "imagen-4.0-fast", label: "Imagen 4.0 Fast ⚡", value: "imagen-4.0-fast-generate-001", description: "سرعة فائقة مع جودة ممتازة" },
-  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر (Vertex)" },
-  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي (Vertex)" },
+  { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر" },
+  { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي " },
 ];
 
 interface GeneratedImage {
@@ -340,50 +347,60 @@ export default function NanoPage() {
                 <Cpu size={14} className="text-yellow-400" />
                 المحرك
               </label>
-              <div className="space-y-1.5">
-                {MODEL_OPTIONS.map(model => (
-                  <button
-                    key={model.id}
-                    onClick={() => setSelectedModel(model.value)}
-                    className={clsx(
-                      "w-full p-2.5 rounded-lg transition-all border text-right relative overflow-hidden",
-                      selectedModel === model.value
-                        ? "bg-yellow-500/20 border-yellow-400 text-white"
-                        : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-0.5 relative z-10">
-                      <div className="flex items-center gap-2">
-                        <div className="text-[10px] font-bold">{model.label}</div>
-                        {model.badge && (
-                          <span className="text-[7px] bg-yellow-500/30 text-yellow-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{model.badge}</span>
+              <Select value={selectedModel} onValueChange={setSelectedModel} dir="rtl">
+                <SelectTrigger className="w-full bg-white/5 border-white/10 h-14 rounded-xl text-right ring-offset-transparent focus:ring-0 focus:ring-offset-0 px-3">
+                  <div className="flex items-center gap-2 w-full overflow-hidden text-right">
+                    <div className="flex flex-col items-start gap-0.5 flex-1 min-w-0 text-right">
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="font-bold text-sm truncate text-white">
+                          {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.label}
+                        </span>
+                        {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.badge && (
+                          <span className="text-[9px] bg-yellow-500/30 text-yellow-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider whitespace-nowrap">
+                            {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.badge}
+                          </span>
                         )}
                       </div>
-                      
-                      {modelCosts[model.value] !== undefined && (
-                        <span className="text-[8px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/20 font-bold whitespace-nowrap">
-                           {modelCosts[model.value].toLocaleString()} كريديت
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="text-[10px] text-gray-500 truncate">
+                          {MODEL_OPTIONS.find((m) => m.value === selectedModel)?.description}
                         </span>
-                      )}
+                      </div>
                     </div>
-                    <div className="text-[8px] opacity-60 relative z-10">{model.description}</div>
-                  </button>
-                ))}
-              </div>
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-[#12141a] border-white/10 text-white max-w-[280px]" align="end">
+                  {MODEL_OPTIONS.map((model) => (
+                    <SelectItem
+                      key={model.id}
+                      value={model.value}
+                      className="focus:bg-white/5 focus:text-white cursor-pointer py-2 px-3 border-b border-white/5 last:border-0"
+                    >
+                      <div className="flex flex-col gap-1 w-full text-right">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-sm">{model.label}</span>
+                          {modelCosts[model.value] !== undefined && (
+                            <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded font-mono border border-yellow-500/20">
+                              {modelCosts[model.value].toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-gray-500">{model.description}</span>
+                          {model.badge && (
+                            <span className="text-[9px] bg-yellow-500/30 text-yellow-300 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shadow-sm">
+                              {model.badge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Info Box */}
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Zap className="text-yellow-400 flex-shrink-0 mt-0.5" size={18} />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-yellow-300">سرعة فائقة</h3>
-                  <p className="text-xs text-gray-400">
-                    Nano مصمم للسرعة القصوى - نتائج في ثوانٍ معدودة
-                  </p>
-                </div>
-              </div>
-            </div>
+       
 
             {/* Clear History Button */}
             {history.length > 0 && (
