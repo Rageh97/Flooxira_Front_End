@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   Sparkles, Upload, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Image as ImageIcon, Zap, Move, Trash2, X, Eye, Play
+  Loader2, ArrowRight, Image as ImageIcon, Zap, Move, Trash2, X, Eye, Play, Settings, Copy, Check, Sliders
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,20 @@ interface GeneratedVideo {
   progress?: number;
 }
 
+const ASPECT_RATIOS = [
+  { id: "16:9", label: "سينمائي", value: "16:9", icon: "" },
+  { id: "9:16", label: "ستوري", value: "9:16", icon: "" },
+  { id: "1:1", label: "مربع", value: "1:1", icon: "" },
+  { id: "4:3", label: "كلاسيكي", value: "4:3", icon: "" },
+  { id: "3:4", label: "عمودي", value: "3:4", icon: "" },
+];
+
+const VIDEO_DURATIONS = [
+  { id: "4s", label: "4 ثواني", value: 4 },
+  { id: "6s", label: "6 ثواني", value: 6 },
+  { id: "8s", label: "8 ثواني", value: 8 },
+];
+
 const MOTION_MODELS = [
   { id: "veo-3.1", label: "Veo 3.1 Pro Motion ✨", value: "veo-3.1-generate-preview", description: "أعلى جودة - واقعية سينمائية فائقة", badge: "جديد" },
   { id: "veo-3.1-fast", label: "Veo 3.1 Fast Motion ⚡", value: "veo-3.1-fast-generate-preview", description: "سرعة مضاعفة مع جودة ممتازة", badge: "سريع" },
@@ -59,6 +73,8 @@ export default function MotionPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState("veo-3.1-generate-preview");
+  const [selectedRatio, setSelectedRatio] = useState("16:9");
+  const [selectedDuration, setSelectedDuration] = useState(4);
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedVideo[]>([]);
@@ -66,10 +82,22 @@ export default function MotionPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+
+  // Get cost directly from modelCosts
+  const totalCost = modelCosts[selectedModel] || 0;
+  
+  // Debug log
+  useEffect(() => {
+    console.log('[Motion] Selected Model:', selectedModel);
+    console.log('[Motion] Total Cost:', totalCost);
+    console.log('[Motion] All Model Costs:', modelCosts);
+  }, [selectedModel, totalCost, modelCosts]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -105,7 +133,10 @@ export default function MotionPage() {
       checkAIPlans();
       loadHistory();
       getAIConfig(token).then(data => {
-        if (data?.models) setModelCosts(data.models);
+        if (data?.models) {
+          console.log('[Motion] Model Costs:', data.models);
+          setModelCosts(data.models);
+        }
       }).catch(console.error);
     }
   }, [token]);
@@ -170,6 +201,8 @@ export default function MotionPage() {
         operation: 'motion',
         inputUrl: previewUrl,
         prompt: prompt.trim() || "Natural cinematic motion, zoom in slowly",
+        aspectRatio: selectedRatio,
+        duration: selectedDuration,
         model: selectedModel
       });
 
@@ -255,6 +288,17 @@ export default function MotionPage() {
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
+  const copyPromptToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPrompt(true);
+      showSuccess("تم النسخ!");
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch (error) {
+      showError("خطأ", "فشل نسخ النص");
+    }
+  };
+
   if (permissionsLoading) return <div className="h-screen  flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
@@ -270,12 +314,31 @@ export default function MotionPage() {
         stats={stats}
       />
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
         {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full lg:h-auto",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
             {/* Upload Image */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-12 lg:mt-0">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Upload size={14} className="text-blue-400" />
                 الصورة الأصلية
@@ -364,6 +427,66 @@ export default function MotionPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Aspect Ratio Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Sliders size={14} className="text-blue-400" />
+                أبعاد الفيديو
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {ASPECT_RATIOS.map(ratio => (
+                  <button
+                    key={ratio.id}
+                    onClick={() => setSelectedRatio(ratio.value)}
+                    className={clsx(
+                      "relative flex flex-col items-center justify-center p-2 rounded-lg transition-all border text-[10px]",
+                      selectedRatio === ratio.value
+                        ? "bg-blue-500/20 border-blue-400 text-white"
+                        : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                    )}
+                  >
+                    <span className="text-base mb-1">{ratio.icon}</span>
+                    <span className="font-medium">{ratio.label}</span>
+                    <span className="text-[9px] text-gray-500">{ratio.value}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Duration Selection */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Zap size={14} className="text-indigo-400" />
+                مدة الفيديو
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {VIDEO_DURATIONS.map(duration => {
+                  // Display the same cost for all durations (cost is per model, not per duration)
+                  const cost = modelCosts[selectedModel] || 0;
+                  
+                  return (
+                    <button
+                      key={duration.id}
+                      onClick={() => setSelectedDuration(duration.value)}
+                      className={clsx(
+                        "relative flex flex-col items-center justify-center p-2 rounded-lg transition-all border text-[10px]",
+                        selectedDuration === duration.value
+                          ? "bg-indigo-500/20 border-indigo-400 text-white"
+                          : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                      )}
+                    >
+                      <span className="font-medium">{duration.label}</span>
+                      {cost > 0 && (
+                        <span className="text-[8px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded mt-1 font-mono border border-yellow-500/20">
+                          {cost.toLocaleString()}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             
             {/* Motion Prompt */}
             <div className="space-y-2">
@@ -392,7 +515,14 @@ export default function MotionPage() {
               size="lg"
               className="w-full rounded-xl h-11"
             >
-              إضافة حركة
+              <div className="flex items-center justify-center gap-2">
+                <span>إضافة حركة</span>
+                {totalCost > 0 && (
+                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full font-mono">
+                    {totalCost.toLocaleString()}
+                  </span>
+                )}
+              </div>
             </GradientButton>
 
             {/* Info Box */}
@@ -424,41 +554,57 @@ export default function MotionPage() {
 
         {/* Main Content - Gallery (Scrollable) */}
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             {history.length === 0 ? (
               // Empty State
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Move size={80} className="text-blue-500/20 mb-4 mx-auto" />
-                  <h3 className="text-xl font-bold text-white mb-2">حرك صورك الثابتة</h3>
-                  <p className="text-sm text-gray-500 max-w-md">
+              <div className="h-full min-h-[60vh] flex items-center justify-center">
+                <div className="text-center px-4">
+                  <Move size={60} className="lg:w-20 lg:h-20 text-blue-500/20 mb-4 mx-auto" />
+                  <h3 className="text-lg lg:text-xl font-bold text-white mb-2">حرك صورك الثابتة</h3>
+                  <p className="text-xs lg:text-sm text-gray-500 max-w-md mb-6">
                     ارفع صورة ثابتة لنحولها إلى فيديو سينمائي مذهل بلمسة ذكاء
                   </p>
+                  
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={18} />
+                    <span>افتح الإعدادات</span>
+                  </button>
                 </div>
               </div>
             ) : (
               // Gallery Grid
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <HistoryIcon size={18} className="text-blue-400" />
+                  <h2 className="text-base lg:text-lg font-bold text-white flex items-center gap-2">
+                    <HistoryIcon size={16} className="lg:w-[18px] lg:h-[18px] text-blue-400" />
                     أعمالك ({history.length})
                   </h2>
+                  
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={16} />
+                    <span>الإعدادات</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 lg:gap-4">
                   {history.map((item) => (
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all"
+                      className="group relative aspect-square rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all"
                     >
                       {item.isProcessing ? (
                         // Loading State with Progress
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3" />
-                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 lg:p-4">
+                          <Loader2 className="w-6 h-6 lg:w-8 lg:h-8 text-blue-400 animate-spin mb-2 lg:mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-1.5 lg:h-2 overflow-hidden">
                             <motion.div
                               className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
                               initial={{ width: "0%" }}
@@ -466,7 +612,7 @@ export default function MotionPage() {
                               transition={{ duration: 0.5 }}
                             />
                           </div>
-                          <p className="text-xs text-gray-400 mt-2">جاري التحريك...</p>
+                          <p className="text-[10px] lg:text-xs text-gray-400 mt-1 lg:mt-2">جاري التحريك...</p>
                         </div>
                       ) : (
                         <>
@@ -481,25 +627,25 @@ export default function MotionPage() {
 
                           {/* Play Icon Overlay */}
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                              <Play size={20} className="text-white fill-white ml-1" />
+                            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                              <Play size={16} className="lg:w-5 lg:h-5 text-white fill-white ml-1" />
                             </div>
                           </div>
 
                           {/* Overlay on Hover */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                              <p className="text-xs text-white line-clamp-1">{item.prompt}</p>
-                              <div className="flex items-center gap-2">
+                            <div className="absolute bottom-0 left-0 right-0 p-2 lg:p-3 space-y-1 lg:space-y-2">
+                              <p className="text-[10px] lg:text-xs text-white line-clamp-1">{item.prompt}</p>
+                              <div className="flex items-center gap-1 lg:gap-2">
                                 <Button
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedResult(item);
                                   }}
-                                  className="flex-1 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-xs"
+                                  className="flex-1 h-7 lg:h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-[10px] lg:text-xs"
                                 >
-                                  <Eye size={12} className="ml-1" />
+                                  <Eye size={10} className="lg:w-3 lg:h-3 ml-1" />
                                   عرض
                                 </Button>
                                 <Button
@@ -509,17 +655,17 @@ export default function MotionPage() {
                                     e.stopPropagation();
                                     downloadVideo(item.url, `motion-${item.id}.mp4`);
                                   }}
-                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
                                 >
-                                  <Download size={12} />
+                                  <Download size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={(e) => handleDeleteHistory(item.id, e)}
-                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
                                 >
-                                  <Trash2 size={12} />
+                                  <Trash2 size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                               </div>
                             </div>
@@ -527,8 +673,8 @@ export default function MotionPage() {
 
                           {/* Selected Indicator */}
                           {selectedResult?.id === item.id && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                              <Eye size={14} className="text-white" />
+                            <div className="absolute top-1 right-1 lg:top-2 lg:right-2 w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <Eye size={12} className="lg:w-[14px] lg:h-[14px] text-white" />
                             </div>
                           )}
                         </>
@@ -549,7 +695,7 @@ export default function MotionPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-2 lg:p-4"
             onClick={() => setSelectedResult(null)}
           >
             <motion.div
@@ -562,42 +708,63 @@ export default function MotionPage() {
               {/* Close Button */}
               <button
                 onClick={() => setSelectedResult(null)}
-                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="absolute -top-10 lg:-top-12 left-0 w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
               >
-                <X size={20} />
+                <X size={18} className="lg:w-5 lg:h-5" />
               </button>
 
               {/* Video */}
-              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+              <div className="relative rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10">
                 <video
                   src={selectedResult.url}
                   controls
                   autoPlay
                   loop
-                  className="w-full max-h-[80vh] object-contain"
+                  className="w-full max-h-[70vh] lg:max-h-[80vh] object-contain"
                 />
                 <BorderBeam />
               </div>
 
-              {/* Actions */}
-              <div className="mt-4 flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 line-clamp-1">{selectedResult.prompt}</p>
+              {/* Prompt and Actions */}
+              <div className="mt-3 lg:mt-4 space-y-3">
+                {/* Prompt Section */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 lg:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-xs text-gray-400 mb-1 block">البرومبت:</label>
+                      <div className="max-h-[100px] overflow-y-auto scrollbar-hide pl-2">
+                        <p className="text-sm lg:text-base text-white leading-relaxed break-words">{selectedResult.prompt}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyPromptToClipboard(selectedResult.prompt)}
+                      className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                      title="نسخ البرومبت"
+                    >
+                      {copiedPrompt ? (
+                        <Check size={16} className="text-green-400" />
+                      ) : (
+                        <Copy size={16} className="text-gray-400" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => downloadVideo(selectedResult.url, `motion-${selectedResult.id}.mp4`)}
-                    className="rounded-xl bg-blue-500 hover:bg-blue-600 h-10 px-6"
+                    className="flex-1 sm:flex-none rounded-xl bg-blue-500 hover:bg-blue-600 h-9 lg:h-10 px-4 lg:px-6 text-sm"
                   >
-                    <Download size={16} className="ml-2" />
+                    <Download size={14} className="lg:w-4 lg:h-4 ml-2" />
                     تحميل
                   </Button>
                   <Button
                     variant="ghost"
                     onClick={(e) => handleDeleteHistory(selectedResult.id, e)}
-                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-9 lg:h-10 w-9 lg:w-10 p-0"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} className="lg:w-4 lg:h-4" />
                   </Button>
                 </div>
               </div>

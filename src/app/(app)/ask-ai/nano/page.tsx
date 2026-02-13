@@ -12,7 +12,10 @@ import {
   Trash2,
   X,
   History,
-  Eye
+  Eye,
+  Settings,
+  Copy,
+  Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -80,11 +83,16 @@ export default function NanoPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
 
+  // Get cost directly from modelCosts
+  const totalCost = modelCosts[selectedModel] || 0;
+  
   useEffect(() => {
     if (typeof window !== "undefined") {
       const t = localStorage.getItem("auth_token") || "";
@@ -268,6 +276,17 @@ export default function NanoPage() {
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
+  const copyPromptToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPrompt(true);
+      showSuccess("تم النسخ!");
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch (error) {
+      showError("خطأ", "فشل نسخ النص");
+    }
+  };
+
   if (permissionsLoading) return <div className="h-screen  flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
@@ -283,12 +302,31 @@ export default function NanoPage() {
       />
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
         {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full lg:h-auto",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
             {/* Prompt Input */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-12 lg:mt-0">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Sparkles size={14} className="text-yellow-400" />
                 وصف سريع
@@ -314,7 +352,14 @@ export default function NanoPage() {
               size="lg"
               className="w-full rounded-xl h-11"
             >
-              توليد سريع
+              <div className="flex items-center justify-center gap-2">
+                <span>توليد سريع</span>
+                {totalCost > 0 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-mono">
+                     {totalCost.toLocaleString()} كريديت 
+                  </span>
+                )}
+              </div>
             </GradientButton>
 
             {/* Aspect Ratio */}
@@ -418,41 +463,59 @@ export default function NanoPage() {
 
         {/* Main Content - Gallery (Scrollable) */}
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             {history.length === 0 ? (
               // Empty State
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Zap size={80} className="text-yellow-500/20 mb-4 mx-auto animate-pulse" />
-                  <h3 className="text-xl font-bold text-white mb-2">توليد فوري</h3>
-                  <p className="text-sm text-gray-500 max-w-md">
+              <div className="h-full min-h-[60vh] flex items-center justify-center">
+                <div className="text-center px-4">
+                  <Zap size={60} className="lg:w-20 lg:h-20 text-yellow-500/20 mb-4 mx-auto animate-pulse" />
+                  <h3 className="text-lg lg:text-xl font-bold text-white mb-2">توليد فوري</h3>
+                  <p className="text-xs lg:text-sm text-gray-500 max-w-md mb-6">
                     اكتب وصفاً سريعاً وشاهد النتيجة تظهر بسرعة البرق
                   </p>
+                  
+                  {/* Mobile Settings Button */}
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={18} />
+                    <span>افتح الإعدادات</span>
+                  </button>
                 </div>
               </div>
             ) : (
               // Gallery Grid
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <History size={18} className="text-yellow-400" />
+                  <h2 className="text-base lg:text-lg font-bold text-white flex items-center gap-2">
+                    <History size={16} className="lg:w-[18px] lg:h-[18px] text-yellow-400" />
                     أعمالك ({history.length})
                   </h2>
+                  
+                  {/* Mobile Settings Button */}
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-500 text-black text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={16} />
+                    <span>الإعدادات</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 lg:gap-4">
                   {history.map((img) => (
                     <motion.div
                       key={img.id}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-500/50 transition-all"
+                      className="group relative aspect-square rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-yellow-500/50 transition-all"
                     >
                       {img.isGenerating ? (
                         // Loading State with Progress
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                          <Loader2 className="w-8 h-8 text-yellow-400 animate-spin mb-3" />
-                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 lg:p-4">
+                          <Loader2 className="w-6 h-6 lg:w-8 lg:h-8 text-yellow-400 animate-spin mb-2 lg:mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-1.5 lg:h-2 overflow-hidden">
                             <motion.div
                               className="h-full bg-gradient-to-r from-yellow-500 to-amber-500"
                               initial={{ width: "0%" }}
@@ -460,7 +523,7 @@ export default function NanoPage() {
                               transition={{ duration: 0.5 }}
                             />
                           </div>
-                          <p className="text-xs text-gray-400 mt-2">جاري الإنشاء...</p>
+                          <p className="text-[10px] lg:text-xs text-gray-400 mt-1 lg:mt-2">جاري الإنشاء...</p>
                         </div>
                       ) : (
                         <>
@@ -474,18 +537,18 @@ export default function NanoPage() {
 
                           {/* Overlay on Hover */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                              <p className="text-xs text-white line-clamp-2">{img.prompt}</p>
-                              <div className="flex items-center gap-2">
+                            <div className="absolute bottom-0 left-0 right-0 p-2 lg:p-3 space-y-1 lg:space-y-2">
+                              <p className="text-[10px] lg:text-xs text-white line-clamp-2">{img.prompt}</p>
+                              <div className="flex items-center gap-1 lg:gap-2">
                                 <Button
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedImage(img);
                                   }}
-                                  className="flex-1 h-8 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black text-xs font-bold"
+                                  className="flex-1 h-7 lg:h-8 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-black text-[10px] lg:text-xs font-bold"
                                 >
-                                  <Eye size={12} className="ml-1" />
+                                  <Eye size={10} className="lg:w-3 lg:h-3 ml-1" />
                                   عرض
                                 </Button>
                                 <Button
@@ -495,17 +558,17 @@ export default function NanoPage() {
                                     e.stopPropagation();
                                     downloadImage(img.url, `nano-${img.id}.png`);
                                   }}
-                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
                                 >
-                                  <Download size={12} />
+                                  <Download size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={(e) => deleteFromHistory(img.id, e)}
-                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
                                 >
-                                  <Trash2 size={12} />
+                                  <Trash2 size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                               </div>
                             </div>
@@ -513,8 +576,8 @@ export default function NanoPage() {
 
                           {/* Selected Indicator */}
                           {selectedImage?.id === img.id && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center">
-                              <Eye size={14} className="text-black" />
+                            <div className="absolute top-1 right-1 lg:top-2 lg:right-2 w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-yellow-500 flex items-center justify-center">
+                              <Eye size={12} className="lg:w-[14px] lg:h-[14px] text-black" />
                             </div>
                           )}
                         </>
@@ -564,24 +627,45 @@ export default function NanoPage() {
               </div>
 
               {/* Actions */}
-              <div className="mt-4 flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 line-clamp-2">{selectedImage.prompt}</p>
+              <div className="mt-3 lg:mt-4 space-y-3">
+                {/* Prompt Section */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 lg:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-xs text-gray-400 mb-1 block">البرومبت:</label>
+                      <div className="max-h-[100px] overflow-y-auto scrollbar-hide pl-2">
+                        <p className="text-sm lg:text-base text-white leading-relaxed break-words">{selectedImage.prompt}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyPromptToClipboard(selectedImage.prompt)}
+                      className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                      title="نسخ البرومبت"
+                    >
+                      {copiedPrompt ? (
+                        <Check size={16} className="text-green-400" />
+                      ) : (
+                        <Copy size={16} className="text-gray-400" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => downloadImage(selectedImage.url, `nano-${selectedImage.id}.png`)}
-                    className="rounded-xl bg-yellow-500 hover:bg-yellow-600 text-black h-10 px-6 font-bold"
+                    className="flex-1 sm:flex-none rounded-xl bg-yellow-500 hover:bg-yellow-600 text-black h-9 lg:h-10 px-4 lg:px-6 text-sm font-bold"
                   >
-                    <Download size={16} className="ml-2" />
+                    <Download size={14} className="lg:w-4 lg:h-4 ml-2" />
                     تحميل
                   </Button>
                   <Button
                     variant="ghost"
                     onClick={(e) => deleteFromHistory(selectedImage.id, e)}
-                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-9 lg:h-10 w-9 lg:w-10 p-0"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} className="lg:w-4 lg:h-4" />
                   </Button>
                 </div>
               </div>

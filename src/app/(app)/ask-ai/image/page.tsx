@@ -17,7 +17,10 @@ import {
   ArrowUpCircle,
   Eraser,
   Scissors,
-  Eye
+  Eye,
+  Settings,
+  Copy,
+  Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -105,11 +108,16 @@ export default function TextToImagePage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
 
+  // Get cost directly from modelCosts
+  const totalCost = modelCosts[selectedModel] || 0;
+  
   useEffect(() => {
     if (typeof window !== "undefined") {
       setToken(localStorage.getItem("auth_token") || "");
@@ -307,6 +315,17 @@ export default function TextToImagePage() {
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
+  const copyPromptToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPrompt(true);
+      showSuccess("تم النسخ!");
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch (error) {
+      showError("خطأ", "فشل نسخ النص");
+    }
+  };
+
   const handleUpscale = async () => {
     if (!selectedImage || selectedImage.isGenerating) return;
     if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
@@ -377,7 +396,7 @@ export default function TextToImagePage() {
   if (permissionsLoading) return <div className="h-screen  flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen  text-white font-sans rounded-xl" dir="rtl">
+    <div className="min-h-screen text-white font-sans rounded-xl" dir="rtl">
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-[#00050a] to-[#00050a]" />
       <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-900/10 via-cyan-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
@@ -390,14 +409,32 @@ export default function TextToImagePage() {
       />
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
-        {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
+        {/* Sidebar - Settings */}
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full lg:h-auto",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
-           
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
 
             {/* Prompt Input */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-12 lg:mt-0">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Sparkles size={14} className="text-blue-400" />
                 وصف الصورة
@@ -423,7 +460,14 @@ export default function TextToImagePage() {
               size="lg"
               className="w-full rounded-xl h-11"
             >
-              إنشاء صورة
+              <div className="flex items-center justify-center gap-2">
+                <span>إنشاء صورة</span>
+                {totalCost > 0 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-mono">
+                     {totalCost.toLocaleString()} كريديت 
+                  </span>
+                )}
+              </div>
             </GradientButton>
             {/* Model Selection */}
             <div className="space-y-2">
@@ -565,48 +609,64 @@ export default function TextToImagePage() {
                 </div>
               </div>
             )}
-
-           
           </div>
         </aside>
 
         {/* Main Content - Gallery (Scrollable) */}
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             {history.length === 0 ? (
               // Empty State
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <ImageIcon size={80} className="text-blue-500/20 mb-4 mx-auto" />
-                  <h3 className="text-xl font-bold text-white mb-2">ابدأ في إنشاء صورك</h3>
-                  <p className="text-sm text-gray-500 max-w-md">
-                    اكتب وصفاً للصورة التي تريدها في الجانب الأيمن وسنقوم بإنشائها لك في ثوانٍ
+              <div className="h-full min-h-[60vh] flex items-center justify-center">
+                <div className="text-center px-4">
+                  <ImageIcon size={60} className="lg:w-20 lg:h-20 text-blue-500/20 mb-4 mx-auto" />
+                  <h3 className="text-lg lg:text-xl font-bold text-white mb-2">ابدأ في إنشاء صورك</h3>
+                  <p className="text-xs lg:text-sm text-gray-500 max-w-md mb-6">
+                    اضغط على زر الإعدادات لكتابة وصف الصورة التي تريدها وسنقوم بإنشائها لك في ثوانٍ
                   </p>
+                  
+                  {/* Mobile Settings Button in Empty State */}
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={18} />
+                    <span>افتح الإعدادات</span>
+                  </button>
                 </div>
               </div>
             ) : (
               // Gallery Grid
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <History size={18} className="text-blue-400" />
+                  <h2 className="text-base lg:text-lg font-bold text-white flex items-center gap-2">
+                    <History size={16} className="lg:w-[18px] lg:h-[18px] text-blue-400" />
                     أعمالك ({history.length})
                   </h2>
+                  
+                  {/* Mobile Settings Button */}
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={16} />
+                    <span>انشاء</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 lg:gap-4">
                   {history.map((img) => (
                     <motion.div
                       key={img.id}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="group relative aspect-square rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all"
+                      className="group relative aspect-square rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-blue-500/50 transition-all"
                     >
                       {img.isGenerating ? (
                         // Loading State with Progress
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                          <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3" />
-                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 lg:p-4">
+                          <Loader2 className="w-6 h-6 lg:w-8 lg:h-8 text-blue-400 animate-spin mb-2 lg:mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-1.5 lg:h-2 overflow-hidden">
                             <motion.div
                               className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
                               initial={{ width: "0%" }}
@@ -614,7 +674,7 @@ export default function TextToImagePage() {
                               transition={{ duration: 0.5 }}
                             />
                           </div>
-                          <p className="text-xs text-gray-400 mt-2">جاري الإنشاء...</p>
+                          <p className="text-[10px] lg:text-xs text-gray-400 mt-1 lg:mt-2">جاري الإنشاء...</p>
                         </div>
                       ) : (
                         <>
@@ -628,18 +688,18 @@ export default function TextToImagePage() {
 
                           {/* Overlay on Hover */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                              <p className="text-xs text-white line-clamp-2">{img.prompt}</p>
-                              <div className="flex items-center gap-2">
+                            <div className="absolute bottom-0 left-0 right-0 p-2 lg:p-3 space-y-1 lg:space-y-2">
+                              <p className="text-[10px] lg:text-xs text-white line-clamp-2">{img.prompt}</p>
+                              <div className="flex items-center gap-1 lg:gap-2">
                                 <Button
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedImage(img);
                                   }}
-                                  className="flex-1 h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-xs"
+                                  className="flex-1 h-7 lg:h-8 rounded-lg bg-blue-500 hover:bg-blue-600 text-[10px] lg:text-xs"
                                 >
-                                  <Eye size={12} className="ml-1" />
+                                  <Eye size={10} className="lg:w-3 lg:h-3 ml-1" />
                                   عرض
                                 </Button>
                                 <Button
@@ -649,17 +709,17 @@ export default function TextToImagePage() {
                                     e.stopPropagation();
                                     downloadImage(img.url, `ai-art-${img.id}.png`);
                                   }}
-                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
                                 >
-                                  <Download size={12} />
+                                  <Download size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={(e) => deleteFromHistory(img.id, e)}
-                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
                                 >
-                                  <Trash2 size={12} />
+                                  <Trash2 size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                               </div>
                             </div>
@@ -667,8 +727,8 @@ export default function TextToImagePage() {
 
                           {/* Selected Indicator */}
                           {selectedImage?.id === img.id && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                              <Eye size={14} className="text-white" />
+                            <div className="absolute top-1 right-1 lg:top-2 lg:right-2 w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                              <Eye size={12} className="lg:w-[14px] lg:h-[14px] text-white" />
                             </div>
                           )}
                         </>
@@ -689,7 +749,7 @@ export default function TextToImagePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-2 lg:p-4"
             onClick={() => setSelectedImage(null)}
           >
             <motion.div
@@ -702,40 +762,61 @@ export default function TextToImagePage() {
               {/* Close Button */}
               <button
                 onClick={() => setSelectedImage(null)}
-                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="absolute -top-10 lg:-top-12 left-0 w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
               >
-                <X size={20} />
+                <X size={18} className="lg:w-5 lg:h-5" />
               </button>
 
               {/* Image */}
-              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+              <div className="relative rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10">
                 <img
                   src={selectedImage.url}
                   alt={selectedImage.prompt}
-                  className="w-full max-h-[80vh] object-contain"
+                  className="w-full max-h-[70vh] lg:max-h-[80vh] object-contain"
                 />
                 <BorderBeam />
               </div>
 
-              {/* Actions */}
-              <div className="mt-4 flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 line-clamp-2">{selectedImage.prompt}</p>
+              {/* Prompt and Actions */}
+              <div className="mt-3 lg:mt-4 space-y-3">
+                {/* Prompt Section */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 lg:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-xs text-gray-400 mb-1 block">البرومبت:</label>
+                      <div className="max-h-[100px] overflow-y-auto scrollbar-hide pl-2">
+                        <p className="text-sm lg:text-base text-white leading-relaxed break-words">{selectedImage.prompt}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyPromptToClipboard(selectedImage.prompt)}
+                      className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                      title="نسخ البرومبت"
+                    >
+                      {copiedPrompt ? (
+                        <Check size={16} className="text-green-400" />
+                      ) : (
+                        <Copy size={16} className="text-gray-400" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => downloadImage(selectedImage.url, `ai-art-${selectedImage.id}.png`)}
-                    className="rounded-xl bg-blue-500 hover:bg-blue-600 h-10 px-6"
+                    className="flex-1 sm:flex-none rounded-xl bg-blue-500 hover:bg-blue-600 h-9 lg:h-10 px-4 lg:px-6 text-sm"
                   >
-                    <Download size={16} className="ml-2" />
+                    <Download size={14} className="lg:w-4 lg:h-4 ml-2" />
                     تحميل
                   </Button>
                   <Button
                     variant="ghost"
                     onClick={(e) => deleteFromHistory(selectedImage.id, e)}
-                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-9 lg:h-10 w-9 lg:w-10 p-0"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} className="lg:w-4 lg:h-4" />
                   </Button>
                 </div>
               </div>

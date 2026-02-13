@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Copy, Check, 
   Loader2, ArrowRight, Zap, Image as ImageIcon, Search, History, X, Trash2,
-  RefreshCw
+  RefreshCw, Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ export default function ImageToTextPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -199,11 +200,31 @@ export default function ImageToTextPage() {
       />
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
         {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full lg:h-auto",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
-            <div className="space-y-4">
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
+            
+            <div className="space-y-4 mt-12 lg:mt-0">
             <div className="space-y-4">
                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">الصورة المراد تحليلها</label>
                <div 
@@ -250,8 +271,8 @@ export default function ImageToTextPage() {
 
         {/* Main Content - Gallery (Scrollable) */}
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="p-6 space-y-6">
-           <div className="min-h-[500px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden">
+          <div className="p-4 lg:p-6 space-y-6">
+           <div className="min-h-[500px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 lg:p-8 relative overflow-hidden">
               <AnimatePresence mode="wait">
                  {description ? (
                     <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
@@ -265,31 +286,39 @@ export default function ImageToTextPage() {
                           </button>
                         </div>
 
-                       <div className="bg-white/5 rounded-3xl p-8 border border-white/5 relative group w-full shadow-2xl">
-                          <h3 className="text-teal-400 font-bold mb-4 flex items-center gap-2 text-right justify-end">الوصف المستخرج: <ImageIcon size={18} /></h3>
+                       <div className="bg-white/5 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-white/5 relative group w-full shadow-2xl">
+                          <h3 className="text-teal-400 font-bold mb-4 flex items-center gap-2 text-right justify-end text-sm lg:text-base">الوصف المستخرج: <ImageIcon size={18} /></h3>
                           <div className="relative">
-                            <p className="text-gray-300 leading-relaxed text-lg font-medium font-sans ltr text-left dir-ltr selection:bg-teal-500/30 overflow-y-auto max-h-[400px] custom-scrollbar p-4 bg-black/20 rounded-2xl border border-white/5">
+                            <p className="text-gray-300 leading-relaxed text-sm lg:text-lg font-medium font-sans ltr text-left dir-ltr selection:bg-teal-500/30 overflow-y-auto max-h-[300px] lg:max-h-[400px] custom-scrollbar p-3 lg:p-4 bg-black/20 rounded-xl lg:rounded-2xl border border-white/5">
                                 {description}
                             </p>
                             <Button 
                                 onClick={copyToClipboard} 
-                                className="absolute top-2 right-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white h-12 w-12 p-0 border border-white/10"
+                                className="absolute top-2 right-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white h-10 w-10 lg:h-12 lg:w-12 p-0 border border-white/10"
                                 title="نسخ الوصف"
                             >
-                                {copied ? <Check className="text-white" size={20} /> : <Copy size={20} />}
+                                {copied ? <Check className="text-white" size={16} /> : <Copy size={16} />}
                             </Button>
                           </div>
-                          <div className="mt-8 flex items-center gap-3 justify-center">
-                             <Button variant="ghost" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 h-10 px-6" onClick={() => {setDescription(null); setPreviewUrl(null);}}><RefreshCw size={16} className="ml-2" /> تجربة صورة أخرى</Button>
+                          <div className="mt-6 lg:mt-8 flex items-center gap-3 justify-center">
+                             <Button variant="ghost" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 h-9 lg:h-10 px-4 lg:px-6 text-xs lg:text-sm" onClick={() => {setDescription(null); setPreviewUrl(null);}}><RefreshCw size={14} className="lg:w-4 lg:h-4 ml-2" /> تجربة صورة أخرى</Button>
                           </div>
                           <BorderBeam colorFrom="#14B8A6" colorTo="#10B981" />
                        </div>
                     </motion.div>
                  ) : isAnalyzing ? <AILoader /> : (
-                    <div className="text-center group">
-                       <Search size={80} className="text-teal-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
-                       <h3 className="text-2xl font-bold mb-2 text-white">أسرار الصورة بانتظارك</h3>
-                       <p className="text-sm text-gray-500 max-w-sm mx-auto">ارفع صورة لنكتشف معاً سحر الكلمات الكامنة خلفها.</p>
+                    <div className="text-center group px-4">
+                       <Search size={60} className="lg:w-20 lg:h-20 text-teal-500/10 mb-4 lg:mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
+                       <h3 className="text-lg lg:text-2xl font-bold mb-2 text-white">أسرار الصورة بانتظارك</h3>
+                       <p className="text-xs lg:text-sm text-gray-500 max-w-sm mx-auto">ارفع صورة لنكتشف معاً سحر الكلمات الكامنة خلفها.</p>
+                       
+                       <button
+                         onClick={() => setShowSettings(true)}
+                         className="lg:hidden mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                       >
+                         <Settings size={18} />
+                         <span>افتح الإعدادات</span>
+                       </button>
                     </div>
                  )}
               </AnimatePresence>
@@ -299,9 +328,18 @@ export default function ImageToTextPage() {
              <div className="space-y-4">
                 <div className="flex items-center justify-between px-2">
                    <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest"><History size={14} className="text-teal-500" /> عمليات التحليل السابقة ({history.length})</h4>
-                   <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                   <div className="flex items-center gap-2">
+                     <button
+                       onClick={() => setShowSettings(true)}
+                       className="lg:hidden flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-xs font-bold transition-transform hover:scale-105"
+                     >
+                       <Settings size={14} />
+                       <span>إعدادات</span>
+                     </button>
+                     <Button variant="ghost" size="sm" onClick={handleClearAll} className="text-red-400 hover:bg-red-500/10 h-8 rounded-full text-xs transition-colors">مسح الكل</Button>
+                   </div>
                 </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 lg:gap-3">
                    {history.map(item => (
                       <div 
                          key={item.id} 

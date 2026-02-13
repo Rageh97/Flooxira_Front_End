@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   Sparkles, Upload, Download, Edit2, 
-  Loader2, ArrowRight, Image as ImageIcon, Zap, Wand2, X, Trash2, History, Eye
+  Loader2, ArrowRight, Image as ImageIcon, Zap, Wand2, X, Trash2, History, Eye, Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,7 @@ export default function ImageEditPage() {
   const [selectedResult, setSelectedResult] = useState<EditedImage | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -245,12 +246,32 @@ export default function ImageEditPage() {
       />
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
         {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full lg:h-auto",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
+            
             {/* Upload Image */}
-            <div className="space-y-2">
+            <div className="space-y-2 mt-12 lg:mt-0">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Upload size={14} className="text-blue-400" />
                 الصورة المراد تعديلها
@@ -340,29 +361,45 @@ export default function ImageEditPage() {
 
         {/* Main Content - Gallery (Scrollable) */}
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             {history.length === 0 ? (
               // Empty State
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Edit2 size={80} className="text-blue-500/20 mb-4 mx-auto" />
-                  <h3 className="text-xl font-bold text-white mb-2">محرر الصور المتقدم</h3>
-                  <p className="text-sm text-gray-500 max-w-md">
+              <div className="h-full min-h-[60vh] flex items-center justify-center">
+                <div className="text-center px-4">
+                  <Edit2 size={60} className="lg:w-20 lg:h-20 text-blue-500/20 mb-4 mx-auto" />
+                  <h3 className="text-lg lg:text-xl font-bold text-white mb-2">محرر الصور المتقدم</h3>
+                  <p className="text-xs lg:text-sm text-gray-500 max-w-md mb-6">
                     ارفع صورتك واكتب أوامرك لنتولى التعديل بدقة متناهية
                   </p>
+                  
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={18} />
+                    <span>افتح الإعدادات</span>
+                  </button>
                 </div>
               </div>
             ) : (
               // Gallery Grid
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <History size={18} className="text-blue-400" />
+                  <h2 className="text-base lg:text-lg font-bold text-white flex items-center gap-2">
+                    <History size={16} className="lg:w-[18px] lg:h-[18px] text-blue-400" />
                     أعمالك ({history.length})
                   </h2>
+                  
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={16} />
+                    <span>الإعدادات</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 lg:gap-4">
                   {history.map((item) => (
                     <motion.div
                       key={item.id}

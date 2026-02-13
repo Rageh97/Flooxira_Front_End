@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Zap, FileVideo, X, Trash2, Eye, Play
+  Loader2, ArrowRight, Zap, FileVideo, X, Trash2, Eye, Play, Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ export default function VideoUpscalePage() {
   const [selectedResult, setSelectedResult] = useState<ProcessedVideo | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -245,10 +246,30 @@ export default function VideoUpscalePage() {
       </header>
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
-        {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
-          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" 
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
+        {/* Sidebar - Settings (Fixed on desktop, sliding on mobile) */}
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0 z-50",
+          "fixed lg:relative top-0 right-0 h-full transition-transform duration-300",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
+          {/* Mobile Close Button */}
+          <button
+            onClick={() => setShowSettings(false)}
+            className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-10"
+          >
+            <X size={18} />
+          </button>
+
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5 mt-12 lg:mt-0">
             {/* Upload Video */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
@@ -329,19 +350,35 @@ export default function VideoUpscalePage() {
                   <p className="text-sm text-gray-500 max-w-md">
                     ارفع الفيديو وسنقوم بتحويله إلى دقة احترافية
                   </p>
+                  {/* Mobile Settings Button */}
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden mt-6 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-bold flex items-center gap-2 mx-auto transition-all"
+                  >
+                    <Settings size={18} />
+                    فتح الإعدادات
+                  </button>
                 </div>
               </div>
             ) : (
               // Gallery Grid
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <HistoryIcon size={18} className="text-blue-400" />
+                  <h2 className="text-base lg:text-lg font-bold text-white flex items-center gap-2">
+                    <HistoryIcon size={16} className="text-blue-400 lg:hidden" />
+                    <HistoryIcon size={18} className="text-blue-400 hidden lg:block" />
                     أعمالك ({history.length})
                   </h2>
+                  {/* Mobile Settings Button */}
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden w-9 h-9 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 flex items-center justify-center transition-all"
+                  >
+                    <Settings size={16} />
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 lg:gap-4">
                   {history.map((item) => (
                     <motion.div
                       key={item.id}

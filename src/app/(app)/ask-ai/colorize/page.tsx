@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Download, Droplets, 
-  Loader2, ArrowRight, Zap, History, RefreshCw, X, Trash2
+  Loader2, ArrowRight, Zap, History, RefreshCw, X, Trash2, Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export default function ColorizePage() {
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -177,11 +178,31 @@ export default function ColorizePage() {
          />
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
         {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full lg:h-auto",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
-            <div className="space-y-4">
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
+            
+            <div className="space-y-4 mt-12 lg:mt-0">
             <div className="space-y-4">
                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">ارفع صورة أبيض وأسود</label>
                <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-blue-500/30 transition-all bg-white/5 group" onClick={() => document.getElementById('file-c')?.click()}>
@@ -217,8 +238,8 @@ export default function ColorizePage() {
 
         {/* Main Content - Gallery (Scrollable) */}
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="p-6 space-y-6">
-           <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-8 relative overflow-hidden group">
+          <div className="p-4 lg:p-6 space-y-6">
+           <div className="min-h-[500px] lg:min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 lg:p-8 relative overflow-hidden group">
               <AnimatePresence mode="wait">
                 {selectedResult ? (
                   <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
@@ -232,22 +253,30 @@ export default function ColorizePage() {
                         </button>
                     </div>
 
-                    <div className="relative w-full overflow-hidden rounded-3xl shadow-3xl">
-                       <img src={selectedResult.url} className="w-full h-auto max-h-[600px] object-contain transition-transform duration-500 hover:scale-[1.01]" />
+                    <div className="relative w-full overflow-hidden rounded-2xl lg:rounded-3xl shadow-3xl">
+                       <img src={selectedResult.url} className="w-full h-auto max-h-[400px] lg:max-h-[600px] object-contain transition-transform duration-500 hover:scale-[1.01]" />
                        <div className="absolute top-4 right-4 bg-blue-500/80 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">تم التلوين</div>
                     </div>
                     
-                    <div className="mt-8 flex gap-4">
-                        <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-white text-black font-bold h-10 px-8 hover:scale-105 transition-all"><Download className="mr-2 h-4 w-4" /> تحميل الصورة الملونة</Button>
-                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-10 w-10 border border-red-500/20" onClick={(e) => handleDeleteItem(selectedResult.id, e)}><Trash2 size={18} /></Button>
+                    <div className="mt-6 lg:mt-8 flex gap-3 lg:gap-4">
+                        <Button onClick={() => window.open(selectedResult.url)} className="rounded-full bg-white text-black font-bold h-9 lg:h-10 px-6 lg:px-8 hover:scale-105 transition-all text-sm"><Download className="mr-2 h-4 w-4" /> تحميل الصورة الملونة</Button>
+                        <Button variant="ghost" size="icon" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 h-9 w-9 lg:h-10 lg:w-10 border border-red-500/20" onClick={(e) => handleDeleteItem(selectedResult.id, e)}><Trash2 size={16} className="lg:w-[18px] lg:h-[18px]" /></Button>
                     </div>
                     <BorderBeam colorFrom="#34D399" colorTo="#3B82F6" />
                   </motion.div>
                 ) : isProcessing ? <AILoader /> : (
-                  <div className="text-center group">
-                     <Droplets size={80} className="text-blue-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
-                     <h3 className="text-2xl font-bold mb-2 text-white">في انتظار ذكرياتك</h3>
-                     <p className="text-sm text-gray-500">ارفع الصورة وسنقوم بتحليل الألوان وإعادتها بشكل طبيعي.</p>
+                  <div className="text-center group px-4">
+                     <Droplets size={60} className="lg:w-20 lg:h-20 text-blue-500/10 mb-4 lg:mb-6 mx-auto group-hover:scale-110 transition-transform duration-500" />
+                     <h3 className="text-lg lg:text-2xl font-bold mb-2 text-white">في انتظار ذكرياتك</h3>
+                     <p className="text-xs lg:text-sm text-gray-500 mb-6">ارفع الصورة وسنقوم بتحليل الألوان وإعادتها بشكل طبيعي.</p>
+                     
+                     <button
+                       onClick={() => setShowSettings(true)}
+                       className="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                     >
+                       <Settings size={18} />
+                       <span>افتح الإعدادات</span>
+                     </button>
                   </div>
                 )}
               </AnimatePresence>
@@ -259,15 +288,24 @@ export default function ColorizePage() {
                    <h4 className="text-xs font-bold text-gray-500 flex items-center gap-2 uppercase tracking-widest">
                      <History size={14} className="text-blue-500" /> أرشيف التلوين ({history.length})
                    </h4>
-                   <Button 
-                     onClick={handleClearAll}
-                     variant="ghost"
-                     size="sm"
-                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-full text-xs"
-                   >
-                     <Trash2 className="h-4 w-4 ml-2" />
-                     حذف الكل
-                   </Button>
+                   <div className="flex items-center gap-2">
+                     <button
+                       onClick={() => setShowSettings(true)}
+                       className="lg:hidden flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs font-bold transition-transform hover:scale-105"
+                     >
+                       <Settings size={14} />
+                       <span>إعدادات</span>
+                     </button>
+                     <Button 
+                       onClick={handleClearAll}
+                       variant="ghost"
+                       size="sm"
+                       className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8 rounded-full text-xs"
+                     >
+                       <Trash2 className="h-4 w-4 ml-2" />
+                       حذف الكل
+                     </Button>
+                   </div>
                 </div>
                 <div className="flex gap-4 overflow-x-auto pb-4 px-2 custom-scrollbar">
                    {history.map(img => (

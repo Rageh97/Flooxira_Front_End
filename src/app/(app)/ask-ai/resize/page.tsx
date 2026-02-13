@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { 
   Sparkles, Upload, Download, History as HistoryIcon, 
-  Loader2, ArrowRight, Zap, Maximize, FileVideo, X, Trash2
+  Loader2, ArrowRight, Zap, Maximize, FileVideo, X, Trash2, Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ export default function ResizePage() {
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -178,10 +179,30 @@ export default function ResizePage() {
         stats={stats}
       />
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
-        {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
-          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" 
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
+        {/* Sidebar - Settings (Fixed on desktop, sliding on mobile) */}
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0 z-50",
+          "fixed lg:relative top-0 right-0 h-full transition-transform duration-300",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
+          {/* Mobile Close Button */}
+          <button
+            onClick={() => setShowSettings(false)}
+            className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-10"
+          >
+            <X size={18} />
+          </button>
+
+          <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5 mt-12 lg:mt-0">
             <div className="space-y-4">
              <div className="space-y-4">
                 <label className="text-xs font-bold text-gray-400 block text-right">الفيديو المستهدف</label>
@@ -268,6 +289,14 @@ export default function ResizePage() {
                        <Maximize size={80} className="text-orange-500/10 mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
                        <p className="text-2xl font-bold text-white mb-2">اختر الأبعاد المناسبة لمنصتك</p>
                        <p className="text-sm text-gray-500">ارفع الفيديو وسنقوم بإعادة تحجيمه ليلائم مقاسات التواصل.</p>
+                       {/* Mobile Settings Button */}
+                       <button
+                         onClick={() => setShowSettings(true)}
+                         className="lg:hidden mt-6 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold flex items-center gap-2 mx-auto transition-all"
+                       >
+                         <Settings size={18} />
+                         فتح الإعدادات
+                       </button>
                     </div>
                  )}
               </AnimatePresence>

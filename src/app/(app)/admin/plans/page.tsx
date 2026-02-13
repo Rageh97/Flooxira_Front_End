@@ -124,6 +124,16 @@ const MODEL_PRICING_OPTIONS: Record<string, { label: string, defaultCost: number
   'gemini-2.0-flash': { label: 'Gemini 2.0 Flash', defaultCost: 2, type: 'chat' }
 };
 
+const VIDEO_DURATIONS = [4, 6, 8];
+
+const DEFAULT_DURATION_PRICING: Record<string, Record<number, number>> = {
+  'veo-3.1-generate-preview': { 5: 60, 10: 80, 15: 100, 20: 120, 30: 150 },
+  'veo-3.1-fast-generate-preview': { 5: 45, 10: 60, 15: 75, 20: 90, 30: 120 },
+  'veo-3.0-generate-001': { 5: 40, 10: 50, 15: 65, 20: 80, 30: 100 },
+  'veo-3.0-fast-generate-001': { 5: 30, 10: 40, 15: 50, 20: 60, 30: 80 },
+  'veo-2.0-generate-001': { 5: 25, 10: 30, 15: 40, 20: 50, 30: 65 },
+};
+
 export default function PlansAdminPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -173,6 +183,7 @@ export default function PlansAdminPage() {
       telegramAiCredits: 0,
       allowedAITools: [] as string[],
       modelPricing: {} as Record<string, number>,
+      durationPricing: {} as Record<string, Record<number, number>>,
       creditMarkupPercent: 30,
       markupChat: 30,
       markupImage: 30,
@@ -218,6 +229,7 @@ export default function PlansAdminPage() {
       telegramAiCredits: 0,
       allowedAITools: [] as string[],
       modelPricing: {} as Record<string, number>,
+      durationPricing: {} as Record<string, Record<number, number>>,
       creditMarkupPercent: 30,
       markupChat: 30,
       markupImage: 30,
@@ -389,6 +401,7 @@ export default function PlansAdminPage() {
         telegramAiCredits: (plan.permissions as any)?.telegramAiCredits || 0,
         allowedAITools: (plan.permissions as any)?.allowedAITools || [],
         modelPricing: (plan.permissions as any)?.modelPricing || {},
+        durationPricing: (plan.permissions as any)?.durationPricing || {},
         creditMarkupPercent: (plan.permissions as any)?.creditMarkupPercent ?? 30,
         markupChat: (plan.permissions as any)?.markupChat ?? 30,
         markupImage: (plan.permissions as any)?.markupImage ?? 30,
@@ -570,6 +583,109 @@ export default function PlansAdminPage() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDurationPricingSection = (
+    currentPermissions: any,
+    onChange: (permissions: any) => void
+  ) => {
+    const videoModels = Object.keys(MODEL_PRICING_OPTIONS).filter(
+      modelId => MODEL_PRICING_OPTIONS[modelId].type === 'video' || MODEL_PRICING_OPTIONS[modelId].type === 'motion'
+    );
+
+    const handleDurationPriceChange = (modelId: string, duration: number, value: string) => {
+      const numValue = parseInt(value);
+      const newDurationPricing = { ...currentPermissions.durationPricing };
+      
+      if (!newDurationPricing[modelId]) {
+        newDurationPricing[modelId] = {};
+      }
+      
+      if (!isNaN(numValue) && numValue >= 0) {
+        newDurationPricing[modelId][duration] = numValue;
+      } else {
+        delete newDurationPricing[modelId][duration];
+      }
+      
+      onChange({
+        ...currentPermissions,
+        durationPricing: newDurationPricing
+      });
+    };
+
+    return (
+      <div className="space-y-6 border-t pt-6 mt-6">
+        <h3 className="font-semibold text-primary flex items-center gap-2 text-lg">
+          <DollarSign className="w-5 h-5" />
+          تسعير مدد الفيديو
+        </h3>
+        
+        <p className="text-sm text-gray-400">
+          حدد التكلفة الأساسية لكل مدة فيديو (بالثواني). سيتم تطبيق نسبة الربح المحددة أعلاه على هذه الأسعار.
+          <br />
+          إذا تركت الحقل فارغاً، سيتم استخدام التكلفة الافتراضية للنظام.
+        </p>
+
+        <div className="space-y-4">
+          {videoModels.map(modelId => {
+            const modelInfo = MODEL_PRICING_OPTIONS[modelId];
+            const modelDurationPricing = currentPermissions.durationPricing?.[modelId] || {};
+            const defaultPricing = DEFAULT_DURATION_PRICING[modelId] || {};
+
+            return (
+              <div key={modelId} className="bg-[#1a1d24] p-4 rounded-xl border border-white/5">
+                <h4 className="font-medium text-gray-200 mb-3 flex items-center justify-between">
+                  <span>{modelInfo.label}</span>
+                  <span className="text-xs font-normal text-gray-500 bg-white/5 px-2 py-1 rounded">
+                    {VIDEO_DURATIONS.length} مدة
+                  </span>
+                </h4>
+                
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                  {VIDEO_DURATIONS.map(duration => {
+                    const currentPrice = modelDurationPricing[duration];
+                    const defaultPrice = defaultPricing[duration] || modelInfo.defaultCost;
+                    
+                    // Calculate total cost with markup
+                    const costBasis = currentPrice !== undefined ? currentPrice : defaultPrice;
+                    const markup = (currentPermissions.markupVideo !== undefined) ? currentPermissions.markupVideo : 30;
+                    const markupAmount = (costBasis * (markup / 100));
+                    const totalCost = Math.ceil(costBasis + markupAmount);
+
+                    return (
+                      <div key={duration} className="flex flex-col gap-2 bg-black/20 p-3 rounded-lg border border-white/5">
+                        <Label className="text-xs font-bold text-gray-300">
+                          {duration} ثانية
+                        </Label>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[9px] text-gray-500 font-mono">
+                            افتراضي: {defaultPrice}C
+                          </span>
+                          <span className="text-[10px] bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded border border-green-500/20 font-bold">
+                            للعميل: {totalCost}C
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            className="w-full h-8 text-xs bg-black/40 border-white/10 text-white placeholder:text-gray-600 focus:border-primary/50"
+                            placeholder={defaultPrice.toString()}
+                            value={currentPrice !== undefined ? currentPrice : ''}
+                            onChange={(e) => handleDurationPriceChange(modelId, duration, e.target.value)}
+                          />
+                          <span className="text-[10px] text-gray-500">C</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -1205,6 +1321,9 @@ export default function PlansAdminPage() {
               
               {/* MODEL PRICING - Create */}
               {renderModelPricingSection(newPlan.permissions, (p) => setNewPlan({ ...newPlan, permissions: p }))}
+              
+              {/* DURATION PRICING - Create */}
+              {renderDurationPricingSection(newPlan.permissions, (p) => setNewPlan({ ...newPlan, permissions: p }))}
               </div>
             </div>
 
@@ -1811,6 +1930,9 @@ export default function PlansAdminPage() {
               
               {/* MODEL PRICING - Edit */}
               {renderModelPricingSection(editPlan.permissions, (p) => setEditPlan({ ...editPlan, permissions: p }))}
+              
+              {/* DURATION PRICING - Edit */}
+              {renderDurationPricingSection(editPlan.permissions, (p) => setEditPlan({ ...editPlan, permissions: p }))}
               </div>
             </div>
             <div>

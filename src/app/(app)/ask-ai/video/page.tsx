@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   Sparkles, Video, Download, Trash2, Sliders, Palette, Zap, Loader2, Wand2,
-  History, ArrowRight, Play, Film, X, ArrowUpCircle, Eye
+  History, ArrowRight, Play, Film, X, ArrowUpCircle, Eye, Settings, Copy, Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
@@ -38,9 +38,17 @@ import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModa
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 const ASPECT_RATIOS = [
-  { id: "16:9", label: "سينمائي", value: "16:9" },
-  { id: "9:16", label: "ستوري", value: "9:16" },
-  { id: "1:1", label: "مربع", value: "1:1" },
+  { id: "16:9", label: "سينمائي", value: "16:9", icon: "" },
+  { id: "9:16", label: "ستوري", value: "9:16", icon: "" },
+  { id: "1:1", label: "مربع", value: "1:1", icon: "" },
+  { id: "4:3", label: "كلاسيكي", value: "4:3", icon: "" },
+  { id: "3:4", label: "عمودي", value: "3:4", icon: "" },
+];
+
+const VIDEO_DURATIONS = [
+  { id: "4s", label: "4 ثواني", value: 4 },
+  { id: "6s", label: "6 ثواني", value: 6 },
+  { id: "8s", label: "8 ثانية", value: 8 },
 ];
 
 const VIDEO_MODELS = [
@@ -75,6 +83,7 @@ export default function TextToVideoPage() {
   const [token, setToken] = useState("");
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("16:9");
+  const [selectedDuration, setSelectedDuration] = useState(4);
   const [selectedStyle, setSelectedStyle] = useState("none");
   const [selectedModel, setSelectedModel] = useState("veo-3.1-generate-preview");
   const [includeAudio, setIncludeAudio] = useState(true);
@@ -89,10 +98,22 @@ export default function TextToVideoPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+
+  // Get cost directly from modelCosts
+  const totalCost = modelCosts[selectedModel] || 0;
+  
+  // Debug log
+  useEffect(() => {
+    console.log('[Video] Selected Model:', selectedModel);
+    console.log('[Video] Total Cost:', totalCost);
+    console.log('[Video] All Model Costs:', modelCosts);
+  }, [selectedModel, totalCost, modelCosts]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -126,6 +147,20 @@ export default function TextToVideoPage() {
 
   useEffect(() => { if (token) { loadStats(); checkAIPlans(); loadHistory(); } }, [token]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const t = localStorage.getItem("auth_token") || "";
+      setToken(t);
+      if (t) {
+        getAIConfig(t).then(data => {
+          if (data?.models) {
+            console.log('[Video] Model Costs:', data.models);
+            setModelCosts(data.models);
+          }
+        }).catch(console.error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -179,7 +214,7 @@ export default function TextToVideoPage() {
       const finalPrompt = prompt.trim() + (styleConfig?.prompt || "");
 
       const response = await generateAIVideo(token, {
-        prompt: finalPrompt, aspectRatio: selectedRatio, includeAudio: includeAudio, model: selectedModel
+        prompt: finalPrompt, aspectRatio: selectedRatio, duration: selectedDuration, includeAudio: includeAudio, model: selectedModel
       });
 
       clearInterval(progressInterval);
@@ -259,6 +294,17 @@ export default function TextToVideoPage() {
     } catch (error) { showError("خطأ", "تعذر التحميل"); }
   };
 
+  const copyPromptToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedPrompt(true);
+      showSuccess("تم النسخ!");
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch (error) {
+      showError("خطأ", "فشل نسخ النص");
+    }
+  };
+
   const handleAddAudio = async () => {
     if (!selectedVideo || !audioText.trim()) return showError("تنبيه", "يرجى كتابة النص الصوتي");
     if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
@@ -336,16 +382,33 @@ export default function TextToVideoPage() {
         modelBadge="VEO 3.1 PREVIEW"
         stats={stats}
       />
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full lg:h-auto",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
-            <div className="space-y-2">
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
+            <div className="space-y-2 mt-12 lg:mt-0">
               <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
                 <Sparkles size={14} className="text-purple-400" />
                 وصف الفيديو
               </label>
-              
-             
 
               <textarea
                 ref={textareaRef}
@@ -367,7 +430,14 @@ export default function TextToVideoPage() {
               size="lg"
               className="w-full rounded-xl h-11"
             >
-              توليد الفيديو
+              <div className="flex items-center justify-center gap-2">
+                <span>توليد الفيديو</span>
+                {totalCost > 0 && (
+                  <span className="text-xs  px-2 py-0.5 rounded-full font-mono">
+                     {totalCost.toLocaleString()} كريديت 
+                  </span>
+                )}
+              </div>
             </GradientButton>
  {/* Model Selection */}
               <div className="mb-4 space-y-2">
@@ -434,22 +504,50 @@ export default function TextToVideoPage() {
                     key={ratio.id}
                     onClick={() => setSelectedRatio(ratio.value)}
                     className={clsx(
-                      "relative flex flex-col items-center justify-center p-2 rounded-lg transition-all border",
+                      "relative flex flex-col items-center justify-center p-2 rounded-lg transition-all border text-[10px]",
                       selectedRatio === ratio.value
                         ? "bg-purple-500/20 border-purple-400 text-white"
                         : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
                     )}
                   >
-                    <div
-                      className={clsx(
-                        "border-2 rounded-sm mb-1",
-                        selectedRatio === ratio.value ? "border-white" : "border-gray-600",
-                        ratio.id === "1:1" ? "w-4 h-4" : ratio.id === "16:9" ? "w-5 h-3" : "w-3 h-5"
-                      )}
-                    />
-                    <span className="text-[10px] font-medium">{ratio.label}</span>
+                    <span className="text-base mb-1">{ratio.icon}</span>
+                    <span className="font-medium">{ratio.label}</span>
+                    <span className="text-[9px] text-gray-500">{ratio.value}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-2">
+                <Zap size={14} className="text-indigo-400" />
+                مدة الفيديو
+              </label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {VIDEO_DURATIONS.map(duration => {
+                  // Display the same cost for all durations (cost is per model, not per duration)
+                  const cost = modelCosts[selectedModel] || 0;
+                  
+                  return (
+                    <button
+                      key={duration.id}
+                      onClick={() => setSelectedDuration(duration.value)}
+                      className={clsx(
+                        "relative flex flex-col items-center justify-center p-2 rounded-lg transition-all border text-[10px]",
+                        selectedDuration === duration.value
+                          ? "bg-indigo-500/20 border-indigo-400 text-white"
+                          : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                      )}
+                    >
+                      <span className="font-medium">{duration.label}</span>
+                      {cost > 0 && (
+                        <span className="text-[8px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded mt-1 font-mono border border-yellow-500/20">
+                          {cost.toLocaleString()}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -541,38 +639,54 @@ export default function TextToVideoPage() {
         </aside>
 
         <main className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="p-6">
+          <div className="p-4 lg:p-6">
             {history.length === 0 ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Play size={80} className="text-purple-500/20 mb-4 mx-auto" />
-                  <h3 className="text-xl font-bold text-white mb-2">استديو الفيديو الاحترافي</h3>
-                  <p className="text-sm text-gray-500 max-w-md">
+              <div className="h-full min-h-[60vh] flex items-center justify-center">
+                <div className="text-center px-4">
+                  <Play size={60} className="lg:w-20 lg:h-20 text-purple-500/20 mb-4 mx-auto" />
+                  <h3 className="text-lg lg:text-xl font-bold text-white mb-2">استديو الفيديو الاحترافي</h3>
+                  <p className="text-xs lg:text-sm text-gray-500 max-w-md mb-6">
                     صف المشهد وسنقوم بتحويله إلى فيديو سينمائي احترافي باستخدام Veo 3.1
                   </p>
+                  
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={18} />
+                    <span>افتح الإعدادات</span>
+                  </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                    <History size={18} className="text-purple-400" />
+                  <h2 className="text-base lg:text-lg font-bold text-white flex items-center gap-2">
+                    <History size={16} className="lg:w-[18px] lg:h-[18px] text-purple-400" />
                     أعمالك ({history.length})
                   </h2>
+                  
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                  >
+                    <Settings size={16} />
+                    <span>الإعدادات</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 lg:gap-4">
                   {history.map((vid) => (
                     <motion.div
                       key={vid.id}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="group relative aspect-video rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all"
+                      className="group relative aspect-video rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all"
                     >
                       {vid.isGenerating ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                          <Loader2 className="w-8 h-8 text-purple-400 animate-spin mb-3" />
-                          <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 lg:p-4">
+                          <Loader2 className="w-6 h-6 lg:w-8 lg:h-8 text-purple-400 animate-spin mb-2 lg:mb-3" />
+                          <div className="w-full bg-white/10 rounded-full h-1.5 lg:h-2 overflow-hidden">
                             <motion.div
                               className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500"
                               initial={{ width: "0%" }}
@@ -580,7 +694,7 @@ export default function TextToVideoPage() {
                               transition={{ duration: 0.5 }}
                             />
                           </div>
-                          <p className="text-xs text-gray-400 mt-2">جاري الإنتاج...</p>
+                          <p className="text-[10px] lg:text-xs text-gray-400 mt-1 lg:mt-2">جاري الإنتاج...</p>
                         </div>
                       ) : (
                         <>
@@ -599,18 +713,18 @@ export default function TextToVideoPage() {
                           </div>
 
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-2">
-                              <p className="text-xs text-white line-clamp-1">{vid.prompt}</p>
-                              <div className="flex items-center gap-2">
+                            <div className="absolute bottom-0 left-0 right-0 p-2 lg:p-3 space-y-1 lg:space-y-2">
+                              <p className="text-[10px] lg:text-xs text-white line-clamp-1">{vid.prompt}</p>
+                              <div className="flex items-center gap-1 lg:gap-2">
                                 <Button
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedVideo(vid);
                                   }}
-                                  className="flex-1 h-8 rounded-lg bg-purple-500 hover:bg-purple-600 text-xs"
+                                  className="flex-1 h-7 lg:h-8 rounded-lg bg-purple-500 hover:bg-purple-600 text-[10px] lg:text-xs"
                                 >
-                                  <Eye size={12} className="ml-1" />
+                                  <Eye size={10} className="lg:w-3 lg:h-3 ml-1" />
                                   عرض
                                 </Button>
                                 <Button
@@ -620,25 +734,25 @@ export default function TextToVideoPage() {
                                     e.stopPropagation();
                                     downloadVideo(vid.url, `ai-vid-${vid.id}.mp4`);
                                   }}
-                                  className="h-8 w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-white/10 hover:bg-white/20"
                                 >
-                                  <Download size={12} />
+                                  <Download size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="ghost"
                                   onClick={(e) => deleteFromHistory(vid.id, e)}
-                                  className="h-8 w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
+                                  className="h-7 lg:h-8 w-7 lg:w-8 p-0 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400"
                                 >
-                                  <Trash2 size={12} />
+                                  <Trash2 size={10} className="lg:w-3 lg:h-3" />
                                 </Button>
                               </div>
                             </div>
                           </div>
 
                           {selectedVideo?.id === vid.id && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
-                              <Eye size={14} className="text-white" />
+                            <div className="absolute top-1 right-1 lg:top-2 lg:right-2 w-5 h-5 lg:w-6 lg:h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                              <Eye size={12} className="lg:w-[14px] lg:h-[14px] text-white" />
                             </div>
                           )}
                         </>
@@ -658,7 +772,7 @@ export default function TextToVideoPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-2 lg:p-4"
             onClick={() => setSelectedVideo(null)}
           >
             <motion.div
@@ -670,40 +784,59 @@ export default function TextToVideoPage() {
             >
               <button
                 onClick={() => setSelectedVideo(null)}
-                className="absolute -top-12 left-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="absolute -top-10 lg:-top-12 left-0 w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
               >
-                <X size={20} />
+                <X size={18} className="lg:w-5 lg:h-5" />
               </button>
 
-              <div className="relative rounded-2xl overflow-hidden bg-white/5 border border-white/10">
+              <div className="relative rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10">
                 <video
                   src={selectedVideo.url}
                   controls
                   autoPlay
                   loop
-                  className="w-full max-h-[80vh] object-contain"
+                  className="w-full max-h-[70vh] lg:max-h-[80vh] object-contain"
                 />
                 <BorderBeam />
               </div>
 
-              <div className="mt-4 flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-400 line-clamp-1">{selectedVideo.prompt}</p>
+              <div className="mt-3 lg:mt-4 space-y-3">
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 lg:p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <label className="text-xs text-gray-400 mb-1 block">البرومبت:</label>
+                      <div className="max-h-[100px] overflow-y-auto scrollbar-hide pl-2">
+                        <p className="text-sm lg:text-base text-white leading-relaxed break-words">{selectedVideo.prompt}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => copyPromptToClipboard(selectedVideo.prompt)}
+                      className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                      title="نسخ البرومبت"
+                    >
+                      {copiedPrompt ? (
+                        <Check size={16} className="text-green-400" />
+                      ) : (
+                        <Copy size={16} className="text-gray-400" />
+                      )}
+                    </button>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <Button
                     onClick={() => downloadVideo(selectedVideo.url, `ai-vid-${selectedVideo.id}.mp4`)}
-                    className="rounded-xl bg-purple-500 hover:bg-purple-600 h-10 px-6"
+                    className="flex-1 sm:flex-none rounded-xl bg-purple-500 hover:bg-purple-600 h-9 lg:h-10 px-4 lg:px-6 text-sm"
                   >
-                    <Download size={16} className="ml-2" />
+                    <Download size={14} className="lg:w-4 lg:h-4 ml-2" />
                     تحميل
                   </Button>
                   <Button
                     variant="ghost"
                     onClick={(e) => deleteFromHistory(selectedVideo.id, e)}
-                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 w-10 p-0"
+                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-9 lg:h-10 w-9 lg:w-10 p-0"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} className="lg:w-4 lg:h-4" />
                   </Button>
                 </div>
               </div>
