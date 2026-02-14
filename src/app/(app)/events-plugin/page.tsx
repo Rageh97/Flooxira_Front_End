@@ -221,7 +221,7 @@ export default function EventsPluginPage() {
         </div>
 
         {/* Stacked Detailed Views */}
-        <div className="space-y-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
           {configs.map(config => (
             <EventConfigDetail 
               key={config.id} 
@@ -359,7 +359,7 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
 
   return (
     <>
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 border-b border-gray-800 pb-10 last:border-0 last:pb-0">
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 last:border-0 last:pb-0">
       <div className="flex items-center gap-2 mb-6">
          <span className="text-2xl font-medium text-primary flex items-center gap-2">
             {PLATFORMS.find(p => p.key === config.platform)?.icon || '🌐'}
@@ -370,9 +370,9 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
           </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className=" gap-6">
         {/* Left Column: Stats & Actions */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className=" space-y-6">
           
           {/* Specific Event Types Stats Grid (Custom only) */}
           {config.platform === 'custom' && (
@@ -389,7 +389,91 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
               })}
             </div>
           )}
+ <div className="space-y-6">
+          <Card className="gradient-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm text-white">إدارة الربط</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {config.platform === 'iapp_cloud' ? (
+                <Button className="w-full justify-start gap-2 primary-button" variant="none" onClick={() => setSettingsOpen(true)}>
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-primary" /> إعدادات الربط
+                  </div>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    className="w-full justify-start gap-2 primary-button"
+                    variant="none"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" /> إعدادات المنصة
+                    </div>
+                  </Button>
+                  {/* {config.platform === "custom" && (
+                    <Button
+                      className="w-full justify-start gap-2 primary-button"
+                      variant="none"
+                      onClick={() => setCodeOpen(true)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Code className="h-4 w-4 text-purple-400" /> بيانات المطور
+                      </div>
+                    </Button>
+                  )} */}
+                </>
+              )}
+              <Button className="w-full justify-center gap-2 bg-red-500" variant="none" onClick={() => setDeleteDialogOpen(true)}>
+                <div className="flex items-center gap-2 text-white justify-center text-center">
+                  <Trash2 className="h-4 w-4" /> حذف التكامل
+                </div>  
+              </Button>
 
+              {/* Delete Confirmation Modal */}
+              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-red-500">
+                      <AlertTriangle className="h-5 w-5" />
+                      تأكيد الحذف
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-400 py-3 text-right">
+                      هل أنت متأكد من حذف هذا التكامل؟ سيتم حذف جميع السجلات المتعلقة به نهائياً ولا يمكن التراجع عن هذا الإجراء.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
+                    <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+                      إلغاء
+                    </Button>
+                    <Button 
+                      className="bg-red-500 hover:bg-red-600 text-white min-w-[100px]" 
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : "نعم، حذف"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <div className="pt-4 border-t border-gray-800 mt-4">
+                <Label className="text-xs text-primary">حالة التشغيل</Label>
+                <div className="flex items-center justify-between mt-1">
+                  <span className={`text-sm text-gray-300 ${config.isActive ? 'text-green-500' : 'text-orange-500'}`}>{config.isActive ? 'نشط' : 'متوقف'}</span>
+                  <Button 
+                    size="sm" 
+                    variant={config.isActive ? "destructive" : "default"} 
+                    onClick={() => handleUpdate({ isActive: !config.isActive })}
+                    className={`h-7 text-xs ${config.isActive ? 'bg-red-500' : 'bg-green-500'}`}
+                  >
+                    {config.isActive ? 'إيقاف' : 'تفعيل'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
           {/* Recent Events Cards */}
           <Card className="gradient-border overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b border-gray-800">
@@ -475,94 +559,11 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
               )}
             </CardContent>
           </Card>
+            {/* Right Column: Mini Settings & Config */}
+       
         </div>
 
-        {/* Right Column: Mini Settings & Config */}
-        <div className="space-y-6">
-          <Card className="gradient-border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-white">إدارة الربط</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {config.platform === 'iapp_cloud' ? (
-                <Button className="w-full justify-start gap-2 primary-button" variant="none" onClick={() => setSettingsOpen(true)}>
-                  <div className="flex items-center gap-2">
-                    <Link2 className="h-4 w-4 text-primary" /> إعدادات الربط
-                  </div>
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    className="w-full justify-start gap-2 primary-button"
-                    variant="none"
-                    onClick={() => setSettingsOpen(true)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" /> إعدادات المنصة
-                    </div>
-                  </Button>
-                  {/* {config.platform === "custom" && (
-                    <Button
-                      className="w-full justify-start gap-2 primary-button"
-                      variant="none"
-                      onClick={() => setCodeOpen(true)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Code className="h-4 w-4 text-purple-400" /> بيانات المطور
-                      </div>
-                    </Button>
-                  )} */}
-                </>
-              )}
-              <Button className="w-full justify-center gap-2 bg-red-500" variant="none" onClick={() => setDeleteDialogOpen(true)}>
-                <div className="flex items-center gap-2 text-white justify-center text-center">
-                  <Trash2 className="h-4 w-4" /> حذف التكامل
-                </div>  
-              </Button>
-
-              {/* Delete Confirmation Modal */}
-              <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-red-500">
-                      <AlertTriangle className="h-5 w-5" />
-                      تأكيد الحذف
-                    </DialogTitle>
-                    <DialogDescription className="text-gray-400 py-3 text-right">
-                      هل أنت متأكد من حذف هذا التكامل؟ سيتم حذف جميع السجلات المتعلقة به نهائياً ولا يمكن التراجع عن هذا الإجراء.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-800">
-                    <Button variant="ghost" onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
-                      إلغاء
-                    </Button>
-                    <Button 
-                      className="bg-red-500 hover:bg-red-600 text-white min-w-[100px]" 
-                      onClick={handleDelete}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? <RefreshCw className="h-4 w-4 animate-spin" /> : "نعم، حذف"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              <div className="pt-4 border-t border-gray-800 mt-4">
-                <Label className="text-xs text-primary">حالة التشغيل</Label>
-                <div className="flex items-center justify-between mt-1">
-                  <span className={`text-sm text-gray-300 ${config.isActive ? 'text-green-500' : 'text-orange-500'}`}>{config.isActive ? 'نشط' : 'متوقف'}</span>
-                  <Button 
-                    size="sm" 
-                    variant={config.isActive ? "destructive" : "default"} 
-                    onClick={() => handleUpdate({ isActive: !config.isActive })}
-                    className={`h-7 text-xs ${config.isActive ? 'bg-red-500' : 'bg-green-500'}`}
-                  >
-                    {config.isActive ? 'إيقاف' : 'تفعيل'}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      
       </div>
     </div>
 

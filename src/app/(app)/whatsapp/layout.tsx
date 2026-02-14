@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/toast-provider";
 
 const whatsappTabs = [
   { href: "/whatsapp", label: "الاتصال", exact: true },
-  { href: "/whatsapp/ai-settings", label: "إعدادات الذكاء الاصطناعي" },
+  { href: "/whatsapp/ai-settings", label: "إعدادات  البوت" },
   { href: "/whatsapp/bot-content", label: "محتوى البوت" },
   // { href: "/whatsapp/appointments", label: "إدارة المواعيد" },
   // { href: "/whatsapp/appointments/settings", label: "إعدادات المواعيد" },

@@ -139,7 +139,11 @@ export default function TextToVideoPage() {
         aspectRatio: (item.options as any)?.aspectRatio || "16:9",
         style: (item.options as any)?.style || "none",
       }));
-      setHistory(mappedHistory);
+      
+      setHistory(prev => {
+        const generatingItems = prev.filter(item => item.isGenerating);
+        return [...generatingItems, ...mappedHistory];
+      });
     } catch (error) {
       console.error("Failed to load history:", error);
     }
@@ -198,7 +202,7 @@ export default function TextToVideoPage() {
       aspectRatio: selectedRatio, style: selectedStyle, isGenerating: true, progress: 0,
     };
 
-    setHistory([placeholder, ...history]);
+    setHistory(prev => [placeholder, ...prev]);
     setIsGenerating(true);
 
     const progressInterval = setInterval(() => {
@@ -247,17 +251,21 @@ export default function TextToVideoPage() {
     if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
     
     // Optimistic update
-    const originalHistory = [...history];
-    setHistory(history.filter(vid => vid.id !== id));
+    setHistory(prev => prev.filter(vid => vid.id !== id));
     
     try {
+      // Only call API if it's a real ID (assuming server IDs are small numbers in string or large if UUID, but placeholders are Date.now which is large)
+      // Actually safe to attempt delete or check if it's a placeholder. 
+      // Placeholders have isGenerating=true ideally.
+      // Assuming valid IDs for delete.
       if (id.length < 15) {
         await deleteAIHistoryItem(token, parseInt(id));
       }
       if (selectedVideo?.id === id) setSelectedVideo(null);
       showSuccess("تم الحذف بنجاح!");
     } catch (error: any) {
-      setHistory(originalHistory);
+      // Revert is hard without keeping the item, so we just reload history
+      loadHistory();
       showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
     }
   };
@@ -265,15 +273,14 @@ export default function TextToVideoPage() {
   const clearAllHistory = async () => {
     if (!window.confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة من السحابة؟")) return;
 
-    const originalHistory = [...history];
-    setHistory([]);
+    setHistory(prev => prev.filter(p => p.isGenerating)); // Keep generating items
 
     try {
       await clearAIHistory(token, 'VIDEO');
       setSelectedVideo(null);
       showSuccess("تم إخلاء السجل بالكامل.");
     } catch (error: any) {
-      setHistory(originalHistory);
+      loadHistory();
       showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };
@@ -324,7 +331,7 @@ export default function TextToVideoPage() {
         aspectRatio: selectedVideo.aspectRatio, style: selectedVideo.style,
       };
 
-      setHistory([videoWithAudio, ...history]);
+      setHistory(prev => [videoWithAudio, ...prev]);
       setSelectedVideo(videoWithAudio);
       setStats(prev => prev ? {
         ...prev, remainingCredits: response.remainingCredits,
@@ -356,7 +363,7 @@ export default function TextToVideoPage() {
         aspectRatio: selectedVideo.aspectRatio, style: selectedVideo.style,
       };
 
-      setHistory([enhancedVideo, ...history]);
+      setHistory(prev => [enhancedVideo, ...prev]);
       setSelectedVideo(enhancedVideo);
       setStats(prev => prev ? {
         ...prev, remainingCredits: response.remainingCredits,

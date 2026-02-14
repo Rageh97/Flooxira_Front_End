@@ -121,7 +121,11 @@ export default function MotionPage() {
           isProcessing: false,
           progress: 100,
         }));
-      setHistory(mappedHistory);
+      
+      setHistory(prev => {
+        const processingItems = prev.filter(item => item.isProcessing);
+        return [...processingItems, ...mappedHistory];
+      });
     } catch (error) {
       console.error("Failed to load history:", error);
     }
@@ -185,7 +189,7 @@ export default function MotionPage() {
       progress: 0,
     };
 
-    setHistory([placeholder, ...history]);
+    setHistory(prev => [placeholder, ...prev]);
     setIsProcessing(true);
 
     const progressInterval = setInterval(() => {
@@ -240,8 +244,7 @@ export default function MotionPage() {
     if (!confirm("هل أنت متأكد من حذف هذا الفيديو؟")) return;
     
     // Optimistic update
-    const originalHistory = [...history];
-    setHistory(history.filter(h => h.id !== id));
+    setHistory(prev => prev.filter(h => h.id !== id));
     
     try {
       if (id.length < 15) {
@@ -250,7 +253,7 @@ export default function MotionPage() {
       if (selectedResult?.id === id) setSelectedResult(null);
       showSuccess("تم الحذف بنجاح!");
     } catch (error: any) {
-      setHistory(originalHistory);
+      loadHistory();
       showError("خطأ", error.message || "فشل حذف الفيديو من السجل السحابي");
     }
   };
@@ -259,15 +262,14 @@ export default function MotionPage() {
     if (!confirm("هل أنت متأكد من مسح جميع الفيديوهات السابقة من السحابة؟")) return;
 
     // Optimistic update
-    const originalHistory = [...history];
-    setHistory([]);
+    setHistory(prev => prev.filter(p => p.isProcessing)); // Keep processing items
 
     try {
       await clearAIHistory(token, 'VIDEO');
       setSelectedResult(null);
       showSuccess("تم إخلاء السجل بالكامل.");
     } catch (error: any) {
-      setHistory(originalHistory);
+      loadHistory();
       showError("خطأ", error.message || "فشل مسح السجل السحابي");
     }
   };

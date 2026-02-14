@@ -1082,6 +1082,8 @@ useEffect(() => {
           <p className="text-gray-300">إدارة قاعدة بيانات العملاء واشتراكاتهم</p>
         </div>
         <div className="flex flex-wrap gap-2">
+                              <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
+
           <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(() => { setEntityType('category'); setEntityName(''); setIsAddEntityDialogOpen(true); })}>
             أضف تصنيف
           </Button>
@@ -1095,22 +1097,7 @@ useEffect(() => {
               
             الإحصائيات
           </Button>
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(handleExportToExcel)}>
-            
-            تصدير Excel
-          </Button>
-          <Button className='primary-button after:bg-[#03132c]' variant="secondary" onClick={() => handleRestrictedAction(handleExportContacts)}>
-            تصدير جهات الاتصال
-          </Button>
-          <Button className='primary-button after:bg-green-600' variant="secondary" onClick={() => handleRestrictedAction(handleExportActiveSubscriptions)}>
-            تصدير الاشتراكات النشطة
-          </Button>
-          <Button className='primary-button after:bg-red-600' variant="secondary" onClick={() => handleRestrictedAction(handleExportExpiredSubscriptions)}>
-            تصدير الاشتراكات المنتهية
-          </Button>
-          <Button className='primary-button after:bg-orange-600' variant="secondary" onClick={() => handleRestrictedAction(handleExportFailedSubscriptions)}>
-            تصدير الطلبات الخاطئة
-          </Button>
+         
           <Button variant="secondary" className='primary-button after:bg-[#03132c]' onClick={() => handleRestrictedAction(() => setIsCustomFieldsDialogOpen(true))}>
             
             إدارة الحقول
@@ -1118,6 +1105,30 @@ useEffect(() => {
           <Button className='primary-button' onClick={() => handleRestrictedAction(() => setIsCreateDialogOpen(true))}>
             إضافة عميل جديد
           </Button>
+           <select
+            className="h-9 px-2 py-1 text-sm text-white rounded-md border border-blue-300 bg-[#01191040] cursor-pointer outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value) {
+                handleRestrictedAction(() => {
+                  if (value === 'excel') handleExportToExcel();
+                  else if (value === 'contacts') handleExportContacts();
+                  else if (value === 'active') handleExportActiveSubscriptions();
+                  else if (value === 'expired') handleExportExpiredSubscriptions();
+                  else if (value === 'failed') handleExportFailedSubscriptions();
+                });
+                e.target.value = '';
+              }
+            }}
+            defaultValue=""
+          >
+            <option className="text-white bg-[#03132c] " value="" disabled>خيارات التصدير</option>
+            <option className="text-white bg-[#03132c]" value="excel">تصدير Excel</option>
+            <option className="text-white bg-[#03132c]" value="contacts">تصدير جهات الاتصال</option>
+            <option className="text-white bg-[#03132c]" value="active">تصدير الاشتراكات النشطة</option>
+            <option className="text-white bg-[#03132c]" value="expired">تصدير الاشتراكات المنتهية</option>
+            <option className="text-white bg-[#03132c]" value="failed">تصدير الطلبات الخاطئة</option>
+          </select>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -1169,7 +1180,6 @@ useEffect(() => {
               </div>
             </DialogContent>
           </Dialog>
-                    <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
 
         </div>
       </div>
@@ -1177,11 +1187,11 @@ useEffect(() => {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Card className="gradient-border border-none">
-            <CardContent className="p-4">
+          <Card className="gradient-border border-none h-16">
+            <CardContent className="p-4 ">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <Users className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-sm md:text-lg font-bold">إجمالي العملاء</p>
@@ -1191,11 +1201,11 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="gradient-border border-none">
-            <CardContent className="p-4">
+          <Card className="gradient-border border-none h-16">
+            <CardContent className="p-4 ">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <UserCheck className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-sm md:text-lg font-bold">العملاء النشطين</p>
@@ -1219,16 +1229,18 @@ useEffect(() => {
             </CardContent>
           </Card> */}
 
-          <Card className="gradient-border border-none">
+          <Card className="gradient-border border-none h-16">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-primary" />
+                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
+                    <XCircle className="w-6 h-6 text-red-500" />
                   </div>
-                  <p className="text-gray-200 text-sm md:text-lg font-bold">معدل النمو</p>
+                  <p className="text-gray-200 text-sm md:text-lg font-bold">الاشتراكات المنتهية</p>
                 </div>
-                <p className="md:text-4xl text-lg font-bold text-white">+12%</p>
+                <p className="md:text-4xl text-lg font-bold text-white">
+                  {stats?.customersByStatus?.find((s: any) => s.subscriptionStatus === 'expired')?.count || 0}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -1236,11 +1248,11 @@ useEffect(() => {
       {stats && (stats as any).financial && (
         <> 
         {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> */}
-          <Card className="gradient-border border-none">
+          <Card className="gradient-border border-none h-16">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <Package className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-sm md:text-lg font-bold">رأس المال الكلي</p>
@@ -1250,11 +1262,11 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="gradient-border border-none">
+          <Card className="gradient-border border-none h-16">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-sm md:text-lg font-bold">الإيرادات الكلية</p>
@@ -1264,11 +1276,11 @@ useEffect(() => {
             </CardContent>
           </Card>
 
-          <Card className="gradient-border border-none">
+          <Card className="gradient-border border-none h-16">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-12 h-12  rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <Crown className="w-6 h-6 text-primary" />
                   </div>
                   <p className="text-gray-200 text-sm md:text-lg font-bold">صافي الربح</p>
@@ -1350,81 +1362,34 @@ useEffect(() => {
               </div>
 
               {/* Subscription Status Filter */}
+              {/* Subscription Status Filter */}
               <div className="flex-1">
                 <Label className="text-white">حالة الاشتراك</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <Button
-                    variant={filters.subscriptionStatus === 'all' ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'all' }))}
-                    className="bg-blue-600 "
-                  >
-                    جميع الحالات
-                  </Button>
-                  <Button
-                    variant={filters.subscriptionStatus === 'active' ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'active' }))}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    نشط
-                  </Button>
-                  <Button
-                    variant={filters.subscriptionStatus === 'expired' ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'expired' }))}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    منتهي
-                  </Button>
-                  <Button
-                    variant={filters.subscriptionStatus === 'pending' ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'pending' }))}
-                    className="bg-yellow-600 text-white"
-                  >
-                    قيد الانتظار
-                  </Button>
-                  <Button
-                    variant={filters.subscriptionStatus === 'failed' ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, subscriptionStatus: 'failed' }))}
-                    className="bg-orange-600 hover:bg-orange-700 text-white"
-                  >
-                    فشل
-                  </Button>
-                </div>
+                <select
+                  className="w-full p-2 mt-2 text-white rounded-md border border-blue-300 bg-[#01191040]"
+                  value={filters.subscriptionStatus}
+                  onChange={(e) => setFilters(prev => ({ ...prev, subscriptionStatus: e.target.value }))}
+                >
+                  <option className="text-white" value="all">جميع الحالات</option>
+                  <option className="text-white" value="active">نشط</option>
+                  <option className="text-white" value="expired">منتهي</option>
+                  <option className="text-white" value="pending">قيد الانتظار</option>
+                  <option className="text-white" value="failed">فشل</option>
+                </select>
               </div>
 
               {/* Delivery Status Filter */}
               <div className="flex-1">
                 <Label className="text-white">حالة التسليم (wordpress)</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  <Button
-                    variant={filters.deliveryStatus === '' ? 'default' : 'none'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, deliveryStatus: '' }))}
-                    className="bg-blue-600 text-white"
-                  >
-                    الكل
-                  </Button>
-                  <Button
-                    variant={filters.deliveryStatus === 'delivered' ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, deliveryStatus: 'delivered' }))}
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    تم التسليم
-                  </Button>
-                  <Button
-                    variant={filters.deliveryStatus === 'undelivered' ? 'default' : 'none'}
-                    size="sm"
-                    onClick={() => setFilters(prev => ({ ...prev, deliveryStatus: 'undelivered' }))}
-                    className="bg-amber-600 hover:bg-amber-700 text-white"
-                  >
-                    لم يتم التسليم
-                  </Button>
-                </div>
+                <select
+                  className="w-full p-2 mt-2 text-white rounded-md border border-blue-300 bg-[#01191040]"
+                  value={filters.deliveryStatus}
+                  onChange={(e) => setFilters(prev => ({ ...prev, deliveryStatus: e.target.value }))}
+                >
+                  <option className="text-white" value="">الكل</option>
+                  <option className="text-white" value="delivered">تم التسليم</option>
+                  <option className="text-white" value="undelivered">لم يتم التسليم</option>
+                </select>
               </div>
             </div>
              {/* Clear Filters */}
@@ -1466,7 +1431,7 @@ useEffect(() => {
             )}
 
             {/* Store Name Quick Filters */}
-            {customers.length > 0 && (
+            {/* {customers.length > 0 && (
               <div>
                 <Label className="text-sm font-medium mb-2 block text-white">فلترة سريعة بأسماء المتاجر:</Label>
                 <div className="flex flex-wrap gap-2">
@@ -1491,7 +1456,7 @@ useEffect(() => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
            
           </div>

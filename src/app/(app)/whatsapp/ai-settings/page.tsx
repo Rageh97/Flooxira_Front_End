@@ -467,6 +467,16 @@ export default function AISettingsPage() {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium mb-2"> بروميت  تخصيص الشخصية</label>
+              <textarea
+                value={settings.systemPrompt || ''}
+                onChange={(e) => setSettings({...settings, systemPrompt: e.target.value})}
+                className="w-full p-2 border-1 border-blue-300 rounded-md h-32 bg-[#01191040]"
+                placeholder="رسالة النظام الرئيسية التي تحدد سلوك البوت"
+              />
+            </div>
+
             {/* Personality Templates */}
             {/* {templates && (
               <div>
@@ -576,15 +586,7 @@ export default function AISettingsPage() {
             </div>
 
 
-            <div>
-              <label className="block text-sm font-medium mb-2"> بروميت الذكاء الاصطناعي</label>
-              <textarea
-                value={settings.systemPrompt || ''}
-                onChange={(e) => setSettings({...settings, systemPrompt: e.target.value})}
-                className="w-full p-2 border-1 border-blue-300 rounded-md h-32 bg-[#01191040]"
-                placeholder="رسالة النظام الرئيسية التي تحدد سلوك البوت"
-              />
-            </div>
+
 
             {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
