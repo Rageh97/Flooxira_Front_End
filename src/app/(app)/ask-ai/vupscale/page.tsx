@@ -20,6 +20,7 @@ import {
   type AIStats,
   type AIHistoryItem
 } from "@/lib/api";
+import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
@@ -217,36 +218,38 @@ export default function VideoUpscalePage() {
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#0b0a25] text-white font-sans rounded-xl" dir="rtl">
+    <div className="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-[#0b0a25] text-white font-sans rounded-xl" dir="rtl">
       {/* Background Effects */}
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950 via-[#00050a] to-[#00050a]" />
       <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-900/10 via-indigo-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
       
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 bg-[#00050a] rounded-xl shadow-2xl">
-        <div className="mx-auto px-6 h-16 flex items-center justify-between max-w-[2000px]">
-          <div className="flex items-center gap-4">
-            <Link href="/ask-ai">
-              <Button variant="ghost" size="icon" className="rounded-full bg-white/5 hover:bg-white/10">
-                <ArrowRight className="h-5 w-5 rotate-180" />
-              </Button>
-            </Link>
-            <h1 className="text-xl font-bold flex items-center gap-3">
-              <span className="bg-gradient-to-r from-blue-300 to-indigo-300 bg-clip-text text-transparent">رفع جودة الفيديو</span>
-              <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-300 font-mono">VIDEO UPSCALE</span>
-            </h1>
-          </div>
-          {stats && (
-            <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono">
-              <Zap size={14} className="text-amber-400" />
-              <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
+      <div className="flex-shrink-0 z-50">
+        <header className="backdrop-blur-xl border-b border-white/5 bg-[#00050a] rounded-xl shadow-2xl">
+          <div className="mx-auto px-6 h-16 flex items-center justify-between max-w-[2000px]">
+            <div className="flex items-center gap-4">
+              <Link href="/ask-ai">
+                <Button variant="ghost" size="icon" className="rounded-full bg-white/5 hover:bg-white/10">
+                  <ArrowRight className="h-5 w-5 rotate-180" />
+                </Button>
+              </Link>
+              <h1 className="text-xl font-bold flex items-center gap-3">
+                <span className="bg-gradient-to-r from-blue-300 to-indigo-300 bg-clip-text text-transparent">رفع جودة الفيديو</span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] text-blue-300 font-mono">VIDEO UPSCALE</span>
+              </h1>
             </div>
-          )}
-        </div>
-      </header>
+            {stats && (
+              <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono">
+                <Zap size={14} className="text-amber-400" />
+                <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span>
+              </div>
+            )}
+          </div>
+        </header>
+      </div>
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+      <div className="flex-1 flex overflow-hidden max-w-[2000px] mx-auto w-full relative">
         {/* Overlay */}
         {showSettings && (
           <div 
@@ -258,7 +261,7 @@ export default function VideoUpscalePage() {
         {/* Sidebar - Settings (Fixed on desktop, sliding on mobile) */}
         <aside className={clsx(
           "w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0 z-50",
-          "fixed lg:relative top-0 right-0 h-full transition-transform duration-300",
+          "fixed lg:relative top-0 right-0 h-full overflow-y-auto custom-scrollbar transition-transform duration-300",
           showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         )}>
           {/* Mobile Close Button */}
@@ -339,7 +342,7 @@ export default function VideoUpscalePage() {
         </aside>
 
         {/* Main Content - Gallery (Scrollable) */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide">
+        <main className="flex-1 h-full overflow-y-auto custom-scrollbar pb-10">
           <div className="p-6">
             {history.length === 0 ? (
               // Empty State

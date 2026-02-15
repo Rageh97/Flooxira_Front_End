@@ -37,6 +37,7 @@ export default function UGCPage() {
   const [selectedResult, setSelectedResult] = useState<any | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -159,26 +160,43 @@ export default function UGCPage() {
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
+    <div className="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-[#00050a] rounded-2xl text-white font-sans" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-pink-900/10 via-[#00050a] to-[#00050a]" />
       
-      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5 h-20 flex items-center justify-between px-8 bg-[#00050a]/80 shadow-2xl">
-        <div className="flex items-center gap-6">
-          <Link href="/ask-ai">
-            <Button variant="ghost" size="icon" className="group rounded-full bg-white/5 hover:bg-white/10 transition-all">
-              <ArrowRight className="h-5 w-5 text-white rotate-180" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-300 to-purple-300 bg-clip-text text-transparent">فيديوهات UGC تفاعلية</h1>
-        </div>
-        {stats && <div className="bg-white/5 rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/5 font-mono"><Zap size={14} className="text-pink-400" /> <span className="text-sm font-bold">{stats.isUnlimited ? "∞" : stats.remainingCredits}</span></div>}
-      </header>
+      {/* Header */}
+      <div className="flex-shrink-0 z-50">
+        <AskAIToolHeader 
+          title="فيديوهات UGC تفاعلية"
+          modelBadge="UGC VIDEO"
+          stats={stats}
+          onSettingsClick={() => setShowSettings(true)}
+        />
+      </div>
 
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto">
+      <div className="flex-1 flex overflow-hidden max-w-[2000px] mx-auto w-full relative">
+        {/* Overlay for mobile */}
+        {showSettings && (
+          <div 
+            className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+            onClick={() => setShowSettings(false)}
+          />
+        )}
+
         {/* Sidebar - Settings (Fixed) */}
-        <aside className="w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0">
+        <aside className={clsx(
+          "w-80 border-l border-white/5 bg-[#0a0c10]/95 backdrop-blur-sm flex-shrink-0 transition-transform duration-300 z-50",
+          "fixed lg:relative top-0 right-0 h-full overflow-y-auto custom-scrollbar",
+          showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        )}>
           <div className="h-full overflow-y-auto scrollbar-hide p-6 space-y-5">
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setShowSettings(false)}
+              className="lg:hidden absolute top-4 left-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <X size={18} />
+            </button>
             <div className="space-y-4">
             <div className="space-y-4">
                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2 justify-end">سيناريو المحتوى <Users size={16} className="text-pink-400" /></label>
@@ -215,7 +233,7 @@ export default function UGCPage() {
         </aside>
 
         {/* Main Content - Gallery (Scrollable) */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide">
+        <main className="flex-1 h-full overflow-y-auto custom-scrollbar pb-10">
           <div className="p-6 space-y-6">
            <div className="min-h-[600px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
               <AnimatePresence mode="wait">

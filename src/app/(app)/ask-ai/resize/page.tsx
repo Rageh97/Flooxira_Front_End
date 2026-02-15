@@ -169,17 +169,19 @@ export default function ResizePage() {
   if (permissionsLoading) return <div className="h-screen flex items-center justify-center bg-[#00050a]"><Loader text="جاري التحميل ..." size="lg" variant="warning" /></div>;
 
   return (
-    <div className="min-h-screen bg-[#00050a] rounded-2xl text-white font-sans overflow-x-hidden" dir="rtl">
+    <div className="flex flex-col h-[calc(100vh-5rem)] overflow-hidden bg-[#00050a] rounded-2xl text-white font-sans" dir="rtl">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-orange-900/10 via-[#00050a] to-[#00050a]" />
       
      {/* Header */}
-      <AskAIToolHeader 
-        title="تغيير أبعاد الفيديو الذكي "
-        modelBadge="VEO 3.1"
-        stats={stats}
-      />
+      <div className="flex-shrink-0 z-50">
+        <AskAIToolHeader 
+          title="تغيير أبعاد الفيديو الذكي "
+          modelBadge="VEO 3.1"
+          stats={stats}
+        />
+      </div>
       {/* Main Layout */}
-      <div className="flex h-[calc(100vh-4rem)] max-w-[2000px] mx-auto relative">
+      <div className="flex-1 flex overflow-hidden max-w-[2000px] mx-auto w-full relative">
         {/* Overlay */}
         {showSettings && (
           <div 
@@ -191,7 +193,7 @@ export default function ResizePage() {
         {/* Sidebar - Settings (Fixed on desktop, sliding on mobile) */}
         <aside className={clsx(
           "w-80 border-l border-white/5 bg-[#0a0c10]/50 backdrop-blur-sm flex-shrink-0 z-50",
-          "fixed lg:relative top-0 right-0 h-full transition-transform duration-300",
+          "fixed lg:relative top-0 right-0 h-full overflow-y-auto custom-scrollbar transition-transform duration-300",
           showSettings ? "translate-x-0" : "translate-x-full lg:translate-x-0"
         )}>
           {/* Mobile Close Button */}
@@ -259,7 +261,7 @@ export default function ResizePage() {
         </aside>
 
         {/* Main Content - Gallery (Scrollable) */}
-        <main className="flex-1 overflow-y-auto scrollbar-hide">
+        <main className="flex-1 h-full overflow-y-auto custom-scrollbar pb-10">
           <div className="p-6 space-y-6">
            <div className="min-h-[600px] w-full rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 relative overflow-hidden group">
               <AnimatePresence mode="wait">

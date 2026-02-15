@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { API_URL } from "@/lib/api";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { ReviewForm } from "@/components/ReviewForm";
 
 type Review = {
   id: number;
@@ -147,7 +149,7 @@ export default function ReviewsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-2">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-white mb-2">تقييمات عملائنا</h1>
@@ -317,18 +319,25 @@ export default function ReviewsPage() {
 
       {/* Call to Action */}
       <Card className="gradient-border border-none">
-        <CardContent className="p-8 text-center">
+        <CardContent className="p-8 text-center flex flex-col items-center justify-center">
           <Award className="w-12 h-12 text-primary mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">شاركنا رأيك</h3>
           <p className="text-gray-300 mb-6">
             نحن نقدر آراء عملائنا ونعمل باستمرار على تحسين خدماتنا
           </p>
-          <Link href="/my-review" className="primary-button">
-           <div className="flex items-center gap-2">
-             <Users className="w-5 h-5 mr-2" />
-            اترك تقييمك
-           </div>
-          </Link>
+          <Dialog>
+            <DialogTrigger asChild>
+              <button className="primary-button mx-auto flex items-center justify-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                اترك تقييمك
+                </div>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-hide border-none">
+              <ReviewForm />
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>

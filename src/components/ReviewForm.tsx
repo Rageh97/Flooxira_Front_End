@@ -30,7 +30,7 @@ type Review = {
   updatedAt: string;
 };
 
-export default function MyReviewPage() {
+export function ReviewForm() {
   const [rating, setRating] = useState<number>(0);
   const [title, setTitle] = useState<string>("");
   const [comment, setComment] = useState<string>("");
@@ -48,7 +48,10 @@ export default function MyReviewPage() {
   }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     
     loadExistingReview();
   }, [token]);
@@ -296,7 +299,7 @@ export default function MyReviewPage() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="اكتب تفاصيل أكثر عن تجربتك مع الخدمة..."
-                  className="mt-2 bg-[#011910] text-white"
+                  className="mt-2 bg-[#011910] text-white outline-none focus:ring-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 border-white/20"
                   rows={4}
                   maxLength={1000}
                 />
@@ -329,25 +332,7 @@ export default function MyReviewPage() {
         </Card>
       )}
 
-      {/* Info Card */}
-      <Card className="gradient-border border-none">
-        <CardContent className="p-6">
-          <div className="flex items-start space-x-3 rtl:space-x-reverse">
-            <ThumbsUp className="w-6 h-6 text-blue-400 mt-1" />
-            <div>
-              <h3 className="font-semibold text-white mb-2">معلومات مهمة</h3>
-              <ul className="text-sm text-gray-300 space-y-1">
-                {/* <li>• سيتم مراجعة تقييمك من قبل فريق الإدارة قبل النشر</li> */}
-                <li>• يمكنك إرسال تقييم واحد فقط</li>
-                <li>• التقييمات المنشورة ستظهر في صفحة "تقييمات عملائنا"</li>
-                <li>• نحن نقدر آراءكم ونعمل على تحسين خدماتنا بناءً عليها</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      
     </div>
   );
 }
-
-
