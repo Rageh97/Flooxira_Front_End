@@ -50,7 +50,7 @@ export default function AskAIPage() {
       id: 'ask-ai',
       title: 'شات GPT',
       desc: 'مساعدك الشخصي للدردشة والإجابة على الأسئلة',
-      image: '/gpt فلوكسيرا.png',
+      image: '/gpt فلوكسيرا.webp',
       status: 'active',
       path: '/ask-ai/chat'
     },
@@ -58,7 +58,7 @@ export default function AskAIPage() {
       id: 'text-to-image',
       title: 'تحويل النص لصورة',
       desc: 'حول خيالك إلى صور واقعية مذهلة بجودة فائقة',
-      image: '/انشاء الصور.png',
+      image: '/انشاء الصور.webp',
       status: 'active',
       path: '/ask-ai/image'
     },
@@ -66,7 +66,7 @@ export default function AskAIPage() {
       id: 'video-gen',
       title: 'توليد الفيديو',
       desc: 'أنشئ فيديوهات سينمائية من خلال النصوص بذكاء Veo 2.0',
-      image: '/تاثيرات الفيديو.png',
+      image: '/تاثيرات الفيديو.webp',
       status: 'active',
       path: '/ask-ai/video'
     },
@@ -74,7 +74,7 @@ export default function AskAIPage() {
       id: 'voice-gen',
       title: 'توليد الصوت',
       desc: 'حول النصوص إلى تعليق صوتي احترافي',
-      image: '/انشاء تعليق صوتي.png',
+      image: '/انشاء تعليق صوتي.webp',
       status: 'soon'
     },
     {
@@ -88,28 +88,28 @@ export default function AskAIPage() {
   ];
 
   const imageTools = [
-    { id: 't2i', title: 'حول النص الى صورة', desc: 'حول خيالك إلى صور واقعية مذهلة', path: '/ask-ai/image', image: '/انشاء الصور.png', status: 'active' },
-    { id: 'upscale', title: 'تحسين الصور', desc: 'زيادة جودة ووضوح الصور بذكاء', path: '/ask-ai/upscale', image: '/رفع جودة الصور.png', status: 'active' },
-    { id: 'nano', title: 'Nano banana Pro', desc: 'نموذج توليد صور فائق السرعة', path: '/ask-ai/nano', image: '/Whisk_d2a441bc8622fa5b2774cf54a715f70feg.png', status: 'active' },
+    { id: 't2i', title: 'حول النص الى صورة', desc: 'حول خيالك إلى صور واقعية مذهلة', path: '/ask-ai/image', image: '/انشاء الصور.webp', status: 'active' },
+    { id: 'upscale', title: 'تحسين الصور', desc: 'زيادة جودة ووضوح الصور بذكاء', path: '/ask-ai/upscale', image: '/رفع جودة الصور.webp', status: 'active' },
+    { id: 'nano', title: 'Nano banana Pro', desc: 'نموذج توليد صور فائق السرعة', path: '/ask-ai/nano', image: '/Whisk_d2a441bc8622fa5b2774cf54a715f70feg.webp', status: 'active' },
     { id: 'logo', title: 'صانع الشعار', desc: 'صمم شعارات احترافية في ثوانٍ', path: '/ask-ai/logo', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=1000', status: 'active' },
-    { id: 'edit', title: 'تحرير الصورة', desc: 'تعديل الصور بالذكاء الاصطناعي', path: '/ask-ai/edit', image: '/تعديل الصور.png', status: 'active' },
-    { id: 'product', title: 'نماذج منتجات', desc: 'عرض منتجاتك في بيئات احترافية', path: '/ask-ai/product', image: '/نماذج لمنتجك.png', status: 'active' },
-    { id: 'bg-remove', title: 'ازالة الخلفية', desc: 'حذف خلفية الصور بدقة عالية', path: '/ask-ai/bg-remove', image: '/ازالة الخلفية.png', status: 'active' },
-    { id: 'avatar', title: 'انشاء افاتار', desc: 'اصنع شخصيتك الافتراضية الخاصة', path: '/ask-ai/avatar', image: '/انشاء افاتار.png', status: 'active' },
-    { id: 'restore', title: 'ترميم الصور', desc: 'إصلاح الصور التالفة والقديمة', path: '/ask-ai/restore', image: '/ترميم الصور .jpeg', status: 'active' },
+    { id: 'edit', title: 'تحرير الصورة', desc: 'تعديل الصور بالذكاء الاصطناعي', path: '/ask-ai/edit', image: '/تعديل الصور.webp', status: 'active' },
+    { id: 'product', title: 'نماذج منتجات', desc: 'عرض منتجاتك في بيئات احترافية', path: '/ask-ai/product', image: '/نماذج لمنتجك.webp', status: 'active' },
+    { id: 'bg-remove', title: 'ازالة الخلفية', desc: 'حذف خلفية الصور بدقة عالية', path: '/ask-ai/bg-remove', image: '/ازالة الخلفية.webp', status: 'active' },
+    { id: 'avatar', title: 'انشاء افاتار', desc: 'اصنع شخصيتك الافتراضية الخاصة', path: '/ask-ai/avatar', image: '/انشاء افاتار.webp', status: 'active' },
+    { id: 'restore', title: 'ترميم الصور', desc: 'إصلاح الصور التالفة والقديمة', path: '/ask-ai/restore', image: '/ترميم الصور .webp', status: 'active' },
     { id: 'sketch', title: 'رسم الى صور', desc: 'حول رسوماتك اليدوية لصور واقعية', path: '/ask-ai/sketch', image: '/رسم الصور.png', status: 'active' },
-    { id: 'colorize', title: 'تلوين الصورة', desc: 'تلوين الصور القديمة بالألوان الطبيعية', path: '/ask-ai/colorize', image: '/تلوين الصورة.png', status: 'active' },
+    { id: 'colorize', title: 'تلوين الصورة', desc: 'تلوين الصور القديمة بالألوان الطبيعية', path: '/ask-ai/colorize', image: '/تلوين الصورة.webp', status: 'active' },
   ];
 
   const videoTools = [
-    { id: 'vgen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
-    { id: 'motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
-    { id: 'ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'soon' },
-    { id: 'effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'soon' },
-    { id: 'lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'soon' },
+    { id: 'vgen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', path: '/ask-ai/video', image: '/تاثيرات الفيديو.webp', status: 'active' },
+    { id: 'motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', path: '/ask-ai/motion', image: '/محاكاة الحركة.webp', status: 'active' },
+    { id: 'ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', path: '/ask-ai/ugc', image: '/فيديوهات UGC.webp', status: 'soon' },
+    { id: 'effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', path: '/ask-ai/effects', image: '/تاثيرات الفيديو.webp', status: 'soon' },
+    { id: 'lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', path: '/ask-ai/lipsync', image: '/تحريك الشفاه.webp', status: 'soon' },
     { id: 'resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'soon' },
-    { id: 'vupscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'soon' },
-    { id: 'long-video', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'soon' },
+    { id: 'vupscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .webp', status: 'soon' },
+    { id: 'long-video', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.webp', status: 'soon' },
   ];
 
   const filterTools = (tools: any[]) => {

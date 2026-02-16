@@ -37,29 +37,29 @@ export default function MediaPage() {
   const [toolSearchQuery, setToolSearchQuery] = useState("");
 
   const imageTools = [
-    { id: 't2i', permId: 'image_gen', title: 'حول النص الى صورة', desc: 'حول خيالك إلى صور واقعية مذهلة', icon: ImageIcon, path: '/ask-ai/image', image: '/انشاء الصور.png', status: 'active' },
-    { id: 'upscale', permId: 'image_upscale', title: 'تحسين الصور', desc: 'زيادة جودة ووضوح الصور بذكاء', icon: Sparkles, path: '/ask-ai/upscale', image: '/رفع جودة الصور.png', status: 'active' },
-    { id: 'nano', permId: 'image_nano', title: 'Nano banana Pro', desc: 'نموذج توليد صور فائق السرعة', icon: Zap, path: '/ask-ai/nano', image: '/Whisk_d2a441bc8622fa5b2774cf54a715f70feg.png', status: 'active' },
+    { id: 't2i', permId: 'image_gen', title: 'حول النص الى صورة', desc: 'حول خيالك إلى صور واقعية مذهلة', icon: ImageIcon, path: '/ask-ai/image', image: '/انشاء الصور.webp', status: 'active' },
+    { id: 'upscale', permId: 'image_upscale', title: 'تحسين الصور', desc: 'زيادة جودة ووضوح الصور بذكاء', icon: Sparkles, path: '/ask-ai/upscale', image: '/رفع جودة الصور.webp', status: 'active' },
+    { id: 'nano', permId: 'image_nano', title: 'Nano banana Pro', desc: 'نموذج توليد صور فائق السرعة', icon: Zap, path: '/ask-ai/nano', image: '/Whisk_d2a441bc8622fa5b2774cf54a715f70feg.webp', status: 'active' },
     { id: 'logo', permId: 'image_logo', title: 'صانع الشعار', desc: 'صمم شعارات احترافية في ثوانٍ', icon: LayoutTemplate, path: '/ask-ai/logo', image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=1000', status: 'active' },
-    { id: 'edit', permId: 'image_edit', title: 'تحرير الصورة', desc: 'تعديل الصور بالذكاء الاصطناعي', icon: Edit2, path: '/ask-ai/edit', image: '/تعديل الصور.png', status: 'active' },
-    { id: 'product', permId: 'image_product', title: 'نماذج منتجات', desc: 'عرض منتجاتك في بيئات احترافية', icon: Package, path: '/ask-ai/product', image: '/نماذج لمنتجك.png', status: 'active' },
-    { id: 'bg-remove', permId: 'image_bg_remove', title: 'ازالة الخلفية', desc: 'حذف خلفية الصور بدقة عالية', icon: Eraser, path: '/ask-ai/bg-remove', image: '/ازالة الخلفية.png', status: 'active' },
-    { id: 'avatar', permId: 'image_avatar', title: 'انشاء افاتار', desc: 'اصنع شخصيتك الافتراضية الخاصة', icon: UserCircle, path: '/ask-ai/avatar', image: '/انشاء افاتار.png', status: 'active' },
-    { id: 'restore', permId: 'image_restore', title: 'ترميم الصور', desc: 'إصلاح الصور التالفة والقديمة', icon: History, path: '/ask-ai/restore', image: '/ترميم الصور .jpeg', status: 'active' },
+    { id: 'edit', permId: 'image_edit', title: 'تحرير الصورة', desc: 'تعديل الصور بالذكاء الاصطناعي', icon: Edit2, path: '/ask-ai/edit', image: '/تعديل الصور.webp', status: 'active' },
+    { id: 'product', permId: 'image_product', title: 'نماذج منتجات', desc: 'عرض منتجاتك في بيئات احترافية', icon: Package, path: '/ask-ai/product', image: '/نماذج لمنتجك.webp', status: 'active' },
+    { id: 'bg-remove', permId: 'image_bg_remove', title: 'ازالة الخلفية', desc: 'حذف خلفية الصور بدقة عالية', icon: Eraser, path: '/ask-ai/bg-remove', image: '/ازالة الخلفية.webp', status: 'active' },
+    { id: 'avatar', permId: 'image_avatar', title: 'انشاء افاتار', desc: 'اصنع شخصيتك الافتراضية الخاصة', icon: UserCircle, path: '/ask-ai/avatar', image: '/انشاء افاتار.webp', status: 'active' },
+    { id: 'restore', permId: 'image_restore', title: 'ترميم الصور', desc: 'إصلاح الصور التالفة والقديمة', icon: History, path: '/ask-ai/restore', image: '/ترميم الصور .webp', status: 'active' },
     { id: 'sketch', permId: 'image_sketch', title: 'رسم الى صور', desc: 'حول رسوماتك اليدوية لصور واقعية', icon: Palette, path: '/ask-ai/sketch', image: '/رسم الصور.png', status: 'active' },
-    { id: 'colorize', permId: 'image_colorize', title: 'تلوين الصورة', desc: 'تلوين الصور القديمة بالألوان الطبيعية', icon: Droplets, path: '/ask-ai/colorize', image: '/تلوين الصورة.png', status: 'active' },
+    { id: 'colorize', permId: 'image_colorize', title: 'تلوين الصورة', desc: 'تلوين الصور القديمة بالألوان الطبيعية', icon: Droplets, path: '/ask-ai/colorize', image: '/تلوين الصورة.webp', status: 'active' },
     { id: 'image-to-text', permId: 'image_describe', title: 'تحويل الصورة الى نص', desc: 'تحويل الصورة الى بروميتات', path: '/ask-ai/image-to-text', image: '/الصورة لنص.png', status: 'active' },
   ];
 
   const videoTools = [
-    { id: 'vgen', permId: 'video_gen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', icon: Video, path: '/ask-ai/video', image: '/تاثيرات الفيديو.png', status: 'active' },
-    { id: 'motion', permId: 'video_motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', icon: Move, path: '/ask-ai/motion', image: '/محاكاة الحركة.png', status: 'active' },
-    { id: 'ugc', permId: 'video_ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', icon: Users, path: '/ask-ai/ugc', image: '/فيديوهات UGC.png', status: 'active' },
-    { id: 'effects', permId: 'video_effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', icon: Wand2, path: '/ask-ai/effects', image: '/تاثيرات الفيديو.png', status: 'active' },
-    { id: 'lipsync', permId: 'video_lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', icon: MessageSquare, path: '/ask-ai/lipsync', image: '/تحريك الشفاه.png', status: 'active' },
-    { id: 'resize', permId: 'video_resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', icon: Maximize, path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'active' },
-    { id: 'vupscale', permId: 'video_upscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', icon: FileVideo, path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .png', status: 'active' },
-    { id: 'long-video', permId: 'video_gen', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', icon: Film, path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.png', status: 'soon' },
+    { id: 'vgen', permId: 'video_gen', title: 'انشاء فيديو', desc: 'أنشئ فيديوهات سينمائية من النصوص', icon: Video, path: '/ask-ai/video', image: '/تاثيرات الفيديو.webp', status: 'soon' },
+    { id: 'motion', permId: 'video_motion', title: 'محاكاة الحركة', desc: 'إضافة حركة واقعية للعناصر', icon: Move, path: '/ask-ai/motion', image: '/محاكاة الحركة.webp', status: 'active' },
+    { id: 'ugc', permId: 'video_ugc', title: 'فيديوهات ugc', desc: 'إنشاء محتوى فيديو تفاعلي', icon: Users, path: '/ask-ai/ugc', image: '/فيديوهات UGC.webp', status: 'soon' },
+    { id: 'effects', permId: 'video_effects', title: 'تأثيرات الفيديو', desc: 'إضافة تأثيرات بصرية مذهلة', icon: Wand2, path: '/ask-ai/effects', image: '/تاثيرات الفيديو.webp', status: 'soon' },
+    { id: 'lipsync', permId: 'video_lipsync', title: 'تحريك الشفاة', desc: 'مزامنة حركة الشفاه مع الصوت', icon: MessageSquare, path: '/ask-ai/lipsync', image: '/تحريك الشفاه.webp', status: 'soon' },
+    { id: 'resize', permId: 'video_resize', title: 'تغيير أبعاد الفيديو', desc: 'تغيير مقاسات الفيديو لمنصات التواصل', icon: Maximize, path: '/ask-ai/resize', image: '/تغيير الابعاد.png', status: 'soon' },
+    { id: 'vupscale', permId: 'video_upscale', title: 'تحسين الفيديو', desc: 'رفع جودة الفيديو بذكاء', icon: FileVideo, path: '/ask-ai/vupscale', image: '/رفع جودة الفيديو .webp', status: 'soon' },
+    { id: 'long-video', permId: 'video_gen', title: 'فيديو طويل', desc: 'دمج مشاهد متعددة في فيديو واحد طويل', icon: Film, path: '/ask-ai/long-video', image: '/تاثيرات الفيديو.webp', status: 'soon' },
   ];
 
   const renderMediaNav = () => (
