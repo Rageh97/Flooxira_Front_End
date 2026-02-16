@@ -28,7 +28,7 @@ type Tutorial = {
   id: number;
   title: string;
   description?: string;
-  youtubeUrl: string;
+  youtubeUrl?: string;
   youtubeVideoId?: string;
   thumbnailUrl?: string;
   duration?: number;
@@ -360,7 +360,7 @@ export default function TutorialsAdminPage() {
           <Card key={tutorial.id} className="bg-card border-none overflow-hidden">
             <div className="relative">
               <img
-                src={tutorial.thumbnailUrl || `https://img.youtube.com/vi/${tutorial.youtubeVideoId}/maxresdefault.jpg`}
+                src={tutorial.thumbnailUrl || (tutorial.youtubeVideoId ? `https://img.youtube.com/vi/${tutorial.youtubeVideoId}/maxresdefault.jpg` : '/placeholder-tutorial.jpg')}
                 alt={tutorial.title}
                 className="w-full h-48 object-cover"
               />
@@ -463,7 +463,7 @@ export default function TutorialsAdminPage() {
               />
             </div>
             <div>
-              <Label htmlFor="youtubeUrl">رابط يوتيوب *</Label>
+              <Label htmlFor="youtubeUrl">رابط يوتيوب (اختياري)</Label>
               <Input
                 id="youtubeUrl"
                 value={newTutorial.youtubeUrl}
@@ -494,7 +494,7 @@ export default function TutorialsAdminPage() {
                 </div>
               )}
               <p className="text-xs text-gray-400 mt-1">
-                إذا لم تقم برفع صورة، سيتم استخدام الصورة الافتراضية من يوتيوب
+                إذا لم تقم برفع صورة ولم يوجد رابط يوتيوب، لن تظهر أي صورة/فيديو
               </p>
             </div>
             <div>
@@ -558,7 +558,7 @@ export default function TutorialsAdminPage() {
               />
             </div>
             <div>
-              <Label htmlFor="edit-youtubeUrl">رابط يوتيوب *</Label>
+              <Label htmlFor="edit-youtubeUrl">رابط يوتيوب (اختياري)</Label>
               <Input
                 id="edit-youtubeUrl"
                 value={editTutorial.youtubeUrl}
@@ -589,7 +589,7 @@ export default function TutorialsAdminPage() {
                 </div>
               )}
               <p className="text-xs text-gray-400 mt-1">
-                إذا لم تقم برفع صورة، سيتم استخدام الصورة الافتراضية من يوتيوب
+                إذا لم تقم برفع صورة ولم يوجد رابط يوتيوب، لن تظهر أي صورة/فيديو
               </p>
             </div>
             <div>

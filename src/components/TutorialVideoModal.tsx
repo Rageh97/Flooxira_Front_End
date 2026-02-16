@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, BookOpen } from "lucide-react";
@@ -16,10 +16,7 @@ export function TutorialVideoModal({
   onClose,
   onViewIncrement 
 }: TutorialVideoModalProps) {
-  const [showFullDescription, setShowFullDescription] = useState<boolean>(false);
-
   useEffect(() => {
-    setShowFullDescription(false);
     if (tutorial && onViewIncrement) {
       onViewIncrement(tutorial.id);
     }
@@ -58,10 +55,7 @@ export function TutorialVideoModal({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => {
-              onClose();
-              setShowFullDescription(false);
-            }}
+            onClick={onClose}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
             ✕ إغلاق
@@ -69,49 +63,34 @@ export function TutorialVideoModal({
         </div>
         
         {/* Content */}
-        <div className="flex flex-col lg:flex-row h-[calc(95vh-120px)]">
+        <div className="flex flex-col h-[calc(95vh-120px)]">
           {/* Video Section */}
-          <div className="lg:w-2/3 p-6">
-            <div className="aspect-video rounded-lg overflow-hidden shadow-lg">
-              <iframe
-                src={getYouTubeEmbedUrl(tutorial.youtubeUrl || '')}
-                title={tutorial.title || ''}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+          {tutorial.youtubeUrl && (
+            <div className="w-full flex-shrink-0 bg-black">
+              <div className="w-full max-h-[60vh] aspect-video mx-auto">
+                <iframe
+                  src={getYouTubeEmbedUrl(tutorial.youtubeUrl)}
+                  title={tutorial.title || ''}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
             </div>
-          </div>
+          )}
           
           {/* Description Section */}
-          <div className="lg:w-1/3 p-6">
-            <div className="h-full flex flex-col">
-              <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                وصف الشرح
-              </h4>
-              
-              {tutorial.description && (
-                <div className="flex-1 overflow-hidden">
-                  <div className={`text-gray-300 leading-relaxed ${!showFullDescription ? 'line-clamp-6' : ''}`}>
-                    {tutorial.description}
-                  </div>
-                  
-                  {tutorial.description.length > 200 && (
-                    <div className="mt-4">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setShowFullDescription(!showFullDescription)}
-                        className="w-full bg-primary/20 hover:bg-primary/30 text-primary border-primary/30"
-                      >
-                        {showFullDescription ? 'عرض أقل' : 'عرض المزيد'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+          <div className="w-full p-6 overflow-y-auto flex-grow [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 sticky top-0 bg-fixed-40 backdrop-blur py-2 z-10">
+              <BookOpen className="w-5 h-5 text-primary" />
+              وصف الشرح
+            </h4>
+            
+            {tutorial.description && (
+              <div className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+                {tutorial.description}
+              </div>
+            )}
           </div>
         </div>
       </div>
