@@ -141,6 +141,9 @@ export default function TicketsPage() {
   const [stats, setStats] = useState<TicketStats | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [ticketsPage, setTicketsPage] = useState(1);
+  const [hasMoreTickets, setHasMoreTickets] = useState(false);
+  const [loadingMoreTickets, setLoadingMoreTickets] = useState(false);
   const [showWidgetCode, setShowWidgetCode] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("tickets");
@@ -297,7 +300,8 @@ export default function TicketsPage() {
   useEffect(() => {
     if (!token) return;
     if (activeTab === "tickets") {
-      loadTickets();
+      setTicketsPage(1);
+      loadTickets(1);
       loadStats();
       loadWidgetSettings();
       loadLiveChatUsage();
@@ -305,7 +309,7 @@ export default function TicketsPage() {
     } else if (activeTab === "knowledge") {
       loadKnowledgeBases();
     }
-  }, [token, statusFilter, activeTab, permissions]);
+  }, [token, statusFilter, searchQuery, activeTab, permissions]);
 
   // Load WhatsApp groups when notifications are enabled
   useEffect(() => {
@@ -378,12 +382,24 @@ export default function TicketsPage() {
     });
   }, [messages, selectedTicket?.id]);
 
-  const loadTickets = async () => {
+  const loadTickets = async (page: number = 1, isLoadMore: boolean = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMoreTickets(true);
+      } else {
+        setLoading(true);
+      }
+
       const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("limit", "20");
+      
       if (statusFilter !== "all") {
         params.append("status", statusFilter);
+      }
+      
+      if (searchQuery) {
+        params.append("search", searchQuery);
       }
       
       const response = await fetch(
@@ -401,9 +417,17 @@ export default function TicketsPage() {
 
       const data = await response.json();
       const fetchedTickets: Ticket[] = data.tickets || [];
-      setTickets(fetchedTickets);
+      
+      if (isLoadMore) {
+        setTickets(prev => [...prev, ...fetchedTickets]);
+      } else {
+        setTickets(fetchedTickets);
+      }
 
-      if (fetchedTickets.length > 0) {
+      setHasMoreTickets(page * 20 < data.total);
+      setTicketsPage(page);
+
+      if (!isLoadMore && fetchedTickets.length > 0) {
         const selectedStillExists = selectedTicketRef.current
           ? fetchedTickets.some((ticket) => ticket.id === selectedTicketRef.current?.id)
           : false;
@@ -413,7 +437,7 @@ export default function TicketsPage() {
         }
 
         loadLiveChatUsage(fetchedTickets[0].storeId);
-      } else {
+      } else if (!isLoadMore) {
         setSelectedTicket(null);
         setMessages([]);
         selectedTicketRef.current = null;
@@ -422,6 +446,7 @@ export default function TicketsPage() {
       showError("خطأ", error.message);
     } finally {
       setLoading(false);
+      setLoadingMoreTickets(false);
     }
   };
 
@@ -1440,73 +1465,96 @@ export default function TicketsPage() {
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
             <div className="divide-y divide-gray-800 h-full overflow-y-auto scrollbar-hide">
-              {filteredTickets.length === 0 ? (
+              {tickets.length === 0 ? (
                 <div className="p-6 text-center text-gray-400">
                   لا توجد تذاكر مطابقة للبحث
                 </div>
               ) : (
-                filteredTickets.map((ticket) => {
-                  const isActive = selectedTicket?.id === ticket.id;
-                  return (
-                    <button
-                      key={ticket.id}
-                      onClick={() => loadTicket(ticket.id)}
-                      className={`w-full text-left rounded-md p-4 transition-colors mb-2 ${
-                        isActive ? "bg-fixed-40 border-primary ring-1 ring-primary/50" : ""
-                      } ${
-                        ticket.status === 'open' ? 'bg-green-500/10 hover:bg-green-500/20' :
-                        ticket.status === 'pending' ? 'bg-yellow-500/10 hover:bg-yellow-500/20' :
-                        ticket.status === 'closed' ? 'bg-red-500/10 hover:bg-red-500/20' :
-                        ticket.status === 'waiting_customer' ? 'bg-purple-500/10 hover:bg-purple-500/20' :
-                        'hover:bg-secondry'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-1">{getStatusIcon(ticket.status)}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <h3 className="font-semibold text-white truncate">
-                                {ticket.visitorName || `عميل جديد `}
-                              </h3>
-                              {ticket.rating && (
-                                <div className="flex items-center gap-0.5 bg-yellow-400/20 px-1.5 py-0.5 rounded text-[10px] text-yellow-400 font-bold shrink-0">
-                                  {ticket.rating}<Star className="h-2.5 w-2.5 fill-yellow-400" />
-                                </div>
-                              )}
+                <>
+                  {tickets.map((ticket) => {
+                    const isActive = selectedTicket?.id === ticket.id;
+                    return (
+                      <button
+                        key={ticket.id}
+                        onClick={() => loadTicket(ticket.id)}
+                        className={`w-full text-left rounded-md p-4 transition-colors mb-2 ${
+                          isActive ? "bg-fixed-40 border-primary ring-1 ring-primary/50" : ""
+                        } ${
+                          ticket.status === 'open' ? 'bg-green-500/10 hover:bg-green-500/20' :
+                          ticket.status === 'pending' ? 'bg-yellow-500/10 hover:bg-yellow-500/20' :
+                          ticket.status === 'closed' ? 'bg-red-500/10 hover:bg-red-500/20' :
+                          ticket.status === 'waiting_customer' ? 'bg-purple-500/10 hover:bg-purple-500/20' :
+                          'hover:bg-secondry'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-1">{getStatusIcon(ticket.status)}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <h3 className="font-semibold text-white truncate">
+                                  {ticket.visitorName || `عميل جديد `}
+                                </h3>
+                                {ticket.rating && (
+                                  <div className="flex items-center gap-0.5 bg-yellow-400/20 px-1.5 py-0.5 rounded text-[10px] text-yellow-400 font-bold shrink-0">
+                                    {ticket.rating}<Star className="h-2.5 w-2.5 fill-yellow-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                                {new Date(ticket.createdAt).toLocaleDateString("en-GB")} {new Date(ticket.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </span>
                             </div>
-                            <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                              {new Date(ticket.createdAt).toLocaleDateString("en-GB")} {new Date(ticket.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center justify-between mt-1 gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <p className="text-[11px] text-yellow-500 font-medium shrink-0">
-                                {getStatusText(ticket.status)}
+                            
+                            <div className="flex items-center justify-between mt-1 gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <p className="text-[11px] text-yellow-500 font-medium shrink-0">
+                                  {getStatusText(ticket.status)}
+                                </p>
+                                {(ticket.assignedAgent?.name || ticket.closedByAgentName) && (
+                                  <div className="flex items-center gap-1 opacity-80 min-w-0">
+                                    <span className="text-gray-600">•</span>
+                                    <User className="h-3 w-3 text-primary shrink-0" />
+                                    <p className="text-[10px] text-primary truncate">
+                                      {ticket.assignedAgent?.name || ticket.closedByAgentName}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {ticket.visitorEmail && (
+                              <p className="text-[11px] text-gray-600 truncate mt-0.5">
+                                {ticket.visitorEmail}
                               </p>
-                              {(ticket.assignedAgent?.name || ticket.closedByAgentName) && (
-                                <div className="flex items-center gap-1 opacity-80 min-w-0">
-                                  <span className="text-gray-600">•</span>
-                                  <User className="h-3 w-3 text-primary shrink-0" />
-                                  <p className="text-[10px] text-primary truncate">
-                                    {ticket.assignedAgent?.name || ticket.closedByAgentName}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
-                          
-                          {ticket.visitorEmail && (
-                            <p className="text-[11px] text-gray-600 truncate mt-0.5">
-                              {ticket.visitorEmail}
-                            </p>
-                          )}
                         </div>
-                      </div>
-                    </button>
-                  );
-                })
+                      </button>
+                    );
+                  })}
+                  
+                  {hasMoreTickets && (
+                    <div className="p-4 flex justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadTickets(ticketsPage + 1, true)}
+                        disabled={loadingMoreTickets}
+                        className="text-xs border-primary text-primary hover:bg-primary/10"
+                      >
+                        {loadingMoreTickets ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            جاري التحميل...
+                          </div>
+                        ) : (
+                          "عرض المزيد من التذاكر"
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </CardContent>

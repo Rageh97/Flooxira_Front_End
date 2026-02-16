@@ -41,11 +41,27 @@ type ChatItem = {
 };
 
 export default function TelegramChatsPage() {
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "";
   const { user, loading } = useAuth();
   const { showSuccess, showError } = useToast();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [loadingMoreContacts, setLoadingMoreContacts] = useState(false);
+  const [contactsOffset, setContactsOffset] = useState(0);
+  const [hasMoreContacts, setHasMoreContacts] = useState(false);
+  const CONTACTS_PER_PAGE = 50;
   const [activeChatId, setActiveChatId] = useState<string>("");
+
+  // Search effect
+  useEffect(() => {
+    if (token) {
+      const delayDebounceFn = setTimeout(() => {
+        loadContacts(true);
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [query, token]);
   const [history, setHistory] = useState<ChatItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [messageText, setMessageText] = useState("");
@@ -61,20 +77,45 @@ export default function TelegramChatsPage() {
   const listEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const token = useMemo(() => (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : ""), []);
-
-  const loadContacts = () => {
+  const loadContacts = (isInitial: boolean = true) => {
     if (!token) return;
-    setLoadingContacts(true);
-    telegramBotGetContacts(token)
+    
+    if (isInitial) {
+      setLoadingContacts(true);
+      setContactsOffset(0);
+    } else {
+      setLoadingMoreContacts(true);
+    }
+
+    const currentOffset = isInitial ? 0 : contactsOffset;
+
+    telegramBotGetContacts(token, CONTACTS_PER_PAGE, currentOffset, query)
       .then((res) => {
-        const items = (res.contacts || []) as Contact[];
-        setContacts(items);
-        if (items.length > 0 && !activeChatId) {
-          setActiveChatId(items[0].chatId.toString());
+        if (res.success && res.contacts) {
+          const items = res.contacts as Contact[];
+          
+          if (isInitial) {
+            setContacts(items);
+            if (items.length > 0 && !activeChatId) {
+              setActiveChatId(items[0].chatId.toString());
+            }
+          } else {
+            setContacts(prev => [...prev, ...items]);
+          }
+
+          if (res.pagination) {
+            setHasMoreContacts(res.pagination.hasMore);
+            setContactsOffset(prev => isInitial ? items.length : prev + items.length);
+          } else {
+            setHasMoreContacts(items.length === CONTACTS_PER_PAGE);
+            setContactsOffset(prev => isInitial ? items.length : prev + items.length);
+          }
         }
       })
-      .finally(() => setLoadingContacts(false));
+      .finally(() => {
+        setLoadingContacts(false);
+        setLoadingMoreContacts(false);
+      });
   };
 
   useEffect(() => {
@@ -196,12 +237,24 @@ export default function TelegramChatsPage() {
   useEffect(() => {
     if (!token) return;
     const interval = setInterval(() => {
-      telegramBotGetContacts(token).then(res => {
+      // Periodic refresh only updates the first page to keep things simple
+      telegramBotGetContacts(token, CONTACTS_PER_PAGE, 0).then(res => {
         if (res.success && res.contacts) {
-          setContacts(res.contacts as Contact[]);
+          setContacts(prev => {
+            const serverContacts = res.contacts as Contact[];
+            const serverIds = new Set(serverContacts.map(c => c.chatId.toString()));
+            
+            // Keep contacts that are NOT in the first page (they are in deeper pages)
+            const deeperContacts = prev.filter(c => !serverIds.has(c.chatId.toString()));
+            
+            return [...serverContacts, ...deeperContacts];
+          });
+          if (res.pagination) {
+            setHasMoreContacts(res.pagination.hasMore);
+          }
         }
       });
-    }, 30000); // Refresh contacts list every 30s
+    }, 30000); // Refresh first page of contacts list every 30s
     return () => clearInterval(interval);
   }, [token]);
 
@@ -434,6 +487,17 @@ export default function TelegramChatsPage() {
                   </li>
                 );
               })}
+              {hasMoreContacts && (
+                <li className="p-2">
+                  <button
+                    onClick={() => loadContacts(false)}
+                    disabled={loadingMoreContacts}
+                    className="w-full py-2 text-xs text-white bg-white/10 hover:bg-white/20 rounded transition-colors disabled:opacity-50"
+                  >
+                    {loadingMoreContacts ? 'جاري التحميل...' : 'تحميل المزيد'}
+                  </button>
+                </li>
+              )}
             </ul>
           )}
         </div>

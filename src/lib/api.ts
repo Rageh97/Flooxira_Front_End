@@ -281,8 +281,12 @@ export async function getChatHistory(token: string, contactNumber?: string, limi
   return apiFetch<{ success: boolean; total: number; chats: Array<{ id: number; contactNumber: string; messageType: 'incoming' | 'outgoing'; messageContent: string; responseSource: string; knowledgeBaseMatch: string | null; timestamp: string }> }>(`/api/whatsapp/chats?${params}`, { authToken: token });
 }
 
-export async function getChatContacts(token: string) {
-  return apiFetch<{ success: boolean; contacts: Array<{ contactNumber: string; messageCount: number; lastMessageTime: string; profilePicture?: string | null; contactName?: string | null }> }>("/api/whatsapp/contacts", { authToken: token });
+export async function getChatContacts(token: string, limit = 50, offset = 0, search = '') {
+  return apiFetch<{ 
+    success: boolean; 
+    contacts: Array<{ contactNumber: string; messageCount: number; lastMessageTime: string; profilePicture?: string | null; contactName?: string | null }>;
+    pagination?: { total: number; limit: number; offset: number; hasMore: boolean }
+  }>(`/api/whatsapp/contacts?limit=${limit}&offset=${offset}&search=${encodeURIComponent(search)}`, { authToken: token });
 }
 
 export async function getBotStats(token: string) {
@@ -1515,8 +1519,12 @@ export async function syncTelegramGroups(token: string) {
   });
 }
 
-export async function telegramBotGetContacts(token: string) {
-  return apiFetch<{ success: boolean; contacts?: any[] }>("/api/telegram-bot/contacts", { authToken: token });
+export async function telegramBotGetContacts(token: string, limit = 50, offset = 0, search = '') {
+  return apiFetch<{ 
+    success: boolean; 
+    contacts?: any[];
+    pagination?: { total: number; limit: number; offset: number; hasMore: boolean }
+  }>(`/api/telegram-bot/contacts?limit=${limit}&offset=${offset}&search=${encodeURIComponent(search)}`, { authToken: token });
 }
 
 export async function telegramBotPollMessages(token: string) {

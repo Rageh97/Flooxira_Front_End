@@ -89,6 +89,7 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
 });
 
 export default function WhatsAppChatsPage() {
+  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
@@ -249,6 +250,17 @@ export default function WhatsAppChatsPage() {
   const [hasMoreContacts, setHasMoreContacts] = useState(true);
   const [loadingMoreContacts, setLoadingMoreContacts] = useState(false);
   const CONTACTS_PER_PAGE = 50;
+
+  // Search effect to reload contacts from server
+  useEffect(() => {
+    if (token) {
+      const delayDebounceFn = setTimeout(() => {
+        loadChatContacts(true, true);
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [searchTerm, token]);
   
   // Profile picture cache to prevent disappearing - with localStorage persistence
   const [profilePictureCache, setProfilePictureCache] = useState<{[key: string]: string}>(() => {
@@ -338,8 +350,6 @@ export default function WhatsAppChatsPage() {
   // Ref for messages container to scroll to bottom
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   // Linkify plain text into clickable anchors and keep line breaks
   const linkify = (text: string) => {
@@ -657,10 +667,11 @@ export default function WhatsAppChatsPage() {
       
       const currentOffset = isInitialLoad ? 0 : contactsOffset;
       
-      const data = await getChatContacts(token);
-      console.log('=== getChatContacts API Response ===');
-      console.log('Full API response:', data);
-      console.log('Contacts array:', data.contacts);
+      // ✅ Call paginated API with search
+      const data = await getChatContacts(token, CONTACTS_PER_PAGE, currentOffset, searchTerm);
+      console.log('=== getChatContacts API Response (Paginated) ===');
+      console.log('Contacts array length:', data.contacts?.length);
+      console.log('Pagination info:', data.pagination);
       
       if (data.success) {
         // Helper to extract clean number for comparison
@@ -672,143 +683,79 @@ export default function WhatsAppChatsPage() {
              if (egyptMatch) return egyptMatch[0];
              const saudiMatch = clean.match(/966\d{9}/);
              if (saudiMatch) return saudiMatch[0];
-             // Try suffix match
              if (clean.length >= 12) {
                 const last12 = clean.slice(-12);
                 if (/^20\d{10}$/.test(last12)) return last12;
              }
-             return clean.slice(-12); // Fallback
+             return clean.slice(-12);
           }
           return clean;
         };
 
-        // Deduplicate contacts
-        const uniqueContactsMap = new Map();
-        
-        data.contacts.forEach((contact: any) => {
-           const cleanNum = getCleanNumber(contact.contactNumber);
-           
-           if (uniqueContactsMap.has(cleanNum)) {
-              const existing = uniqueContactsMap.get(cleanNum);
-              
-              // Determine which one to keep
-              // Prefer non-LID (s.whatsapp.net) over LID
-              const isExistingLid = existing.contactNumber.includes('@lid');
-              const isNewLid = contact.contactNumber.includes('@lid');
-              
-              if (isExistingLid && !isNewLid) {
-                 // Replace LID with real number
-                 uniqueContactsMap.set(cleanNum, {
-                    ...contact,
-                    // Preserve profile picture if missing in new
-                    profilePicture: contact.profilePicture || existing.profilePicture,
-                    // Take latest message time
-                    lastMessageTime: new Date(contact.lastMessageTime) > new Date(existing.lastMessageTime) ? contact.lastMessageTime : existing.lastMessageTime,
-                    messageCount: Math.max(contact.messageCount, existing.messageCount)
-                 });
-              } else if (!isExistingLid && isNewLid) {
-                 // Keep existing real number, but update metadata if new is fresher
-                 uniqueContactsMap.set(cleanNum, {
-                    ...existing,
-                    profilePicture: existing.profilePicture || contact.profilePicture,
-                    lastMessageTime: new Date(contact.lastMessageTime) > new Date(existing.lastMessageTime) ? contact.lastMessageTime : existing.lastMessageTime,
-                     messageCount: Math.max(contact.messageCount, existing.messageCount)
-                 });
-              } else {
-                 // Both same type, keep the one with latest message
-                 if (new Date(contact.lastMessageTime) > new Date(existing.lastMessageTime)) {
-                    uniqueContactsMap.set(cleanNum, contact);
-                 }
-              }
-           } else {
-              uniqueContactsMap.set(cleanNum, contact);
-           }
-        });
-
-        const dedupedContacts = Array.from(uniqueContactsMap.values());
-        
-        // FILTER: Remove groups, LID numbers and long internal IDs
-        const cleanContacts = (dedupedContacts as any[]).filter(c => {
-           // ❌ FILTER OUT ALL GROUPS
+        // Process and clean contacts from the current batch
+        const cleanContacts = (data.contacts as any[]).filter(c => {
            if (c.isGroup) return false;
-
-           // Explicitly filter LID suffix if user doesn't want them
            if (c.contactNumber.includes('@lid')) return false;
-
            const clean = c.contactNumber.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '').replace(/\D/g, '');
-           // Phone numbers (Egypt/Saudi/etc) are usually <= 13 digits
            if (clean.length > 13) return false;
-           
            return true;
         });
 
-        // Sort by last message time descending (Newest first)
-        cleanContacts.sort((a: any, b: any) => {
-           const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-           const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-           return timeB - timeA;
-        });
-
-        // Cache profile pictures to prevent disappearing - PRESERVE existing cache
+        // Cache profile pictures
         let finalCache: {[key: string]: string} = {};
         setProfilePictureCache(prevCache => {
-          const newCache = {...prevCache}; // Start with existing cache
+          const newCache = {...prevCache};
           cleanContacts.forEach((contact: any) => {
             if (contact.profilePicture && contact.contactNumber) {
-              // Always update if new picture exists
               newCache[contact.contactNumber] = contact.profilePicture;
             }
-            // CRITICAL: If no picture in new data, keep the old cached one
-            // This prevents disappearing pictures on refresh
           });
-          finalCache = newCache; // Store for use below
+          finalCache = newCache;
           return newCache;
         });
 
-        // Apply pagination on frontend for now (backend should handle this ideally)
-        const paginatedContacts = isInitialLoad 
-          ? cleanContacts.slice(0, CONTACTS_PER_PAGE)
-          : cleanContacts.slice(0, currentOffset + CONTACTS_PER_PAGE);
-
-        setHasMoreContacts(paginatedContacts.length < cleanContacts.length);
-        
-        if (isInitialLoad) {
-          setContactsOffset(CONTACTS_PER_PAGE);
+        // Update pagination state
+        if (data.pagination) {
+          setHasMoreContacts(data.pagination.hasMore);
+          if (isInitialLoad) {
+            setContactsOffset(data.contacts.length);
+          } else {
+            setContactsOffset(prev => prev + data.contacts.length);
+          }
         } else {
-          setContactsOffset(prev => prev + CONTACTS_PER_PAGE);
+          // Fallback if pagination object is missing (shouldn't happen with new backend)
+          setHasMoreContacts(data.contacts.length === CONTACTS_PER_PAGE);
+          setContactsOffset(prev => isInitialLoad ? data.contacts.length : prev + data.contacts.length);
         }
 
-        // Optimization: prevent unnecessary state updates
+        // Update contacts list
         setContacts(prev => {
           if (isInitialLoad) {
-            // ✅ CRITICAL: Merge with cached profile pictures
-            return paginatedContacts.map(contact => ({
+            return cleanContacts.map(contact => ({
               ...contact,
               profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
             }));
           }
           
-          // For load more, append new contacts with cached pictures
           const existingNumbers = new Set(prev.map(c => c.contactNumber));
-          const newContacts = paginatedContacts
+          const newContactsToAdd = cleanContacts
             .filter(c => !existingNumbers.has(c.contactNumber))
             .map(contact => ({
               ...contact,
               profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
             }));
           
-          // ✅ CRITICAL: Also update existing contacts with cached pictures
           const updatedPrev = prev.map(contact => ({
             ...contact,
             profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
           }));
           
-          return [...updatedPrev, ...newContacts];
+          return [...updatedPrev, ...newContactsToAdd];
         });
         
-        // Load tags for contacts (debounced to avoid blocking)
-        if (isInitialLoad) {
-          setTimeout(() => loadContactTags(paginatedContacts), 500);
+        // Load tags for the new contacts
+        if (cleanContacts.length > 0) {
+          setTimeout(() => loadContactTags(cleanContacts), 500);
         }
       }
     } catch (e: any) {

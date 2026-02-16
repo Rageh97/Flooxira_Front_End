@@ -55,7 +55,7 @@ export default function TagsPage() {
     try {
       const [tagsRes, contactsRes] = await Promise.all([
         listTags(),
-        getChatContacts(localStorage.getItem('auth_token') || '')
+        getChatContacts(localStorage.getItem('auth_token') || '', 500)
       ]);
       
       if (tagsRes.success) setTags(tagsRes.data || []);
