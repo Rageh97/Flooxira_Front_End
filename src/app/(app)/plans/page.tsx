@@ -305,8 +305,22 @@ export default function PlansPage() {
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
                                     <span className="text-xs font-medium text-gray-200">إدارة التليجرام</span>
+                                    {(permissions as any).telegramMessagesPerMonth !== 0 && (
+                                      <span className="text-xs text-primary">
+                                        ({(permissions as any).telegramMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).telegramMessagesPerMonth} رسالة/شهر)
+                                      </span>
+                                    )}
                                     {(permissions as any).canUseTelegramAI ? (
-                                      <span className="text-xs text-green-400">(مدعوم بالذكاء الاصطناعي)</span>
+                                      <span className="text-xs text-green-400">
+                                        (مدعوم بالذكاء الاصطناعي
+                                        {(permissions as any).telegramAiCredits !== undefined && (
+                                          <>
+                                            {" - "}
+                                            {(permissions as any).telegramAiCredits === -1 || (permissions as any).telegramAiCredits === 0 ? 'غير محدود' : `${(permissions as any).telegramAiCredits} رد`}
+                                          </>
+                                        )}
+                                        )
+                                      </span>
                                     ) : (
                                       <span className="text-xs text-red-400">(غير مدعوم بالذكاء الاصطناعي)</span>
                                     )}
@@ -468,7 +482,16 @@ export default function PlansPage() {
                                     </div>
                                     <span className="text-xs text-white font-medium">ادارة التذاكر & لايف شات</span>
                                     {(permissions as any).canUseLiveChatAI ? (
-                                      <span className="text-xs text-green-400">(مدعوم بالذكاء الاصطناعي)</span>
+                                      <span className="text-xs text-green-400">
+                                        (مدعوم بالذكاء الاصطناعي
+                                        {(permissions as any).liveChatAiResponses !== undefined && (
+                                          <>
+                                            {" - "}
+                                            {(permissions as any).liveChatAiResponses === -1 || (permissions as any).liveChatAiResponses === 0 ? 'غير محدود' : `${(permissions as any).liveChatAiResponses} رد`}
+                                          </>
+                                        )}
+                                        )
+                                      </span>
                                     ) : (
                                       <span className="text-xs text-red-400">(غير مدعوم بالذكاء الاصطناعي)</span>
                                     )}
