@@ -208,16 +208,16 @@ export default function ResizePage() {
             <div className="space-y-4">
              <div className="space-y-4">
                 <label className="text-xs font-bold text-gray-400 block text-right">الفيديو المستهدف</label>
-                <div className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload" onClick={() => document.getElementById('file-v-r')?.click()}>
+                <div className="relative aspect-video rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group" onClick={() => document.getElementById('file-v-r')?.click()}>
                    {previewUrl ? (
                      <>
-                        <video src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                        <video src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
                           <FileVideo className="text-orange-400 mb-2" size={32} />
                           <span className="text-xs font-bold text-white">تغيير الفيديو</span>
                         </div>
                      </>
-                   ) : <Upload className="text-gray-700 group-hover/upload:text-orange-400" size={32} />}
+                   ) : <Upload className="text-gray-700 group-hover:text-orange-400" size={32} />}
                 </div>
                 <input id="file-v-r" type="file" className="hidden" accept="video/*" onChange={e => {
                    const file = e.target.files?.[0];

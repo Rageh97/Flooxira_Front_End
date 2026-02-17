@@ -10,7 +10,7 @@ import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, X } from "lucide-react";
+import { BookOpen, Eye, X } from "lucide-react";
 
 import { 
   listContentCategories, 
@@ -114,6 +114,9 @@ export default function ContentHomePage() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [createdItemId, setCreatedItemId] = useState<number | null>(null); // Track newly created item ID
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [viewingItem, setViewingItem] = useState<ContentItem | null>(null);
   
   const token = typeof window !== 'undefined' ? (localStorage.getItem("auth_token") || "") : "";
 
@@ -506,9 +509,17 @@ export default function ContentHomePage() {
   };
 
   const handleFileUpload = async (files: FileList) => {
-    const arr = Array.from(files);
-    const uploaded = await Promise.all(arr.map(uploadFile));
-    setItemAttachments(prev => [...prev, ...uploaded]);
+    setIsUploading(true);
+    try {
+      const arr = Array.from(files);
+      const uploaded = await Promise.all(arr.map(uploadFile));
+      setItemAttachments(prev => [...prev, ...uploaded]);
+    } catch (e) {
+      console.error(e);
+      showError("فشل رفع الملفات");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const removeAttachment = (idx: number) => {
@@ -1125,7 +1136,11 @@ export default function ContentHomePage() {
                                       <img 
                                         src={att.url} 
                                         alt="مرفق" 
-                                        className="w-8 h-8 object-cover rounded border"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewImage(att.url);
+                                        }}
+                                        className="w-8 h-8 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
                                       />
                                     ) : (
                                       <div className="text-xs bg-green-600 text-white px-2 py-1 rounded">
@@ -1140,6 +1155,13 @@ export default function ContentHomePage() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1">
+                              <button 
+                                onClick={() => setViewingItem(item)}
+                                className="text-blue-400 hover:text-blue-300"
+                                title="عرض التفاصيل"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
                               <button 
                                 onClick={() => onEditItem(item)}
                                 className="text-green-400 hover:text-green-300"
@@ -1228,7 +1250,7 @@ export default function ContentHomePage() {
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-lg font-semibold text-white">إضافة عنصر جديد</DialogTitle>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 pt-2 scrollbar-hide">
               <div className="space-y-4">
                 <Input 
                   placeholder="عنوان العنصر" 
@@ -1244,8 +1266,8 @@ export default function ContentHomePage() {
                     value={itemBody} 
                     onChange={(e) => setItemBody(e.target.value)}
                     autoResize
-                    maxHeight={600}
-                    className="bg-[#011910] border-gray-700 text-white"
+                    maxHeight={200}
+                    className="bg-[#011910] border-gray-700 text-white scrollbar-hide resize-none min-h-[100px]"
                   />
                 </div>
 
@@ -1315,7 +1337,7 @@ export default function ContentHomePage() {
                       </svg> 
                       <p className="text-white text-sm font-medium">اختر مرفقات</p>
                       <p className="text-gray-400 text-xs text-center">
-                        {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "اضغط هنا لرفع الصور أو الفيديو"}
+                        {isUploading ? "جاري الرفع..." : itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "اضغط هنا لرفع الصور أو الفيديو"}
                       </p> 
                     </div> 
                   </label>
@@ -1521,7 +1543,7 @@ export default function ContentHomePage() {
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="text-lg font-semibold text-white">تحرير العنصر</DialogTitle>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto p-6 pt-2 scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto p-6 pt-2 scrollbar-hide">
               <div className="space-y-4">
                 <Input 
                   placeholder="عنوان العنصر" 
@@ -1537,8 +1559,8 @@ export default function ContentHomePage() {
                     value={itemBody} 
                     onChange={(e) => setItemBody(e.target.value)}
                     autoResize
-                    maxHeight={600}
-                    className="bg-[#011910] border-gray-700 text-white"
+                    maxHeight={200}
+                    className="bg-[#011910] border-gray-700 text-white scrollbar-hide resize-none min-h-[100px]"
                   />
                 </div>
 
@@ -1608,7 +1630,7 @@ export default function ContentHomePage() {
                       </svg> 
                       <p className="text-white text-sm font-medium">اختر مرفقات</p>
                       <p className="text-gray-400 text-xs text-center">
-                        {itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "اضغط هنا لرفع الصور أو الفيديو"}
+                        {isUploading ? "جاري الرفع..." : itemAttachments.length ? `${itemAttachments.length} ملف/ملفات مرفوعة` : "اضغط هنا لرفع الصور أو الفيديو"}
                       </p> 
                     </div> 
                   </label>
@@ -1948,6 +1970,121 @@ export default function ContentHomePage() {
           </div>
         )}
       </div>
+
+      {/* View Item Modal */}
+      <Dialog open={!!viewingItem} onOpenChange={(open) => !open && setViewingItem(null)}>
+        <DialogContent className="max-w-xl bg-[#0f1827] border border-gray-700 text-white p-0 overflow-hidden">
+          <DialogHeader className="p-6 border-b border-gray-700 bg-[#0a0f18]">
+            <DialogTitle className="text-xl font-bold text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-400" />
+              تفاصيل العنصر
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="p-6 overflow-y-auto max-h-[80vh] custom-scrollbar space-y-6">
+            {viewingItem && (
+              <>
+                {/* Title */}
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">{viewingItem.title}</h3>
+                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {viewingItem.scheduledAt ? new Date(viewingItem.scheduledAt).toLocaleString('ar-SA') : 'غير مجدول'}
+                    </span>
+                    {viewingItem.platforms && viewingItem.platforms.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Send className="w-3 h-3" />
+                        {viewingItem.platforms.join(', ')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Content Body */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <label className="text-xs font-bold text-gray-400 mb-2 block">المحتوى:</label>
+                  <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {viewingItem.body || "لا يوجد محتوى نصي"}
+                  </p>
+                </div>
+
+                {/* Attachments */}
+                {viewingItem.attachments && viewingItem.attachments.length > 0 && (
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 mb-2 block flex items-center gap-2">
+                       <Image className="w-3 h-3" />
+                       المرفقات ({viewingItem.attachments.length})
+                    </label>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {viewingItem.attachments.map((att, idx) => (
+                        <div key={idx} className="relative aspect-square group rounded-lg overflow-hidden border border-white/10 bg-black/20">
+                          {att.type === 'image' || att.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                            <img 
+                              src={att.url} 
+                              alt="مرفق" 
+                              onClick={() => setPreviewImage(att.url)}
+                              className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-2">
+                              {att.type === 'video' ? <Video className="w-6 h-6 mb-1" /> : <FileText className="w-6 h-6 mb-1" />}
+                              <span className="text-[10px] truncate w-full text-center">{att.type}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions Footer */}
+                <div className="flex gap-3 pt-2 border-t border-white/5">
+                  <Button 
+                    onClick={() => {
+                      setViewingItem(null);
+                      onEditItem(viewingItem);
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    تعديل
+                  </Button>
+                  <Button 
+                    onClick={() => setViewingItem(null)}
+                    variant="ghost"
+                    className="flex-1 bg-white/5 hover:bg-white/10 text-gray-300"
+                  >
+                    إغلاق
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-[99999] flex items-center justify-center p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button 
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 z-50 bg-black/50 rounded-full p-2"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img 
+            src={previewImage} 
+            alt="Preview" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()} 
+          />
+        </div>
+      )}
+
       {/* Tutorial Video Modal */}
       <TutorialVideoModal
         tutorial={selectedTutorial}

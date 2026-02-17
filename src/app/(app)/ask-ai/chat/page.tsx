@@ -360,7 +360,8 @@ export default function ChatPage() {
             } else {
               const id = streamingMsgRef.current.id;
               streamingMsgRef.current.content += delta;
-              setMessages((prev) => prev.map(m => m.id === id ? { ...m, content: streamingMsgRef.current!.content } : m));
+              const currentContent = streamingMsgRef.current.content;
+              setMessages((prev) => prev.map(m => m.id === id ? { ...m, content: currentContent } : m));
             }
           },
           onDone: ({ assistantMessage, remainingCredits }) => {

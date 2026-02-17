@@ -109,7 +109,9 @@ export default function SketchPage() {
   };
 
   const handleProcess = async () => {
-    if (!hasActiveSubscription) {
+    // Check if user has active subscription OR remaining credits
+    const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
+    if (!hasActiveSubscription && !hasCredits) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -276,19 +278,19 @@ export default function SketchPage() {
                 ارفع رسمك اليدوي
               </label>
               <div 
-                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-purple-500/30 transition-all"
+                className="relative aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group hover:border-purple-500/30 transition-all"
                 onClick={() => document.getElementById('file-s')?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <img src={previewUrl} className="w-full h-full object-contain opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                    <img src={previewUrl} className="w-full h-full object-contain opacity-50 group-hover:opacity-30 transition-opacity" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <Palette className="text-purple-400 mb-2" size={32} />
                       <span className="text-xs font-bold text-white">تغيير الصورة</span>
                     </div>
                   </>
                 ) : (
-                  <Palette className="text-gray-700 group-hover/upload:text-purple-400 transition-colors" size={48} />
+                  <Palette className="text-gray-700 group-hover:text-purple-400 transition-colors" size={48} />
                 )}
               </div>
               <input id="file-s" type="file" className="hidden" accept="image/*" onChange={e => {
@@ -344,17 +346,7 @@ export default function SketchPage() {
               </div>
             </div>
 
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+     
           </div>
         </aside>
 

@@ -113,7 +113,9 @@ export default function BackgroundRemovalPage() {
 
   const handleProcess = async () => {
     if (!previewUrl) return showError("تنبيه", "يرجى اختيار صورة أولاً!");
-    if (!hasActiveSubscription) {
+    // Check if user has active subscription OR remaining credits
+    const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
+    if (!hasActiveSubscription && !hasCredits) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -277,7 +279,7 @@ export default function BackgroundRemovalPage() {
               </label>
               <div 
                 className={clsx(
-                  "relative aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden",
+                  "relative aspect-square rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center cursor-pointer overflow-hidden group",
                   previewUrl ? "border-purple-500/50" : "border-white/10 hover:border-purple-500/30 bg-white/5"
                 )}
                 onClick={() => document.getElementById('fileInput')?.click()}
@@ -313,30 +315,7 @@ export default function BackgroundRemovalPage() {
               إزالة الخلفية الآن
             </GradientButton>
 
-            {/* Info Box */}
-            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Eraser className="text-purple-400 flex-shrink-0 mt-0.5" size={18} />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-purple-300">دقة متناهية</h3>
-                  <p className="text-xs text-gray-400">
-                    خوارزمياتنا قادرة على تمييز الشعر والتفاصيل الدقيقة بدقة عالية
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={handleClearAll}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+   
           </div>
         </aside>
 

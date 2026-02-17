@@ -201,21 +201,21 @@ export default function EffectsPage() {
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">رفع الفيديو</label>
                 <div 
                   className={clsx(
-                    "relative aspect-video rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all bg-white/5 group/upload",
+                    "relative aspect-video rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all bg-white/5 group",
                     previewUrl ? "border-cyan-500/50" : "border-white/10 hover:border-cyan-500/30"
                   )}
                   onClick={() => document.getElementById('file-v-e')?.click()}
                 >
                   {previewUrl ? (
                     <>
-                      <video src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                      <video src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
                        <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <FileVideo className="text-cyan-400 mb-2" size={32} />
                         <span className="text-xs font-bold text-white">تغيير الفيديو</span>
                       </div>
                     </>
                   ) : (
-                    <FileVideo className="text-gray-700 group-hover/upload:text-cyan-400" size={48} />
+                    <FileVideo className="text-gray-700 group-hover:text-cyan-400" size={48} />
                   )}
                 </div>
                 <input id="file-v-e" type="file" className="hidden" accept="video/*" onChange={handleFileSelect} />

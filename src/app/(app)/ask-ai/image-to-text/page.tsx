@@ -264,10 +264,6 @@ export default function ImageToTextPage() {
             </GradientButton>
           </div>
 
-          <div className="p-6 bg-teal-500/5 rounded-[24px] border border-white/5 space-y-3">
-             <h4 className="text-sm font-bold text-teal-400 mb-1 flex items-center gap-2 italic text-right"><Sparkles size={16} /> هندسة الأوامر الذكية</h4>
-             <p className="text-[10px] text-gray-400 leading-relaxed text-right">ارفع أي صورة تعجبك وسيقوم الذكاء الاصطناعي باستخراج وصف دقيق جداً (Prompt) يمكنك استخدامه لإعادة توليد صور مشابهة أو تعديلها.</p>
-          </div>
           </div>
         </aside>
 
@@ -276,52 +272,105 @@ export default function ImageToTextPage() {
           <div className="p-4 lg:p-6 space-y-6">
            <div className="min-h-[500px] rounded-[40px] bg-[#0a0c10] border border-white/10 flex items-center justify-center p-4 lg:p-8 relative overflow-hidden">
               <AnimatePresence mode="wait">
-                 {description ? (
-                    <motion.div key="res" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative z-10 w-full flex flex-col items-center">
-                        {/* Close Button */}
-                        <div className="absolute top-0 left-0 z-30">
-                          <button 
-                            onClick={() => {setDescription(null); setPreviewUrl(null);}}
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-500 transition-colors border border-red-500/20"
-                          >
-                            <X size={14}/>
-                          </button>
-                        </div>
-
-                       <div className="bg-white/5 rounded-2xl lg:rounded-3xl p-4 lg:p-8 border border-white/5 relative group w-full shadow-2xl">
-                          <h3 className="text-teal-400 font-bold mb-4 flex items-center gap-2 text-right justify-end text-sm lg:text-base">الوصف المستخرج: <ImageIcon size={18} /></h3>
-                          <div className="relative">
-                            <p className="text-gray-300 leading-relaxed text-sm lg:text-lg font-medium font-sans ltr text-left dir-ltr selection:bg-teal-500/30 overflow-y-auto max-h-[300px] lg:max-h-[400px] custom-scrollbar p-3 lg:p-4 bg-black/20 rounded-xl lg:rounded-2xl border border-white/5">
-                                {description}
-                            </p>
-                            <Button 
-                                onClick={copyToClipboard} 
-                                className="absolute top-2 right-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-white h-10 w-10 lg:h-12 lg:w-12 p-0 border border-white/10"
-                                title="نسخ الوصف"
-                            >
-                                {copied ? <Check className="text-white" size={16} /> : <Copy size={16} />}
-                            </Button>
-                          </div>
-                          <div className="mt-6 lg:mt-8 flex items-center gap-3 justify-center">
-                             <Button variant="ghost" className="rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 h-9 lg:h-10 px-4 lg:px-6 text-xs lg:text-sm" onClick={() => {setDescription(null); setPreviewUrl(null);}}><RefreshCw size={14} className="lg:w-4 lg:h-4 ml-2" /> تجربة صورة أخرى</Button>
-                          </div>
-                          <BorderBeam colorFrom="#14B8A6" colorTo="#10B981" />
+                 {!previewUrl ? (
+                    <motion.div 
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-center group px-4 py-20 flex flex-col items-center justify-center w-full h-full"
+                    >
+                       <div className="w-24 h-24 rounded-[30px] bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 border border-white/5 shadow-2xl">
+                            <ImageIcon size={48} className="text-gray-600 group-hover:text-teal-400 transition-colors" />
                        </div>
-                    </motion.div>
-                 ) : isAnalyzing ? <AILoader /> : (
-                    <div className="text-center group px-4">
-                       <Search size={60} className="lg:w-20 lg:h-20 text-teal-500/10 mb-4 lg:mb-6 mx-auto group-hover:scale-110 transition-transform duration-500 animate-pulse" />
-                       <h3 className="text-lg lg:text-2xl font-bold mb-2 text-white">أسرار الصورة بانتظارك</h3>
-                       <p className="text-xs lg:text-sm text-gray-500 max-w-sm mx-auto">ارفع صورة لنكتشف معاً سحر الكلمات الكامنة خلفها.</p>
+                       <h3 className="text-2xl font-bold mb-3 text-white">تحليل الصور الذكي</h3>
+                       <p className="text-sm text-gray-400 max-w-sm mx-auto leading-relaxed">
+                         قم برفع صورة لاستخراج وصف دقيق (Prompt) أو لفهم محتوياتها وتفاصيلها الفنية
+                       </p>
                        
+                       {/* Mobile Action */}
                        <button
                          onClick={() => setShowSettings(true)}
-                         className="lg:hidden mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-sm font-bold transition-transform hover:scale-105"
+                         className="lg:hidden mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 text-sm font-bold transition-all"
                        >
-                         <Settings size={18} />
-                         <span>افتح الإعدادات</span>
+                         <Upload size={18} />
+                         <span>رفع صورة</span>
                        </button>
-                    </div>
+                    </motion.div>
+                 ) : (
+                    <motion.div 
+                        key="content"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="w-full max-w-3xl flex flex-col gap-8 self-center"
+                    >
+                        {/* Image Preview / Processing Area */}
+                        <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-black/40 group shadow-2xl">
+                            <div className="relative max-h-[600px] w-full flex items-center justify-center bg-dots-white/[0.05]">
+                                <img src={previewUrl} className="max-w-full max-h-[600px] object-contain shadow-lg" alt="Preview" />
+                            </div>
+                            
+                            {/* Loading State Overlay */}
+                            {isAnalyzing && (
+                                <div className="absolute inset-0 bg-black/70 backdrop-blur-[4px] flex flex-col items-center justify-center z-20 transition-all animate-in fade-in duration-300">
+                                    <div className="relative p-6 rounded-full bg-white/5 border border-white/10 mb-6">
+                                        <div className="absolute inset-0 bg-teal-500/20 blur-xl animate-pulse" />
+                                        <Sparkles size={40} className="text-teal-400 animate-pulse relative z-10" />
+                                    </div>
+                                    <h4 className="text-xl font-bold text-white mb-2">جاري تحليل المشهد...</h4>
+                                    <p className="text-gray-400 text-sm animate-pulse">يتم الآن قراءة العناصر، الإضاءة، والأنماط</p>
+                                </div>
+                            )}
+
+                            {/* Actions overlay (Only when not analyzing) */}
+                            {!isAnalyzing && (
+                                <div className="absolute top-4 left-4 z-10 flex gap-2">
+                                     <button 
+                                        onClick={() => {setPreviewUrl(null); setDescription(null);}}
+                                        className="p-2.5 rounded-xl bg-black/60 hover:bg-red-500/90 text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-md border border-white/10 shadow-lg transform translate-y-[-10px] group-hover:translate-y-0"
+                                        title="حذف الصورة"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Result Section */}
+                        {description && !isAnalyzing && (
+                           <motion.div 
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ type: "spring", bounce: 0.4 }}
+                                className="bg-[#0f1115] rounded-3xl p-6 lg:p-8 border border-white/10 relative overflow-hidden group/card"
+                           >
+                              <div className="flex items-center justify-between mb-6">
+                                  <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20">
+                                       <Zap size={20} className="text-teal-400" />
+                                    </div>
+                                    نتيجة التحليل
+                                  </h3>
+                                  <Button 
+                                    onClick={copyToClipboard} 
+                                    variant="ghost"
+                                    className="rounded-xl hover:bg-white/10 text-gray-400 hover:text-white"
+                                  >
+                                    {copied ? <Check size={18} className="text-green-400" /> : <Copy size={18} />}
+                                    <span className="mr-2">{copied ? "تم النسخ" : "نسخ النص"}</span>
+                                  </Button>
+                              </div>
+                              
+                              <div className="bg-black/40 rounded-2xl p-6 border border-white/5">
+                                  <p className="font-mono text-sm md:text-base leading-loose text-gray-300 dir-ltr text-left selection:bg-teal-500/30 whitespace-pre-wrap">
+                                     {description}
+                                  </p>
+                              </div>
+                              
+                              <BorderBeam size={200} duration={8} delay={9} colorFrom="#14B8A6" colorTo="#2DD4BF" />
+                           </motion.div>
+                        )}
+                    </motion.div>
                  )}
               </AnimatePresence>
            </div>

@@ -280,19 +280,19 @@ export default function VideoUpscalePage() {
                 الفيديو الأصلي
               </label>
               <div 
-                className="aspect-video rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
+                className="relative aspect-video rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group hover:border-blue-500/30 transition-all"
                 onClick={() => document.getElementById('file-v-u')?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <video src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                    <video src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <FileVideo className="text-blue-400 mb-2" size={32} />
                       <span className="text-xs font-bold text-white">تغيير الفيديو</span>
                     </div>
                   </>
                 ) : (
-                  <Upload className="text-gray-700 group-hover/upload:text-blue-400 transition-colors" size={32} />
+                  <Upload className="text-gray-700 group-hover:text-blue-400 transition-colors" size={32} />
                 )}
               </div>
               <input id="file-v-u" type="file" className="hidden" accept="video/*" onChange={e => {

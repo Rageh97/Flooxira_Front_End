@@ -114,7 +114,9 @@ export default function ImageEditPage() {
   };
 
   const handleProcess = async () => {
-    if (!hasActiveSubscription) {
+    // Check if user has active subscription OR remaining credits
+    const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
+    if (!hasActiveSubscription && !hasCredits) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -279,7 +281,7 @@ export default function ImageEditPage() {
                 الصورة المراد تعديلها
               </label>
               <div 
-                className="aspect-video rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
+                className="relative aspect-video rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
                 onClick={() => document.getElementById('file-e')?.click()}
               >
                 {previewUrl ? (
@@ -334,30 +336,9 @@ export default function ImageEditPage() {
               نفذ التعديل
             </GradientButton>
 
-            {/* Info Box */}
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Edit2 className="text-blue-400 flex-shrink-0 mt-0.5" size={18} />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-blue-300">تحرير ذكي</h3>
-                  <p className="text-xs text-gray-400">
-                    استخدم الأوامر النصية لتوجيه الذكاء الاصطناعي نحو التغييرات التي تريدها
-                  </p>
-                </div>
-              </div>
-            </div>
+        
 
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={handleClearAll}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+    
           </div>
         </aside>
 

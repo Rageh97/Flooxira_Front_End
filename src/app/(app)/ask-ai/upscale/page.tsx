@@ -295,12 +295,12 @@ export default function UpscalePage() {
                 اختر الصورة
               </label>
               <div 
-                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
+                className="relative aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group hover:border-blue-500/30 transition-all"
                 onClick={() => document.getElementById('fileInput')?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <ImageIcon className="text-blue-400 mb-2" size={32} />
                       <span className="text-xs font-bold text-white">تغيير الصورة</span>
@@ -308,7 +308,7 @@ export default function UpscalePage() {
                   </>
                 ) : (
                   <>
-                    <Upload className="text-gray-500 mb-4 group-hover/upload:text-blue-400 transition-colors" size={40} />
+                    <Upload className="text-gray-500 mb-4 group-hover:text-blue-400 transition-colors" size={40} />
                     <span className="text-sm">اضغط لرفع صورة</span>
                     <span className="text-[10px] text-gray-600 mt-2">JPG, PNG, WebP (Max 5MB)</span>
                   </>
@@ -343,17 +343,7 @@ export default function UpscalePage() {
               </div>
             </div>
 
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+          
           </div>
         </aside>
 

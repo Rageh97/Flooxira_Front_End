@@ -313,17 +313,7 @@ export default function LogoMakerPage() {
 
           
 
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearAllHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+      
           </div>
         </aside>
 

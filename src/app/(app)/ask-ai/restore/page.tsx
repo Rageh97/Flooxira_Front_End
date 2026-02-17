@@ -115,7 +115,10 @@ export default function RestorePage() {
 
   const handleProcess = async () => {
     if (!previewUrl) return showError("تنبيه", "يرجى اختيار صورة!");
-    if (!hasActiveSubscription) {
+    
+    // Check if user has active subscription OR remaining credits
+    const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
+    if (!hasActiveSubscription && !hasCredits) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -278,7 +281,7 @@ export default function RestorePage() {
                 الصورة الأصلية
               </label>
               <div 
-                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-amber-500/30 transition-all"
+                className="relative aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-amber-500/30 transition-all"
                 onClick={() => document.getElementById('fileInput')?.click()}
               >
                 {previewUrl ? (
@@ -312,30 +315,8 @@ export default function RestorePage() {
               ابدأ الترميم الآن
             </GradientButton>
 
-            {/* Info Box */}
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Sparkles className="text-amber-400 flex-shrink-0 mt-0.5" size={18} />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-amber-300">كيف تعمل تقنية الإحياء؟</h3>
-                  <p className="text-xs text-gray-400">
-                    ارفع صورة قديمة أو تالفة وسيقوم الذكاء الاصطناعي بإصلاح الخدوش وتحسين ملامح الوجوه
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+           
           </div>
         </aside>
 

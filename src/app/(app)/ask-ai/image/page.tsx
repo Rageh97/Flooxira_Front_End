@@ -758,68 +758,74 @@ export default function TextToImagePage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-w-5xl w-full"
+              className={clsx(
+                "relative w-full flex flex-col max-h-[90vh] lg:max-h-[95vh]",
+                selectedImage.aspectRatio === "9:16" ? "max-w-[400px]" : "max-w-5xl"
+              )}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
               <button
                 onClick={() => setSelectedImage(null)}
-                className="absolute -top-10 lg:-top-12 left-0 w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                className="absolute -top-12 left-0 lg:left-0 w-10 h-10 rounded-full bg-black/50 border border-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-[60]"
               >
-                <X size={18} className="lg:w-5 lg:h-5" />
+                <X size={20} className="text-white" />
               </button>
 
-              {/* Image */}
-              <div className="relative rounded-xl lg:rounded-2xl overflow-hidden bg-white/5 border border-white/10">
-                <img
-                  src={selectedImage.url}
-                  alt={selectedImage.prompt}
-                  className="w-full max-h-[70vh] lg:max-h-[80vh] object-contain"
-                />
-                <BorderBeam />
-              </div>
-
-              {/* Prompt and Actions */}
-              <div className="mt-3 lg:mt-4 space-y-3">
-                {/* Prompt Section */}
-                <div className="bg-white/5 border border-white/10 rounded-xl p-3 lg:p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <label className="text-xs text-gray-400 mb-1 block">البرومبت:</label>
-                      <div className="max-h-[100px] overflow-y-auto scrollbar-hide pl-2">
-                        <p className="text-sm lg:text-base text-white leading-relaxed break-words">{selectedImage.prompt}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => copyPromptToClipboard(selectedImage.prompt)}
-                      className="flex-shrink-0 w-9 h-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                      title="نسخ البرومبت"
-                    >
-                      {copiedPrompt ? (
-                        <Check size={16} className="text-green-400" />
-                      ) : (
-                        <Copy size={16} className="text-gray-400" />
-                      )}
-                    </button>
-                  </div>
+              {/* Image Container - Content Area */}
+              <div className="flex flex-col h-full overflow-hidden bg-[#0d1017] rounded-2xl border border-white/10 shadow-2xl relative">
+                <div className="flex-1 min-h-0 relative flex items-center justify-center bg-black p-2">
+                  <img
+                    src={selectedImage.url}
+                    alt={selectedImage.prompt}
+                    className="max-w-full max-h-full object-contain shadow-2xl"
+                  />
+                  <BorderBeam />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => downloadImage(selectedImage.url, `ai-art-${selectedImage.id}.png`)}
-                    className="flex-1 sm:flex-none rounded-xl bg-blue-500 hover:bg-blue-600 h-9 lg:h-10 px-4 lg:px-6 text-sm"
-                  >
-                    <Download size={14} className="lg:w-4 lg:h-4 ml-2" />
-                    تحميل
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={(e) => deleteFromHistory(selectedImage.id, e)}
-                    className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-9 lg:h-10 w-9 lg:w-10 p-0"
-                  >
-                    <Trash2 size={14} className="lg:w-4 lg:h-4" />
-                  </Button>
+                {/* Prompt and Actions - Footer Area */}
+                <div className="flex-shrink-0 p-4 lg:p-6 bg-[#0d1017] border-t border-white/5 space-y-4 relative z-20">
+                  {/* Prompt Section */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3 lg:p-4 hover:border-white/20 transition-all">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <label className="text-xs font-bold text-blue-400 mb-1.5 block">البرومبت:</label>
+                        <div className="max-h-[80px] overflow-y-auto custom-scrollbar">
+                          <p className="text-sm lg:text-base text-gray-100 leading-relaxed break-words">{selectedImage.prompt}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => copyPromptToClipboard(selectedImage.prompt)}
+                        className="flex-shrink-0 w-8 h-8 lg:w-9 lg:h-9 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all border border-white/10 group"
+                        title="نسخ البرومبت"
+                      >
+                        {copiedPrompt ? (
+                          <Check size={16} className="text-green-400" />
+                        ) : (
+                          <Copy size={16} className="text-gray-400 group-hover:text-white" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={() => downloadImage(selectedImage.url, `ai-art-${selectedImage.id}.png`)}
+                      className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 h-10 lg:h-11 text-sm font-bold shadow-lg shadow-blue-500/20"
+                    >
+                      <Download size={18} className="ml-2" />
+                      تحميل الصورة
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={(e) => deleteFromHistory(selectedImage.id, e)}
+                      className="rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 h-10 lg:h-11 px-4 border border-red-500/20 min-w-[100px]"
+                    >
+                      <Trash2 size={18} />
+                      <span className="mr-2">حذف</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -291,11 +291,17 @@ export default function AvatarPage() {
                 صورة الوجه
               </label>
               <div 
-                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-purple-500/50 transition-all bg-white/5 group"
+                className="relative aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-purple-500/50 transition-all bg-white/5 group"
                 onClick={() => document.getElementById('file-upload')?.click()}
               >
                 {previewUrl ? (
-                  <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                  <>
+                    <img src={previewUrl} className="w-full h-full object-cover opacity-50 group-hover:opacity-30 transition-opacity" alt="Preview" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <UserCircle className="text-purple-400 mb-2" size={32} />
+                      <span className="text-xs font-bold text-white">تغيير الصورة</span>
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center p-4">
                     <UserCircle className="text-gray-600 group-hover:text-purple-400 mx-auto mb-2 transition-colors" size={48} />
@@ -356,32 +362,9 @@ export default function AvatarPage() {
               إنشاء أفاتار
             </GradientButton>
 
-            {/* Info Box */}
-            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <User className="text-purple-400 flex-shrink-0 mt-0.5" size={18} />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-purple-300">نصائح للحصول على أفضل نتيجة</h3>
-                  <ul className="text-xs text-gray-400 space-y-1">
-                    <li>• استخدم صورة واضحة للوجه</li>
-                    <li>• تأكد من الإضاءة الجيدة</li>
-                    <li>• جرب أساليب مختلفة</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+       
 
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearAllHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+     
           </div>
         </aside>
 

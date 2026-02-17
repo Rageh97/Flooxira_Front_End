@@ -96,7 +96,9 @@ export default function ColorizePage() {
   };
 
   const handleProcess = async () => {
-    if (!hasActiveSubscription) {
+    // Check if user has active subscription OR remaining credits
+    const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
+    if (!hasActiveSubscription && !hasCredits) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -207,8 +209,18 @@ export default function ColorizePage() {
             <div className="space-y-4 mt-12 lg:mt-0">
             <div className="space-y-4">
                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block text-right">ارفع صورة أبيض وأسود</label>
-               <div className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-blue-500/30 transition-all bg-white/5 group" onClick={() => document.getElementById('file-c')?.click()}>
-                  {previewUrl ? <img src={previewUrl} className="w-full h-full object-contain" /> : <Droplets className="text-gray-700 group-hover:text-blue-400" size={48} />}
+               <div className="relative aspect-square rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer overflow-hidden hover:border-blue-500/30 transition-all bg-white/5 group" onClick={() => document.getElementById('file-c')?.click()}>
+                  {previewUrl ? (
+                    <>
+                      <img src={previewUrl} className="w-full h-full object-contain opacity-50 group-hover:opacity-30 transition-opacity" />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <Droplets className="text-blue-400 mb-2" size={32} />
+                        <span className="text-xs font-bold text-white">تغيير الصورة</span>
+                      </div>
+                    </>
+                  ) : (
+                    <Droplets className="text-gray-600 group-hover:text-blue-400 transition-colors" size={48} />
+                  )}
                </div>
                <input id="file-c" type="file" className="hidden" accept="image/*" onChange={e => {
                   const file = e.target.files?.[0];

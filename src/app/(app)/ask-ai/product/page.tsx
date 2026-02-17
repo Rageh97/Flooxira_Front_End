@@ -276,19 +276,19 @@ export default function ProductModelPage() {
                 صورة المنتج
               </label>
               <div 
-                className="aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group/upload hover:border-blue-500/30 transition-all"
+                className="relative aspect-square rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer overflow-hidden bg-white/5 group hover:border-blue-500/30 transition-all"
                 onClick={() => document.getElementById('file-p')?.click()}
               >
                 {previewUrl ? (
                   <>
-                    <img src={previewUrl} className="w-full h-full object-contain opacity-50 group-hover/upload:opacity-30 transition-opacity" />
+                    <img src={previewUrl} className="w-full h-full object-contain opacity-50 group-hover:opacity-30 transition-opacity" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <Package className="text-blue-400 mb-2" size={32} />
                       <span className="text-xs font-bold text-white">تغيير الصورة</span>
                     </div>
                   </>
                 ) : (
-                  <Package className="text-gray-700 group-hover/upload:text-blue-400 transition-colors" size={48} />
+                  <Package className="text-gray-700 group-hover:text-blue-400 transition-colors" size={48} />
                 )}
               </div>
               <input id="file-p" type="file" className="hidden" accept="image/*" onChange={e => {
@@ -331,30 +331,9 @@ export default function ProductModelPage() {
               توليد المشهد
             </GradientButton>
 
-            {/* Info Box */}
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Package className="text-blue-400 flex-shrink-0 mt-0.5" size={18} />
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-blue-300">عرض احترافي</h3>
-                  <p className="text-xs text-gray-400">
-                    حوّل صور منتجاتك العادية إلى صور إعلانية احترافية بإضاءة وظلال واقعية
-                  </p>
-                </div>
-              </div>
-            </div>
+           
 
-            {/* Clear History Button */}
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={clearHistory}
-                className="w-full text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9"
-              >
-                <Trash2 size={12} className="ml-2" />
-                مسح جميع الأعمال
-              </Button>
-            )}
+        
           </div>
         </aside>
 
