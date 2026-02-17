@@ -3129,6 +3129,10 @@ export async function testEventsPluginConnection(token: string, configId: number
     };
   }>(`/api/events-plugin/test/${configId}`, { authToken: token });
 }
+export async function getConnectedWhatsAppUsers(token: string) {
+  return apiFetch<{ success: boolean; users: Array<{ id: number; name: string; email: string; phone?: string; status: 'connected' | 'initializing' | 'disconnected'; whatsappName?: string }> }>("/api/admin/whatsapp/connected", { authToken: token });
+}
+
 export async function getSubscriptionReminderTemplates(token: string) {
   return apiFetch<{ success: boolean; data: any[] }>("/api/admin/subscription-reminders", { authToken: token });
 }

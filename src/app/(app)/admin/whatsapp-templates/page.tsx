@@ -6,9 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getSubscriptionReminderTemplates, updateSubscriptionReminderTemplate, uploadReminderMedia } from "@/lib/api";
+import { getSubscriptionReminderTemplates, updateSubscriptionReminderTemplate, uploadReminderMedia, getConnectedWhatsAppUsers } from "@/lib/api";
 import { toast } from "sonner";
-import { MessageSquare, Clock, AlertTriangle, CheckCircle2, Save, Image as ImageIcon, Video, Loader2, ChevronUp, ChevronDown, Upload, X } from "lucide-react";
+import { MessageSquare, Clock, AlertTriangle, CheckCircle2, Save, Image as ImageIcon, Video, Loader2, ChevronUp, ChevronDown, Upload, X, Users, UserCheck, UserMinus, RefreshCw } from "lucide-react";
 
 type Template = {
   id: number;
@@ -27,6 +27,23 @@ export default function WhatsAppTemplatesPage() {
   const [savingId, setSavingId] = useState<number | null>(null);
   const [openTimePicker, setOpenTimePicker] = useState<number | null>(null);
   const [uploadingMedia, setUploadingMedia] = useState<number | null>(null);
+  const [connectedUsers, setConnectedUsers] = useState<any[]>([]);
+  const [fetchingUsers, setFetchingUsers] = useState(false);
+
+  const fetchConnectedUsers = async () => {
+    setFetchingUsers(true);
+    try {
+      const token = localStorage.getItem("auth_token") || "";
+      const res = await getConnectedWhatsAppUsers(token);
+      if (res.success) {
+        setConnectedUsers(res.users);
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch connected users:", error);
+    } finally {
+      setFetchingUsers(false);
+    }
+  };
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -44,6 +61,7 @@ export default function WhatsAppTemplatesPage() {
     };
 
     fetchTemplates();
+    fetchConnectedUsers();
   }, []);
 
   const handleUpdate = async (id: number) => {
@@ -319,8 +337,101 @@ export default function WhatsAppTemplatesPage() {
   return (
     <div className=" mx-auto py-8 space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-white">قوالب واتساب التلقائية</h1>
-        <p className="text-primary text-lg">إدارة رسائل التذكير التلقائية للمشتركين عبر الواتساب</p>
+        <h1 className="text-3xl font-bold tracking-tight text-white">إدارة الواتساب والقوالب</h1>
+        <p className="text-primary text-lg">مراقبة الجلسات وإدارة رسائل التذكير التلقائية</p>
+      </div>
+
+      {/* Connected Users Section */}
+      <Card className="gradient-border overflow-hidden">
+        <CardHeader className="bg-white/5 border-b border-white/10 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
+              <Users className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-white text-lg">حالات اتصال المستخدمين</CardTitle>
+              <CardDescription className="text-gray-400">المستخدمين المسجلين وحالة اتصال البوت الخاص بهم</CardDescription>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchConnectedUsers} 
+            disabled={fetchingUsers}
+            className="border-white/10 text-white hover:bg-white/5"
+          >
+            {fetchingUsers ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            تحديث
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right">
+              <thead>
+                <tr className="bg-white/5 text-gray-400 text-xs border-b border-white/5">
+                  <th className="px-6 py-4 font-medium">المستخدم</th>
+                  <th className="px-6 py-4 font-medium">معلومات التواصل</th>
+                  <th className="px-6 py-4 font-medium">الاسم في واتساب</th>
+                  <th className="px-6 py-4 font-medium text-center">حالة الاتصال</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {connectedUsers.length === 0 && !fetchingUsers && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">لا يوجد مستخدمين متاحين</td>
+                  </tr>
+                )}
+                {connectedUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                          {user.name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-white">{user.name}</div>
+                          <div className="text-[10px] text-gray-500">ID: {user.id}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-300">{user.email}</div>
+                      <div className="text-xs text-gray-500">{user.phone || 'بدون رقم'}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-300 font-mono">{user.whatsappName || '---'}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center">
+                        {user.status === 'connected' ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-500 text-xs">
+                            <UserCheck className="w-3 h-3" />
+                            متصل الآن
+                          </div>
+                        ) : user.status === 'initializing' ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-xs">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            جاري الاتصال...
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
+                            <UserMinus className="w-3 h-3" />
+                            غير متصل
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold text-white">قوالب التذكير التلقائية</h2>
+        <div className="h-px bg-white/10 w-full" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-8">

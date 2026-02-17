@@ -44,6 +44,8 @@ export default function TelegramChatsPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "";
   const { user, loading } = useAuth();
   const { showSuccess, showError } = useToast();
+  
+  // All state and refs at the top
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [loadingMoreContacts, setLoadingMoreContacts] = useState(false);
@@ -51,17 +53,6 @@ export default function TelegramChatsPage() {
   const [hasMoreContacts, setHasMoreContacts] = useState(false);
   const CONTACTS_PER_PAGE = 50;
   const [activeChatId, setActiveChatId] = useState<string>("");
-
-  // Search effect
-  useEffect(() => {
-    if (token) {
-      const delayDebounceFn = setTimeout(() => {
-        loadContacts(true);
-      }, 500);
-
-      return () => clearTimeout(delayDebounceFn);
-    }
-  }, [query, token]);
   const [history, setHistory] = useState<ChatItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [messageText, setMessageText] = useState("");
@@ -76,6 +67,17 @@ export default function TelegramChatsPage() {
   const [pauseTimeRemaining, setPauseTimeRemaining] = useState(0);
   const listEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Search effect
+  useEffect(() => {
+    if (token) {
+      const delayDebounceFn = setTimeout(() => {
+        loadContacts(true);
+      }, 500);
+
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [query, token]);
 
   const loadContacts = (isInitial: boolean = true) => {
     if (!token) return;
