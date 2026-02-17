@@ -566,6 +566,54 @@ export default function PlansPage() {
                               </div>
                             </div>
                           )
+                        },
+                        {
+                          enabled: (permissions as any).canUseEventsPlugin,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canUseEventsPlugin ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white font-medium"> Iapp cloud Webhook</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-gray-200">Iapp cloud Webhook</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        },
+                        {
+                          enabled: (permissions as any).canUseEventsPlugin,
+                          render: () => (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                {(permissions as any).canUseEventsPlugin ? (
+                                  <>
+                                    <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <Check className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs text-white font-medium"> Wordpress Webhook</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="rounded-full bg-red-500 p-1 w-4 h-4 flex items-center justify-center">
+                                      <X className="h-3 w-3 text-black font-bold" />
+                                    </div>
+                                    <span className="text-xs font-medium line-through text-gray-200">Wordpress Webhook</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )
                         }
                       ];
 
