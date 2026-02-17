@@ -27,7 +27,8 @@ import {
   Settings,
   CheckCircle,
   XCircle,
-  DollarSign
+  DollarSign,
+  RefreshCw
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 
@@ -137,6 +138,7 @@ const DEFAULT_DURATION_PRICING: Record<string, Record<number, number>> = {
 export default function PlansAdminPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [token, setToken] = useState<string>("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -362,6 +364,49 @@ export default function PlansAdminPage() {
     }
   };
 
+  const handleSyncAIPricing = async (currentPermissions: any) => {
+    if (!confirm('هل أنت متأكد من تطبيق تسعير النماذج ونسب الربح هذه على جميع الباقات؟ سيتم تحديث كافة الباقات الحالية بنفس قيم التسعير هذه.')) return;
+    
+    setIsSyncing(true);
+    try {
+      // Get AI related fields
+      const aiFields = {
+        modelPricing: currentPermissions.modelPricing || {},
+        durationPricing: currentPermissions.durationPricing || {},
+        markupChat: currentPermissions.markupChat ?? 30,
+        markupImage: currentPermissions.markupImage ?? 30,
+        markupVideo: currentPermissions.markupVideo ?? 30,
+        creditMarkupPercent: currentPermissions.creditMarkupPercent ?? 30
+      };
+
+      // Create update promises for ALL plans
+      const updatePromises = plans.map(p => {
+        const updatedPermissions = {
+          ...(p.permissions || {}),
+          ...aiFields
+        };
+        
+        return updatePlan(token, p.id, {
+          name: p.name,
+          priceCents: p.priceCents,
+          interval: p.interval,
+          isActive: p.isActive,
+          paymentLink: p.paymentLink || '',
+          permissions: updatedPermissions,
+          type: p.type || 'standard'
+        });
+      });
+
+      await Promise.all(updatePromises);
+      await loadPlans();
+      showSuccess('تمت المزامنة بنجاح!', 'تم تطبيق تسعير الذكاء الاصطناعي على كافة الباقات');
+    } catch (e: any) {
+      showError('خطأ أثناء المزامنة', e.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const openEditModal = (plan: Plan) => {
     setSelectedPlan(plan);
     setEditPlan({
@@ -458,10 +503,23 @@ export default function PlansAdminPage() {
 
     return (
       <div className="space-y-6 border-t pt-6 mt-6">
-        <h3 className="font-semibold text-primary flex items-center gap-2 text-lg">
-          <DollarSign className="w-5 h-5" />
-          تسعير نماذج الذكاء الاصطناعي
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-primary flex items-center gap-2 text-lg">
+            <DollarSign className="w-5 h-5" />
+            تسعير نماذج الذكاء الاصطناعي
+          </h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleSyncAIPricing(currentPermissions)}
+            disabled={isSyncing}
+            className="text-[10px] h-7 bg-primary/5 border-primary/20 hover:bg-primary/10 text-primary gap-1"
+          >
+            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+            تطبيق على جميع الباقات
+          </Button>
+        </div>
         
         {/* Profit Markup Section */}
         <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
