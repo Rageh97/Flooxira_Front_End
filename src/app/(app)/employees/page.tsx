@@ -29,6 +29,7 @@ import {
   Plus, 
   Search, 
   Edit, 
+  Eye,
   Trash2, 
   Users, 
   UserCheck, 
@@ -109,9 +110,11 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [employeeToView, setEmployeeToView] = useState<Employee | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const { showSuccess, showError } = useToast();
@@ -681,10 +684,10 @@ export default function EmployeesPage() {
                     <TableRow>
                       <TableHead>الاسم</TableHead>
                       <TableHead>البريد الإلكتروني</TableHead>
-                      <TableHead>الهاتف</TableHead>
-                      <TableHead>الصلاحيات</TableHead>
-                      <TableHead>آخر دخول</TableHead>
-                      <TableHead>الحالة</TableHead>
+                      <TableHead className="hidden md:table-cell">الهاتف</TableHead>
+                      <TableHead className="hidden md:table-cell">الصلاحيات</TableHead>
+                      <TableHead className="hidden md:table-cell">آخر دخول</TableHead>
+                      <TableHead className="hidden md:table-cell">الحالة</TableHead>
                       <TableHead>الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -693,8 +696,8 @@ export default function EmployeesPage() {
                       <TableRow key={employee.id}>
                         <TableCell className="font-medium text-white">{employee.name}</TableCell>
                         <TableCell className="text-text-primary font-medium">{employee.email}</TableCell>
-                        <TableCell className="text-white">{employee.phone || '-'}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-white hidden md:table-cell">{employee.phone || '-'}</TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <div className="flex flex-wrap gap-1">
                             {employee.permissions.platforms.slice(0, 2).map(platform => (
                               <Badge key={platform} variant="secondary" className="text-[10px] px-1 h-5">
@@ -715,19 +718,30 @@ export default function EmployeesPage() {
                             {employee.permissions.canUseEventsPlugin && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">Webhook</Badge>}
                           </div>
                         </TableCell>
-                        <TableCell className="text-text-primary font-medium">
+                        <TableCell className="text-text-primary font-medium hidden md:table-cell">
                           {employee.lastLoginAt 
                             ? new Date(employee.lastLoginAt).toLocaleDateString('ar-SA')
                             : 'لم يسجل دخول'
                           }
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <Badge variant={employee.isActive ? "default" : "destructive"}>
                             {employee.isActive ? 'نشط' : 'غير نشط'}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="md:hidden"
+                              onClick={() => {
+                                setEmployeeToView(employee);
+                                setIsViewDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="w-4 h-4 text-blue-400" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="secondary"
@@ -956,6 +970,113 @@ export default function EmployeesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* View Employee Details Dialog */}
+      <ViewEmployeeDialog
+        isOpen={isViewDialogOpen}
+        onClose={() => {
+          setIsViewDialogOpen(false);
+          setEmployeeToView(null);
+        }}
+        employee={employeeToView}
+      />
     </div>
   );
 }
+
+// View Employee Details Dialog Component
+function ViewEmployeeDialog({ 
+  isOpen, 
+  onClose, 
+  employee 
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  employee: Employee | null;
+}) {
+  if (!employee) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">تفاصيل الموظف</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">المعلومات الأساسية</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-400">الاسم:</span>
+              <span className="text-white font-medium">{employee.name}</span>
+              
+              <span className="text-gray-400">البريد الإلكتروني:</span>
+              <span className="text-white">{employee.email}</span>
+              
+              <span className="text-gray-400">رقم الهاتف:</span>
+              <span className="text-white">{employee.phone || '-'}</span>
+
+              <span className="text-gray-400">الحالة:</span>
+              <Badge variant={employee.isActive ? "default" : "destructive"} className="w-fit">
+                {employee.isActive ? 'نشط' : 'غير نشط'}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">تاريخ الدخول والعمل</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-400">تاريخ الإنشاء:</span>
+              <span className="text-white font-medium">{new Date(employee.createdAt).toLocaleDateString('ar-SA')}</span>
+              
+              <span className="text-gray-400">آخر ظهور:</span>
+              <span className="text-white">
+                {employee.lastLoginAt 
+                  ? new Date(employee.lastLoginAt).toLocaleString('ar-SA')
+                  : 'لم يسجل دخول'
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-4">
+          <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            الصلاحيات الممنوحة
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {employee.permissions.canManageWhatsApp && <Badge variant="secondary">إدارة الواتساب</Badge>}
+            {employee.permissions.canManageTelegram && <Badge variant="secondary">إدارة التليجرام</Badge>}
+            {employee.permissions.canManageTickets && <Badge variant="secondary">المحادثة والتذاكر</Badge>}
+            {employee.permissions.canManageContent && <Badge variant="secondary">إدارة المحتوى</Badge>}
+            {employee.permissions.canManageCustomers && <Badge variant="secondary">إدارة العملاء</Badge>}
+            {employee.permissions.canMarketServices && <Badge variant="secondary">تسويق الخدمات</Badge>}
+            {employee.permissions.canManageEmployees && <Badge variant="secondary">إدارة الموظفين</Badge>}
+            {employee.permissions.canUseEventsPlugin && <Badge variant="secondary">الربط البرمجي</Badge>}
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-gray-400">منصات التواصل الاجتماعي:</h4>
+            <div className="flex flex-wrap gap-2">
+              {employee.permissions.platforms.length > 0 ? (
+                employee.permissions.platforms.map(p => (
+                  <Badge key={p} className="bg-blue-500/20 text-blue-400 border-blue-500/20">
+                    {p}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-xs text-gray-500">لا يوجد منصات محددة</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-6">
+          <Button onClick={onClose} className="primary-button">إغلاق</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

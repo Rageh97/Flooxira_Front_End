@@ -280,32 +280,32 @@ export default function DashboardPage() {
       </div> */}
 
       {/* Main Stats Grid */}
-      <div className="grid gap-2 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 ">
+      <div className="grid gap-2 grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 ">
         <Card className="gradient-border card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between  pb-2">
-            <div className="flex items-center  gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="text-sm font-medium text-white"> مرات النشر</h3>
+          <CardHeader className="flex flex-row items-center justify-between p-2 md:p-6 pb-2">
+            <div className="flex items-center gap-1 md:gap-2">
+              <div className="w-1.5 h-1.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h3 className="text-[10px] md:text-sm font-medium text-white"> مرات النشر</h3>
             </div>
-            <img src="/check.gif" className="w-6 h-6"/>
+            <img src="/check.gif" className="w-4 h-4 md:w-6 md:h-6"/>
           </CardHeader>
-          <CardContent className="px-4">
+          <CardContent className="px-2 md:px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
+          <div className="flex items-center justify-center gap-2 md:gap-10 h-10">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="text-xs md:text-md text-gray-300 mt-1">
+            <div className="text-[8px] md:text-xs text-gray-300 mt-1">
               المحتوى المنشور
             </div>
           </div>
 
 
-          <div className="w-0.5 h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
+          <div className="w-0.5 h-12 md:h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-4xl   font-bold text-primary">{stats?.totalSuccessfulPublications ?? stats?.published ?? 0}</div>
+           <div className="text-sm md:text-4xl font-bold text-primary">{stats?.totalSuccessfulPublications ?? stats?.published ?? 0}</div>
            
            </div>
 
@@ -316,31 +316,31 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="gradient-border card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between  pb-2">
-            <div className="flex items-center  gap-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <h3 className="text-xs md:text-sm font-medium text-white"> المنشورات المجدولة</h3>
+          <CardHeader className="flex flex-row items-center justify-between p-2 md:p-6 pb-2">
+            <div className="flex items-center gap-1 md:gap-2">
+              <div className="w-1.5 h-1.5 md:w-3 md:h-3 bg-red-500 rounded-full animate-pulse"></div>
+            <h3 className="text-[9px] md:text-sm font-medium text-white"> المنشورات المجدولة</h3>
             </div>
-            <img src="/hour.gif" className="w-6 h-6"/>
+            <img src="/hour.gif" className="w-4 h-4 md:w-6 md:h-6"/>
           </CardHeader>
-          <CardContent className="px-4">
+          <CardContent className="px-2 md:px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-5 md:gap-10 h-10">
+          <div className="flex items-center justify-center gap-1 md:gap-10 h-10">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-            <div className="text-xs md:text-md text-gray-300 mt-1">
+            <div className="text-[8px] md:text-xs text-gray-300 mt-1">
               العدد المجدول
             </div>
           </div>
 
 
-          <div className="w-0.5 h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
+          <div className="w-0.5 h-12 md:h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xs md:text-xl  font-bold text-primary">{stats?.scheduled || 0}</div>
-            <div className=" text-[9px] md:text-xs text-primary">
+           <div className="text-xs md:text-xl font-bold text-primary">{stats?.scheduled || 0}</div>
+            <div className=" text-[8px] md:text-xs text-primary">
               شهر ({currentMonthName})
             </div>
            </div>
@@ -371,20 +371,20 @@ export default function DashboardPage() {
         </Card> */}
 
 <Card className="gradient-border card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between  pb-2">
-            <div className="flex items-center  gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="text-sm font-medium text-white"> عدد العملاء </h3>
+          <CardHeader className="flex flex-row items-center justify-between p-2 md:p-6 pb-2">
+            <div className="flex items-center gap-1 md:gap-2">
+              <div className="w-1.5 h-1.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h3 className="text-[10px] md:text-sm font-medium text-white"> عدد العملاء </h3>
             </div>
-            <div className="text-primary">📈</div>
+            <div className="text-primary text-xs md:text-base">📈</div>
           </CardHeader>
-          <CardContent className="px-4">
+          <CardContent className="px-2 md:px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
+          <div className="flex items-center justify-center gap-2 md:gap-10 h-10">
 
 
-          <div className="flex  items-center justify-center gap-1 font-bold">
-          <div className="text-xs md:text-md text-gray-300 mt-1">
+          <div className="flex items-center justify-center gap-1 font-bold">
+          <div className="text-[8px] md:text-xs text-gray-300 mt-1">
              الاشتراكات النشطة
           </div>
           <div>
@@ -395,11 +395,11 @@ export default function DashboardPage() {
           </div>
 
 
-          <div className="w-0.5 h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
+          <div className="w-0.5 h-12 md:h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xl font-bold text-primary">{customerStats?.activeCustomers }</div>
+           <div className="text-xs md:text-xl font-bold text-primary">{customerStats?.activeCustomers }</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -413,21 +413,21 @@ export default function DashboardPage() {
 
         {/* WhatsApp Messages Card */}
         <Card className="gradient-border card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between  pb-2">
-            <div className="flex items-center  gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="text-xs md:text-sm font-medium text-white"> عدد رسائل الواتساب </h3>
+          <CardHeader className="flex flex-row items-center justify-between p-2 md:p-6 pb-2">
+            <div className="flex items-center gap-1 md:gap-2">
+              <div className="w-1.5 h-1.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h3 className="text-[8px] md:text-sm font-medium text-white"> رسائل الواتساب </h3>
             </div>
-            <div className="text-primary">{whatsappStats?.messagesLimit || 0}</div>
+            <div className="text-primary text-[10px] md:text-base font-bold">{whatsappStats?.messagesLimit || 0}</div>
           </CardHeader>
-          <CardContent className="px-4 flex flex-col">
+          <CardContent className="px-2 md:px-4 flex flex-col">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
+          <div className="flex items-center justify-center gap-1 md:gap-10 h-10">
 
 
           <div className="flex items-center justify-center gap-1 font-bold">
-          <div className="text-xs md:text-md text-gray-300 mt-1">
-             الرسائل    المتبقية
+          <div className="text-[8px] md:text-xs text-gray-300 mt-1">
+             المتبقية
           </div>
           <div>
             {/* <div className="text-xl text-gray-300 mt-1">
@@ -437,11 +437,11 @@ export default function DashboardPage() {
           </div>
 
 
-          <div className="w-0.5 h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
+          <div className="w-0.5 h-12 md:h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xl   font-bold text-primary">{whatsappStats?.messagesRemaining || 0}</div>
+           <div className="text-xs md:text-xl font-bold text-primary">{whatsappStats?.messagesRemaining || 0}</div>
             
            </div>
 
@@ -476,20 +476,20 @@ export default function DashboardPage() {
    </Card>
         {/* new  Card */}
         <Card className="gradient-border card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between  pb-2">
-            <div className="flex items-center  gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="text-sm font-medium text-white">  الربح الصافي </h3>
+          <CardHeader className="flex flex-row items-center justify-between p-2 md:p-6 pb-2">
+            <div className="flex items-center gap-1 md:gap-2">
+              <div className="w-1.5 h-1.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h3 className="text-[10px] md:text-sm font-medium text-white"> الربح الصافي </h3>
             </div>
-            <img src="/money.gif" className="w-6 h-6"/>
+            <img src="/money.gif" className="w-4 h-4 md:w-6 md:h-6"/>
           </CardHeader>
-          <CardContent className="px-4">
+          <CardContent className="px-2 md:px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
+          <div className="flex items-center justify-center gap-2 md:gap-10 h-10">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <div className="text-xs md:text-md text-gray-300 mt-1">
+          <div className="text-[8px] md:text-xs text-gray-300 mt-1">
              اجمالي الربح
           </div>
           <div>
@@ -500,11 +500,11 @@ export default function DashboardPage() {
           </div>
 
 
-          <div className="w-0.5 h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
+          <div className="w-0.5 h-12 md:h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xs md:text-xl  font-bold text-primary">{customerStats?.financial?.netProfit || 0} ر.س</div>
+           <div className="text-[9px] md:text-xl font-bold text-primary whitespace-nowrap">{customerStats?.financial?.netProfit || 0} ر.س</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}
@@ -518,20 +518,20 @@ export default function DashboardPage() {
         {/* .................... */}
 
          <Card className="gradient-border card-hover-effect">
-          <CardHeader className="flex flex-row items-center justify-between  pb-2">
-            <div className="flex items-center  gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <h3 className="text-sm font-medium text-white"> المحادثات المعلقة </h3>
+          <CardHeader className="flex flex-row items-center justify-between p-2 md:p-6 pb-2">
+            <div className="flex items-center gap-1 md:gap-2">
+              <div className="w-1.5 h-1.5 md:w-3 md:h-3 bg-green-500 rounded-full animate-pulse"></div>
+            <h3 className="text-[10px] md:text-sm font-medium text-white"> المحادثات المعلقة </h3>
             </div>
-            <img src="/live.png" className="w-6 h-6"/>
+            <img src="/live.png" className="w-4 h-4 md:w-6 md:h-6"/>
           </CardHeader>
-          <CardContent className="px-4">
+          <CardContent className="px-2 md:px-4">
           
-          <div className="flex items-center justify-center gap-5 md:gap-10 h-10">
+          <div className="flex items-center justify-center gap-2 md:gap-10 h-10">
 
 
           <div className="flex flex-col items-center justify-center gap-1 font-bold">
-          <div className="text-xs md:text-md text-gray-300 mt-1">
+          <div className="text-[8px] md:text-xs text-gray-300 mt-1">
               المحادثات 
           </div>
           <div>
@@ -542,11 +542,11 @@ export default function DashboardPage() {
           </div>
 
 
-          <div className="w-0.5 h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
+          <div className="w-0.5 h-12 md:h-18 bg-gradient-to-b from-transparent via-white/50 to-transparent"/>
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-xs md:text-xl  font-bold text-primary">{pendingTicketsCount}</div>
+           <div className="text-xs md:text-xl font-bold text-primary">{pendingTicketsCount}</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}

@@ -23,6 +23,7 @@ import {
   Crown, 
   TrendingUp,
   Edit,
+  Eye,
   Trash2,
   BarChart3,
   Filter,
@@ -149,6 +150,8 @@ export default function CustomersPage() {
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [customerToView, setCustomerToView] = useState<Customer | null>(null);
   const [isDeleteCustomerDialogOpen, setIsDeleteCustomerDialogOpen] = useState(false);
   const [isDeleteFieldDialogOpen, setIsDeleteFieldDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
@@ -1236,9 +1239,9 @@ useEffect(() => {
                   <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <XCircle className="w-6 h-6 text-red-500" />
                   </div>
-                  <p className="text-gray-200 text-sm md:text-lg font-bold">الاشتراكات المنتهية</p>
+                  <p className="text-gray-200 text-xs md:text-lg font-bold">الاشتراكات المنتهية</p>
                 </div>
-                <p className="md:text-4xl text-lg font-bold text-white">
+                <p className="md:text-4xl text-xs font-bold text-white">
                   {stats?.customersByStatus?.find((s: any) => s.subscriptionStatus === 'expired')?.count || 0}
                 </p>
               </div>
@@ -1255,9 +1258,9 @@ useEffect(() => {
                   <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <Package className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-sm md:text-lg font-bold">رأس المال الكلي</p>
+                  <p className="text-gray-200 text-xs md:text-lg font-bold">رأس المال الكلي</p>
                 </div>
-                <p className="md:text-2xl text-lg font-bold text-white">{(stats as any).financial.totalCapital} ر.س</p>
+                <p className="md:text-2xl text-xs font-bold text-white">{(stats as any).financial.totalCapital} ر.س</p>
               </div>
             </CardContent>
           </Card>
@@ -1269,9 +1272,9 @@ useEffect(() => {
                   <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-sm md:text-lg font-bold">الإيرادات الكلية</p>
+                  <p className="text-gray-200 text-xs md:text-lg font-bold">الإيرادات الكلية</p>
                 </div>
-                <p className="md:text-2xl text-lg font-bold text-white">{(stats as any).financial.totalRevenue} ر.س</p>
+                <p className="md:text-2xl text-xs font-bold text-white">{(stats as any).financial.totalRevenue} ر.س</p>
               </div>
             </CardContent>
           </Card>
@@ -1283,9 +1286,9 @@ useEffect(() => {
                   <div className="w-8 h-8  rounded-lg flex items-center justify-center">
                     <Crown className="w-6 h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-sm md:text-lg font-bold">صافي الربح</p>
+                  <p className="text-gray-200 text-xs md:text-lg font-bold">صافي الربح</p>
                 </div>
-                <p className="md:text-2xl text-lg font-bold text-white">{(stats as any).financial.netProfit} ر.س</p>
+                <p className="md:text-2xl text-xs font-bold text-white">{(stats as any).financial.netProfit} ر.س</p>
               </div>
             </CardContent>
           </Card>
@@ -1331,6 +1334,7 @@ useEffect(() => {
 
             {/* Filters Row */}
             <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex items-center gap-2 md:flex-1">
               {/* Store Filter */}
               <div className="flex-1">
                 <Label className="text-white">المتجر</Label>
@@ -1360,9 +1364,10 @@ useEffect(() => {
                   ))}
                 </select>
               </div>
-
+              </div>
               {/* Subscription Status Filter */}
               {/* Subscription Status Filter */}
+              <div className="flex items-center gap-2 md:flex-1">
               <div className="flex-1">
                 <Label className="text-white">حالة الاشتراك</Label>
                 <select
@@ -1390,6 +1395,7 @@ useEffect(() => {
                   <option className="text-white" value="delivered">تم التسليم</option>
                   <option className="text-white" value="undelivered">لم يتم التسليم</option>
                 </select>
+              </div>
               </div>
             </div>
              {/* Clear Filters */}
@@ -1544,23 +1550,23 @@ useEffect(() => {
                   <TableRow>
                     <TableHead className='border-r '>الاسم</TableHead>
                     <TableHead className='border-r '>معلومات الاتصال</TableHead>
-                    <TableHead className='border-r '>اسم المتجر</TableHead>
-                    <TableHead className='border-r '>اسم المنصة</TableHead>
-                    <TableHead className='border-r '>التصنيف</TableHead>
-                    <TableHead className='border-r '>المنتج</TableHead>
-                    <TableHead className='border-r '>رقم الطلب</TableHead>
-                    <TableHead className='border-r '>سعر التكلفة</TableHead>
-                    <TableHead className='border-r '>سعر البيع</TableHead>
-                    <TableHead className='border-r '>الربح</TableHead>
-                    <TableHead className='border-r '>صورة الفاتورة</TableHead>
-                    <TableHead className='border-r '>نوع الاشتراك</TableHead>
-                    <TableHead className='border-r '>فترة الاشتراك</TableHead>
-                    <TableHead className='border-r '>حالة الاشتراك</TableHead>
-                    <TableHead className='border-r '>حالة التسليم</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>اسم المتجر</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>اسم المنصة</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>التصنيف</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>المنتج</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>رقم الطلب</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>سعر التكلفة</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>سعر البيع</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>الربح</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>صورة الفاتورة</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>نوع الاشتراك</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>فترة الاشتراك</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>حالة الاشتراك</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>حالة التسليم</TableHead>
                     {customFields.map((field) => (
-                      <TableHead className='border-r' key={field.id} >{field.label}</TableHead>
+                      <TableHead className='border-r hidden md:table-cell' key={field.id} >{field.label}</TableHead>
                     ))}
-                    <TableHead className='border-r' >تاريخ الإنشاء</TableHead>
+                    <TableHead className='border-r hidden md:table-cell' >تاريخ الإنشاء</TableHead>
                     <TableHead className='border-r' >الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1596,7 +1602,7 @@ useEffect(() => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {customer.storeName ? (
                           <div className="flex items-center gap-1">
                             <span className="text-white">{customer.storeName}</span>
@@ -1605,7 +1611,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {(customer as any).platformName ? (
                           <div className="flex items-center gap-1">
                             <span className="text-white">{(customer as any).platformName}</span>
@@ -1614,7 +1620,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {customer.category ? (
                           <Badge style={{ backgroundColor: customer.category.color, color: 'white' }} className="shadow-sm">
                             {customer.category.name}
@@ -1623,7 +1629,7 @@ useEffect(() => {
                           <span className="text-green-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {customer.productName ? (
                           <div className="flex items-center gap-1">
                             <Package className="w-3 h-3 text-white" />
@@ -1633,7 +1639,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                       <TableCell className="p-2 border-r border-green-100">
+                       <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         <div className="text-sm font-medium">
                           {customer.customFields && (customer.customFields as any).lastOrderId ? (
                             <span className="text-white font-mono">{(customer.customFields as any).lastOrderId}</span>
@@ -1643,7 +1649,7 @@ useEffect(() => {
                         </div>
                       </TableCell>
                     
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {(customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
                             {parseFloat((customer as any).purchasePrice || 0)} ر.س
@@ -1652,7 +1658,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {(customer as any).salePrice !== null && (customer as any).salePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
                             {parseFloat((customer as any).salePrice || 0).toFixed(2)} ر.س
@@ -1661,7 +1667,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {((customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined) || 
                          ((customer as any).salePrice !== null && (customer as any).salePrice !== undefined) ? (
                           <span className={`text-sm font-bold px-2 py-1 rounded ${
@@ -1675,7 +1681,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {(() => {
                           const invoiceImage = (customer as any).invoiceImage;
                           console.log('Customer:', customer.name, 'Invoice Image:', invoiceImage);
@@ -1737,14 +1743,14 @@ useEffect(() => {
                           }
                         })()}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {customer.subscriptionType ? (
                           <span className="text-green-700 bg-green-50 px-2 py-1 rounded text-sm">{customer.subscriptionType}</span>
                         ) : (
                           <span className="text-green-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         <div className="text-sm">
                           {customer.subscriptionStartDate && (
                             <div className="flex items-center gap-1">
@@ -1763,10 +1769,10 @@ useEffect(() => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {getSubscriptionStatusBadge(customer)}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 text-center">
+                      <TableCell className="p-2 border-r border-green-100 text-center hidden md:table-cell">
                         {/* Delivery Status for WordPress/WooCommerce only */}
                         {((customer as any).platformName === 'wordpress' || (customer as any).platformName === 'woocommerce' || 
                            customer.tags?.includes('woocommerce') || customer.tags?.includes('wordpress')) && 
@@ -1801,7 +1807,7 @@ useEffect(() => {
                       {customFields.map((field) => {
                         const value = customer.customFields?.[field.name];
                         return (
-                          <TableCell key={field.id} className="p-2 border-r border-green-100">
+                          <TableCell key={field.id} className="p-2 border-r border-green-100 hidden md:table-cell">
                             <div className="text-sm">
                               {value ? (
                                 <span className="text-white">{value}</span>
@@ -1812,13 +1818,24 @@ useEffect(() => {
                           </TableCell>
                         );
                       })}
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         <div className="text-sm text-white">
                           {formatDate(customer.createdAt)}
                         </div>
                       </TableCell>
                       <TableCell className="p-2 border-r border-green-100">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center ">
+                          <Button 
+                            variant="none" 
+                            size="sm" 
+                            onClick={() => {
+                              setCustomerToView(customer);
+                              setIsViewDialogOpen(true);
+                            }}
+                            className="md:hidden text-blue-400"
+                          >
+                            <Eye className="h-6 w-6" />
+                          </Button>
                           <Button 
                             variant="none" 
                             size="sm" 
@@ -1959,6 +1976,19 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      {/* View Customer Details Dialog */}
+      <ViewCustomerDialog
+        isOpen={isViewDialogOpen}
+        onClose={() => {
+          setIsViewDialogOpen(false);
+          setCustomerToView(null);
+        }}
+        customer={customerToView}
+        customFields={customFields}
+        formatDate={formatDate}
+        getSubscriptionStatusBadge={getSubscriptionStatusBadge}
+      />
       </div>
     </div>
   );
@@ -2550,6 +2580,145 @@ function DeleteFieldDialog({
           <Button variant="destructive" onClick={onConfirm}>
             حذف
           </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// View Customer Details Dialog Component
+function ViewCustomerDialog({ 
+  isOpen, 
+  onClose, 
+  customer, 
+  customFields, 
+  formatDate,
+  getSubscriptionStatusBadge
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  customer: Customer | null;
+  customFields: CustomField[];
+  formatDate: (date: string) => string;
+  getSubscriptionStatusBadge: (customer: Customer) => React.ReactNode;
+}) {
+  if (!customer) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">تفاصيل العميل</DialogTitle>
+          <DialogDescription className="text-gray-400">
+            عرض كافة المعلومات الخاصة بالعميل: {customer.name}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">المعلومات الأساسية</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-400">الاسم:</span>
+              <span className="text-white font-medium">{customer.name}</span>
+              
+              <span className="text-gray-400">البريد الإلكتروني:</span>
+              <span className="text-white">{customer.email || '-'}</span>
+              
+              <span className="text-gray-400">رقم الهاتف:</span>
+              <span className="text-white">{customer.phone || '-'}</span>
+            </div>
+          </div>
+
+          {/* Subscription Info */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">تفاصيل الاشتراك</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-400">نوع الاشتراك:</span>
+              <span className="text-white">{customer.subscriptionType || '-'}</span>
+              
+              <span className="text-gray-400">الحالة:</span>
+              <span>{getSubscriptionStatusBadge(customer)}</span>
+              
+              <span className="text-gray-400">تاريخ البداية:</span>
+              <span className="text-white">{customer.subscriptionStartDate ? formatDate(customer.subscriptionStartDate) : '-'}</span>
+              
+              <span className="text-gray-400">تاريخ الانتهاء:</span>
+              <span className="text-white">{customer.subscriptionEndDate ? formatDate(customer.subscriptionEndDate) : '-'}</span>
+            </div>
+          </div>
+
+          {/* Product & Store */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">المنتج والمتجر</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-400">اسم المنتج:</span>
+              <span className="text-white">{customer.productName || '-'}</span>
+              
+              <span className="text-gray-400">المتجر:</span>
+              <span className="text-white">{customer.storeName || '-'}</span>
+              
+              <span className="text-gray-400">المنصة:</span>
+              <span className="text-white">{(customer as any).platformName || '-'}</span>
+              
+              <span className="text-gray-400">التصنيف:</span>
+              <span className="text-white">{customer.category?.name || '-'}</span>
+
+              <span className="text-gray-400">حالة التسليم:</span>
+              <span>
+                {((customer as any).platformName === 'wordpress' || (customer as any).platformName === 'woocommerce' || 
+                   customer.tags?.includes('woocommerce') || customer.tags?.includes('wordpress')) ? (
+                  customer.customFields && (customer.customFields as any).deliveryStatus === 'delivered' ? (
+                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                      تم التسليم
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                      بانتظار التسليم
+                    </Badge>
+                  )
+                ) : (
+                  <span className="text-gray-500">-</span>
+                )}
+              </span>
+            </div>
+          </div>
+
+          {/* Pricing Info */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">المعلومات المالية</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-400">سعر التكلفة:</span>
+              <span className="text-white">{(customer as any).purchasePrice || 0} ر.س</span>
+              
+              <span className="text-gray-400">سعر البيع:</span>
+              <span className="text-white">{(customer as any).salePrice || 0} ر.س</span>
+              
+              <span className="text-gray-400">الربح:</span>
+              <span className="text-white font-bold text-green-400">
+                {(parseFloat((customer as any).salePrice || 0) - parseFloat((customer as any).purchasePrice || 0)).toFixed(2)} ر.س
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Custom Fields */}
+        {customFields.length > 0 && (
+          <div className="mt-6 space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">الحقول المخصصة</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {customFields.map((field) => (
+                <div key={field.id} className="flex justify-between text-sm bg-white/5 p-2 rounded">
+                  <span className="text-gray-400">{field.label}:</span>
+                  <span className="text-white font-medium">{customer.customFields?.[field.name] || '-'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end mt-6">
+          <Button onClick={onClose} className="primary-button">إغلاق</Button>
         </div>
       </DialogContent>
     </Dialog>

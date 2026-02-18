@@ -56,7 +56,9 @@ export default function ServicesPage() {
   const [token, setToken] = useState<string>("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [serviceToView, setServiceToView] = useState<ServiceWithApproval | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { showSuccess, showError } = useToast();
   const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
@@ -431,22 +433,19 @@ export default function ServicesPage() {
               <Table className="w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead >
+                    <TableHead>
                       الخدمة
                     </TableHead>
-                    <TableHead >
+                    <TableHead className="hidden md:table-cell">
                       السعر
                     </TableHead>
-                    <TableHead >
+                    <TableHead className="hidden md:table-cell">
                       رابط الخدمة
                     </TableHead>
-                    <TableHead >
-                      الحالة
-                    </TableHead>
-                    <TableHead >
+                    <TableHead className="hidden md:table-cell">
                       المشاهدات
                     </TableHead>
-                    <TableHead >
+                    <TableHead>
                       الإجراءات
                     </TableHead>
                   </TableRow>
@@ -465,7 +464,7 @@ export default function ServicesPage() {
                               className="w-12 h-12 rounded object-cover"
                             />
                           )}
-                          <div>
+                          <div className="text-center md:text-right">
                             <div className="text-sm font-medium text-white">
                               {service.title}
                             </div>
@@ -474,6 +473,9 @@ export default function ServicesPage() {
                                 {service.category}
                               </div>
                             )}
+                            <div className="md:hidden text-xs text-primary font-bold mt-1">
+                               {parseFloat(service.price.toString()).toFixed(2)} {service.currency}
+                            </div>
                             {service.rejectionReason && (
                               <div className="text-xs text-red-400 mt-1">
                                 سبب الرفض: {service.rejectionReason}
@@ -482,12 +484,12 @@ export default function ServicesPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="px-2 py-4 whitespace-nowrap">
+                      <TableCell className="px-2 py-4 whitespace-nowrap hidden md:table-cell">
                         <div className="text-sm font-semibold text-primary">
                           {parseFloat(service.price.toString()).toFixed(2)} {service.currency}
                         </div>
                       </TableCell>
-                      <TableCell className="px-6 py-4 whitespace-nowrap">
+                      <TableCell className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                         {service.purchaseLink ? (
                           <a
                             href={service.purchaseLink}
@@ -502,35 +504,8 @@ export default function ServicesPage() {
                           <span className="text-gray-500 text-sm">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="px-2 py-4 whitespace-nowrap">
-                        <div className="flex flex-col  gap-1">
-                          {/* Show approval status first */}
-                          {service.approvalStatus === 'pending' && (
-                            <span className="px-2 py-1 text-xs w-fit font-medium rounded-full bg-yellow-100 text-yellow-800">
-                              قيد الانتظار
-                            </span>
-                          )}
-                          {service.approvalStatus === 'approved' && (
-                            <>
-                              {service.isActive ? (
-                                <span className="px-2 py-1 w-fit text-xs  font-medium rounded-full bg-green-100 text-green-800">
-                                  نشط
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 w-fit text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                                  غير نشط
-                                </span>
-                              )}
-                            </>
-                          )}
-                          {service.approvalStatus === 'rejected' && (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                              مرفوضة
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-4 whitespace-nowrap">
+
+                      <TableCell className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                         <div className="flex items-center gap-1 text-sm text-white">
                           <Eye className="h-4 w-4" />
                           {/* {service.viewsCount || 0} */}
@@ -545,6 +520,17 @@ export default function ServicesPage() {
                       </td> */}
                       <TableCell className="px-6 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
+                          <Button
+                              onClick={() => {
+                                setServiceToView(service);
+                                setViewModalOpen(true);
+                              }}
+                              size="sm"
+                              variant="secondary"
+                              className="md:hidden"
+                            >
+                              <Eye className="h-4 w-4 text-blue-400" />
+                          </Button>
                           {service.approvalStatus !== 'approved' && (
                             <Button
                               onClick={() => handleRestrictedAction(() => openEditModal(service))}
@@ -972,6 +958,109 @@ export default function ServicesPage() {
         onClose={() => setSelectedTutorial(null)}
         onViewIncrement={incrementViews}
       />
+
+      {/* View Service Details Dialog */}
+      <ViewServiceDialog
+        isOpen={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setServiceToView(null);
+        }}
+        service={serviceToView}
+      />
     </div>
+  );
+}
+
+// View Service Details Dialog Component
+function ViewServiceDialog({ 
+  isOpen, 
+  onClose, 
+  service 
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  service: ServiceWithApproval | null;
+}) {
+  if (!service) return null;
+  const imageUrl = resolveServiceImageUrl(service.image);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">تفاصيل الخدمة</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">المعلومات الأساسية</h3>
+            <div className="space-y-2">
+               {imageUrl && (
+                <div className="mb-4">
+                  <span className="text-gray-400 block mb-2">صورة الخدمة:</span>
+                  <img
+                    src={imageUrl}
+                    alt={service.title}
+                    className="w-full h-48 object-cover rounded-lg border border-white/10"
+                  />
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <span className="text-gray-400">العنوان:</span>
+                <span className="text-white font-medium">{service.title}</span>
+                
+                <span className="text-gray-400">التصنيف:</span>
+                <span className="text-white">{service.category || '-'}</span>
+                
+                <span className="text-gray-400">السعر:</span>
+                <span className="text-primary font-bold">{service.price} {service.currency}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary">الإحصائيات</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <span className="text-gray-400">المشاهدات:</span>
+              <span className="text-white flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                {service.clicksCount * 36 || 0}
+              </span>
+            </div>
+            
+            <div className="pt-4">
+               <span className="text-gray-400 block mb-2 text-sm">رابط الشراء:</span>
+               {service.purchaseLink ? (
+                 <a
+                   href={service.purchaseLink}
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   className="text-blue-400 hover:text-blue-300 flex items-center gap-1 text-sm underline break-all"
+                 >
+                   <ExternalLink className="h-4 w-4" />
+                   {service.purchaseLink}
+                 </a>
+               ) : (
+                 <span className="text-gray-500 text-sm">-</span>
+               )}
+            </div>
+          </div>
+        </div>
+
+        {service.description && (
+          <div className="mt-6 space-y-2">
+            <h3 className="font-bold text-lg border-b border-white/10 pb-2 text-primary text-sm">الوصف:</h3>
+            <p className="text-white text-sm bg-white/5 p-4 rounded-lg leading-relaxed">
+              {service.description}
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end mt-6">
+          <Button onClick={onClose} className="primary-button">إغلاق</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

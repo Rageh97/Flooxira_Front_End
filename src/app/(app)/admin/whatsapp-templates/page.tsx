@@ -371,14 +371,15 @@ export default function WhatsAppTemplatesPage() {
                 <tr className="bg-white/5 text-gray-400 text-xs border-b border-white/5">
                   <th className="px-6 py-4 font-medium">المستخدم</th>
                   <th className="px-6 py-4 font-medium">معلومات التواصل</th>
-                  <th className="px-6 py-4 font-medium">الاسم في واتساب</th>
+                  <th className="px-6 py-4 font-medium text-center">الاسم في واتساب</th>
+                  <th className="px-6 py-4 font-medium text-center">استهلاك AI</th>
                   <th className="px-6 py-4 font-medium text-center">حالة الاتصال</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {connectedUsers.length === 0 && !fetchingUsers && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">لا يوجد مستخدمين متاحين</td>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">لا يوجد مستخدمين متاحين</td>
                   </tr>
                 )}
                 {connectedUsers.map((user) => (
@@ -398,8 +399,13 @@ export default function WhatsAppTemplatesPage() {
                       <div className="text-sm text-gray-300">{user.email}</div>
                       <div className="text-xs text-gray-500">{user.phone || 'بدون رقم'}</div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <div className="text-sm text-gray-300 font-mono">{user.whatsappName || '---'}</div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-500 text-xs font-bold">
+                        {user.aiCreditsUsed || 0} كريديت
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center">

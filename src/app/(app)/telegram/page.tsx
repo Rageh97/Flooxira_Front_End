@@ -852,17 +852,19 @@ export default function TelegramBotPage() {
                   {/* <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center text-xl">
                     🧠
                   </div> */}
-                  <div className="flex items-center gap-5">
-                    <div className="text-white font-semibold">مساعد الذكاء الاصطناعي (AI)</div>
-                    <div className="text-gray-400 text-sm">تفعيل الرد التلقائي باستخدام الذكاء الاصطناعي</div>
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-5">
+                    <div className="flex flex-col md:flex-row md:items-center gap-2">
+                      <div className="text-white font-semibold whitespace-nowrap">مساعد الذكاء الاصطناعي (AI)</div>
+                      <div className="text-gray-400 text-xs md:text-sm">تفعيل الرد التلقائي باستخدام الذكاء الاصطناعي</div>
+                    </div>
                     {usageStats && usageStats.telegramAiCredits > 0 && (
-                      <div className="text-xs mt-1 flex flex-col gap-0.5">
+                      <div className="text-xs md:mt-1 flex flex-col gap-1">
                         <div className="text-green-400 font-medium">
                           الرصيد المتبقي: {usageStats.telegramAiRemaining === -1 ? 'غير محدود' : usageStats.telegramAiRemaining} من {usageStats.telegramAiCredits} كريديت
                         </div>
-                        <div className="w-full bg-text-primary h-1 rounded-full overflow-hidden max-w-[200px]">
+                        <div className="w-full bg-text-primary/20 h-1.5 rounded-full overflow-hidden w-full md:max-w-[200px]">
                           <div 
-                            className="bg-purple-500 h-full transition-all" 
+                            className="bg-purple-500 h-full transition-all shadow-[0_0_10px_purple]" 
                             style={{ width: `${Math.min(100, (usageStats.telegramAiCreditsUsed / usageStats.telegramAiCredits) * 100)}%` }}
                           />
                         </div>
