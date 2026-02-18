@@ -1481,22 +1481,22 @@ useEffect(() => {
       <Card className='gradient-border border-none'>
         <CardHeader className=' border-none'>
           <CardTitle className='text-white'>قائمة العملاء</CardTitle>
-          <CardDescription className='text-primary flex items-center justify-between'>
-            عرض {customers.length} من أصل {pagination.total} عميل
+          <CardDescription className='text-primary flex flex-col md:flex-row md:items-center md:justify-between gap-2'>
+            <span>عرض {customers.length} من أصل {pagination.total} عميل</span>
               {/* Pagination Controls */}
           {pagination.pages > 1 && (
-            <div className="flex items-center justify-between mt-4 px-4 py-3 ">
+            <div className="flex items-center justify-center md:justify-end py-2 overflow-x-auto w-full">
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}
-                  className="bg-transparent border border-green-400 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-transparent border border-green-400 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed h-8 px-2"
                 >
                   <ChevronRight className="w-4 h-4" />
-                  السابق
+                  <span className="hidden sm:inline">السابق</span>
                 </Button>
                 
                 <div className="flex items-center gap-1">
@@ -1518,11 +1518,11 @@ useEffect(() => {
                         variant={pagination.page === pageNum ? "default" : "secondary"}
                         size="sm"
                         onClick={() => handlePageChange(pageNum)}
-                        className={
+                        className={`h-8 w-8 p-0 ${
                           pagination.page === pageNum
                             ? "bg-green-600 text-white hover:bg-green-700"
                             : "bg-transparent border border-green-400 text-white hover:bg-green-600"
-                        }
+                        }`}
                       >
                         {pageNum}
                       </Button>
@@ -1535,9 +1535,9 @@ useEffect(() => {
                   size="sm"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page === pagination.pages}
-                  className="bg-transparent border border-green-400 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-transparent border border-green-400 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed h-8 px-2"
                 >
-                  التالي
+                  <span className="hidden sm:inline">التالي</span>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
