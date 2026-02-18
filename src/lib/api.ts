@@ -598,6 +598,10 @@ export async function botDeleteRow(token: string, id: number) {
   return apiFetch<{ ok: boolean }>(`/api/bot/data/${id}`, { method: 'DELETE', authToken: token });
 }
 
+export async function botClearAll(token: string) {
+  return apiFetch<{ success: boolean; message: string }>(`/api/bot/clear-all`, { method: 'DELETE', authToken: token });
+}
+
 // ===== Bot Settings API =====
 export async function getBotSettings(token: string) {
   return apiFetch<{ success: boolean; data: any }>("/api/bot-settings", { authToken: token });

@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, botExportData, botUpdateField, type BotField, type BotDataRow } from "@/lib/api";
+import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, botExportData, botUpdateField, botClearAll, type BotField, type BotDataRow } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import Loader from "@/components/Loader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -383,20 +383,19 @@ export default function BotContentPage() {
         return;
       }
 
-      // Delete all rows
-      for (const row of rows) {
-        await botDeleteRow(token, row.id);
-      }
+      const res = await botClearAll(token);
       
-      // Delete all fields
-      for (const field of fields) {
-        await botDeleteField(token, field.id);
+      if (res.success) {
+        setSuccessMessage('تم حذف جميع البيانات بنجاح');
+        setTimeout(() => setSuccessMessage(''), 3000);
+        setShowClearConfirm(false);
+        // Reset local state immediately to ensure UI reflects deletion
+        setFields([]);
+        setRows([]);
+        loadData();
+      } else {
+        alert('فشل في حذف البيانات');
       }
-
-      setSuccessMessage('تم حذف جميع البيانات بنجاح');
-      setTimeout(() => setSuccessMessage(''), 3000);
-      setShowClearConfirm(false);
-      loadData();
     } catch (error) {
       console.error('Error clearing data:', error);
       alert('فشل في حذف البيانات');
