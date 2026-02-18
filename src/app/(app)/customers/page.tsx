@@ -1556,21 +1556,21 @@ useEffect(() => {
               <Table className="w-full ">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='border-r '>الاسم</TableHead>
-                    <TableHead className='border-r '>معلومات الاتصال</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>الاسم</TableHead>
+                    <TableHead className='border-r hidden md:table-cell'>معلومات الاتصال</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>اسم المتجر</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>اسم المنصة</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>التصنيف</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>المنتج</TableHead>
+                    <TableHead className='border-r '>المنتج</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>رقم الطلب</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>سعر التكلفة</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>سعر البيع</TableHead>
+                    <TableHead className='border-r '>سعر البيع</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>الربح</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>صورة الفاتورة</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>نوع الاشتراك</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>فترة الاشتراك</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>حالة الاشتراك</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>حالة التسليم</TableHead>
+                    <TableHead className='border-r '>فترة الاشتراك</TableHead>
+                    <TableHead className='border-r '>حالة الاشتراك</TableHead>
+                    <TableHead className='border-r '>حالة التسليم</TableHead>
                     {customFields.map((field) => (
                       <TableHead className='border-r hidden md:table-cell' key={field.id} >{field.label}</TableHead>
                     ))}
@@ -1581,7 +1581,7 @@ useEffect(() => {
                 <TableBody >
                   {customers.map((customer, index) => (
                     <TableRow key={customer.id} className={`border-b text-white border-green-100  transition-all duration-200 ${index % 2 === 0 ? '' : ''} group`}>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         <div className="font-medium">{customer.name}</div>
                         {customer.tags && Array.isArray(customer.tags) && customer.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -1594,7 +1594,7 @@ useEffect(() => {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100">
+                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         <div className="space-y-1 text-sm">
                           {customer.email && (
                             <div className="flex items-center gap-1">
@@ -1637,7 +1637,7 @@ useEffect(() => {
                           <span className="text-green-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
+                      <TableCell className="p-2 border-r border-green-100 ">
                         {customer.productName ? (
                           <div className="flex items-center gap-1">
                             <Package className="w-3 h-3 text-white" />
@@ -1666,7 +1666,7 @@ useEffect(() => {
                           <span className="text-white">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
+                      <TableCell className="p-2 border-r border-green-100 ">
                         {(customer as any).salePrice !== null && (customer as any).salePrice !== undefined ? (
                           <span className="text-sm font-medium text-white  px-2 py-1 rounded">
                             {parseFloat((customer as any).salePrice || 0).toFixed(2)} ر.س
@@ -1758,7 +1758,7 @@ useEffect(() => {
                           <span className="text-green-400">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
+                      <TableCell className="p-2 border-r border-green-100 ">
                         <div className="text-sm">
                           {customer.subscriptionStartDate && (
                             <div className="flex items-center gap-1">
@@ -1777,10 +1777,10 @@ useEffect(() => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
+                      <TableCell className="p-2 border-r border-green-100 ">
                         {getSubscriptionStatusBadge(customer)}
                       </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 text-center hidden md:table-cell">
+                      <TableCell className="p-2 border-r border-green-100 text-center ">
                         {/* Delivery Status for WordPress/WooCommerce only */}
                         {((customer as any).platformName === 'wordpress' || (customer as any).platformName === 'woocommerce' || 
                            customer.tags?.includes('woocommerce') || customer.tags?.includes('wordpress')) && 
