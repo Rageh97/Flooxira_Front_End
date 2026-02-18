@@ -895,6 +895,14 @@ useEffect(() => {
             ? { ...c, customFields: updatedCustomFields } 
             : c
         ));
+
+        // Update customerToView if it's currently being viewed
+        if (customerToView && customerToView.id === customer.id) {
+          setCustomerToView({
+            ...customerToView,
+            customFields: updatedCustomFields
+          });
+        }
       } else {
         toast.error('فشل تأكيد التسليم');
       }
@@ -1988,6 +1996,7 @@ useEffect(() => {
         customFields={customFields}
         formatDate={formatDate}
         getSubscriptionStatusBadge={getSubscriptionStatusBadge}
+        onConfirmDelivery={handleConfirmDelivery}
       />
       </div>
     </div>
@@ -2593,7 +2602,8 @@ function ViewCustomerDialog({
   customer, 
   customFields, 
   formatDate,
-  getSubscriptionStatusBadge
+  getSubscriptionStatusBadge,
+  onConfirmDelivery
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -2601,6 +2611,7 @@ function ViewCustomerDialog({
   customFields: CustomField[];
   formatDate: (date: string) => string;
   getSubscriptionStatusBadge: (customer: Customer) => React.ReactNode;
+  onConfirmDelivery: (customer: Customer) => Promise<void>;
 }) {
   if (!customer) return null;
 
@@ -2665,7 +2676,7 @@ function ViewCustomerDialog({
               <span className="text-white">{customer.category?.name || '-'}</span>
 
               <span className="text-gray-400">حالة التسليم:</span>
-              <span>
+              <span className="flex flex-col gap-2 items-start">
                 {((customer as any).platformName === 'wordpress' || (customer as any).platformName === 'woocommerce' || 
                    customer.tags?.includes('woocommerce') || customer.tags?.includes('wordpress')) ? (
                   customer.customFields && (customer.customFields as any).deliveryStatus === 'delivered' ? (
@@ -2673,9 +2684,21 @@ function ViewCustomerDialog({
                       تم التسليم
                     </Badge>
                   ) : (
-                    <Badge className="bg-amber-100 text-amber-800 border-amber-200">
-                      بانتظار التسليم
-                    </Badge>
+                    <>
+                      <Badge className="bg-amber-100 text-amber-800 border-amber-200">
+                        بانتظار التسليم
+                      </Badge>
+                      {customer.subscriptionStatus === 'active' && (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="h-7 text-xs bg-green-600 text-white border-green-500 hover:bg-green-700 hover:text-white mt-1"
+                          onClick={() => onConfirmDelivery(customer)}
+                        >
+                          تأكيد التسليم الآن
+                        </Button>
+                      )}
+                    </>
                   )
                 ) : (
                   <span className="text-gray-500">-</span>
