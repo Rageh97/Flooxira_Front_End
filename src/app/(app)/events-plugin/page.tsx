@@ -50,7 +50,7 @@ import AuthGuard from "@/components/AuthGuard";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 
 const PLATFORMS = [
-  { key: "salla", label: "سلة", icon: <img className="w-10 h-10 flex items-center justify-center" src="/salla.png"/> },
+  { key: "salla", label: "سلة", icon: <img className="w-8 h-8 flex items-center justify-center" src="/salla.png"/> },
   { key: "wordpress", label: "ووردبريس", icon: <img className="w-8 h-8 flex items-center justify-center" src="/wordpress.png"/> },
   { key: "iapp_cloud", label: "IAPP Cloud", icon: "☁️" },
   { key: "custom", label: "مخصص", icon: "⚙️" },

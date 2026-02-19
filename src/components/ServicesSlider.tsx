@@ -276,11 +276,11 @@ export default function ServicesSlider() {
                     <div className="p-0 rounded-lg flex flex-col h-full">
                       {/* Service Image */}
                       {imageUrl && (
-                        <div className="relative w-full overflow-hidden rounded-lg flex-shrink-0">
+                        <div className="relative w-full aspect-square overflow-hidden rounded-lg flex-shrink-0">
                           <img
                             src={imageUrl}
                             alt={service.title}
-                            className="w-full h-auto object-cover"
+                            className="w-full h-full object-cover"
                           />
                           {service.category && (
                             <div className="absolute top-1 right-1 text-white text-[10px] px-1.5 py-0.5 rounded-full">

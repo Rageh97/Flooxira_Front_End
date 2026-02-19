@@ -430,7 +430,18 @@ export default function WhatsAppCampaignsPage() {
     type="file"
     accept="image/*,video/*"
     className="hidden"
-    onChange={(e) => setCampaignMedia(e.target.files?.[0] || null)}/> 
+    onChange={(e) => {
+      const file = e.target.files?.[0] || null;
+      if (file) {
+        if (file.size > 2 * 1024 * 1024) {
+          showError("حجم الملف كبير جداً", "أقصى حجم مسموح به هو 2 ميجابايت. يرجى ضغط الصورة أو استخدام صيغة WebP.");
+          e.target.value = '';
+          setCampaignMedia(null);
+          return;
+        }
+      }
+      setCampaignMedia(file);
+    }}/> 
 
       </label>
       </div>
@@ -711,7 +722,18 @@ export default function WhatsAppCampaignsPage() {
                     type="file"
                     accept="image/*,video/*"
                     className="hidden"
-                    onChange={(e) => setTagCampaignMedia(e.target.files?.[0] || null)}/> 
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                          showError("حجم الملف كبير جداً", "أقصى حجم مسموح به هو 2 ميجابايت. يرجى ضغط الصورة أو استخدام صيغة WebP.");
+                          e.target.value = '';
+                          setTagCampaignMedia(null);
+                          return;
+                        }
+                      }
+                      setTagCampaignMedia(file);
+                    }}/> 
               </label>
           </div>
 

@@ -538,10 +538,18 @@ export default function WhatsAppGroupsPage() {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    setGroupMedia(file);
                     if (file) {
-                      console.log('[Groups] File selected:', file.name, file.type, file.size);
+                      if (file.size > 2 * 1024 * 1024) {
+                        showError("حجم الملف كبير جداً", "أقصى حجم مسموح به هو 2 ميجابايت. يرجى ضغط الصورة أو استخدام صيغة WebP.");
+                        e.target.value = '';
+                        setGroupMedia(null);
+                        return;
+                      }
+                      if (!file.type.includes('webp')) {
+                        console.log("صيغة غير مستحسنة: يفضل استخدام WebP لضمان سرعة الإرسال.");
+                      }
                     }
+                    setGroupMedia(file);
                   }}
                 />
               </label>
