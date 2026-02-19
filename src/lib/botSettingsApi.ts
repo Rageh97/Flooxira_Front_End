@@ -93,6 +93,12 @@ export interface BotSettings {
   escalationNotificationNumber?: string;
   escalationMessage?: string;
   escalationEnabled?: boolean;
+  
+  // Order Incoming Notification Settings (Notify the Owner)
+  orderNotifyEnabled?: boolean;
+  orderNotifyNumber?: string;
+  orderNotifyGroupId?: string;
+
   createdAt: string;
   updatedAt: string;
 }

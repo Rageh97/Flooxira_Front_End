@@ -45,7 +45,26 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCustomers, createCustomer, updateCustomer, deleteCustomer, getCustomerStats, getCategories, createCategory, getCustomFields, createCustomField, updateCustomField, deleteCustomField, getStores, createStore, getPlatforms, createPlatform } from '@/lib/api';
+import { 
+  getCustomers, 
+  createCustomer, 
+  updateCustomer, 
+  deleteCustomer, 
+  getCustomerStats, 
+  getCategories, 
+  createCategory, 
+  getCustomFields, 
+  createCustomField, 
+  updateCustomField, 
+  deleteCustomField, 
+  getStores, 
+  createStore, 
+  getPlatforms, 
+  createPlatform,
+  getBotSettings,
+  updateBotSettings,
+  listWhatsAppGroups
+} from '@/lib/api';
 import { usePermissions } from '@/lib/permissions';
 import * as XLSX from 'xlsx';
 import Loader from '@/components/Loader';
@@ -194,6 +213,18 @@ export default function CustomersPage() {
   const [isDeletingField, setIsDeletingField] = useState(false);
   const [isDeletingCustomer, setIsDeletingCustomer] = useState(false);
   const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
+  
+  // Notification settings state
+  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+  const [waGroups, setWaGroups] = useState<any[]>([]);
+  const [notifSettings, setNotifSettings] = useState<any>({
+    orderNotifyEnabled: false,
+    orderNotifyNumber: '',
+    orderNotifyGroupId: ''
+  });
+  const [isSavingNotif, setIsSavingNotif] = useState(false);
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false);
+
   const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
   const handleShowTutorial = () => {
     const customersTutorial = 
@@ -213,6 +244,54 @@ export default function CustomersPage() {
       incrementViews(customersTutorial.id);
     } else {
       showError("لم يتم العثور على شرح خاص بالعملاء");
+    }
+  };
+
+  // Notification settings logic
+  useEffect(() => {
+    if (isNotificationSettingsOpen) {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        // Fetch current settings
+        getBotSettings(token).then(res => {
+          if (res.success && res.data) {
+            setNotifSettings({
+              orderNotifyEnabled: res.data.orderNotifyEnabled || false,
+              orderNotifyNumber: res.data.orderNotifyNumber || '',
+              orderNotifyGroupId: res.data.orderNotifyGroupId || ''
+            });
+          }
+        });
+
+        // Fetch WhatsApp groups
+        setIsLoadingGroups(true);
+        listWhatsAppGroups(token).then(res => {
+          if (res.success && res.groups) {
+            setWaGroups(res.groups);
+          }
+          setIsLoadingGroups(false);
+        }).catch(() => setIsLoadingGroups(false));
+      }
+    }
+  }, [isNotificationSettingsOpen]);
+
+  const handleSaveNotificationSettings = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    setIsSavingNotif(true);
+    try {
+      const res = await updateBotSettings(token, notifSettings);
+      if (res.success) {
+        showSuccess("تم حفظ إعدادات الإشعارات بنجاح");
+        setIsNotificationSettingsOpen(false);
+      } else {
+        showError(res.message || "فشل حفظ الإعدادات");
+      }
+    } catch (err: any) {
+      showError("حدث خطأ أثناء حفظ الإعدادات");
+    } finally {
+      setIsSavingNotif(false);
     }
   };
 useEffect(() => {
@@ -1113,6 +1192,9 @@ useEffect(() => {
             
             إدارة الحقول
           </Button>
+          <Button variant="secondary" className='primary-button after:bg-[#03132c]' onClick={() => handleRestrictedAction(() => setIsNotificationSettingsOpen(true))}>
+            إعدادات الإشعارات
+          </Button>
           <Button className='primary-button' onClick={() => handleRestrictedAction(() => setIsCreateDialogOpen(true))}>
             إضافة عميل جديد
           </Button>
@@ -1995,11 +2077,116 @@ useEffect(() => {
         customer={customerToView}
         customFields={customFields}
         formatDate={formatDate}
-        getSubscriptionStatusBadge={getSubscriptionStatusBadge}
         onConfirmDelivery={handleConfirmDelivery}
+      />
+
+      <NotificationSettingsDialog 
+        isOpen={isNotificationSettingsOpen}
+        onClose={() => setIsNotificationSettingsOpen(false)}
+        settings={notifSettings}
+        groups={waGroups}
+        onSave={handleSaveNotificationSettings}
+        isSaving={isSavingNotif}
+        isLoadingGroups={isLoadingGroups}
+        setSettings={setNotifSettings}
       />
       </div>
     </div>
+  );
+}
+
+// WhatsApp Notification Settings Dialog
+function NotificationSettingsDialog({
+  isOpen,
+  onClose,
+  settings,
+  groups,
+  onSave,
+  isSaving,
+  isLoadingGroups,
+  setSettings
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  settings: any;
+  groups: any[];
+  onSave: () => void;
+  isSaving: boolean;
+  isLoadingGroups: boolean;
+  setSettings: (settings: any) => void;
+}) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md  text-white border-blue-500/30">
+        <DialogHeader>
+          <DialogTitle className="text-xl mx-5 font-bold flex items-center gap-2 text-white">
+            {/* <Settings className="w-5 h-5 text-primary mx-5" /> */}
+            إعدادات إشعارات الطلبات (الواتساب)
+          </DialogTitle>
+          <DialogDescription className="text-gray-400">
+            تحكم في كيفية وصول إشعارات الطلبات والاشتراكات الجديدة إليك
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+            <div className="space-y-0.5">
+              <Label className="text-base font-medium text-white">تفعيل الإشعارات</Label>
+              <p className="text-xs text-gray-400">تلقي إشعارات عند وصول طلب جديد من الويبهوك</p>
+            </div>
+            <Switch 
+              checked={settings.orderNotifyEnabled} 
+              onCheckedChange={(val) => setSettings({ ...settings, orderNotifyEnabled: val })}
+            />
+          </div>
+
+          {settings.orderNotifyEnabled && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-white">رقم الواتساب المستلم (اختياري)</Label>
+                <Input 
+                  placeholder="مثال: 9665xxxxxxxx+" 
+                  value={settings.orderNotifyNumber || ''} 
+                  onChange={(e) => setSettings({ ...settings, orderNotifyNumber: e.target.value })}
+                  className="bg-white/5 border-white/20 focus:border-primary text-white"
+                />
+                <p className="text-[10px] text-gray-500">سيتم إرسال الإشعار إلى هذا الرقم بشكل خاص</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-white">أو اختر مجموعة واتساب للإرسال إليها</Label>
+                {isLoadingGroups ? (
+                  <div className="flex items-center gap-2 text-xs text-gray-400 p-2 text-white">
+                    <Loader size="sm" /> جاري تحميل المجموعات...
+                  </div>
+                ) : (
+                  <select
+                    className="w-full p-2 bg-[#03132c] border border-white/20 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                    value={settings.orderNotifyGroupId || ''}
+                    onChange={(e) => setSettings({ ...settings, orderNotifyGroupId: e.target.value })}
+                  >
+                    <option value="">-- اختر مجموعة --</option>
+                    {groups.map((group) => (
+                      <option key={group.id} value={group.id}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-[10px] text-gray-500">يفضل اختيار مجموعة إذا كنت تريد تنبيه فريق العمل</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+          <Button variant="ghost" className="text-white hover:bg-white/10" onClick={onClose} disabled={isSaving}>إلغاء</Button>
+          <Button className="primary-button" onClick={onSave} disabled={isSaving}>
+            {isSaving ? <><Loader size="sm" className="mr-2" /> جاري الحفظ...</> : 'حفظ الإعدادات'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
