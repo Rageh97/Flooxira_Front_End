@@ -2077,6 +2077,7 @@ useEffect(() => {
         customer={customerToView}
         customFields={customFields}
         formatDate={formatDate}
+        getSubscriptionStatusBadge={getSubscriptionStatusBadge}
         onConfirmDelivery={handleConfirmDelivery}
       />
 
