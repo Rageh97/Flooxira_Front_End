@@ -276,11 +276,10 @@ export default function PlansPage() {
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
                                     <span className="text-xs font-medium text-gray-200">إدارة الواتساب:</span>
-                                    {(permissions as any).whatsappMessagesPerMonth > 0 && (
-                                      <span className="text-xs text-primary">
-                                        ({(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : (permissions as any).whatsappMessagesPerMonth} رسالة/شهر)
-                                      </span>
-                                    )}
+                                    <span className="text-xs text-green-400">
+                                      (مدعوم بالذكاء الاصطناعي - 
+                                      {(permissions as any).whatsappMessagesPerMonth === -1 ? 'غير محدود' : ` ${(permissions as any).whatsappMessagesPerMonth} رد Ai`})
+                                    </span>
                                   </>
                                 ) : (
                                   <>
@@ -349,7 +348,7 @@ export default function PlansPage() {
                                     <div className="rounded-full bg-green-500 p-1 w-4 h-4 flex items-center justify-center">
                                       <Check className="h-3 w-3 text-black font-bold" />
                                     </div>
-                                    <span className="text-xs text-white font-medium"> الذكاء الاصطناعي</span>
+                                    <span className="text-xs text-white font-medium">  جميع أدوات الذكاء الاصطناعي    </span>
                                     {(permissions as any).aiCredits > 0 && (
                                       <span className="text-xs text-primary">
                                         ({(permissions as any).aiCredits} كريديت/شهر)

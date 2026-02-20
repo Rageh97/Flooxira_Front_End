@@ -949,16 +949,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </div>
       )}
     </div>
-  <Script >
+  {/* <Script >
       {`window.WIDGET_API_URL = 'https://api.flooxira.com';
       window.WIDGET_SOCKET_URL = 'https://api.flooxira.com';`}
     </Script>
-    <Script  src="https://api.flooxira.com/widget.js" data-store-id="728a0211-a7ae-4279-b045-39dc52e8599b"></Script>
-     {/* <Script >
+    <Script  src="https://api.flooxira.com/widget.js" data-store-id="728a0211-a7ae-4279-b045-39dc52e8599b"></Script> */}
+     <Script >
       {`window.WIDGET_API_URL = 'http://localhost:4000';
       window.WIDGET_SOCKET_URL = 'http://localhost:4000';`}
     </Script>
-    <Script  src="http://localhost:4000/widget.js" data-store-id="9b78752d-4935-4a05-bc10-f283a3602c4b"></Script>  */}
+    <Script  src="http://localhost:4000/widget.js" data-store-id="9b78752d-4935-4a05-bc10-f283a3602c4b"></Script> 
     </AuthGuard>
   );
 }
