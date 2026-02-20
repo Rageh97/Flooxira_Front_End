@@ -39,6 +39,7 @@ export default function WhatsAppPage() {
   const qrCodeRef = useRef<string>("");
   const statusRef = useRef<any>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
@@ -70,7 +71,21 @@ export default function WhatsAppPage() {
   
   useEffect(() => {
     statusRef.current = status;
+    if (status?.status === 'connected' || status?.status === 'CONNECTED' || status?.status === 'inChat' || status?.status === 'disconnected') {
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current);
+        sessionTimeoutRef.current = null;
+      }
+    }
   }, [status]);
+
+  useEffect(() => {
+    return () => {
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Load initial status
   useEffect(() => {
@@ -645,6 +660,29 @@ export default function WhatsAppPage() {
           }, 1000); // Wait 1 second then try to get QR
         }
         
+        // إعداد مؤقت للإيقاف التلقائي بعد دقيقتين بدون ربط
+        if (sessionTimeoutRef.current) {
+          clearTimeout(sessionTimeoutRef.current);
+        }
+        sessionTimeoutRef.current = setTimeout(async () => {
+          const currentStatus = statusRef.current?.status;
+          if (currentStatus !== 'connected' && currentStatus !== 'CONNECTED' && currentStatus !== 'inChat') {
+            console.log('[WhatsApp] ⏰ انقضت دقيقتان دون ربط. إيقاف الجلسة تلقائياً.');
+            try {
+              setIsWaitingForQR(false);
+              const stopResult = await stopWhatsAppSession(token);
+              if (stopResult.success) {
+                setQrCode("");
+                setStatus({ ...statusRef.current, status: 'disconnected', message: 'تم الإيقاف' });
+                setError("تم إيقاف عملية الربط تلقائياً لمرور أكثر من دقيقتين دون مسح الكود، يرجى المحاولة مرة آخرى.");
+                setSuccess("");
+              }
+            } catch (err) {
+              console.error('[WhatsApp] Auto-stop failed', err);
+            }
+          }
+        }, 120000); // 120 seconds = 2 minutes
+
         // Check status after starting
         await checkStatus();
       } else {
@@ -665,6 +703,10 @@ export default function WhatsAppPage() {
       setLoading(true);
       setError("");
       setIsWaitingForQR(false); // Stop polling
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current);
+        sessionTimeoutRef.current = null;
+      }
       const result = await stopWhatsAppSession(token);
       if (result.success) {
         setSuccess("تم إيقاف الجلسة بنجاح!");
