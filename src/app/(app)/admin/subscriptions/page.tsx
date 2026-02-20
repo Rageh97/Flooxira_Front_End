@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { getAllSubscriptions, updateSubscriptionExpiry } from "@/lib/api";
-import { Users, Calendar, DollarSign, Edit, Download } from "lucide-react";
+import { getAllSubscriptions, updateSubscriptionExpiry, getConnectedWhatsAppUsers } from "@/lib/api";
+import { Users, Calendar, DollarSign, Edit, Download, UserCheck, UserMinus, Loader2 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { toast } from "sonner";
 
@@ -47,6 +47,7 @@ export default function SubscriptionsAdminPage() {
   const [totalSubscriptions, setTotalSubscriptions] = useState<number>(0);
   const subscriptionsPerPage = 10;
   const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [connectedUsers, setConnectedUsers] = useState<any[]>([]);
 
   // Edit expiry date modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -65,11 +66,17 @@ export default function SubscriptionsAdminPage() {
     if (!token) return;
     
     setLoading(true);
-    getAllSubscriptions(token, currentPage, subscriptionsPerPage, filter)
-      .then((res) => {
+    Promise.all([
+      getAllSubscriptions(token, currentPage, subscriptionsPerPage, filter),
+      getConnectedWhatsAppUsers(token)
+    ])
+      .then(([res, connectedRes]) => {
         setSubscriptions(res.subscriptions);
         setTotalPages(res.totalPages || 1);
         setTotalSubscriptions(res.total || 0);
+        if (connectedRes.success) {
+          setConnectedUsers(connectedRes.users);
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -213,6 +220,10 @@ export default function SubscriptionsAdminPage() {
   };
 
   const filteredSubscriptions = subscriptions;
+
+  const getConnectedData = (userId: number) => {
+    return connectedUsers.find(cu => cu.id === userId);
+  };
 
   const stats = {
     total: totalSubscriptions, // Use total from API response if available, otherwise subscriptions.length is wrong for pagination
@@ -365,6 +376,8 @@ export default function SubscriptionsAdminPage() {
                     <th className="py-3 px-4 font-medium text-white">الباقة</th>
                     <th className="py-3 px-4 font-medium text-white">السعر</th>
                     <th className="py-3 px-4 font-medium text-white">الحالة</th>
+                    <th className="py-3 px-4 font-medium text-white">حالة الواتساب</th>
+                    <th className="py-3 px-4 font-medium text-white">استهلاك AI</th>
                     <th className="py-3 px-4 font-medium text-white">تاريخ البداية</th>
                     <th className="py-3 px-4 font-medium text-white">تاريخ الانتهاء</th>
                     <th className="py-3 px-4 font-medium text-white">الأيام المتبقية</th>
@@ -410,6 +423,48 @@ export default function SubscriptionsAdminPage() {
                             <Badge className={getStatusColor(displayStatus)}>
                               {getStatusText(displayStatus)}
                             </Badge>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-center">
+                            {(() => {
+                              const cu = getConnectedData(subscription.userId);
+                              if (!cu) return <span className="text-gray-500 text-xs">غير مسجل</span>;
+                              
+                              return (
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="text-[10px] text-gray-400 font-mono">{cu.whatsappName || '---'}</div>
+                                  {cu.status === 'connected' ? (
+                                    <Badge className="bg-green-100 text-green-800 border-none flex items-center gap-1">
+                                      <UserCheck className="w-3 h-3" />
+                                      متصل
+                                    </Badge>
+                                  ) : cu.status === 'initializing' ? (
+                                    <Badge className="bg-blue-100 text-blue-800 border-none flex items-center gap-1">
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      جاري...
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-red-100 text-red-800 border-none flex items-center gap-1">
+                                      <UserMinus className="w-3 h-3" />
+                                      غير متصل
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-center">
+                            {(() => {
+                              const cu = getConnectedData(subscription.userId);
+                              return (
+                                <Badge variant="outline" className="border-purple-500/30 text-purple-400 bg-purple-500/10">
+                                  {(cu?.aiCreditsUsed || 0)} كريديت
+                                </Badge>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className="py-3 px-4">
