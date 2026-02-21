@@ -65,6 +65,7 @@ import {
   updateBotSettings,
   listWhatsAppGroups
 } from '@/lib/api';
+
 import { usePermissions } from '@/lib/permissions';
 import { useAuth } from '@/lib/auth';
 import * as XLSX from 'xlsx';
@@ -2537,31 +2538,33 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
                           />
           </div>
         </div>
-        <div>
-          <Label htmlFor="salePrice">سعر البيع</Label>
-          <Input
-            id="salePrice"
-            type="number"
-            step="1"
-            value={formData.salePrice}
-            onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
-            placeholder="0"
-          />
-        </div>
-        <div>
-          <Label htmlFor="purchasePrice">سعر التكلفة</Label>
-         
-          <Input
-            id="purchasePrice"
-            type="number"
-            step="1"
-            value={formData.purchasePrice}
-            onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
-            placeholder="0"
-          />
-          
-          
-        </div>
+        {user?.role !== 'employee' && (
+          <>
+            <div>
+              <Label htmlFor="salePrice">سعر البيع</Label>
+              <Input
+                id="salePrice"
+                type="number"
+                step="1"
+                value={formData.salePrice}
+                onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <Label htmlFor="purchasePrice">سعر التكلفة</Label>
+              
+              <Input
+                id="purchasePrice"
+                type="number"
+                step="1"
+                value={formData.purchasePrice}
+                onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+          </>
+        )}
         <div>
           <Label htmlFor="subscriptionStatus">حالة الاشتراك</Label>
           <select
