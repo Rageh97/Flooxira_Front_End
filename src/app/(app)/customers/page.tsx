@@ -66,6 +66,7 @@ import {
   listWhatsAppGroups
 } from '@/lib/api';
 import { usePermissions } from '@/lib/permissions';
+import { useAuth } from '@/lib/auth';
 import * as XLSX from 'xlsx';
 import Loader from '@/components/Loader';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -133,6 +134,7 @@ interface Category {
 
 export default function CustomersPage() {
   const { canManageCustomers, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const { user, loading: authLoading } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const { showSuccess, showError } = useToast();
   const [stats, setStats] = useState<CustomerStats | null>(null);
@@ -878,7 +880,7 @@ useEffect(() => {
       
       // تحضير البيانات للتصدير - كل البيانات
       const exportData = customers.map(customer => {
-        const baseData = {
+        const baseData: any = {
           'الاسم': customer.name,
           'البريد الإلكتروني': customer.email || '',
           'رقم الهاتف': customer.phone || '',
@@ -890,18 +892,22 @@ useEffect(() => {
           'تاريخ انتهاء الاشتراك': customer.subscriptionEndDate ? new Date(customer.subscriptionEndDate).toLocaleDateString('en-US') : '',
           'حالة الاشتراك': getSubscriptionStatus(customer) === 'active' ? 'نشط' : getSubscriptionStatus(customer) === 'expired' ? 'منتهي' : 'غير نشط',
           'العنوان': customer.address || '',
-          'سعر التكلفة': (customer as any).purchasePrice || 0,
-          'سعر البيع': (customer as any).salePrice || 0,
-          'الربح': ((customer as any).salePrice || 0) - ((customer as any).purchasePrice || 0),
-          'العلامات': customer.tags.join(', '),
-          'وسائل التواصل': Object.entries(customer.socialMedia)
-            .map(([platform, handle]) => `${platform}: ${handle}`)
-            .join(', '),
-          'تاريخ آخر اتصال': customer.lastContactDate ? new Date(customer.lastContactDate).toLocaleDateString('en-US') : '',
-          'تاريخ المتابعة التالية': customer.nextFollowUpDate ? new Date(customer.nextFollowUpDate).toLocaleDateString('en-US') : '',
-          'تاريخ الإنشاء': new Date(customer.createdAt).toLocaleDateString('en-US'),
-          'صورة الفاتورة': (customer as any).invoiceImage || ''
         };
+
+        if (user?.role !== 'employee') {
+          baseData['سعر التكلفة'] = (customer as any).purchasePrice || 0;
+          baseData['سعر البيع'] = (customer as any).salePrice || 0;
+          baseData['الربح'] = ((customer as any).salePrice || 0) - ((customer as any).purchasePrice || 0);
+        }
+
+        baseData['العلامات'] = customer.tags.join(', ');
+        baseData['وسائل التواصل'] = Object.entries(customer.socialMedia)
+            .map(([platform, handle]) => `${platform}: ${handle}`)
+            .join(', ');
+        baseData['تاريخ آخر اتصال'] = customer.lastContactDate ? new Date(customer.lastContactDate).toLocaleDateString('en-US') : '';
+        baseData['تاريخ المتابعة التالية'] = customer.nextFollowUpDate ? new Date(customer.nextFollowUpDate).toLocaleDateString('en-US') : '';
+        baseData['تاريخ الإنشاء'] = new Date(customer.createdAt).toLocaleDateString('en-US');
+        baseData['صورة الفاتورة'] = (customer as any).invoiceImage || '';
 
         // إضافة الحقول المخصصة
         const customFieldsData: Record<string, any> = {};
@@ -1132,7 +1138,7 @@ useEffect(() => {
   }
 
   // Check permissions loading state
-  if (permissionsLoading) {
+  if (permissionsLoading || authLoading) {
     return (
       <div className="container mx-auto p-6">
        
@@ -1339,7 +1345,7 @@ useEffect(() => {
             </CardContent>
           </Card>
           {/* Financial Stats Cards */}
-      {stats && (stats as any).financial && (
+      {stats && (stats as any).financial && user?.role !== 'employee' && (
         <> 
         {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> */}
           <Card className="gradient-border border-none h-16">
@@ -1646,9 +1652,13 @@ useEffect(() => {
                     <TableHead className='border-r hidden md:table-cell'>التصنيف</TableHead>
                     <TableHead className='border-r'>المنتج</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>رقم الطلب</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>سعر التكلفة</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>سعر البيع</TableHead>
-                    <TableHead className='border-r hidden md:table-cell'>الربح</TableHead>
+                    {user?.role !== 'employee' && (
+                      <>
+                        <TableHead className='border-r hidden md:table-cell'>سعر التكلفة</TableHead>
+                        <TableHead className='border-r hidden md:table-cell'>سعر البيع</TableHead>
+                        <TableHead className='border-r hidden md:table-cell'>الربح</TableHead>
+                      </>
+                    )}
                     <TableHead className='border-r hidden md:table-cell'>صورة الفاتورة</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>نوع الاشتراك</TableHead>
                     <TableHead className='border-r hidden md:table-cell'>فترة الاشتراك</TableHead>
@@ -1740,38 +1750,42 @@ useEffect(() => {
                         </div>
                       </TableCell>
                     
-                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
-                        {(customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined ? (
-                          <span className="text-sm font-medium text-white  px-2 py-1 rounded">
-                            {parseFloat((customer as any).purchasePrice || 0)} ر.س
-                          </span>
-                        ) : (
-                          <span className="text-white">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
-                        {(customer as any).salePrice !== null && (customer as any).salePrice !== undefined ? (
-                          <span className="text-sm font-medium text-white  px-2 py-1 rounded">
-                            {parseFloat((customer as any).salePrice || 0).toFixed(2)} ر.س
-                          </span>
-                        ) : (
-                          <span className="text-white">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
-                        {((customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined) || 
-                         ((customer as any).salePrice !== null && (customer as any).salePrice !== undefined) ? (
-                          <span className={`text-sm font-bold px-2 py-1 rounded ${
-                            (parseFloat((customer as any).salePrice || 0) - parseFloat((customer as any).purchasePrice || 0)) >= 0 
-                              ? 'text-white ' 
-                              : 'text-white '
-                          }`}>
-                            {(parseFloat((customer as any).salePrice || 0) - parseFloat((customer as any).purchasePrice || 0))} ر.س
-                          </span>
-                        ) : (
-                          <span className="text-white">-</span>
-                        )}
-                      </TableCell>
+                      {user?.role !== 'employee' && (
+                        <>
+                          <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
+                            {(customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined ? (
+                              <span className="text-sm font-medium text-white  px-2 py-1 rounded">
+                                {parseFloat((customer as any).purchasePrice || 0)} ر.س
+                              </span>
+                            ) : (
+                              <span className="text-white">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
+                            {(customer as any).salePrice !== null && (customer as any).salePrice !== undefined ? (
+                              <span className="text-sm font-medium text-white  px-2 py-1 rounded">
+                                {parseFloat((customer as any).salePrice || 0).toFixed(2)} ر.س
+                              </span>
+                            ) : (
+                              <span className="text-white">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
+                            {((customer as any).purchasePrice !== null && (customer as any).purchasePrice !== undefined) || 
+                            ((customer as any).salePrice !== null && (customer as any).salePrice !== undefined) ? (
+                              <span className={`text-sm font-bold px-2 py-1 rounded ${
+                                (parseFloat((customer as any).salePrice || 0) - parseFloat((customer as any).purchasePrice || 0)) >= 0 
+                                  ? 'text-white ' 
+                                  : 'text-white '
+                              }`}>
+                                {(parseFloat((customer as any).salePrice || 0) - parseFloat((customer as any).purchasePrice || 0))} ر.س
+                              </span>
+                            ) : (
+                              <span className="text-white">-</span>
+                            )}
+                          </TableCell>
+                        </>
+                      )}
                       <TableCell className="p-2 border-r border-green-100 hidden md:table-cell">
                         {(() => {
                           const invoiceImage = (customer as any).invoiceImage;
