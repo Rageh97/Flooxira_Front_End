@@ -3018,7 +3018,8 @@ function ViewCustomerDialog({
               <span className="text-gray-400">حالة التسليم:</span>
               <span className="flex flex-col gap-2 items-start">
                 {((customer as any).platformName === 'wordpress' || (customer as any).platformName === 'woocommerce' || 
-                   customer.tags?.includes('woocommerce') || customer.tags?.includes('wordpress')) ? (
+                   customer.tags?.includes('woocommerce') || customer.tags?.includes('wordpress')) && 
+                 customer.subscriptionStatus === 'active' ? (
                   customer.customFields && (customer.customFields as any).deliveryStatus === 'delivered' ? (
                     <Badge className="bg-green-100 text-green-800 border-green-200">
                       تم التسليم
@@ -3028,16 +3029,14 @@ function ViewCustomerDialog({
                       <Badge className="bg-amber-100 text-amber-800 border-amber-200">
                         بانتظار التسليم
                       </Badge>
-                      {customer.subscriptionStatus === 'active' && (
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="h-7 text-xs bg-green-600 text-white border-green-500 hover:bg-green-700 hover:text-white mt-1"
-                          onClick={() => onConfirmDelivery(customer)}
-                        >
-                          تأكيد التسليم الآن
-                        </Button>
-                      )}
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-7 text-xs bg-green-600 text-white border-green-500 hover:bg-green-700 hover:text-white mt-1"
+                        onClick={() => onConfirmDelivery(customer)}
+                      >
+                        تأكيد التسليم الآن
+                      </Button>
                     </>
                   )
                 ) : (
