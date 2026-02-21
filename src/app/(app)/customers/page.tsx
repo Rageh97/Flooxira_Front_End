@@ -220,7 +220,8 @@ export default function CustomersPage() {
   const [notifSettings, setNotifSettings] = useState<any>({
     orderNotifyEnabled: false,
     orderNotifyNumber: '',
-    orderNotifyGroupId: ''
+    orderNotifyGroupId: '',
+    orderNotifyStatuses: [] as string[]   // [] = all statuses, non-empty = filter by these
   });
   const [isSavingNotif, setIsSavingNotif] = useState(false);
   const [isLoadingGroups, setIsLoadingGroups] = useState(false);
@@ -258,7 +259,8 @@ export default function CustomersPage() {
             setNotifSettings({
               orderNotifyEnabled: res.data.orderNotifyEnabled || false,
               orderNotifyNumber: res.data.orderNotifyNumber || '',
-              orderNotifyGroupId: res.data.orderNotifyGroupId || ''
+              orderNotifyGroupId: res.data.orderNotifyGroupId || '',
+              orderNotifyStatuses: Array.isArray(res.data.orderNotifyStatuses) ? res.data.orderNotifyStatuses : []
             });
           }
         });
@@ -1069,7 +1071,6 @@ useEffect(() => {
       case 'cancelled':
         return <Badge className="bg-gray-100 text-gray-800"><XCircle className="w-3 h-3 mr-1" />ملغي</Badge>;
       case 'refunded':
-        return <Badge className="bg-purple-100 text-purple-800"><AlertCircle className="w-3 h-3 mr-1" />مسترد</Badge>;
       default:
         return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />قيد الانتظار</Badge>;
     }
@@ -2116,80 +2117,214 @@ function NotificationSettingsDialog({
   isLoadingGroups: boolean;
   setSettings: (settings: any) => void;
 }) {
+  // Toggle a status in the orderNotifyStatuses array
+  const toggleStatus = (status: string) => {
+    const current: string[] = Array.isArray(settings.orderNotifyStatuses) ? settings.orderNotifyStatuses : [];
+    const next = current.includes(status)
+      ? current.filter(s => s !== status)
+      : [...current, status];
+    setSettings({ ...settings, orderNotifyStatuses: next });
+  };
+
+  const isSelected = (status: string) => {
+    const current: string[] = Array.isArray(settings.orderNotifyStatuses) ? settings.orderNotifyStatuses : [];
+    return current.includes(status);
+  };
+
+  const selectedCount = Array.isArray(settings.orderNotifyStatuses) ? settings.orderNotifyStatuses.length : 0;
+
+  // Subscription status chips
+  const subscriptionStatuses = [
+    { value: 'active',    label: 'نشط',           emoji: '✅', color: 'border-green-500 bg-green-500/20 text-green-300'    },
+    { value: 'pending',   label: 'قيد الانتظار',  emoji: '⏳', color: 'border-yellow-500 bg-yellow-500/20 text-yellow-300' },
+    { value: 'expired',   label: 'منتهي',          emoji: '🔴', color: 'border-red-500 bg-red-500/20 text-red-300'          },
+    { value: 'failed',    label: 'فشل',            emoji: '❌', color: 'border-orange-500 bg-orange-500/20 text-orange-300'  },
+    { value: 'cancelled', label: 'ملغي',           emoji: '🚫', color: 'border-gray-500 bg-gray-500/20 text-gray-300'       },
+  ];
+
+  // WordPress delivery status chips
+  const deliveryStatuses = [
+    { value: 'delivered',   label: 'تم التسليم',     emoji: '📦', color: 'border-emerald-500 bg-emerald-500/20 text-emerald-300' },
+    { value: 'undelivered', label: 'لم يتم التسليم', emoji: '🕐', color: 'border-amber-500 bg-amber-500/20 text-amber-300'        },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md  text-white border-blue-500/30">
+      <DialogContent className="max-w-lg text-white border-blue-500/30 overflow-y-auto max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="text-xl mx-5 font-bold flex items-center gap-2 text-white">
-            {/* <Settings className="w-5 h-5 text-primary mx-5" /> */}
-            إعدادات إشعارات الطلبات (الواتساب)
+          <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
+             إعدادات إشعارات الطلبات
           </DialogTitle>
-          <DialogDescription className="text-gray-400">
-            تحكم في كيفية وصول إشعارات الطلبات والاشتراكات الجديدة إليك
+          <DialogDescription className="text-gray-400 text-sm">
+            خصّص متى تصلك إشعارات واتساب عند وصول طلبات ووردبريس أو سلة أو أي منصة أخرى
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+        <div className="space-y-5 py-2">
+
+          {/* ─── Step 1: Enable Toggle ─── */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
             <div className="space-y-0.5">
-              <Label className="text-base font-medium text-white">تفعيل الإشعارات</Label>
-              <p className="text-xs text-gray-400">تلقي إشعارات عند وصول طلب جديد من الويبهوك</p>
+              <Label className="text-base font-semibold text-white">تفعيل الإشعارات</Label>
+              <p className="text-xs text-gray-400">استقبل تنبيهات فورية عند وصول كل طلب جديد</p>
             </div>
-            <Switch 
-              checked={settings.orderNotifyEnabled} 
+            <Switch
+              checked={settings.orderNotifyEnabled}
               onCheckedChange={(val) => setSettings({ ...settings, orderNotifyEnabled: val })}
             />
           </div>
 
           {settings.orderNotifyEnabled && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-white">رقم الواتساب المستلم (اختياري)</Label>
-                <Input 
-                  placeholder="مثال: 9665xxxxxxxx+" 
-                  value={settings.orderNotifyNumber || ''} 
-                  onChange={(e) => setSettings({ ...settings, orderNotifyNumber: e.target.value })}
-                  className="bg-white/5 border-white/20 focus:border-primary text-white"
-                />
-                <p className="text-[10px] text-gray-500">سيتم إرسال الإشعار إلى هذا الرقم بشكل خاص</p>
+            <div className="space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+
+              {/* ─── Step 2: Recipient ─── */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-4">
+                <p className="text-sm font-semibold text-primary flex items-center gap-1">
+                  وجهة الإشعار
+                </p>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-300">رقم واتساب خاص (اختياري)</Label>
+                  <Input
+                    dir="ltr"
+                    placeholder="+9665xxxxxxxx"
+                    value={settings.orderNotifyNumber || ''}
+                    onChange={(e) => setSettings({ ...settings, orderNotifyNumber: e.target.value })}
+                    className="bg-white/5 border-white/20 focus:border-primary text-white placeholder:text-gray-600 text-sm"
+                  />
+                  <p className="text-[10px] text-gray-500">سيتم إرسال الإشعار مباشرةً إلى هذا الرقم</p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-300">أو اختر مجموعة واتساب</Label>
+                  {isLoadingGroups ? (
+                    <div className="flex items-center gap-2 text-xs text-gray-400 p-2">
+                      <Loader size="sm" /> جاري تحميل المجموعات...
+                    </div>
+                  ) : (
+                    <select
+                      className="w-full p-2 bg-[#03132c] border border-white/20 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                      value={settings.orderNotifyGroupId || ''}
+                      onChange={(e) => setSettings({ ...settings, orderNotifyGroupId: e.target.value })}
+                    >
+                      <option value="">-- بدون مجموعة --</option>
+                      {groups.map((group) => (
+                        <option key={group.id} value={group.id}>{group.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  <p className="text-[10px] text-gray-500">لتنبيه فريق العمل كله في نفس الوقت</p>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-white">أو اختر مجموعة واتساب للإرسال إليها</Label>
-                {isLoadingGroups ? (
-                  <div className="flex items-center gap-2 text-xs text-gray-400 p-2 text-white">
-                    <Loader size="sm" /> جاري تحميل المجموعات...
-                  </div>
-                ) : (
-                  <select
-                    className="w-full p-2 bg-[#03132c] border border-white/20 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
-                    value={settings.orderNotifyGroupId || ''}
-                    onChange={(e) => setSettings({ ...settings, orderNotifyGroupId: e.target.value })}
-                  >
-                    <option value="">-- اختر مجموعة --</option>
-                    {groups.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
+              {/* ─── Step 3: Status Filters ─── */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-primary flex items-center gap-1">
+                    🎛️ فلترة الحالات
+                  </p>
+                  {selectedCount > 0 ? (
+                    <span className="text-xs text-yellow-300 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/30">
+                      {selectedCount} حالة مختارة
+                    </span>
+                  ) : (
+                    <span className="text-xs text-green-300 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/30">
+                      كل الحالات ✓
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-[11px] text-gray-400 leading-relaxed">
+                  اختر الحالات التي تريد أن تصلك إشعار عندها. <span className="text-green-400 font-medium">إذا لم تختر شيئاً = ستصلك إشعارات لجميع الحالات.</span>
+                </p>
+
+                {/* Subscription statuses */}
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">حالات الاشتراك / الطلب</p>
+                  <div className="flex flex-wrap gap-2">
+                    {subscriptionStatuses.map(({ value, label, emoji, color }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => toggleStatus(value)}
+                        className={`
+                          flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150
+                          ${isSelected(value)
+                            ? `${color} shadow-md scale-105`
+                            : 'border-white/15 bg-white/5 text-gray-400 hover:border-white/30 hover:text-white'
+                          }
+                        `}
+                      >
+                        <span>{emoji}</span>
+                        <span>{label}</span>
+                        {isSelected(value) && (
+                          <span className="ml-0.5 text-[10px] font-bold opacity-80">✓</span>
+                        )}
+                      </button>
                     ))}
-                  </select>
+                  </div>
+                </div>
+
+                {/* WordPress delivery statuses */}
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wide flex items-center gap-1">
+                    حالات التسليم (WordPress)
+                    <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded">WooCommerce</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {deliveryStatuses.map(({ value, label, emoji, color }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => toggleStatus(value)}
+                        className={`
+                          flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150
+                          ${isSelected(value)
+                            ? `${color} shadow-md scale-105`
+                            : 'border-white/15 bg-white/5 text-gray-400 hover:border-white/30 hover:text-white'
+                          }
+                        `}
+                      >
+                        <span>{emoji}</span>
+                        <span>{label}</span>
+                        {isSelected(value) && (
+                          <span className="ml-0.5 text-[10px] font-bold opacity-80">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  
+                </div>
+
+                {/* Quick Select All / Clear */}
+                {selectedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, orderNotifyStatuses: [] })}
+                    className="text-[11px] text-gray-400 hover:text-white underline underline-offset-2 transition-colors"
+                  >
+                    إلغاء التحديد (استقبل كل الحالات)
+                  </button>
                 )}
-                <p className="text-[10px] text-gray-500">يفضل اختيار مجموعة إذا كنت تريد تنبيه فريق العمل</p>
               </div>
+
             </div>
           )}
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-          <Button variant="ghost" className="text-white hover:bg-white/10" onClick={onClose} disabled={isSaving}>إلغاء</Button>
+          <Button variant="ghost" className="text-white hover:bg-white/10" onClick={onClose} disabled={isSaving}>
+            إلغاء
+          </Button>
           <Button className="primary-button" onClick={onSave} disabled={isSaving}>
-            {isSaving ? <><Loader size="sm" className="mr-2" /> جاري الحفظ...</> : 'حفظ الإعدادات'}
+            {isSaving ? <><Loader size="sm" className="mr-2" /> جاري الحفظ...</> : ' حفظ الإعدادات'}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
 
 // Customer Form Component
 function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, customFields = [], categories = [], stores = [], platforms = [], invoiceImage, invoiceImagePreview, handleInvoiceImageChange, clearInvoiceImage }: {
@@ -2426,7 +2561,6 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
             <option value="expired">منتهي</option>
             <option value="failed">فشل</option>
             <option value="cancelled">ملغي</option>
-            <option value="refunded">مسترد</option>
             <option value="inactive">غير نشط</option>
           </select>
         </div>

@@ -3159,3 +3159,40 @@ export async function uploadReminderMedia(token: string, file: File) {
     body: formData
   });
 }
+
+// Unified Inbox API
+export async function getUnifiedConversations(token: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    conversations: Array<{
+      id: string;
+      platform: 'whatsapp' | 'telegram' | 'livechat';
+      contactId: string;
+      name: string;
+      lastMessageTime: string;
+      messageCount: number;
+      isEscalated: boolean;
+      status: string;
+      lastMessage: string;
+    }> 
+  }>("/api/unified-inbox/conversations", { authToken: token });
+}
+
+export async function getUnifiedMessages(token: string, platform: string, contactId: string) {
+  return apiFetch<{ 
+    success: boolean; 
+    messages: Array<{
+      id: string;
+      content: string;
+      type: 'incoming' | 'outgoing';
+      contentType: string;
+      timestamp: string;
+      mediaUrl?: string;
+      senderName?: string;
+    }> 
+  }>(`/api/unified-inbox/conversations/${platform}/${contactId}/messages`, { authToken: token });
+}
+
+
+
+

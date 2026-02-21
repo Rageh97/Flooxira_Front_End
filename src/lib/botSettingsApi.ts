@@ -99,6 +99,13 @@ export interface BotSettings {
   orderNotifyNumber?: string;
   orderNotifyGroupId?: string;
 
+  // Telegram Settings
+  telegramAiEnabled?: boolean;
+  telegramNotifyEnabled?: boolean;
+  telegramForwardingEnabled?: boolean;
+  telegramNotifyGroupId?: string;
+  telegramEscalationGroupId?: string;
+
   createdAt: string;
   updatedAt: string;
 }
