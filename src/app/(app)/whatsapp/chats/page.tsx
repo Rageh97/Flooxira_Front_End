@@ -11,6 +11,8 @@ import {
   createChatNote,
   resolveChatNote,
   listEmployees,
+  markChatAsRead,
+  toggleAiBlock,
 } from "@/lib/api";
 import React, { useMemo, useCallback } from "react";
 import { listTags, addContactToTag, createTag, listContactsByTag } from "@/lib/tagsApi";
@@ -51,11 +53,18 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
       }`}
     >
       <div className="flex items-center gap-2">
-        {profilePic ? (
-          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={profilePic} alt={contact.contactName || contact.contactNumber} loading="lazy" />
-        ) : (
-          <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" loading="lazy" />
-        )}
+        <div className="relative">
+          {profilePic ? (
+            <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={profilePic} alt={contact.contactName || contact.contactNumber} loading="lazy" />
+          ) : (
+            <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" loading="lazy" />
+          )}
+          {contact.unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse z-10 border-1 border-white/20">
+              {contact.unreadCount > 99 ? '99+' : contact.unreadCount}
+            </div>
+          )}
+        </div>
         
         <div className="flex flex-col items-start">
           <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
@@ -87,6 +96,17 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
          prev.onClick === next.onClick &&
          JSON.stringify(prev.tags) === JSON.stringify(next.tags);
 });
+
+interface WhatsAppContact {
+  contactNumber: string;
+  messageCount: number;
+  lastMessageTime: string;
+  profilePicture?: string | null;
+  contactName?: string | null;
+  isGroup?: boolean;
+  unreadCount?: number;
+  isAiBlocked?: boolean;
+}
 
 export default function WhatsAppChatsPage() {
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
@@ -162,14 +182,7 @@ export default function WhatsAppChatsPage() {
     timestamp: string 
   }>>([]);
   // Contacts state with localStorage persistence
-  const [contacts, setContacts] = useState<Array<{ 
-    contactNumber: string; 
-    messageCount: number; 
-    lastMessageTime: string; 
-    profilePicture?: string | null; 
-    contactName?: string | null; 
-    isGroup?: boolean 
-  }>>(() => {
+  const [contacts, setContacts] = useState<WhatsAppContact[]>(() => {
     // Load from localStorage on mount
     if (typeof window !== 'undefined') {
       try {
@@ -501,6 +514,14 @@ export default function WhatsAppChatsPage() {
   }, [chats, selectedContact, initialLoading]);
 
   async function loadChatHistory(contactNumber: string, isAutoRefresh: boolean = false, isLoadMore: boolean = false, isNewContact: boolean = false) {
+    // Immediately mark as read on opening a chat (optimistic UI)
+    if (!isAutoRefresh && !isLoadMore && token) {
+      markChatAsRead(token, contactNumber).catch(e => console.error("Failed to mark as read:", e));
+      setContacts(prev => prev.map(c => 
+        c.contactNumber === contactNumber ? { ...c, unreadCount: 0 } : c
+      ));
+    }
+
     try {
       if (isAutoRefresh) {
         setIsAutoRefreshing(true);
@@ -769,7 +790,7 @@ export default function WhatsAppChatsPage() {
     }
   }
 
-  async function loadContactTags(contacts: Array<{ contactNumber: string; messageCount: number; lastMessageTime: string }>) {
+  async function loadContactTags(contacts: WhatsAppContact[]) {
     try {
       const tagsMap: {[key: string]: string[]} = {};
       
@@ -1227,6 +1248,27 @@ export default function WhatsAppChatsPage() {
     }
   }
 
+  async function handleToggleAiBlock() {
+    if (!selectedContact || !token) return;
+    try {
+      setBotControlLoading(true);
+      const res = await toggleAiBlock(token, selectedContact);
+      if (res.success) {
+        showToast(res.message, 'success');
+        // Update contact state
+        setContacts(prev => prev.map(c => 
+          c.contactNumber === selectedContact ? { ...c, isAiBlocked: res.isAiBlocked } : c
+        ));
+      } else {
+        showToast(res.message || 'فشل في تغيير حالة ردود الذكاء الاصطناعي', 'error');
+      }
+    } catch (e: any) {
+      showToast(e.message, 'error');
+    } finally {
+      setBotControlLoading(false);
+    }
+  }
+
   // Stable callback for contact item clicks
   const handleContactItemClick = useCallback((contactNumber: string) => {
     if (contactNumber) {
@@ -1324,6 +1366,20 @@ export default function WhatsAppChatsPage() {
                       className="text-xs primary-button"
                     >
                       + إضافة إلى تصنيف
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={handleToggleAiBlock}
+                      disabled={botControlLoading}
+                      className={`text-xs border border-text-primary/50 inner-shadow ${
+                        contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
+                          ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
+                          : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                      }`}
+                    >
+                      {contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
+                        ? 'تفعيل الذكاء الاصطناعي' 
+                        : ' تعطيل Ai لهذه المحادثة '}
                     </Button>
                     <Button 
                       size="sm"
@@ -1526,6 +1582,20 @@ export default function WhatsAppChatsPage() {
                   className="text-[10px] h-8 whitespace-nowrap primary-button"
                 >
                   + تصنيف
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={handleToggleAiBlock}
+                  disabled={botControlLoading}
+                  className={`text-[10px] h-8 whitespace-nowrap border border-text-primary/50 inner-shadow ${
+                    contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
+                      ? 'bg-red-500/20 text-red-400' 
+                      : 'bg-green-500/20 text-green-400'
+                  }`}
+                >
+                  {contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
+                    ? 'تفعيل AI' 
+                    : 'تعطيل AI'}
                 </Button>
                 <Button 
                   size="sm"

@@ -2357,6 +2357,7 @@ function CustomerForm({ formData, setFormData, onSubmit, onCancel, submitText, c
   handleInvoiceImageChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   clearInvoiceImage?: () => void;
 }) {
+  const { user } = useAuth();
   const renderCustomField = (field: CustomField) => {
     const fieldValue = formData.customFields?.[field.name] || '';
     

@@ -271,7 +271,23 @@ export async function deleteKnowledgeEntry(token: string, id: number) {
   return apiFetch<{ success: boolean; message: string }>(`/api/whatsapp/knowledge/${id}`, { method: "DELETE", authToken: token });
 }
 
-// Chat Management API functions
+// ===== Chat Management API functions =====
+export async function markChatAsRead(token: string, contactNumber: string) {
+  return apiFetch<{ success: boolean }>("/api/whatsapp/chats/mark-read", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ contactNumber })
+  });
+}
+
+export async function toggleAiBlock(token: string, contactNumber: string) {
+  return apiFetch<{ success: boolean; isAiBlocked: boolean; message: string }>("/api/whatsapp/chats/toggle-ai-block", {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ contactNumber })
+  });
+}
+
 export async function getChatHistory(token: string, contactNumber?: string, limit = 50, offset = 0) {
   const params = new URLSearchParams();
   if (contactNumber) params.set('contactNumber', contactNumber);

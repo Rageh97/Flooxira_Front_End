@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 import { getBotSettings, updateBotSettings, BotSettings as IBotSettings } from "@/lib/botSettingsApi";
 import { getBotStatus, pauseBot, resumeBot } from "@/lib/botControlApi";
-import { listTags, addContactToTag } from "@/lib/tagsApi";
+import { listTags, addContactToTag, createTag } from "@/lib/tagsApi";
 import { createPortal } from "react-dom";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { 
@@ -181,7 +181,7 @@ export default function InboxPage() {
       const tgRes = await telegramBotGetStatus(token);
       if (tgRes.success) {
         setTgBotPaused(tgRes.isPaused);
-        setTgBotTimeRemaining(tgRes.timeRemaining);
+        setTgBotTimeRemaining(tgRes.timeRemaining || 0);
       }
       
       const settingsRes = await getBotSettings();
@@ -318,8 +318,7 @@ export default function InboxPage() {
     if (!selectedConversation || selectedAssignee === "none") return;
     try {
       setAssignLoading(true);
-      const { apiFetch } = require("@/lib/api");
-      const res = await apiFetch(`/api/dashboard/tickets/${selectedConversation.contactId}/assign`, {
+      const res = await apiFetch<{ success: boolean; ok?: boolean }>(`/api/dashboard/tickets/${selectedConversation.contactId}/assign`, {
         method: 'PUT',
         authToken: token,
         body: JSON.stringify({ assignedTo: parseInt(selectedAssignee) })
@@ -341,8 +340,7 @@ export default function InboxPage() {
   async function handleResolveTicket() {
     if (!selectedConversation) return;
     try {
-      const { apiFetch } = require("@/lib/api");
-      const res = await apiFetch(`/api/dashboard/tickets/${selectedConversation.contactId}/status`, {
+      const res = await apiFetch<{ success: boolean; ok?: boolean }>(`/api/dashboard/tickets/${selectedConversation.contactId}/status`, {
         method: 'PUT',
         authToken: token,
         body: JSON.stringify({ status: 'closed' })
@@ -371,7 +369,6 @@ export default function InboxPage() {
 
     try {
       const currentPage = isLoadMore ? page + 1 : 1;
-      const { apiFetch } = require("@/lib/api");
       const data = await apiFetch<any>(`/api/unified-inbox/conversations?page=${currentPage}&limit=20`, { authToken: token });
       
       if (data.success) {
@@ -439,7 +436,7 @@ export default function InboxPage() {
           formData.append('to', selectedConversation.contactId);
           formData.append('file', selectedFile);
           if (newMessage.trim()) formData.append('caption', newMessage.trim());
-          result = await apiFetch('/api/whatsapp/media', {
+          result = await apiFetch<any>('/api/whatsapp/media', {
             method: 'POST',
             authToken: token,
             body: formData
@@ -452,7 +449,7 @@ export default function InboxPage() {
           formData.append('chatId', selectedConversation.contactId);
           formData.append('media', selectedFile);
           if (newMessage.trim()) formData.append('text', newMessage.trim());
-          result = await apiFetch('/api/telegram-bot/send', {
+          result = await apiFetch<any>('/api/telegram-bot/send', {
             method: 'POST',
             authToken: token,
             body: formData
@@ -469,7 +466,7 @@ export default function InboxPage() {
         if (selectedFile) {
           const uploadFormData = new FormData();
           uploadFormData.append('image', selectedFile);
-          const uploadRes: any = await apiFetch('/api/dashboard/tickets/upload-image', {
+          const uploadRes = await apiFetch<any>('/api/dashboard/tickets/upload-image', {
             method: 'POST',
             authToken: token,
             body: uploadFormData
@@ -676,7 +673,7 @@ export default function InboxPage() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={fetchConversations}
+                onClick={() => fetchConversations()}
                 disabled={loading}
                 className="h-8 w-8 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-full transition-all"
                 title="تحديث المحادثات"
@@ -1343,7 +1340,6 @@ export default function InboxPage() {
                   onClick={async () => {
                     try {
                       setCreatingTag(true);
-                      const { createTag } = require('@/lib/tagsApi');
                       const res = await createTag({ name: newTagName.trim() });
                       if (res.success) {
                         showSuccess("تم إضافة التصنيف الجديد");
@@ -1356,7 +1352,7 @@ export default function InboxPage() {
                     } catch (e: any) { showError(e.message); } finally { setCreatingTag(false); }
                   }}
                 >
-                  {creatingTag ? <Loader size="sm" color="white" /> : "إضافة"}
+                  {creatingTag ? <Loader size="sm" variant="primary" /> : "إضافة"}
                 </Button>
               </div>
 
