@@ -611,6 +611,13 @@ export default function MotionPage() {
                             onClick={() => setSelectedResult(item)}
                             muted
                             loop
+                            playsInline
+                            preload="metadata"
+                            onMouseOver={(e) => e.currentTarget.play()}
+                            onMouseOut={(e) => {
+                              e.currentTarget.pause();
+                              e.currentTarget.currentTime = 0;
+                            }}
                           />
 
                           {/* Play Icon Overlay */}
@@ -713,6 +720,8 @@ export default function MotionPage() {
                     controls
                     autoPlay
                     loop
+                    playsInline
+                    preload="auto"
                     className="w-full h-full object-contain"
                   />
                   <BorderBeam />

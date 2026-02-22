@@ -72,7 +72,7 @@ const AI_TOOLS_LIST = [
   { id: 'chat', label: 'الدردشة (AI Chat)', category: 'الدردشة' },
   { id: 'image_gen', label: 'توليد الصور (Text to Image)', category: 'الصور' },
   { id: 'image_upscale', label: 'تحسين جودة الصور', category: 'الصور' },
-  { id: 'image_nano', label: 'Nano Banana Pro (توليد سريع)', category: 'الصور' },
+  { id: 'image_nano', label: 'Nano Banana Pro 🍌 (توليد متعدد الوسائط)', category: 'الصور' },
   { id: 'image_logo', label: 'صانع الشعارات', category: 'الصور' },
   { id: 'image_edit', label: 'تحرير الصور', category: 'الصور' },
   { id: 'image_product', label: 'نماذج المنتجات (Product Mockups)', category: 'الصور' },
@@ -106,6 +106,8 @@ const MODEL_PRICING_OPTIONS: Record<string, { label: string, defaultCost: number
   'imagen-4.0-fast-generate-001': { label: 'Imagen 4.0 Fast', defaultCost: 2, type: 'image' },
   'imagen-4.0-generate-001': { label: 'Imagen 4.0 Pro', defaultCost: 4, type: 'image' },
   'imagen-4.0-ultra-generate-001': { label: 'Imagen 4.0 Ultra', defaultCost: 8, type: 'image' },
+  'gemini-3-pro-image-preview': { label: 'Nano Banana Pro 🍌 (Gemini 3 Pro Image)', defaultCost: 8, type: 'image' },
+  'gemini-2.5-flash-image': { label: 'Nano Banana ⚡ (Gemini 2.5 Flash Image)', defaultCost: 3, type: 'image' },
   
   // Video Models
   'veo-3.1-generate-preview': { label: 'Veo 3.1 Pro', defaultCost: 80, type: 'video' },

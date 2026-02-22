@@ -248,10 +248,10 @@ export default function ReviewsPage() {
               <div className="mt-4 pt-4 border-t border-gray-600">
                 <div className="flex items-center justify-between text-sm text-gray-400">
                   <span>{new Date(review.createdAt).toLocaleDateString('en-US')}</span>
-                  <div className="flex items-center space-x-1 rtl:space-x-reverse">
+                  {/* <div className="flex items-center space-x-1 rtl:space-x-reverse">
                     <ThumbsUp className="w-4 h-4" />
                     <span>مفيد</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </CardContent>

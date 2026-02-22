@@ -54,11 +54,11 @@ const ASPECT_RATIOS = [
 ];
 
 const MODEL_OPTIONS = [
-  { id: "imagen-4.0-ultra", label: "Nano Banana Pro 🍌", value: "imagen-4.0-ultra-generate-001", description: "أعلى جودة - تصاميم احترافية", badge: "الأفضل" },
-  { id: "imagen-4.0", label: "Nano Banana Creative", value: "imagen-4.0-generate-001", description: "  " },
-  { id: "imagen-4.0-fast", label: "Nano Banana Standard ⚡", value: "imagen-4.0-fast-generate-001", description: "  " },
-  // { id: "imagen-3.0", label: "Imagen 3.0", value: "imagen-3.0-generate-001", description: "كلاسيكي ومستقر" },
-  // { id: "imagen-3.0-fast", label: "Imagen 3.0 Fast", value: "imagen-3.0-fast-generate-001", description: "سرعة مضاعفة - اقتصادي " },
+  { id: "gemini-3-pro-image-preview", label: "Nano Banana Pro 🍌", value: "gemini-3-pro-image-preview", description: "النموذج الأقوى ويدعم العربية", badge: "جديد ✨" },
+  { id: "gemini-2.5-flash-image", label: "Nano Banana ⚡", value: "gemini-2.5-flash-image", description: "توليد سريع وجودة رائعة", badge: "مميز" },
+  // { id: "imagen-4.0-ultra", label: "Imagen Banana Pro 🍌", value: "imagen-4.0-ultra-generate-001", description: "Imagen 4.0 Ultra - أعلى جودة احترافية", badge: "الأفضل" },
+  // { id: "imagen-4.0", label: "Imagen Banana Creative", value: "imagen-4.0-generate-001", description: "Imagen 4.0 - جودة متميزة" },
+  { id: "imagen-4.0-fast", label: "Imagen Banana Standard ⚡", value: "imagen-4.0-fast-generate-001", description: "Imagen 4.0 Fast - سريع واقتصادي" },
 ];
 
 interface GeneratedImage {
@@ -75,7 +75,7 @@ export default function NanoPage() {
   const [token, setToken] = useState("");
   const [prompt, setPrompt] = useState("");
   const [selectedRatio, setSelectedRatio] = useState("1:1");
-  const [selectedModel, setSelectedModel] = useState("imagen-4.0-ultra-generate-001");
+  const [selectedModel, setSelectedModel] = useState("gemini-3-pro-image-preview");
   const [isGenerating, setIsGenerating] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedImage[]>([]);

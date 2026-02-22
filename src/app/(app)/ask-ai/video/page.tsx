@@ -713,6 +713,13 @@ export default function TextToVideoPage() {
                             onClick={() => setSelectedVideo(vid)}
                             muted
                             loop
+                            playsInline
+                            preload="metadata"
+                            onMouseOver={(e) => e.currentTarget.play()}
+                            onMouseOut={(e) => {
+                              e.currentTarget.pause();
+                              e.currentTarget.currentTime = 0;
+                            }}
                           />
 
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -809,7 +816,9 @@ export default function TextToVideoPage() {
                     controls
                     autoPlay
                     loop
-                    className="w-full h-full object-contain"
+                    playsInline
+                    preload="auto"
+                    className="w-full h-full object-contain shadow-2xl"
                   />
                   <BorderBeam />
                 </div>
