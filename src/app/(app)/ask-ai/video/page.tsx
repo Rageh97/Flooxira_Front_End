@@ -91,6 +91,7 @@ export default function TextToVideoPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [stats, setStats] = useState<AIStats | null>(null);
   const [history, setHistory] = useState<GeneratedVideo[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<GeneratedVideo | null>(null);
   const [audioText, setAudioText] = useState("");
   const [selectedVoice, setSelectedVoice] = useState("ar-XA-Standard-A");
@@ -129,11 +130,12 @@ export default function TextToVideoPage() {
 
   const loadHistory = async () => {
     if (!token) return;
+    setIsHistoryLoading(true);
     try {
       const response = await getAIHistory(token, 'VIDEO');
       const mappedHistory: GeneratedVideo[] = response.history.map((item: AIHistoryItem) => ({
         id: item.id.toString(),
-        url: item.outputUrl,
+        url: item.outputUrl.includes('#t=') ? item.outputUrl : `${item.outputUrl}#t=0.001`,
         prompt: item.prompt,
         timestamp: item.createdAt,
         aspectRatio: (item.options as any)?.aspectRatio || "16:9",
@@ -146,6 +148,8 @@ export default function TextToVideoPage() {
       });
     } catch (error) {
       console.error("Failed to load history:", error);
+    } finally {
+      setIsHistoryLoading(false);
     }
   };
 
@@ -649,7 +653,18 @@ export default function TextToVideoPage() {
 
         <main className="flex-1 h-full overflow-y-auto custom-scrollbar pb-10">
           <div className="p-4 lg:p-6">
-            {history.length === 0 ? (
+            {isHistoryLoading ? (
+               <div className="space-y-4">
+               <div className="flex items-center justify-between">
+                 <div className="h-6 w-32 bg-white/5 animate-pulse rounded-lg" />
+               </div>
+               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 lg:gap-4">
+                 {[1, 2, 3, 4, 5, 6].map((i) => (
+                   <div key={i} className="aspect-video rounded-xl lg:rounded-2xl bg-white/5 animate-pulse border border-white/5" />
+                 ))}
+               </div>
+             </div>
+            ) : history.length === 0 ? (
               <div className="h-full min-h-[60vh] flex items-center justify-center">
                 <div className="text-center px-4">
                   <Play size={60} className="lg:w-20 lg:h-20 text-purple-500/20 mb-4 mx-auto" />
