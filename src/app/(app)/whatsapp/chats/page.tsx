@@ -52,8 +52,8 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
           : isOpenNote ? 'bg-yellow-600/30' : 'bg-secondry'
       }`}
     >
-      <div className="flex items-center gap-2">
-        <div className="relative">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="relative flex-shrink-0">
           {profilePic ? (
             <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={profilePic} alt={contact.contactName || contact.contactNumber} loading="lazy" />
           ) : (
@@ -66,9 +66,14 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
           )}
         </div>
         
-        <div className="flex flex-col items-start">
-          <div className="font-medium text-sm sm:text-md text-white truncate max-w-[120px] sm:max-w-none">{contact.contactName || 'عميل جديد'}</div>
-          <div className="text-xs text-white/60 truncate max-w-[120px] sm:max-w-none text-right" dir="ltr">
+        <div className="flex flex-col items-start overflow-hidden min-w-0 flex-1">
+          <div className="font-medium text-sm sm:text-md text-white truncate w-full">{contact.contactName || 'عميل جديد'}</div>
+          {contact.lastMessage && (
+            <div className="text-[10px] sm:text-xs text-white/40 truncate w-full mt-0.5">
+              {contact.lastMessage}
+            </div>
+          )}
+          <div className="text-[10px] text-white/30 truncate w-full text-right" dir="ltr">
             {contact.contactNumber?.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '')}
           </div>
         </div>
@@ -89,6 +94,7 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
 }, (prev, next) => {
   return prev.contact.contactNumber === next.contact.contactNumber &&
          prev.contact.lastMessageTime === next.contact.lastMessageTime &&
+         prev.contact.lastMessage === next.contact.lastMessage &&
          prev.isSelected === next.isSelected &&
          prev.isEscalated === next.isEscalated &&
          prev.isOpenNote === next.isOpenNote &&
@@ -106,6 +112,7 @@ interface WhatsAppContact {
   isGroup?: boolean;
   unreadCount?: number;
   isAiBlocked?: boolean;
+  lastMessage?: string | null;
 }
 
 export default function WhatsAppChatsPage() {
@@ -235,6 +242,7 @@ export default function WhatsAppChatsPage() {
   const [contactTags, setContactTags] = useState<{[key: string]: string[]}>({});
   const [availableTags, setAvailableTags] = useState<Array<{ id: number; name: string }>>([]);
   const [filterTagId, setFilterTagId] = useState<string>("");
+  const [showOnlyEscalated, setShowOnlyEscalated] = useState(false);
   const [contactsInSelectedFilter, setContactsInSelectedFilter] = useState<Set<string> | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -931,9 +939,12 @@ export default function WhatsAppChatsPage() {
       const matchesTag = !filterTagId || 
         (contactsInSelectedFilter && contactsInSelectedFilter.has(contact.contactNumber));
 
-      return matchesSearch && matchesTag;
+      // Escalation filter
+      const matchesEscalation = !showOnlyEscalated || escalatedContacts.has(contact.contactNumber);
+
+      return matchesSearch && matchesTag && matchesEscalation;
     });
-  }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter]);
+  }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter, showOnlyEscalated, escalatedContacts]);
 
   async function handleSendMessage(phoneNumber?: string, message?: string) {
     const targetPhone = phoneNumber;
@@ -1415,6 +1426,17 @@ export default function WhatsAppChatsPage() {
                   ))}
                 </select>
               </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowOnlyEscalated(!showOnlyEscalated)}
+                className={`h-9 px-3 text-xs border border-text-primary/30 flex items-center gap-1 transition-all ${
+                  showOnlyEscalated ? 'bg-red-500/20 text-red-400 border-red-500/50' : 'bg-[#01191040] text-white'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${showOnlyEscalated ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                محولة لموظف
+              </Button>
             </div>
             </div>
             
