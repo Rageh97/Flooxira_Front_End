@@ -598,8 +598,8 @@ export default function NanoPage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className={clsx(
-                "relative w-full flex flex-col max-h-[90vh] lg:max-h-[95vh]",
-                selectedImage.aspectRatio === "9:16" ? "max-w-[400px]" : "max-w-5xl"
+                "relative w-full flex flex-col max-h-[90vh] lg:max-h-[95vh] transition-all duration-300",
+                selectedImage.aspectRatio === "9:16" ? "max-w-[450px]" : "max-w-5xl"
               )}
               onClick={(e) => e.stopPropagation()}
             >
@@ -612,12 +612,12 @@ export default function NanoPage() {
               </button>
 
               {/* Image Container - Content Area */}
-              <div className="flex flex-col h-full overflow-hidden bg-[#0d1017] rounded-2xl border border-white/10 shadow-2xl relative">
-                <div className="flex-1 min-h-0 relative flex items-center justify-center bg-black p-2">
+              <div className="flex flex-col overflow-hidden bg-[#0d1017] rounded-2xl border border-white/10 shadow-2xl relative">
+                <div className="relative flex items-center justify-center bg-black p-1 lg:p-2 min-h-[300px]">
                   <img
                     src={selectedImage.url}
                     alt={selectedImage.prompt}
-                    className="max-w-full max-h-full object-contain shadow-2xl"
+                    className="max-w-full max-h-[65vh] lg:max-h-[70vh] object-contain shadow-2xl mx-auto"
                   />
                   <BorderBeam />
                 </div>

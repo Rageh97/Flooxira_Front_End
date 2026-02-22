@@ -12,11 +12,21 @@ import {
   telegramBotPause,
   telegramBotResume,
   createChatNote,
-  apiFetch
+  apiFetch,
+  toggleAiBlock,
+  getChatNote,
+  resolveChatNote,
+  getChatContacts
 } from "@/lib/api";
+import { 
+  getPendingEscalationContacts, 
+  resolveEscalationByContact,
+  checkContactEscalation
+} from "@/lib/escalationApi";
 import { getBotSettings, updateBotSettings, BotSettings as IBotSettings } from "@/lib/botSettingsApi";
 import { getBotStatus, pauseBot, resumeBot } from "@/lib/botControlApi";
 import { listTags, addContactToTag, createTag } from "@/lib/tagsApi";
+import { useAuth } from "@/lib/auth";
 import { createPortal } from "react-dom";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { 
@@ -45,7 +55,15 @@ import {
   Info,
   X,
   Bot,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  ArrowRight,
+  TrendingUp,
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  Star,
+  Settings
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
@@ -98,9 +116,13 @@ export default function InboxPage() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const { showSuccess, showError } = useToast();
+  const { user } = useAuth();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+
+  // Profile Picture Cache
+  const [profilePicCache, setProfilePicCache] = useState<{[key: string]: string}>({});
 
   // Modals state
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -155,6 +177,14 @@ export default function InboxPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  
+  // New States for Syncing Features
+  const [isAiBlocked, setIsAiBlocked] = useState(false);
+  const [escalatedContacts, setEscalatedContacts] = useState<Set<string>>(new Set());
+  const [openNoteContacts, setOpenNoteContacts] = useState<Set<string>>(new Set());
+  const [activeNote, setActiveNote] = useState<any>(null);
+  const [liveChatUsage, setLiveChatUsage] = useState<any>(null);
+  const [currentEscalation, setCurrentEscalation] = useState<any>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -196,6 +226,20 @@ export default function InboxPage() {
   useEffect(() => {
     if (token) {
       loadBotStatuses();
+      
+      // Load global states
+      getPendingEscalationContacts().then(res => {
+        if (res.success) setEscalatedContacts(new Set(res.contacts || []));
+      });
+      
+      apiFetch<any>('/api/whatsapp/chats/notes/open', { authToken: token }).then(res => {
+        if (res.success && res.contacts) {
+          setOpenNoteContacts(new Set(res.contacts));
+        } else {
+          setOpenNoteContacts(new Set());
+        }
+      });
+
       // Fetch WhatsApp contacts to populate profile picture cache if possible
       apiFetch<any>('/api/whatsapp/contacts?limit=100', { authToken: token })
         .then(data => {
@@ -206,7 +250,16 @@ export default function InboxPage() {
                 newCache[c.contactNumber] = c.profilePicture;
               }
             });
-            setProfilePictureCache(prev => ({...prev, ...newCache}));
+            setProfilePictureCache(prev => {
+              const updated = {...prev, ...newCache};
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('whatsapp_profile_cache', JSON.stringify({
+                  timestamp: Date.now(),
+                  data: updated
+                }));
+              }
+              return updated;
+            });
           }
         })
         .catch(() => {});
@@ -251,6 +304,24 @@ export default function InboxPage() {
         loadBotStatuses();
       }
     } catch(e) {}
+  };
+
+  const handleToggleAiBlock = async () => {
+    if (!selectedConversation || !token) return;
+    try {
+      const res = await toggleAiBlock(token, selectedConversation.contactId);
+      if (res.success) {
+        showSuccess(res.message);
+        setIsAiBlocked(res.isAiBlocked);
+      }
+    } catch (e: any) { showError(e.message); }
+  };
+
+  const loadLiveChatUsage = async () => {
+    try {
+      const res = await apiFetch<any>('/api/dashboard/tickets/usage', { authToken: token });
+      if (res.success) setLiveChatUsage(res.usage);
+    } catch (e) {}
   };
 
   const handleResolveEscalation = async () => {
@@ -339,23 +410,29 @@ export default function InboxPage() {
     }
   }
 
-  async function handleResolveTicket() {
+  async function handleUpdateTicketStatus(status: string) {
     if (!selectedConversation) return;
     try {
       const res = await apiFetch<{ success: boolean; ok?: boolean }>(`/api/dashboard/tickets/${selectedConversation.contactId}/status`, {
         method: 'PUT',
         authToken: token,
-        body: JSON.stringify({ status: 'closed' })
+        body: JSON.stringify({ status })
       });
       if (res.success || res.ok) {
-        showSuccess("تم إغلاق المحادثة بنجاح");
+        showSuccess(status === 'closed' ? "تم إغلاق المحادثة بنجاح" : "تم إعادة فتح المحادثة");
+        setSelectedConversation(prev => prev ? { ...prev, status: status as any } : null);
         fetchConversations();
       } else {
-        showError("فشل إغلاق المحادثة");
+        showError("فشل تحديث حالة المحادثة");
       }
     } catch (e) {
-      showError("حدث خطأ أثناء الإغلاق");
+      showError("حدث خطأ أثناء التحديث");
     }
+  }
+
+  // Backwards compatibility for handleResolveTicket
+  async function handleResolveTicket() {
+    await handleUpdateTicketStatus('closed');
   }
 
   // Fetch conversations
@@ -400,6 +477,7 @@ export default function InboxPage() {
   // Fetch messages when a conversation is selected
   useEffect(() => {
     if (selectedConversation && token) {
+      
       const fetchMessages = async () => {
         setMessagesLoading(true);
         try {
@@ -415,7 +493,40 @@ export default function InboxPage() {
           scrollToBottom();
         }
       };
+      
       fetchMessages();
+
+      // Fetch avatar for whatsapp
+      if (selectedConversation.platform === 'whatsapp' && !profilePicCache[selectedConversation.contactId]) {
+        getChatContacts(token, 1, 0, selectedConversation.contactId).then((res) => {
+          if (res.success && res.contacts && res.contacts.length > 0) {
+            const found = res.contacts.find((c: any) => c.contactNumber === selectedConversation.contactId);
+            if (found && found.profilePicture) {
+              setProfilePicCache(prev => ({ ...prev, [selectedConversation.contactId]: found.profilePicture as string }));
+            }
+          }
+        }).catch(() => {});
+      }
+
+      // Reset states before fetching new context to prevent "ghost" data
+      setActiveNote(null);
+      setCurrentEscalation(null);
+      setIsAiBlocked(false);
+
+      // Sync additional context
+      if (selectedConversation.platform === 'whatsapp') {
+        // Check AI Block
+        apiFetch<any>(`/api/whatsapp/chats/check-ai-block?contactNumber=${selectedConversation.contactId}`, { authToken: token })
+          .then(res => setIsAiBlocked(res.isAiBlocked || false));
+        
+        // Check Note
+        getChatNote(token, selectedConversation.contactId).then(res => setActiveNote(res.note || null));
+        
+        // Check Escalation
+        checkContactEscalation(selectedConversation.contactId).then(res => setCurrentEscalation(res.escalation));
+      } else if (selectedConversation.platform === 'livechat') {
+        loadLiveChatUsage();
+      }
     }
   }, [selectedConversation, token]);
 
@@ -423,6 +534,34 @@ export default function InboxPage() {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 16 * 1024 * 1024) {
+      showError('حجم الملف كبير جداً (الحد الأقصى 16 ميجابايت)');
+      return;
+    }
+
+    setSelectedFile(file);
+    
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => setFilePreview(e.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setFilePreview(null);
+    }
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setFilePreview(null);
+    // Reset file input value if possible, though React handles state better
+    const fileInput = document.getElementById('chat-file') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   };
 
   const handleSendMessage = async () => {
@@ -496,12 +635,12 @@ export default function InboxPage() {
           type: 'outgoing',
           timestamp: new Date().toISOString(),
           contentType: selectedFile ? selectedFile.type.split('/')[0] : 'text',
-          mediaUrl: result?.url || result?.mediaUrl || (result?.messages?.[0]?.mediaUrl) || filePreview
+          mediaUrl: result?.url || result?.mediaUrl || (result?.messages?.[0]?.mediaUrl) || filePreview,
+          responseSource: 'manual'
         };
         setMessages((prev: any) => [...prev, newMsg]);
         setNewMessage("");
-        setSelectedFile(null);
-        setFilePreview(null);
+        clearSelectedFile();
         scrollToBottom();
       } else {
         showError(result?.message || "فشل إرسال الرسالة");
@@ -716,7 +855,7 @@ export default function InboxPage() {
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-4">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-2 pb-4">
           {filteredConversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-20 text-center px-4">
               <MessageSquare size={32} className="text-white/5 mb-3" />
@@ -734,7 +873,11 @@ export default function InboxPage() {
                   className={`p-2.5 mb-1.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all duration-200 relative border
                     ${selectedConversation?.id === conv.id 
                       ? 'bg-white/[0.08] border-white/10 shadow-lg' 
-                      : 'bg-transparent border-transparent hover:bg-white/[0.04]'}
+                      : escalatedContacts.has(conv.contactId) 
+                        ? 'bg-red-500/20 border-red-500/20' 
+                        : openNoteContacts.has(conv.contactId)
+                          ? 'bg-amber-500/20 border-amber-500/20'
+                          : 'bg-transparent border-transparent hover:bg-white/[0.04]'}
                   `}
                 >
                   <div className="relative shrink-0">
@@ -824,6 +967,39 @@ export default function InboxPage() {
               </div>
             </div>
 
+            {/* Escalation Resolve Banner */}
+            {currentEscalation && (
+                <div className="bg-red-500/20 border-y border-red-500/30 px-6 py-3 flex items-center justify-between backdrop-blur-sm sticky top-[80px] z-30">
+                    <div className="flex items-center gap-3">
+                        <User size={14} className="text-red-400" />
+                        <span className="text-xs font-bold text-red-200">هذه المحادثة محولة لموظف</span>
+                    </div>
+                    <Button size="sm" onClick={handleResolveEscalation} className="h-7 bg-red-600 hover:bg-red-500 text-white text-[10px] font-black px-4 rounded-lg border-none">
+                        إغلاق التحويل
+                    </Button>
+                </div>
+            )}
+
+            {/* Note Banner */}
+            {activeNote && activeNote.status === 'open' && (
+                <div className="bg-amber-500/20 border-y border-amber-500/30 px-6 py-3 flex items-center justify-between backdrop-blur-sm sticky top-[80px] z-[29]">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <FileText size={14} className="text-amber-400 shrink-0" />
+                        <span className="text-xs font-bold text-amber-200 truncate">{activeNote.note}</span>
+                    </div>
+                    <Button size="sm" onClick={async () => {
+                        const res = await resolveChatNote(token, activeNote.id);
+                        if(res.success) { showSuccess("تم حل الملحوظة"); setActiveNote(null); setOpenNoteContacts(prev => {
+                          const next = new Set(prev);
+                          next.delete(selectedConversation.contactId);
+                          return next;
+                        }); }
+                    }} className="h-7 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black px-4 rounded-lg border-none shrink-0">
+                        تم الحل
+                    </Button>
+                </div>
+            )}
+
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 z-10 custom-scrollbar relative">
               {messagesLoading ? (
@@ -842,8 +1018,13 @@ export default function InboxPage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         key={msg.id || idx}
-                        className={`flex w-full ${isOut ? 'justify-end' : 'justify-start'}`}
+                        className={`flex w-full items-end gap-2 ${isOut ? 'justify-end' : 'justify-start'}`}
                       >
+                        {!isOut && (
+                          <div className="flex-shrink-0 mb-2">
+                            <img width={28} height={28} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shadow-sm bg-black/20" src={profilePicCache[selectedConversation?.contactId] || selectedConversation?.profilePicture || selectedConversation?.avatar || "/user.gif"} alt="Client" />
+                          </div>
+                        )}
                         {(() => {
                           const mediaUrl = typeof msg.mediaUrl === 'string' 
                             ? msg.mediaUrl 
@@ -893,12 +1074,46 @@ export default function InboxPage() {
                                    ${isOut ? 'text-white/60' : 'text-gray-500'}
                                 `}>
                                   {formatTime(msg.timestamp)}
+                                  {isOut && msg.responseSource && (
+                                    <span className="mx-1 font-semibold text-[9px] bg-black/20 px-1.5 py-0.5 rounded-full">
+                                      {msg.responseSource === 'knowledge_base' || msg.responseSource === 'fuse' ? 'KB' 
+                                       : msg.responseSource === 'openai' || msg.responseSource === 'gemini' ? 'AI' 
+                                       : msg.responseSource === 'manual' ? (user?.name || msg.senderName || 'موظف') 
+                                       : 'AI'} 
+                                    </span>
+                                  )}
+                                  {isOut && !msg.responseSource && (
+                                    <span className="mx-1 font-semibold text-[9px] bg-black/20 px-1.5 py-0.5 rounded-full">
+                                      {user?.name || 'موظف'}
+                                    </span>
+                                  )}
                                   {isOut && <CheckCheck size={13} className="text-indigo-300" />}
                                 </div>
                               </div>
                             </div>
                           );
                         })()}
+                        {isOut && (
+                          <div className="flex-shrink-0 mb-2">
+                            {msg.responseSource === 'knowledge_base' || msg.responseSource === 'fuse' || msg.responseSource === 'openai' || msg.responseSource === 'gemini' || msg.responseSource === 'AI' ? (
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30 shadow-sm">
+                                <Bot size={14} className="text-indigo-400" />
+                              </div>
+                            ) : (
+                              user?.avatar ? (
+                                <img 
+                                   src={user.avatar} 
+                                   className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-green-500/30 object-cover shadow-sm bg-black/20" 
+                                   alt="Agent" 
+                                />
+                              ) : (
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-500/20 flex items-center justify-center text-xs font-bold text-green-400 border border-green-500/30 shadow-sm">
+                                  {(user?.name || msg.senderName || 'موظف').charAt(0).toUpperCase()}
+                                </div>
+                              )
+                            )}
+                          </div>
+                        )}
                       </motion.div>
                     );
                   })}
@@ -911,6 +1126,29 @@ export default function InboxPage() {
 
             {/* WhatsApp Style Fixed Input Bar */}
             <div className="bg-[#101d25] border-t border-white/5 absolute bottom-0 left-0 right-0 z-50 px-3 py-2.5">
+               
+               {/* Media Pre-Send Preview */}
+               {selectedFile && (
+                 <div className="mb-2 p-3 bg-[#202c33] rounded-xl flex items-start gap-4 shadow-2xl border border-white/10 relative -mt-[110px] sm:-mt-[150px] w-full max-w-sm mx-auto animate-in slide-in-from-bottom-5">
+                   <div className="flex-1 w-full min-w-0">
+                     <div className="flex items-center justify-between mb-2">
+                       <span className="text-[#e9edef] text-xs font-semibold truncate px-2">{selectedFile.name}</span>
+                       <button onClick={clearSelectedFile} className="text-gray-400 hover:text-red-400 transition-colors p-1 rounded-full hover:bg-white/5">
+                         <X size={16} />
+                       </button>
+                     </div>
+                     {filePreview ? (
+                       <img src={filePreview} alt="preview" className="h-24 sm:h-32 w-full object-contain bg-black/40 rounded-lg shadow-inner" />
+                     ) : (
+                       <div className="flex items-center gap-3 p-4 bg-black/20 rounded-lg flex-col justify-center text-center">
+                         <FileText size={32} className="text-gray-400" />
+                         <span className="text-gray-400 text-xs font-medium tracking-wide">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB / {selectedFile.type.split('/')[0].toUpperCase()}</span>
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               )}
+
                {/* Emoji Picker Popup */}
                {showEmojiPicker && (
                 <div ref={emojiPickerRef} className="absolute bottom-[65px] mb-2 right-4 z-[100] shadow-2xl rounded-2xl overflow-hidden border border-white/10 ring-1 ring-black">
@@ -941,7 +1179,7 @@ export default function InboxPage() {
                         <Paperclip size={20} />
                       </div>
                     </label>
-                    <input id="chat-file" type="file" className="hidden" />
+                    <input id="chat-file" onChange={handleFileSelect} type="file" accept="image/*,video/*,document/*,.pdf,.doc,.docx" className="hidden" />
                   </div>
 
                   <textarea 
@@ -992,7 +1230,7 @@ export default function InboxPage() {
             exit={{ width: 0, opacity: 0 }}
             className="bg-[#0a0c10]/60 backdrop-blur-3xl border-r border-white/5 flex flex-col z-50 overflow-hidden font-sans shrink-0"
           >
-             <div className="p-5 flex flex-col h-full overflow-y-auto custom-scrollbar">
+             <div className="p-5 flex flex-col h-full overflow-y-auto scrollbar-hide">
                 <div className="flex flex-col items-center text-center mb-8">
                    <div className="relative group mb-4">
                       <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -1019,89 +1257,155 @@ export default function InboxPage() {
                       <span className="text-[11px] font-black text-indigo-400 tracking-tight">
                         {selectedConversation.contactId}
                       </span>
-                      <div className="flex items-center gap-2 text-gray-600 text-[10px] font-medium">
+                      {/* <div className="flex items-center gap-2 text-gray-600 text-[10px] font-medium">
                          <Clock size={11} className="text-gray-600" />
                          نشط: {formatTime(selectedConversation.lastMessageTime)}
-                      </div>
+                      </div> */}
                    </div>
                 </div>
 
                 <div className="space-y-6">
                    {/* Clean Content Area (Action-Oriented) */}
 
-                   {/* Actions Center */}
-                   {selectedConversation.platform === 'livechat' ? (
-                     <section className="pt-5 border-t border-white/5 space-y-3">
-                        <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">إدارة التذكرة</h4>
-                        <div className="grid grid-cols-1 gap-2">
-                           <Button 
-                             onClick={handleResolveTicket}
-                             className="w-full bg-orange-600/90 hover:bg-orange-600 text-white rounded-lg h-10 text-[13px] font-bold gap-2"
-                           >
-                             <Check size={16} />
-                             إغلاق المحادثة
-                           </Button>
-                        </div>
-                     </section>
-                   ) : (selectedConversation.platform === 'whatsapp' || selectedConversation.platform === 'telegram') && (
-                     <section className="pt-5 border-t border-white/5 space-y-3">
-                        <div className="flex items-center justify-between">
-                           <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">البوت</h4>
-                           <div className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter ${
-                             selectedConversation.platform === 'whatsapp' 
-                               ? (waBotPaused ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500')
-                               : (tgBotPaused ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500')
-                           }`}>
-                             {selectedConversation.platform === 'whatsapp' 
-                               ? (waBotPaused ? 'PAUSED' : 'ACTIVE')
-                               : (tgBotPaused ? 'PAUSED' : 'ACTIVE')}
-                           </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 gap-2">
-                           {selectedConversation.platform === 'whatsapp' ? (
-                             waBotPaused ? (
-                               <Button onClick={handleWaResumeBot} className="w-full bg-green-600 hover:bg-green-500 text-white rounded-lg h-9 text-[12px] font-bold gap-2">
-                                 <RefreshCw size={14} /> استئناف
-                               </Button>
-                             ) : (
-                               <Button onClick={() => handleWaPauseBot(60)} variant="outline" className="w-full bg-white/5 border-white/5 hover:bg-red-500/10 text-red-100 rounded-lg h-9 text-[12px] font-bold gap-2">
-                                 <AlertCircle size={14} /> إيقاف مؤقت
-                               </Button>
-                             )
-                           ) : (
-                             tgBotPaused ? (
-                               <Button onClick={handleTgResumeBot} className="w-full bg-green-600 hover:bg-green-500 text-white rounded-lg h-9 text-[12px] font-bold gap-2">
-                                 <RefreshCw size={14} /> استئناف
-                               </Button>
-                             ) : (
-                               <Button onClick={() => handleTgPauseBot(60)} variant="outline" className="w-full bg-white/5 border-white/5 hover:bg-red-500/10 text-red-100 rounded-lg h-9 text-[12px] font-bold gap-2">
-                                 <AlertCircle size={14} /> إيقاف مؤقت
-                               </Button>
-                             )
-                           )}
-                        </div>
-                     </section>
-                   )}
+                    {/* Actions Center */}
+                    {selectedConversation.platform === 'livechat' ? (
+                      <>
+                        {liveChatUsage && (
+                          <section className="pt-2 border-t border-white/5 space-y-3">
+                            <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">الاستهلاك</h4>
+                            <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                              <div className="flex justify-between text-[11px] mb-2">
+                                <span className="text-gray-400">التذاكر المستخدمة</span>
+                                <span className="text-white font-bold">{liveChatUsage.used} / {liveChatUsage.isUnlimited ? '∞' : (liveChatUsage.total || 0)}</span>
+                              </div>
+                              <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                <div 
+                                  className="bg-indigo-500 h-full rounded-full transition-all duration-1000" 
+                                  style={{ width: `${liveChatUsage.isUnlimited ? 0 : Math.min(100, ((liveChatUsage.used || 0) / (liveChatUsage.total || 1)) * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </section>
+                        )}
 
-                   {/* Team Actions */}
-                   <section className="pt-5 border-t border-white/5 space-y-3">
-                      <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">الإجراءات</h4>
-                      <div className="grid grid-cols-1 gap-2">
-                         <button onClick={openNoteModal} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
-                            <FileText size={16} className="text-indigo-400" />
-                            <span className="text-[13px] font-medium">إضافة ملاحظة</span>
-                         </button>
-                         <button onClick={openTagModal} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
-                            <Filter size={16} className="text-purple-400" />
-                            <span className="text-[13px] font-medium">تغيير التصنيف</span>
-                         </button>
-                         <button onClick={() => setShowAssignModal(true)} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
-                            <User size={16} className="text-emerald-400" />
-                            <span className="text-[13px] font-medium">تحويل لموظف</span>
-                         </button>
-                      </div>
-                   </section>
+                        {selectedConversation.status === 'closed' && selectedConversation.ticketData?.rating && (
+                          <section className="pt-5 border-t border-white/5 space-y-3">
+                            <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">تقييم العميل</h4>
+                            <div className="bg-amber-500/10 rounded-xl p-3 border border-amber-500/10 flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <Star size={14} className="text-amber-400 fill-amber-400" />
+                                <span className="text-lg font-black text-amber-100">{selectedConversation.ticketData.rating}</span>
+                              </div>
+                              {selectedConversation.ticketData.feedback && (
+                                <p className="text-[10px] text-amber-200/60 font-medium italic">"{selectedConversation.ticketData.feedback}"</p>
+                              )}
+                            </div>
+                          </section>
+                        )}
+
+                        <section className="pt-5 border-t border-white/5 space-y-3">
+                            <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">إدارة التذكرة</h4>
+                            <div className="grid grid-cols-1 gap-2">
+                              {selectedConversation.status === 'closed' ? (
+                                <Button 
+                                  onClick={() => handleUpdateTicketStatus('open')}
+                                  className="w-full bg-emerald-600/90 hover:bg-emerald-600 text-white rounded-lg h-10 text-[13px] font-bold gap-2 border-none"
+                                >
+                                  <RefreshCw size={16} />
+                                  إعادة فتح المحادثة
+                                </Button>
+                              ) : (
+                                <Button 
+                                  onClick={() => handleUpdateTicketStatus('closed')}
+                                  className="w-full bg-orange-600/90 hover:bg-orange-600 text-white rounded-lg h-10 text-[13px] font-bold gap-2 border-none"
+                                >
+                                  <Check size={16} />
+                                  إغلاق المحادثة
+                                </Button>
+                              )}
+                            </div>
+                        </section>
+                      </>
+                    ) : (selectedConversation.platform === 'whatsapp' || selectedConversation.platform === 'telegram') && (
+                      <>
+                        <section className="pt-5 border-t border-white/5 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">الرد الآلي (AI)</h4>
+                              <div className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter ${
+                                isAiBlocked ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'
+                              }`}>
+                                {isAiBlocked ? 'BLOCKED' : 'ACTIVE'}
+                              </div>
+                            </div>
+                            <Button 
+                              onClick={handleToggleAiBlock}
+                              variant="outline"
+                              className={`w-full rounded-lg h-9 text-[12px] font-bold gap-2 transition-all ${
+                                isAiBlocked 
+                                  ? 'bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20' 
+                                  : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20'
+                              }`}
+                            >
+                              {isAiBlocked ? <RefreshCw size={14} /> : <AlertCircle size={14} />}
+                              {isAiBlocked ? 'تفعيل الرد الآلي' : 'تعطيل الرد الآلي'}
+                            </Button>
+                        </section>
+
+                        <section className="pt-5 border-t border-white/5 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">حالة البوت</h4>
+                              <div className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter ${
+                                selectedConversation.platform === 'whatsapp' 
+                                  ? (waBotPaused ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500')
+                                  : (tgBotPaused ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500')
+                              }`}>
+                                {selectedConversation.platform === 'whatsapp' 
+                                  ? (waBotPaused ? 'PAUSED' : 'ACTIVE')
+                                  : (tgBotPaused ? 'PAUSED' : 'ACTIVE')}
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 gap-2">
+                              {selectedConversation.platform === 'whatsapp' ? (
+                                waBotPaused ? (
+                                  <Button onClick={handleWaResumeBot} className="w-full bg-green-600 hover:bg-green-500 text-white rounded-lg h-9 text-[12px] font-bold gap-2 border-none">
+                                    <RefreshCw size={14} /> استئناف البوت
+                                  </Button>
+                                ) : (
+                                  <Button onClick={() => handleWaPauseBot(60)} variant="outline" className="w-full bg-white/5 border-white/5 hover:bg-red-500/10 text-red-100 rounded-lg h-9 text-[12px] font-bold gap-2">
+                                    <AlertCircle size={14} /> إيقاف مؤقت (ساعة)
+                                  </Button>
+                                )
+                              ) : (
+                                tgBotPaused ? (
+                                  <Button onClick={handleTgResumeBot} className="w-full bg-green-600 hover:bg-green-500 text-white rounded-lg h-9 text-[12px] font-bold gap-2 border-none">
+                                    <RefreshCw size={14} /> استئناف البوت
+                                  </Button>
+                                ) : (
+                                  <Button onClick={() => handleTgPauseBot(60)} variant="outline" className="w-full bg-white/5 border-white/5 hover:bg-red-500/10 text-red-100 rounded-lg h-9 text-[12px] font-bold gap-2">
+                                    <AlertCircle size={14} /> إيقاف مؤقت (ساعة)
+                                  </Button>
+                                )
+                              )}
+                            </div>
+                        </section>
+
+                        <section className="pt-5 border-t border-white/5 space-y-3">
+                            <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">الإجراءات</h4>
+                            <div className="grid grid-cols-1 gap-2">
+                              <button onClick={openNoteModal} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
+                                  <FileText size={16} className="text-indigo-400" />
+                                  <span className="text-[13px] font-medium">إضافة ملاحظة</span>
+                              </button>
+                              <button onClick={openTagModal} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
+                                  <Filter size={16} className="text-purple-400" />
+                                  <span className="text-[13px] font-medium">اضافة لتصنيف</span>
+                              </button>
+                              
+                            </div>
+                        </section>
+                      </>
+                    )}
                 </div>
                 
                
@@ -1112,6 +1416,13 @@ export default function InboxPage() {
 
       {/* Exquisite Scrollbar & Animations */}
       <style jsx global>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
         .custom-scrollbar::-webkit-scrollbar {
           width: 5px;
         }
@@ -1129,42 +1440,53 @@ export default function InboxPage() {
       
       {/* Note Modal */}
       {showNoteModal && (typeof window !== 'undefined') && createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/50">
+        <div className="fixed inset-0 z-[1000000000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
           <div className="absolute inset-0" onClick={() => setShowNoteModal(false)} />
-          <div className="relative z-10 w-full max-w-lg bg-white rounded-2xl p-6 shadow-2xl border border-gray-100">
+          <div className="relative z-10 w-full max-w-lg gradient-border rounded-lg p-4 max-h-[90vh] overflow-y-auto border border-text-primary/50">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-800 text-lg font-bold">إضافة ملاحظة على المحادثة</h3>
-              <button onClick={() => setShowNoteModal(false)} className="text-gray-400 hover:text-red-500 transition-colors">✕</button>
+              <h3 className="text-white text-lg font-semibold">إضافة ملاحظة على الشات</h3>
+              <button onClick={() => setShowNoteModal(false)} className="text-red-400 cursor-pointer text-xl">✕</button>
             </div>
             
             <div className="space-y-4">
+              {selectedConversation && (
+                <div className="text-xs text-gray-400 mb-2">
+                  لجهة الاتصال: {selectedConversation.contactId}
+                </div>
+              )}
+              
               <textarea 
-                className="w-full h-32 p-3 rounded-xl bg-gray-50 text-gray-800 border border-gray-200 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                className="w-full h-32 p-3 rounded-md bg-[#01191040] text-white border border-blue-300/30 outline-none focus:border-blue-500 transition-colors"
                 placeholder="اكتب ملاحظتك هنا..."
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
               />
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-600">منشن لموظف (اختياري)</label>
-                <select
-                  className="w-full bg-gray-50 rounded-xl px-3 py-3 text-gray-700 outline-none border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  value={selectedMentionEmployeeId}
-                  onChange={(e) => setSelectedMentionEmployeeId(e.target.value)}
-                >
-                  <option value="none">بدون منشن</option>
-                  {employees.filter(emp => emp.isActive && emp.phone).map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name} ({emp.phone})</option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-gray-500">سيتم إرسال إشعار للموظف عبر رسائل واتساب داخلية</p>
+                <label className="block text-sm text-gray-300">منشن لموظف (اختياري)</label>
+                <div className="flex items-center gap-2">
+                  <select
+                    className="flex-1 bg-[#01191040] rounded px-3 py-2 text-white outline-none border border-blue-300/30 focus:border-blue-500"
+                    value={selectedMentionEmployeeId}
+                    onChange={(e) => setSelectedMentionEmployeeId(e.target.value)}
+                  >
+                    <option value="none">بدون منشن</option>
+                    {employees.filter(emp => emp.isActive && emp.phone).map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.phone})</option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-[10px] text-gray-400">سيتم إرسال إشعار للموظف عبر الواتساب فور حفظ الملاحظة</p>
               </div>
               
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                <Button variant="ghost" className="text-gray-500 hover:text-gray-700" onClick={() => setShowNoteModal(false)}>
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button 
+                  className="px-4 py-2 text-white border border-text-primary rounded-md hover:bg-white/5 transition-colors"
+                  onClick={() => setShowNoteModal(false)}
+                >
                   إلغاء
-                </Button>
-                <Button 
+                </button>
+                <button 
                   onClick={async () => {
                     if (!selectedConversation || !noteText.trim()) return;
                     try {
@@ -1179,16 +1501,17 @@ export default function InboxPage() {
                           }
                         }
                         showSuccess('تم حفظ الملاحظة بنجاح');
+                        setOpenNoteContacts(prev => new Set(prev).add(selectedConversation.contactId));
                         setShowNoteModal(false);
                       }
                     } catch (e: any) { showError('فشل في حفظ الملاحظة'); } 
                     finally { setSavingNote(false); }
                   }}
                   disabled={savingNote || !noteText.trim()}
-                  className="bg-primary hover:text-white hover:bg-primary/90 rounded-xl px-6"
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md transition-colors font-medium shadow-lg"
                 >
                   {savingNote ? 'جاري الحفظ...' : 'حفظ الملاحظة'}
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -1198,15 +1521,21 @@ export default function InboxPage() {
 
       {/* Tag Modal */}
       {showTagModal && (typeof window !== 'undefined') && createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/50">
+        <div className="fixed inset-0 z-[1000000000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
           <div className="absolute inset-0" onClick={() => setShowTagModal(false)} />
-          <div className="relative z-10 w-full max-w-sm bg-white rounded-2xl p-5 shadow-2xl border border-gray-100">
-            <h3 className="text-gray-800 text-base font-bold mb-4">إضافة إلى تصنيف</h3>
-            <div className="space-y-4">
+          <div className="relative z-10 w-full max-w-xl gradient-border rounded-lg p-4 max-h-[90vh] overflow-y-auto border border-text-primary/50">
+            <h3 className="text-white text-lg font-medium mb-3">إضافة إلى تصنيف</h3>
+            <div className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-2">اختر تصنيف موجود</label>
+                <label className="block text-sm text-gray-300 mb-1">جهة الاتصال</label>
+                <div className="w-full bg-[#01191040] rounded px-3 py-2 text-white outline-none border border-blue-300/30 font-mono text-sm">
+                  {selectedConversation?.contactId || 'اختر جهة اتصال'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">التصنيف</label>
                 <select
-                  className="w-full bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-700 outline-none border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full bg-[#01191040]  rounded px-3 py-2 text-white outline-none border border-blue-300/30"
                   value={selectedTagId ?? ''}
                   onChange={(e) => setSelectedTagId(parseInt(e.target.value))}
                 >
@@ -1216,24 +1545,17 @@ export default function InboxPage() {
                   ))}
                 </select>
               </div>
-
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
-                <div className="relative flex justify-center text-[10px] uppercase font-bold"><span className="bg-white px-2 text-gray-400">أو إضافة تصنيف جديد</span></div>
-              </div>
-
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="اسم التصنيف الجديد..."
-                  className="flex-1 bg-gray-50 border-gray-200 text-sm h-10"
+              
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  className="flex-1 bg-[#01191040] rounded px-3 py-2 text-white placeholder-white/50 outline-none border border-blue-300/30"
+                  placeholder="إنشاء تصنيف سريع"
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
                 />
-                <Button 
-                  size="sm"
-                  className="bg-primary hover:bg-primary/90 text-white h-10 px-3"
-                  disabled={!newTagName.trim() || creatingTag}
+                <button 
                   onClick={async () => {
+                    if (!newTagName.trim() || creatingTag) return;
                     try {
                       setCreatingTag(true);
                       const res = await createTag({ name: newTagName.trim() });
@@ -1247,16 +1569,17 @@ export default function InboxPage() {
                       }
                     } catch (e: any) { showError(e.message); } finally { setCreatingTag(false); }
                   }}
+                  disabled={!newTagName.trim() || creatingTag || tagLoading} 
+                  className="bg-transparent rounded-md px-4 py-2 text-white inner-shadow border border-text-primary whitespace-nowrap"
                 >
-                  {creatingTag ? <Loader size="sm" variant="primary" /> : "إضافة"}
-                </Button>
+                  {creatingTag ? 'جاري الإضافة...' : 'إنشاء'}
+                </button>
               </div>
-
-              <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
-                <Button variant="ghost" size="sm" className="w-full text-gray-500 hover:text-gray-700 text-xs" onClick={() => setShowTagModal(false)}>إلغاء</Button>
-                <Button size="sm" className="w-full bg-primary text-white shadow-md hover:bg-primary/90 rounded-xl text-xs" onClick={handleAddToTag} disabled={!selectedTagId || tagLoading}>
-                  {tagLoading ? 'جاري الحفظ...' : 'حفظ الإضافة'}
-                </Button>
+              <div className="flex items-center w-full gap-2 pt-4 mt-2 border-t border-text-primary/30">
+                <button className="w-full text-white primary-button after:bg-red-700 before:bg-red-700 h-10" onClick={() => setShowTagModal(false)}>إلغاء</button>
+                <button onClick={handleAddToTag} disabled={!selectedTagId || !selectedConversation || tagLoading} className="after:bg-[#01191040] before:bg-[#01191080] w-full primary-button h-10">
+                  {tagLoading ? 'جاري الإضافة...' : 'إضافة'}
+                </button>
               </div>
             </div>
           </div>
@@ -1297,7 +1620,7 @@ export default function InboxPage() {
       )}
 
       {/* Media Preview Modal */}
-      {previewMedia && createPortal(
+      {previewMedia && (typeof window !== 'undefined') && createPortal(
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm p-4 md:p-10"
           onClick={() => setPreviewMedia(null)}
@@ -1316,7 +1639,7 @@ export default function InboxPage() {
                 alt="preview" 
                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
               />
-            ) : previewMedia && (
+            ) : (
               <video 
                 src={previewMedia.url} 
                 controls 
