@@ -341,7 +341,7 @@ export default function WhatsAppSettingsPage() {
           </div>
         </CardContent>
       </Card>
-      <div className="flex items-center lg:flex-row flex-col gap-2 w-full mx-auto ">
+      <div className="flex items-center 2xl:flex-row flex-col gap-2 w-full mx-auto ">
         
       <Card className="gradient-border mt-2 w-full mx-auto ">
         <CardHeader className="flex items-center justify-between">
@@ -469,7 +469,7 @@ export default function WhatsAppSettingsPage() {
           )}
 <div className="text-gray-400 flex  gap-2 mb-9">
             <Notebook className="text-yellow-500 w-[55px] "/>
-            <p className="text-lg text-italic">            عند تفعيل هذا الخيار سيتم إرسال جميع الإشعارات والتنبيهات مباشرة داخل كروب الواتساب الذي قمت باختياره.
+            <p className="text-md text-italic">            عند تفعيل هذا الخيار سيتم إرسال جميع الإشعارات والتنبيهات مباشرة داخل كروب الواتساب الذي قمت باختياره.
 تأكد من تحديد الكروب الصحيح لأن النظام سيعتمد عليه بالكامل في استقبال التحديثات والرسائل.
 يجب أن يمتلك البوت أو النظام صلاحية الإرسال داخل الكروب حتى تصل الإشعارات بدون مشاكل.
 في حال رغبت بتغيير الكروب لاحقاً يمكنك تعديل الإعدادات من لوحة التحكم وتحديث مسار الإشعارات.

@@ -192,7 +192,7 @@ export default function AskAIPage() {
       {/* Header */}
       <div className="shrink-0 flex flex-col gap-4 mt-4 md:mt-6 mb-6 md:mb-8 px-3 md:px-4">
         {/* Search Bar - Mobile First */}
-        <div className="w-full md:hidden">
+        {/* <div className="w-full md:hidden">
           <div className="relative rounded-[20px] overflow-hidden">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
             <input 
@@ -203,11 +203,11 @@ export default function AskAIPage() {
             /> 
             <BorderBeam duration={4} delay={9} />
           </div>
-        </div>
+        </div> */}
 
         {/* Desktop Layout */}
         <div className="hidden md:flex items-center justify-between gap-4">
-          <div className="w-96 hidden xl:block shrink-0">
+          {/* <div className="w-96 hidden xl:block shrink-0">
             <div className="relative rounded-[20px] overflow-hidden">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
               <input 
@@ -218,28 +218,28 @@ export default function AskAIPage() {
               /> 
               <BorderBeam duration={4} delay={9} />
             </div>
-          </div>
+          </div> */}
 
-          <div className="flex-1 flex justify-center gap-4">
+          <div className="flex-1 flex justify-center gap-2 md:gap-4">
             <Button
               onClick={() => router.push('/ask-ai')}
-              className="flex items-center gap-2 bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-500/30 px-6 py-3 rounded-[20px] transition-all"
+              className="flex items-center gap-1 md:gap-2 bg-green-600/10 hover:bg-green-600/20 text-green-400 border border-green-500/30 px-3 md:px-4 lg:px-6 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs md:text-sm"
             >
-              <Home className="w-5 h-5" />
+              <Home className="w-4 h-4 md:w-5 h-5" />
               <span className="font-bold">الرئيسية</span>
             </Button>
             <Button
               onClick={() => router.push('/ask-ai/chat')}
-              className="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all"
+              className="flex items-center gap-1 md:gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 md:px-4 lg:px-6 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs md:text-sm"
             >
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className="w-4 h-4 md:w-5 h-5" />
               <span className="font-bold">شات GPT</span>
             </Button>
             <Button
               onClick={() => router.push('/ask-ai/media')}
-              className="flex items-center gap-2 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/30 px-6 py-3 rounded-[20px] transition-all"
+              className="flex items-center gap-1 md:gap-2 bg-purple-600/10 hover:bg-purple-600/20 text-purple-400 border border-purple-500/30 px-3 md:px-4 lg:px-6 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs md:text-sm"
             >
-              <ImageIcon className="w-5 h-5" />
+              <ImageIcon className="w-4 h-4 md:w-5 h-5" />
               <span className="font-bold">أدوات الميديا</span>
             </Button>
           </div>

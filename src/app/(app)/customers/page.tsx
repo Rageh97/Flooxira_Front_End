@@ -1288,30 +1288,30 @@ useEffect(() => {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Card className="gradient-border border-none h-16">
-            <CardContent className="p-4 ">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
-                    <Users className="w-6 h-6 text-primary" />
+          <Card className="gradient-border border-none min-h-16 h-auto">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center">
+                    <Users className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-sm md:text-lg font-bold">إجمالي العملاء</p>
+                  <p className="text-gray-200 text-[10px] md:text-sm lg:text-base font-bold">إجمالي العملاء</p>
                 </div>
-                <p className="md:text-4xl text-lg font-bold text-white">{stats.totalCustomers}</p>
+                <p className="text-base md:text-2xl lg:text-3xl font-bold text-white">{stats.totalCustomers}</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="gradient-border border-none h-16">
-            <CardContent className="p-4 ">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
-                    <UserCheck className="w-6 h-6 text-primary" />
+          <Card className="gradient-border border-none min-h-16 h-auto">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center">
+                    <UserCheck className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-sm md:text-lg font-bold">العملاء النشطين</p>
+                  <p className="text-gray-200 text-[10px] md:text-sm lg:text-base font-bold">العملاء النشطين</p>
                 </div>
-                <p className="md:text-4xl text-lg font-bold text-white">{stats.activeCustomers}</p>
+                <p className="text-base md:text-2xl lg:text-3xl font-bold text-white">{stats.activeCustomers}</p>
               </div>
             </CardContent>
           </Card>
@@ -1330,16 +1330,16 @@ useEffect(() => {
             </CardContent>
           </Card> */}
 
-          <Card className="gradient-border border-none h-16">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
-                    <XCircle className="w-6 h-6 text-red-500" />
+          <Card className="gradient-border border-none min-h-16 h-auto">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center">
+                    <XCircle className="w-4 h-4 md:w-6 md:h-6 text-red-500" />
                   </div>
-                  <p className="text-gray-200 text-xs md:text-lg font-bold">الاشتراكات المنتهية</p>
+                  <p className="text-gray-200 text-[10px] md:text-sm lg:text-base font-bold">الاشتراكات المنتهية</p>
                 </div>
-                <p className="md:text-4xl text-xs font-bold text-white">
+                <p className="text-base md:text-2xl lg:text-3xl font-bold text-white">
                   {stats?.customersByStatus?.find((s: any) => s.subscriptionStatus === 'expired')?.count || 0}
                 </p>
               </div>
@@ -1349,44 +1349,44 @@ useEffect(() => {
       {stats && (stats as any).financial && user?.role !== 'employee' && (
         <> 
         {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> */}
-          <Card className="gradient-border border-none h-16">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
-                    <Package className="w-6 h-6 text-primary" />
+          <Card className="gradient-border border-none min-h-16 h-auto">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center">
+                    <Package className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-xs md:text-lg font-bold">رأس المال الكلي</p>
+                  <p className="text-gray-200 text-[10px] md:text-sm lg:text-base font-bold">رأس المال الكلي</p>
                 </div>
-                <p className="md:text-2xl text-xs font-bold text-white">{(stats as any).financial.totalCapital} ر.س</p>
+                <p className="text-xs md:text-lg lg:text-xl font-bold text-white whitespace-nowrap">{(stats as any).financial.totalCapital} ر.س</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="gradient-border border-none h-16">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-primary" />
+          <Card className="gradient-border border-none min-h-16 h-auto">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-xs md:text-lg font-bold">الإيرادات الكلية</p>
+                  <p className="text-gray-200 text-[10px] md:text-sm lg:text-base font-bold">الإيرادات الكلية</p>
                 </div>
-                <p className="md:text-2xl text-xs font-bold text-white">{(stats as any).financial.totalRevenue} ر.س</p>
+                <p className="text-xs md:text-lg lg:text-xl font-bold text-white whitespace-nowrap">{(stats as any).financial.totalRevenue} ر.س</p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="gradient-border border-none h-16">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8  rounded-lg flex items-center justify-center">
-                    <Crown className="w-6 h-6 text-primary" />
+          <Card className="gradient-border border-none min-h-16 h-auto">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center justify-between gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center">
+                    <Crown className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                   </div>
-                  <p className="text-gray-200 text-xs md:text-lg font-bold">صافي الربح</p>
+                  <p className="text-gray-200 text-[10px] md:text-sm lg:text-base font-bold">صافي الربح</p>
                 </div>
-                <p className="md:text-2xl text-xs font-bold text-white">{(stats as any).financial.netProfit} ر.س</p>
+                <p className="text-xs md:text-lg lg:text-xl font-bold text-white whitespace-nowrap">{(stats as any).financial.netProfit} ر.س</p>
               </div>
             </CardContent>
           </Card>

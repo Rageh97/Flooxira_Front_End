@@ -280,7 +280,7 @@ export default function DashboardPage() {
       </div> */}
 
       {/* Main Stats Grid */}
-      <div className="grid gap-2 grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 ">
+      <div className="grid gap-2 grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 xxl:grid-cols-6 ">
         <Card className="gradient-border card-hover-effect">
           <CardHeader className="flex flex-row items-center justify-between p-2 md:p-6 pb-2">
             <div className="flex items-center gap-1 md:gap-2">
@@ -504,7 +504,7 @@ export default function DashboardPage() {
 
           
           <div className="flex flex-col items-center justify-center ">
-           <div className="text-[9px] md:text-xl font-bold text-primary whitespace-nowrap">{customerStats?.financial?.netProfit || 0} ر.س</div>
+           <div className="text-[9px] md:text-md   font-bold text-primary whitespace-nowrap">{customerStats?.financial?.netProfit || 0} ر.س</div>
             {/* <div className=" text-xs text-green-300">
               +12% معدل النمو
             </div> */}

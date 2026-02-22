@@ -36,7 +36,7 @@ export default function WhatsAppStatsPage() {
       )}
 
       {botStats && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 xxl:grid-cols-4">
           <Card className="gradient-border border-none">
             <CardContent className="p-6 flex items-center justify-between">
               <div className="text-[50px] font-bold text-orange-500 ">{botStats.totalMessages}</div>

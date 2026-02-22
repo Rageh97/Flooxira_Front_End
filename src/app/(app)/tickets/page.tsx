@@ -1419,19 +1419,19 @@ export default function TicketsPage() {
       )}
 
       {/* Tickets Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-4 items-start">
        <Button
                     variant="default"
                     size="sm"
-                    className="lg:hidden p-0 h-auto hover:bg-transparent py-3 bg-fixed-40 text-white w-full flex items-center justify-start"
+                    className="xl:hidden p-0 h-auto hover:bg-transparent py-3 bg-fixed-40 text-white w-full flex items-center justify-start"
                     onClick={() => setSelectedTicket(null)}
                   >
-                    <div className="flex items-center w-full justify-end gap-2">
+                    <div className="flex items-center w-full justify-end gap-2 px-4">
                       الرجوع لاختيار تذكرة
-                    <ArrowRight className="h-6 w-6 text-primary" />
+                    <ArrowRight className="h-5 w-5 text-primary" />
                     </div>
                   </Button>
-        <Card className={`gradient-border border-none h-[640px] flex flex-col overflow-hidden ${selectedTicket ? 'hidden lg:flex' : 'flex'}`}>
+        <Card className={`gradient-border border-none h-[680px] flex flex-col overflow-hidden ${selectedTicket ? 'hidden xl:flex' : 'flex'}`}>
           <CardHeader className="space-y-4">
             <div>
               <CardTitle className="text-white">قائمة التذاكر</CardTitle>
@@ -1492,17 +1492,17 @@ export default function TicketsPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <div className="flex items-center gap-2 min-w-0">
-                                <h3 className="font-semibold text-white truncate">
+                                <h4 className="text-sm font-bold text-white truncate">
                                   {ticket.visitorName || `عميل جديد `}
-                                </h3>
+                                </h4>
                                 {ticket.rating && (
-                                  <div className="flex items-center gap-0.5 bg-yellow-400/20 px-1.5 py-0.5 rounded text-[10px] text-yellow-400 font-bold shrink-0">
-                                    {ticket.rating}<Star className="h-2.5 w-2.5 fill-yellow-400" />
+                                  <div className="flex items-center gap-0.5 bg-yellow-400/20 px-1 py-0.5 rounded text-[9px] text-yellow-400 font-bold shrink-0">
+                                    {ticket.rating}<Star className="h-2 w-2 fill-yellow-400" />
                                   </div>
                                 )}
                               </div>
-                              <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                                {new Date(ticket.createdAt).toLocaleDateString("en-GB")} {new Date(ticket.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              <span className="text-[9px] text-gray-400 whitespace-nowrap">
+                                {new Date(ticket.createdAt).toLocaleTimeString("ar-SA", { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                             
@@ -1560,20 +1560,16 @@ export default function TicketsPage() {
           </CardContent>
         </Card>
 
-        <Card className={`gradient-border border-none h-[640px] flex flex-col overflow-hidden ${!selectedTicket ? 'hidden lg:flex' : 'flex'}`}>
+        <Card className={`gradient-border border-none h-[680px] flex flex-col overflow-hidden ${!selectedTicket ? 'hidden xl:flex' : 'flex'}`}>
           {selectedTicket ? (
             <CardContent className="p-4 flex-1 flex flex-col min-h-0 border-none">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4  ">
-                <div className="flex items-center gap-10">
-                 
-                  {/* <h2 className="text-xl font-semibold text-white">
-                    {selectedTicket.visitorName || `عميل جديد`}
-                  </h2> */}
-                  <p className="text-sm text-primary mt-1">
-                    رقم التذكرة: {selectedTicket.ticketNumber || `#${selectedTicket.id}`}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 border-b border-white/5 pb-4">
+                <div className="flex flex-wrap items-center gap-3 md:gap-6">
+                  <p className="text-xs md:text-sm text-primary font-bold">
+                    {selectedTicket.ticketNumber || `#${selectedTicket.id}`}
                   </p>
-                  <p className="text-xs text-gray-200 mt-1">
-                    تم الإنشاء في {new Date(selectedTicket.createdAt).toLocaleDateString("en-GB")} {new Date(selectedTicket.createdAt).toLocaleTimeString("en-US", { hour: '2-digit', minute: '2-digit', hour12: true })}
+                  <p className="text-[10px] md:text-xs text-gray-400">
+                    بدأت: {new Date(selectedTicket.createdAt).toLocaleDateString("ar-SA", { day: 'numeric', month: 'short' })} {new Date(selectedTicket.createdAt).toLocaleTimeString("ar-SA", { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 <div className="flex items-center justify-between gap-3">

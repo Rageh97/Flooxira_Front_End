@@ -808,12 +808,12 @@ export default function WhatsAppPage() {
                   تحديث
                 </Button> */}
                  <Button 
-                className={`w-1/2 primary-button after:bg-[#01191080] text-[9px] lg:text-lg ${status?.botPaused ? 'after:bg-green-500' : 'after:bg-red-500'}`} 
+                className={`w-1/2 primary-button after:bg-[#01191080] text-[9px] lg:text-sm ${status?.botPaused ? 'after:bg-green-500' : 'after:bg-red-500'}`} 
                 onClick={handleToggleBot} 
                 disabled={loading || (status?.status !== 'connected' && status?.status !== 'CONNECTED' && status?.status !== 'inChat')} 
                 variant={status?.botPaused ? "secondary" : "destructive"}
               >
-                {status?.botPaused ? 'استئناف البوت (البوت متوقف حالياً)' : 'ايقاف البوت (البوت يعمل حالياً)'}
+                {status?.botPaused ? 'استئناف  (البوت متوقف حالياً)' : 'ايقاف  (البوت يعمل حالياً)'}
               </Button>
                 
                 {status?.status === 'disconnected' || !status ? (
