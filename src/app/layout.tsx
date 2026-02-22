@@ -35,7 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={` antialiased`}>
         <Providers>
             {children}
-            <Toaster position="top-right" dir="rtl" />
+            <Toaster position="top-right" dir="rtl" toastOptions={{ style: { zIndex: 9999 } }} />
         </Providers>
 
       </body>

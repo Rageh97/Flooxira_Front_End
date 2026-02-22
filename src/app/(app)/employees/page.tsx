@@ -262,9 +262,9 @@ export default function EmployeesPage() {
       } else {
         showError(response.message || 'خطأ في إنشاء الموظف');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating employee:', error);
-      showError('خطأ في إنشاء الموظف');
+      showError(error.message || 'خطأ في إنشاء الموظف');
     }
   };
 
@@ -294,9 +294,9 @@ export default function EmployeesPage() {
       } else {
         toast.error(response.message || 'خطأ في تحديث الموظف');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating employee:', error);
-      toast.error('خطأ في تحديث الموظف');
+      toast.error(error.message || 'خطأ في تحديث الموظف');
     }
   };
 
@@ -326,9 +326,9 @@ export default function EmployeesPage() {
       } else {
         toast.error(response.message || 'خطأ في حذف الموظف');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting employee:', error);
-      toast.error('خطأ في حذف الموظف');
+      toast.error(error.message || 'خطأ في حذف الموظف');
     }
   };
 
