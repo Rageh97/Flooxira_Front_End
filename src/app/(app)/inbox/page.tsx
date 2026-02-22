@@ -51,6 +51,8 @@ import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
+import { GradientButton } from "@/components/ui/gradient-button";
+import { BorderBeam } from "@/components/ui/border-beam";
 
 // Native Date Formatter to replace date-fns
 const formatTime = (dateStr: string) => {
@@ -529,62 +531,59 @@ export default function InboxPage() {
 
     if (platform === 'whatsapp') {
       return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <div className="flex items-center gap-4 bg-white/60 p-4 rounded-2xl shadow-sm border border-white/50 backdrop-blur-md">
-            <div className="w-12 h-12 rounded-xl bg-[#25D366]/10 flex items-center justify-center text-[#25D366]">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
               <Phone size={22} />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-gray-500 font-semibold mb-1 uppercase tracking-wider">رقم الهاتف النشط</p>
-              <p className="text-sm font-bold text-gray-800 dir-ltr text-right">{contactId}</p>
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">رقم الهاتف</p>
+              <p className="text-sm font-bold text-white dir-ltr text-right">{contactId}</p>
             </div>
           </div>
-              <div className="flex items-center gap-4 bg-white/60 p-4 rounded-2xl shadow-sm border border-white/50 backdrop-blur-md">
-            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
               <Info size={22} />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-gray-500 font-semibold mb-1 uppercase tracking-wider">معلومات واتساب</p>
-              <p className="text-sm font-bold text-gray-800">حساب متصل بنجاح</p>
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">الحالة</p>
+              <p className="text-sm font-bold text-emerald-400">حساب متصل</p>
             </div>
           </div>
-
-        
         </motion.div>
       );
     }
     
     if (platform === 'telegram') {
       return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <div className="flex items-center gap-4 bg-white/60 p-4 rounded-2xl shadow-sm border border-white/50 backdrop-blur-md">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
             <div className="w-12 h-12 rounded-xl bg-[#0088cc]/10 flex items-center justify-center text-[#0088cc]">
               <AtSign size={22} />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-gray-500 font-semibold mb-1 uppercase tracking-wider">اسم المستخدم</p>
-              <p className="text-sm font-bold text-gray-800 dir-ltr text-right">{contactId.startsWith('@') ? contactId : `@${contactId}`}</p>
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">اسم المستخدم</p>
+              <p className="text-sm font-bold text-white dir-ltr text-right">{contactId.startsWith('@') ? contactId : `@${contactId}`}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 bg-white/60 p-4 rounded-2xl shadow-sm border border-white/50 backdrop-blur-md">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
               <User size={22} />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-gray-500 font-semibold mb-1 uppercase tracking-wider">الاسم بالكامل</p>
-              <p className="text-sm font-bold text-gray-800">{name}</p>
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">الاسم</p>
+              <p className="text-sm font-bold text-white">{name}</p>
             </div>
           </div>
 
-          {/* Telegram Settings Section */}
-          <div className="mt-6 pt-6 border-t border-gray-100">
-            <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Bot size={14} />
+          <div className="mt-6 pt-6 border-t border-white/5">
+            <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <Bot size={14} className="text-indigo-400" />
               إعدادات تليجرام
             </h4>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">تفعيل الذكاء الاصطناعي</span>
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                <span className="text-xs font-bold text-gray-300">تفعيل الذكاء الاصطناعي</span>
                 <button 
                   onClick={async () => {
                     if(!botSettings) return;
@@ -592,13 +591,13 @@ export default function InboxPage() {
                     setBotSettings({...botSettings, telegramAiEnabled: newVal});
                     await updateBotSettings({ telegramAiEnabled: newVal });
                   }}
-                  className={`w-10 h-5 rounded-full relative transition-colors ${botSettings?.telegramAiEnabled ? 'bg-primary' : 'bg-gray-300'}`}
+                  className={`w-10 h-5 rounded-full relative transition-colors ${botSettings?.telegramAiEnabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
                 >
                   <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${botSettings?.telegramAiEnabled ? 'left-1' : 'right-1'}`} />
                 </button>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                <span className="text-sm font-semibold text-gray-700">تنبيهات الرسائل</span>
+              <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                <span className="text-xs font-bold text-gray-300">تنبيهات الرسائل</span>
                 <button 
                   onClick={async () => {
                     if(!botSettings) return;
@@ -606,7 +605,7 @@ export default function InboxPage() {
                     setBotSettings({...botSettings, telegramNotifyEnabled: newVal});
                     await updateBotSettings({ telegramNotifyEnabled: newVal });
                   }}
-                  className={`w-10 h-5 rounded-full relative transition-colors ${botSettings?.telegramNotifyEnabled ? 'bg-primary' : 'bg-gray-300'}`}
+                  className={`w-10 h-5 rounded-full relative transition-colors ${botSettings?.telegramNotifyEnabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
                 >
                   <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${botSettings?.telegramNotifyEnabled ? 'left-1' : 'right-1'}`} />
                 </button>
@@ -619,32 +618,32 @@ export default function InboxPage() {
 
     if (platform === 'livechat') {
       return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          <div className="flex items-center gap-4 bg-white/60 p-4 rounded-2xl shadow-sm border border-white/50 backdrop-blur-md">
-            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400">
               <Monitor size={22} />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-gray-500 font-semibold mb-1 uppercase tracking-wider">تفضيلات النظام</p>
-              <p className="text-sm font-bold text-gray-800 line-clamp-1">Chrome / Windows 10</p>
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">نظام التشغيل</p>
+              <p className="text-sm font-bold text-white line-clamp-1">Chrome / Windows</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 bg-white/60 p-4 rounded-2xl shadow-sm border border-white/50 backdrop-blur-md">
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
               <MapPin size={22} />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-gray-500 font-semibold mb-1 uppercase tracking-wider">أقرب تواجد ملتقط</p>
-              <p className="text-sm font-bold text-gray-800">السعودية، الرياض</p>
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">الموقع</p>
+              <p className="text-sm font-bold text-white">السعودية، الرياض</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 bg-white/60 p-4 rounded-2xl shadow-sm border border-white/50 backdrop-blur-md">
-            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
               <Globe size={22} />
             </div>
             <div className="flex-1">
-              <p className="text-[11px] text-gray-500 font-semibold mb-1 uppercase tracking-wider">مسار التصفح</p>
-              <p className="text-sm font-bold text-gray-800 line-clamp-1 dir-ltr text-right">/pricing</p>
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">الصفحة الحالية</p>
+              <p className="text-sm font-bold text-white line-clamp-1 dir-ltr text-right">/pricing</p>
             </div>
           </div>
         </motion.div>
@@ -662,192 +661,138 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-110px)] gap-0 bg-[#Fdfdfd] rounded-[2rem] overflow-hidden shadow-2xl border border-gray-200/60 p-1.5">
-      
-      {/* Sidebar List */}
-      <div className="w-[300px] flex flex-col bg-white rounded-l-none rounded-r-3xl overflow-hidden border-l border-gray-100 shadow-[2px_0_15px_-3px_rgba(0,0,0,0.03)] z-10">
-        <div className="p-4 pb-3">
+    <div className="flex h-[calc(100vh-5.5rem)] gap-0 text-white font-sans rounded-[2rem] overflow-hidden relative" dir="rtl">
+      {/* Platform Identity Backgrounds */}
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950 via-[#00050a] to-[#00050a]" />
+      <div className="fixed top-0 left-0 w-full h-[600px] bg-gradient-to-b from-indigo-900/10 via-purple-900/5 to-transparent -z-10 blur-[100px] opacity-60" />
+
+      {/* Sidebar List (Refined & Compact) */}
+      <div className="w-[260px] flex flex-col bg-[#0a0c10]/60 backdrop-blur-3xl border-l border-white/5 z-10 shrink-0">
+        <div className="p-4 pb-2">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600"> جميع المحادثات</h1>
+              <h1 className="text-lg font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">الدردشات</h1>
               <Button 
                 variant="ghost" 
                 size="icon" 
                 onClick={() => fetchConversations()}
                 disabled={loading}
-                className="h-8 w-8 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-full transition-all"
-                title="تحديث المحادثات"
+                className="h-7 w-7 text-gray-500 hover:text-white hover:bg-white/5 rounded-full transition-all"
               >
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
               </Button>
             </div>
-           
           </div>
           <div className="relative group">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={16} />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-indigo-400 transition-colors" size={14} />
             <Input 
-              placeholder="البحث..." 
-              className="pr-10 py-5 bg-gray-50/80 border-gray-200/60 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20 shadow-sm transition-all text-sm"
+              placeholder="ابحث..." 
+              className="pr-9 h-9 bg-white/5 border-white/5 rounded-lg focus-visible:ring-1 focus-visible:ring-indigo-500/50 text-white placeholder:text-gray-700 transition-all text-xs"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
-          <div className="flex items-center gap-1.5 mt-3 overflow-x-auto pb-1 custom-scrollbar">
+          <div className="flex items-center gap-1 mt-3 overflow-x-auto pb-1 scrollbar-hide">
             {[
-              { id: 'all', label: 'الكل', count: conversations.length },
-              { id: 'whatsapp', label: 'واتساب', icon: <MessageSquare size={12} /> },
-              { id: 'telegram', label: 'تليجرام', icon: <Send size={12} /> },
-              { id: 'livechat', label: 'لايف شات', icon: <Globe size={12} /> },
+              { id: 'all', label: 'الكل' },
+              { id: 'whatsapp', label: 'واتساب' },
+              { id: 'telegram', label: 'تليجرام' },
+              { id: 'livechat', label: 'لايف شات' },
             ].map((f) => (
               <button
                 key={f.id}
                 onClick={() => setActivePlatformFilter(f.id as any)}
                 className={`
-                  flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-all border
+                  flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black whitespace-nowrap transition-all border
                   ${activePlatformFilter === f.id 
-                    ? 'bg-primary text-white border-primary shadow-sm' 
-                    : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-200 hover:text-gray-600'}
+                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm' 
+                    : 'bg-white/5 text-gray-500 border-white/5 hover:bg-white/10 hover:text-gray-400'}
                 `}
               >
-                {'icon' in f && f.icon}
                 {f.label}
               </button>
             ))}
           </div>
         </div>
         
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-2">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-2 pb-4">
           {filteredConversations.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center mt-10 text-center text-gray-400">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-3">
-                <MessageSquare size={28} className="text-gray-300" />
-              </div>
-              <p className="text-sm font-medium text-gray-500">لا يوجد محادثات</p>
-            </motion.div>
+            <div className="flex flex-col items-center justify-center mt-20 text-center px-4">
+              <MessageSquare size={32} className="text-white/5 mb-3" />
+              <p className="text-[11px] font-bold text-gray-700 uppercase tracking-widest">تحدث مع العالم</p>
+            </div>
           ) : (
-            <>
-              <AnimatePresence>
-                {filteredConversations.map((conv, index) => (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    key={conv.id}
-                    onClick={() => setSelectedConversation(conv)}
-                    className={`p-3 mb-1.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all duration-300 relative border
-                      ${selectedConversation?.id === conv.id 
-                        ? 'bg-gradient-to-l from-primary/5 to-transparent border-primary/10 shadow-sm' 
-                        : 'bg-white border-transparent hover:bg-gray-50/80'}
-                    `}
-                  >
-                    <div className="relative shrink-0">
-                      {conv.platform === 'whatsapp' && (profilePictureCache[conv.contactId] || profilePictureCache[conv.contactId + '@s.whatsapp.net']) ? (
-                        <div className="w-11 h-11 rounded-lg shadow-md overflow-hidden bg-gray-100 flex items-center justify-center">
-                          <img 
-                            src={profilePictureCache[conv.contactId] || profilePictureCache[conv.contactId + '@s.whatsapp.net']} 
-                            className="w-full h-full object-cover" 
-                            alt="" 
-                          />
-                        </div>
-                      ) : (
-                        <div className={`w-11 h-11 rounded-lg bg-gradient-to-br ${getAvatarColor(conv.name)} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
-                          {conv.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="absolute -bottom-1 -left-1 bg-white p-1 rounded-full shadow-sm z-10 border border-gray-100">
-                        <PlatformIcon platform={conv.platform} className="w-2.5 h-2.5" />
+            <AnimatePresence mode="popLayout">
+              {filteredConversations.map((conv, index) => (
+                <motion.div 
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.02 }}
+                  key={conv.id}
+                  onClick={() => setSelectedConversation(conv)}
+                  className={`p-2.5 mb-1.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all duration-200 relative border
+                    ${selectedConversation?.id === conv.id 
+                      ? 'bg-white/[0.08] border-white/10 shadow-lg' 
+                      : 'bg-transparent border-transparent hover:bg-white/[0.04]'}
+                  `}
+                >
+                  <div className="relative shrink-0">
+                    {conv.platform === 'whatsapp' && (profilePictureCache[conv.contactId] || profilePictureCache[conv.contactId + '@s.whatsapp.net']) ? (
+                      <div className="w-10 h-10 rounded-lg shadow-lg overflow-hidden border border-white/5">
+                        <img 
+                          src={profilePictureCache[conv.contactId] || profilePictureCache[conv.contactId + '@s.whatsapp.net']} 
+                          className="w-full h-full object-cover" 
+                          alt="" 
+                        />
                       </div>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <div className="flex flex-col min-w-0">
-                          <h3 className={`text-sm font-bold truncate ${selectedConversation?.id === conv.id ? 'text-primary' : 'text-gray-800'}`}>
-                            {conv.name}
-                          </h3>
-                          {conv.platform === 'whatsapp' && conv.name !== conv.contactId && (
-                             <p className="text-[10px] text-gray-400 font-medium">{conv.contactId}</p>
-                          )}
-                        </div>
-                        <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap bg-gray-50 px-1.5 py-0.5 rounded-full">
-                          {formatTime(conv.lastMessageTime)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs text-gray-500 truncate mt-0.5">
-                          {conv.lastMessage || 'محادثة جديدة...'}
-                        </p>
-                        <div className="flex items-center gap-1.5">
-                          {conv.unreadCount > 0 && (
-                            <motion.span 
-                              initial={{ scale: 0.5, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm shadow-red-200"
-                            >
-                              {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
-                            </motion.span>
-                          )}
-                          {conv.platform === 'livechat' && (
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
-                              conv.status === 'open' ? 'bg-green-100 text-green-600' : 
-                              conv.status === 'waiting_customer' ? 'bg-orange-100 text-orange-600' :
-                              'bg-gray-100 text-gray-500'
-                            }`}>
-                              {conv.status === 'open' ? 'نشط' : 
-                               conv.status === 'waiting_customer' ? 'انتظار' : 
-                               conv.status === 'closed' ? 'مغلق' : 'مفتوحة'}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {/* Load More Indicator */}
-              {hasMore && (
-                <div className="p-4 flex flex-col items-center">
-                  <button 
-                    onClick={() => fetchConversations(true)} 
-                    disabled={loadingMore}
-                    className="text-xs text-primary font-bold bg-primary/5 hover:bg-primary/10 px-4 py-2 rounded-full transition-colors disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <RefreshCw size={14} className="animate-spin" />
-                        جاري التحميل...
-                      </>
                     ) : (
-                      <>
-                        <RefreshCw size={14} />
-                        تحميل المزيد
-                      </>
+                      <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${getAvatarColor(conv.name)} flex items-center justify-center text-white font-black text-sm shadow-md border border-white/5`}>
+                        {conv.name.charAt(0).toUpperCase()}
+                      </div>
                     )}
-                  </button>
-                </div>
-              )}
-            </>
+                    <div className="absolute -bottom-1 -left-1 bg-[#0a0c10] p-0.5 rounded shadow-lg z-10 border border-white/5">
+                      <PlatformIcon platform={conv.platform} className="w-2.5 h-2.5" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <h3 className={`text-[13px] font-bold truncate ${selectedConversation?.id === conv.id ? 'text-white' : 'text-gray-300'}`}>
+                        {conv.name}
+                      </h3>
+                      <span className="text-[9px] font-bold text-gray-600">
+                        {formatTime(conv.lastMessageTime)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-[11px] truncate ${conv.unreadCount > 0 ? 'text-indigo-400 font-bold' : 'text-gray-600'}`}>
+                        {conv.lastMessage || 'بدء دردشة...'}
+                      </p>
+                      {conv.unreadCount > 0 && (
+                        <span className="bg-indigo-600 text-white text-[9px] font-black h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full shadow-lg">
+                          {conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </div>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-[#fdfdfd] relative rounded-3xl overflow-hidden shadow-[0_0_40px_-15px_rgba(0,0,0,0.05)] border border-gray-100 m-1">
-        {/* Subtle Background Pattern */}
-        <div className="absolute inset-0 opacity-[0.02] pointer-events-none z-0" 
-             style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M54.627 0l.83.83-54.627 54.627-.83-.83L54.627 0zM0 54.627l.83.83L60 1.66V0h-1.66L0 56.287v-1.66z\' fill=\'%23000000\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' }} />
-
+      {/* Main Chat Area (WhatsApp Dark Style) */}
+      <div className="flex-1 flex flex-col bg-[#0b141a] relative overflow-hidden border-x border-white/5">
         {selectedConversation ? (
           <>
-            {/* Extended Chat Header */}
-            <div className="p-3 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-md z-10 sticky top-0">
-              <div className="flex items-center gap-3">
-                <div className="relative shrink-0">
+            {/* Simple Chat Header */}
+            <div className="h-20 px-6 flex items-center justify-between bg-[#0a0c10]/40 backdrop-blur-xl border-b border-white/5 z-40 sticky top-0">
+              <div className="flex items-center gap-4 text-right">
+                <div className="relative">
                   {selectedConversation.platform === 'whatsapp' && (profilePictureCache[selectedConversation.contactId] || profilePictureCache[selectedConversation.contactId + '@s.whatsapp.net']) ? (
-                    <div className="w-10 h-10 rounded-lg shadow-sm overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl shadow-2xl overflow-hidden border border-white/10 ring-2 ring-indigo-500/20">
                       <img 
                         src={profilePictureCache[selectedConversation.contactId] || profilePictureCache[selectedConversation.contactId + '@s.whatsapp.net']} 
                         className="w-full h-full object-cover" 
@@ -855,49 +800,46 @@ export default function InboxPage() {
                       />
                     </div>
                   ) : (
-                    <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${getAvatarColor(selectedConversation.name)} flex items-center justify-center text-white font-bold text-base shadow-sm`}>
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getAvatarColor(selectedConversation.name)} flex items-center justify-center text-white font-bold text-lg shadow-lg border border-white/10`}>
                       {selectedConversation.name.charAt(0).toUpperCase()}
                     </div>
                   )}
+                  <div className="absolute -bottom-0.5 -left-0.5 w-4 h-4 bg-green-500 rounded-full border-[3px] border-[#0c0e12]"></div>
                 </div>
                 <div>
-                  <h2 className="font-bold text-base text-gray-800 flex items-center gap-1.5">
+                  <h2 className="font-bold text-lg text-white tracking-tight leading-none mb-1.5">
                     {selectedConversation.name}
                   </h2>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-[10px] font-medium text-emerald-500 flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded-md">
-                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
-                      نشط الآن
-                    </p>
-                    <div className="flex items-center gap-1 text-gray-400 text-[10px]">
-                      <PlatformIcon platform={selectedConversation.platform} className="w-2.5 h-2.5 grayscale opacity-60" />
-                      <span className="capitalize">{selectedConversation.platform}</span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">متصل الآن</span>
                   </div>
                 </div>
               </div>
               
+              <div className="flex items-center gap-3">
+                 <div className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 tracking-tighter uppercase whitespace-nowrap">
+                   ID: {selectedConversation.contactId}
+                 </div>
+              </div>
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 z-10 custom-scrollbar relative">
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 z-10 custom-scrollbar relative">
               {messagesLoading ? (
-                <div className="flex items-center justify-center h-full"><Loader size="md" /></div>
+                <div className="flex items-center justify-center h-full"><Loader size="md" variant="primary" /></div>
               ) : messages.length === 0 ? (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <div className="bg-gradient-to-br from-primary/10 to-transparent p-5 rounded-full mb-4 border border-primary/10">
-                    <MessageCircle size={36} className="text-primary/40" />
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-700 mb-1.5">ابدأ الدردشة</h3>
-                  <p className="text-xs">تفاعل الآن مع العميل بشكل مباشر</p>
-                </motion.div>
+                <div className="flex flex-col items-center justify-center h-full text-gray-600">
+                  <MessageCircle size={48} className="opacity-10 mb-4" />
+                  <p className="text-sm">لا توجد رسائل سابقة في هذه المحادثة</p>
+                </div>
               ) : (
                 <AnimatePresence>
                   {messages.map((msg, idx) => {
                     const isOut = msg.type === 'outgoing';
                     return (
                       <motion.div 
-                        initial={{ opacity: 0, y: 15 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         key={msg.id || idx}
                         className={`flex w-full ${isOut ? 'justify-end' : 'justify-start'}`}
@@ -908,13 +850,13 @@ export default function InboxPage() {
                             : (Array.isArray(msg.mediaUrl) && msg.mediaUrl.length > 0 ? msg.mediaUrl[0] : null);
                           
                           return (
-                            <div className={`max-w-[80%] flex flex-col ${isOut ? 'items-end' : 'items-start'}`}>
-                              <div className={`
-                                px-4 py-3 text-sm leading-relaxed relative group
-                                ${isOut 
-                                  ? 'bg-gradient-to-br from-primary to-[#2b4c8a] text-white rounded-2xl rounded-tr-sm shadow-sm' 
-                                  : 'bg-white text-gray-800 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100'}
-                              `}>
+                            <div className={`max-w-[75%] flex flex-col ${isOut ? 'items-end' : 'items-start'}`}>
+                               <div className={`
+                                 px-4 py-2.5 rounded-2xl relative group shadow-sm
+                                 ${isOut 
+                                   ? 'bg-[#005c4b] text-[#e9edef] rounded-tr-none' 
+                                   : 'bg-[#202c33] text-[#e9edef] rounded-tl-none'}
+                               `}>
                                 {mediaUrl && (msg.contentType === 'image' || mediaUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) && (
                                   <img 
                                     src={mediaUrl} 
@@ -925,7 +867,7 @@ export default function InboxPage() {
                                 )}
                                 {mediaUrl && (msg.contentType === 'video' || mediaUrl.match(/\.(mp4|webm|avi)$/i)) && (
                                   <div className="relative group/vid cursor-pointer" onClick={() => setPreviewMedia({ url: mediaUrl, type: 'video' })}>
-                                    <video src={mediaUrl} className="max-w-full rounded-xl mb-2 max-h-52 object-contain shadow-xs" />
+                                    <video src={mediaUrl} controls className="max-w-full rounded-xl mb-2 max-h-52 object-contain shadow-xs" />
                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/vid:opacity-100 transition-opacity">
                                       <div className="w-12 h-12 bg-black/50 rounded-full flex items-center justify-center text-white backdrop-blur-sm">
                                         <Send size={24} className="rotate-90" />
@@ -937,20 +879,21 @@ export default function InboxPage() {
                                   <audio src={mediaUrl} controls className="max-w-full mb-2 max-h-12" />
                                 )}
                                 {mediaUrl && msg.contentType !== 'image' && msg.contentType !== 'video' && msg.contentType !== 'audio' && !mediaUrl.match(/\.(jpeg|jpg|gif|png|webp|mp4|webm|avi|mp3|wav|ogg)$/i) && (
-                                  <a href={mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/5 hover:bg-black/10 rounded-xl mb-1.5 transition-colors">
+                                  <a href={mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-white/10 hover:bg-white/20 rounded-xl mb-1.5 transition-colors">
                                     <FileText size={16} />
                                     <span className="text-xs font-semibold underline">تحميل المرفق</span>
                                   </a>
                                 )}
                                 {msg.content && !(['صورة', 'فيديو', 'مقطع صوتي', 'مستند', '[IMAGE]', '[VIDEO]', '[AUDIO]', '[DOCUMENT]'].includes(msg.content.trim())) && (
-                                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                                  <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap">{msg.content}</div>
                                 )}
+                                
                                 <div className={`
-                                  mt-1.5 flex items-center justify-end gap-1 text-[9px] font-medium tracking-wide
-                                  ${isOut ? 'text-white/70' : 'text-gray-400'}
+                                   mt-2 flex items-center justify-end gap-1.5 text-[10px] font-bold
+                                   ${isOut ? 'text-white/60' : 'text-gray-500'}
                                 `}>
                                   {formatTime(msg.timestamp)}
-                                  {isOut && <CheckCheck size={12} className="text-blue-300" />}
+                                  {isOut && <CheckCheck size={13} className="text-indigo-300" />}
                                 </div>
                               </div>
                             </div>
@@ -961,255 +904,208 @@ export default function InboxPage() {
                   })}
                 </AnimatePresence>
               )}
+              {/* Space for floating input to prevent overlap */}
+              <div className="pb-24 h-24 w-full" />
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Smart Input Bar */}
-            <div className="p-3 z-20 bg-white/80 backdrop-blur-md border-t border-gray-100 relative">
-              {/* Emoji Picker Popup */}
-              {showEmojiPicker && (
-                <div ref={emojiPickerRef} className="absolute bottom-full mb-2 right-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
+            {/* WhatsApp Style Fixed Input Bar */}
+            <div className="bg-[#101d25] border-t border-white/5 absolute bottom-0 left-0 right-0 z-50 px-3 py-2.5">
+               {/* Emoji Picker Popup */}
+               {showEmojiPicker && (
+                <div ref={emojiPickerRef} className="absolute bottom-[65px] mb-2 right-4 z-[100] shadow-2xl rounded-2xl overflow-hidden border border-white/10 ring-1 ring-black">
                   <EmojiPicker
                     onEmojiClick={(emojiData: EmojiClickData) => {
                       setNewMessage(prev => prev + emojiData.emoji);
                       setShowEmojiPicker(false);
                     }}
-                    theme={Theme.LIGHT}
+                    theme={Theme.DARK}
                     width={320}
                     height={380}
-                    searchPlaceHolder="ابحث عن رمز..."
                   />
                 </div>
               )}
 
-              {selectedFile && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-2 mb-2 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3 relative"
-                >
-                  <button 
-                    onClick={() => { setSelectedFile(null); setFilePreview(null); }}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm z-10 hover:bg-red-600 transition-colors"
-                  >
-                    <X size={12} />
-                  </button>
-                  
-                  {filePreview ? (
-                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 shrink-0">
-                      <img src={filePreview} alt="preview" className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                      <FileText size={24} />
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-800 truncate">{selectedFile.name}</p>
-                    <p className="text-[10px] text-gray-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+               <div className="w-full flex items-end gap-2 bg-[#202c33] p-1.5 pl-3 rounded-xl transition-all">
+                  <div className="flex items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowEmojiPicker(v => !v)}
+                      className="h-9 w-9 text-gray-400 hover:text-white rounded-full hover:bg-white/5"
+                    >
+                      <Smile size={20} />
+                    </Button>
+                    <label htmlFor="chat-file" className="cursor-pointer">
+                      <div className="h-9 w-9 text-gray-400 hover:text-white rounded-full hover:bg-white/5 flex items-center justify-center transition-all">
+                        <Paperclip size={20} />
+                      </div>
+                    </label>
+                    <input id="chat-file" type="file" className="hidden" />
                   </div>
-                </motion.div>
-              )}
 
-              <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-gray-200 focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
-                
-                <div className="flex items-center gap-1 pr-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowEmojiPicker(v => !v)}
-                    className={`text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg h-9 w-9 ${showEmojiPicker ? 'bg-primary/10 text-primary' : ''}`}
-                  >
-                    <Smile size={20} />
-                  </Button>
-                  
-                  <label htmlFor="inbox-file-upload" className="cursor-pointer">
-                    <div className="text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg h-9 w-9 flex items-center justify-center transition-colors">
-                      <Paperclip size={20} />
-                    </div>
-                  </label>
-                  <input
-                    id="inbox-file-upload"
-                    type="file"
-                    className="hidden"
-                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xlsx"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      setSelectedFile(file);
-                      if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => setFilePreview(e.target?.result as string);
-                        reader.readAsDataURL(file);
-                      } else {
-                        setFilePreview(null);
+                  <textarea 
+                    rows={1}
+                    placeholder="اكتب رسالة..."
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-[14.5px] py-1.5 text-[#e9edef] placeholder:text-gray-500 resize-none max-h-32 custom-scrollbar outline-none"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
                       }
-                      e.target.value = '';
                     }}
                   />
-                  <div className="w-[1px] h-5 bg-gray-200 mx-0.5"></div>
-                  {/* <Button variant="ghost" size="icon" className="text-primary/70 hover:text-primary hover:bg-primary/5 rounded-lg h-9 w-9">
-                    <Bot size={20} />
-                  </Button> */}
-                </div>
-                
-                <Input 
-                  placeholder="اكتب رسالتك هنا..."
-                  className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 text-sm h-10 !text-black placeholder:text-gray-400 font-medium"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                />
-                
-                <Button 
-                
-                  onClick={handleSendMessage}
-                  disabled={(!newMessage.trim() && !selectedFile) || sending}
-                  className="rounded-lg px-4 h-10 bg-black text-white shadow-sm flex items-center gap-1.5 font-bold text-sm"
-                >
-                  {sending ? <Loader size="sm" /> : <Send size={16} />}
-                  <span className="hidden sm:inline">إرسال</span>
-                </Button>
 
-              </div>
+                  <button 
+                    onClick={handleSendMessage}
+                    disabled={(!newMessage.trim() && !selectedFile) || sending}
+                    className={`
+                      h-10 w-10 shrink-0 flex items-center justify-center rounded-full transition-all
+                      ${(!newMessage.trim() && !selectedFile) || sending 
+                        ? 'text-gray-500' 
+                        : 'text-indigo-400 hover:scale-110 active:scale-95'}
+                    `}
+                  >
+                    {sending ? <RefreshCw size={18} className="animate-spin" /> : <Send size={20} className="-mr-0.5" />}
+                  </button>
+               </div>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-10 bg-transparent z-10">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="w-72 h-72 relative mb-8">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 to-blue-500/5 rounded-full animate-[ping_3s_ease-in-out_infinite]"></div>
-              <div className="absolute inset-6 bg-gradient-to-tr from-primary/5 to-blue-500/5 rounded-full animate-[ping_3s_ease-in-out_infinite_animation-delay-500]"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white/80 backdrop-blur-md p-10 rounded-[2.5rem] shadow-2xl border border-white transform rotate-3 hover:rotate-0 transition-transform duration-500">
-                  <MessageSquare size={72} className="text-primary opacity-80 mix-blend-multiply" />
-                </div>
-              </div>
-            </motion.div>
-            <p className="text-gray-500 text-center max-w-md leading-relaxed font-medium">
-              الرجاء تحديد محادثة من القائمة لعرض الرسائل وتجربة التواصل السلس عبر قنواتك المختلفة في مكان واحد.
-            </p>
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="relative">
+              <div className="w-40 h-40 bg-indigo-500/5 rounded-full blur-3xl absolute inset-0 animate-pulse"></div>
+              <MessageSquare size={100} className="text-white/5 relative z-10" />
+            </div>
           </div>
         )}
       </div>
       
-      {/* Context Sidebar (Changes based on Platform) */}
+      {/* Context Sidebar (Matching Identity) */}
       <AnimatePresence>
         {selectedConversation && (
           <motion.div 
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="border-r border-gray-100 bg-[#fdfdfd] flex flex-col rounded-r-none rounded-l-3xl overflow-y-auto custom-scrollbar z-10"
+            className="bg-[#0a0c10]/60 backdrop-blur-3xl border-r border-white/5 flex flex-col z-50 overflow-hidden font-sans shrink-0"
           >
-            <div className="p-4">
-              <div className="flex flex-col items-center mb-6 relative">
-                <div className="absolute top-0 right-0 p-1.5 bg-gray-50 rounded-full cursor-pointer hover:bg-gray-100 transition-colors">
-                  <AlertCircle size={14} className="text-red-500" />
+             <div className="p-5 flex flex-col h-full overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col items-center text-center mb-8">
+                   <div className="relative group mb-4">
+                      <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      {selectedConversation?.platform === 'whatsapp' && profilePictureCache[selectedConversation?.contactId] ? (
+                        <div className="w-20 h-20 rounded-2xl shadow-xl relative z-10 overflow-hidden border border-white/10 ring-2 ring-white/5">
+                          <img 
+                            src={profilePictureCache[selectedConversation?.contactId]} 
+                            className="w-full h-full object-cover" 
+                            alt="" 
+                          />
+                        </div>
+                      ) : (
+                        <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${getAvatarColor(selectedConversation.name)} flex items-center justify-center text-white font-black text-2xl shadow-xl relative z-10 border border-white/10`}>
+                          {selectedConversation.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -left-1 bg-[#0a0c10] p-1.5 rounded-lg shadow-xl border border-white/10 z-20">
+                        <PlatformIcon platform={selectedConversation.platform} className="w-4 h-4" />
+                      </div>
+                   </div>
+                   
+                   <h3 className="text-lg font-bold text-white mb-0.5 line-clamp-1">{selectedConversation.name}</h3>
+                   <div className="flex flex-col items-center gap-1">
+                      <span className="text-[11px] font-black text-indigo-400 tracking-tight">
+                        {selectedConversation.contactId}
+                      </span>
+                      <div className="flex items-center gap-2 text-gray-600 text-[10px] font-medium">
+                         <Clock size={11} className="text-gray-600" />
+                         نشط: {formatTime(selectedConversation.lastMessageTime)}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="space-y-6">
+                   {/* Clean Content Area (Action-Oriented) */}
+
+                   {/* Actions Center */}
+                   {selectedConversation.platform === 'livechat' ? (
+                     <section className="pt-5 border-t border-white/5 space-y-3">
+                        <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">إدارة التذكرة</h4>
+                        <div className="grid grid-cols-1 gap-2">
+                           <Button 
+                             onClick={handleResolveTicket}
+                             className="w-full bg-orange-600/90 hover:bg-orange-600 text-white rounded-lg h-10 text-[13px] font-bold gap-2"
+                           >
+                             <Check size={16} />
+                             إغلاق المحادثة
+                           </Button>
+                        </div>
+                     </section>
+                   ) : (selectedConversation.platform === 'whatsapp' || selectedConversation.platform === 'telegram') && (
+                     <section className="pt-5 border-t border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                           <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">البوت</h4>
+                           <div className={`px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter ${
+                             selectedConversation.platform === 'whatsapp' 
+                               ? (waBotPaused ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500')
+                               : (tgBotPaused ? 'bg-amber-500/10 text-amber-500' : 'bg-green-500/10 text-green-500')
+                           }`}>
+                             {selectedConversation.platform === 'whatsapp' 
+                               ? (waBotPaused ? 'PAUSED' : 'ACTIVE')
+                               : (tgBotPaused ? 'PAUSED' : 'ACTIVE')}
+                           </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 gap-2">
+                           {selectedConversation.platform === 'whatsapp' ? (
+                             waBotPaused ? (
+                               <Button onClick={handleWaResumeBot} className="w-full bg-green-600 hover:bg-green-500 text-white rounded-lg h-9 text-[12px] font-bold gap-2">
+                                 <RefreshCw size={14} /> استئناف
+                               </Button>
+                             ) : (
+                               <Button onClick={() => handleWaPauseBot(60)} variant="outline" className="w-full bg-white/5 border-white/5 hover:bg-red-500/10 text-red-100 rounded-lg h-9 text-[12px] font-bold gap-2">
+                                 <AlertCircle size={14} /> إيقاف مؤقت
+                               </Button>
+                             )
+                           ) : (
+                             tgBotPaused ? (
+                               <Button onClick={handleTgResumeBot} className="w-full bg-green-600 hover:bg-green-500 text-white rounded-lg h-9 text-[12px] font-bold gap-2">
+                                 <RefreshCw size={14} /> استئناف
+                               </Button>
+                             ) : (
+                               <Button onClick={() => handleTgPauseBot(60)} variant="outline" className="w-full bg-white/5 border-white/5 hover:bg-red-500/10 text-red-100 rounded-lg h-9 text-[12px] font-bold gap-2">
+                                 <AlertCircle size={14} /> إيقاف مؤقت
+                               </Button>
+                             )
+                           )}
+                        </div>
+                     </section>
+                   )}
+
+                   {/* Team Actions */}
+                   <section className="pt-5 border-t border-white/5 space-y-3">
+                      <h4 className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em]">الإجراءات</h4>
+                      <div className="grid grid-cols-1 gap-2">
+                         <button onClick={openNoteModal} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
+                            <FileText size={16} className="text-indigo-400" />
+                            <span className="text-[13px] font-medium">إضافة ملاحظة</span>
+                         </button>
+                         <button onClick={openTagModal} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
+                            <Filter size={16} className="text-purple-400" />
+                            <span className="text-[13px] font-medium">تغيير التصنيف</span>
+                         </button>
+                         <button onClick={() => setShowAssignModal(true)} className="w-full h-9 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center gap-3 px-3 transition-all border border-white/5">
+                            <User size={16} className="text-emerald-400" />
+                            <span className="text-[13px] font-medium">تحويل لموظف</span>
+                         </button>
+                      </div>
+                   </section>
                 </div>
                 
-                <div className="relative mb-4">
-                  {selectedConversation?.platform === 'whatsapp' && profilePictureCache[selectedConversation?.contactId] ? (
-                    <div className="w-20 h-20 rounded-2xl shadow-lg shadow-gray-200/40 overflow-hidden bg-gray-100 flex items-center justify-center">
-                      <img 
-                        src={profilePictureCache[selectedConversation?.contactId]} 
-                        className="w-full h-full object-cover" 
-                        alt="" 
-                      />
-                    </div>
-                  ) : (
-                    <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${getAvatarColor(selectedConversation.name)} flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-gray-200/40`}>
-                      {selectedConversation.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="absolute -bottom-1.5 -left-1.5 bg-white p-2 rounded-xl shadow-md border border-gray-50 z-10">
-                    <PlatformIcon platform={selectedConversation.platform} className="w-5 h-5" />
-                  </div>
-                </div>
-                <h3 className="text-lg font-black text-gray-800 text-center line-clamp-2 px-2">{selectedConversation.name}</h3>
-                <p className="text-xs font-medium text-gray-400 mt-1 flex items-center gap-1">
-                  <Clock size={12} />
-                  {formatDate(selectedConversation.lastMessageTime)}
-                </p>
-              </div>
-              
-              <div className="w-full h-[1px] bg-gradient-to-r from-transparent via-gray-200 to-transparent my-4"></div>
-
-              {/* Dynamic Platform Context */}
-              {selectedConversation.platform !== 'livechat' && (
-                <div className="mb-6">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary/50"></div>
-                    معلومات المنصة
-                  </h4>
-                  <div className="scale-[0.85] origin-top">
-                    {renderConversationDetails()}
-                  </div>
-                </div>
-              )}
-              
-              <div className={`${selectedConversation.platform === 'livechat' ? 'pt-2' : 'pt-4 border-t border-gray-100/60'}`}>
-                <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-purple-500/50"></div>
-                  إجراءات سريعة
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedConversation?.platform === 'whatsapp' && (
-                    <>
-                      {waBotPaused ? (
-                        <Button onClick={handleWaResumeBot} variant="outline" className="h-auto py-3 bg-white flex flex-col gap-2 rounded-xl border-gray-200/60 hover:bg-green-50 hover:border-green-200 hover:text-green-600 transition-all shadow-sm">
-                          <Bot size={20} className="text-green-500" />
-                          <span className="text-[12px] font-bold">استئناف البوت</span>
-                        </Button>
-                      ) : (
-                        <Button onClick={() => handleWaPauseBot(30)} variant="outline" className="h-auto py-3 bg-white flex flex-col gap-2 rounded-xl border-gray-200/60 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all shadow-sm">
-                          <Bot size={20} className="text-orange-500" />
-                          <span className="text-[12px] font-bold">إيقاف البوت 30د</span>
-                        </Button>
-                      )}
-                      <Button onClick={openNoteModal} variant="outline" className="h-auto py-3 bg-white flex flex-col gap-2 rounded-xl border-gray-200/60 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-all shadow-sm">
-                        <FileText size={20} className="text-blue-500" />
-                        <span className="text-[12px] font-bold">ملاحظة</span>
-                      </Button>
-                      <Button onClick={openTagModal} variant="outline" className="h-auto py-3 bg-white flex flex-col gap-2 rounded-xl border-gray-200/60 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 transition-all shadow-sm">
-                        <Filter size={20} className="text-indigo-500" />
-                        <span className="text-[12px] font-bold">تصنيف</span>
-                      </Button>
-                    </>
-                  )}
-
-                  {selectedConversation?.platform === 'telegram' && (
-                    <>
-                      {tgBotPaused ? (
-                        <Button onClick={handleTgResumeBot} variant="outline" className="h-auto py-3 bg-white flex flex-col gap-2 rounded-xl border-gray-200/60 hover:bg-green-50 hover:border-green-200 hover:text-green-600 transition-all shadow-sm">
-                          <Bot size={20} className="text-green-500" />
-                          <span className="text-[12px] font-bold">استئناف البوت</span>
-                        </Button>
-                      ) : (
-                        <Button onClick={() => handleTgPauseBot(30)} variant="outline" className="h-auto py-3 bg-white flex flex-col gap-2 rounded-xl border-gray-200/60 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all shadow-sm">
-                          <Bot size={20} className="text-orange-500" />
-                          <span className="text-[12px] font-bold">إيقاف البوت 30د</span>
-                        </Button>
-                      )}
-                    </>
-                  )}
-
-                  {selectedConversation?.platform === 'livechat' && (
-                    <>
-                      <Button onClick={handleResolveTicket} variant="outline" className="h-auto py-3 bg-white flex flex-col gap-2 rounded-xl border-gray-200/60 hover:bg-green-50 hover:border-green-200 hover:text-green-600 transition-all shadow-sm">
-                        <CheckCheck size={20} className="text-green-500" />
-                        <span className="text-[12px] font-bold">إغلاق المحادثة</span>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+               
+             </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1414,13 +1310,13 @@ export default function InboxPage() {
           </button>
           
           <div className="w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            {previewMedia.type === 'image' ? (
+            {previewMedia && previewMedia.type === 'image' ? (
               <img 
                 src={previewMedia.url} 
                 alt="preview" 
                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-200"
               />
-            ) : (
+            ) : previewMedia && (
               <video 
                 src={previewMedia.url} 
                 controls 
