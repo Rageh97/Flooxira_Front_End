@@ -185,7 +185,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
       )}
 
       {/* WhatsApp Tabs */}
-      <div className="bg-secondry inner-shadow rounded-lg p-1 sm:p-2">
+      <div className="gradient-border rounded-lg p-1 sm:p-2">
         <div className="relative">
           <div className="flex overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
             <div className="flex space-x-1 sm:space-x-2 px-1 sm:px-2">

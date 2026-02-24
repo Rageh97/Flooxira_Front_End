@@ -7,6 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Link from "next/link";
 import { getLinkByKey } from "@/lib/systemLinkApi";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Settings, Plus, Layout, ListPlus, Upload, Download, Trash2, ExternalLink } from "lucide-react";
 
 type EditableCellProps = {
   value: any;
@@ -482,6 +490,24 @@ export default function BotContentPage() {
     setEditingData({});
   };
 
+  const handleActionChange = (value: string) => {
+    switch (value) {
+      case 'content-service':
+        if (contentServiceLink.startsWith('http')) {
+          window.open(contentServiceLink, '_blank');
+        } else {
+          window.location.href = contentServiceLink;
+        }
+        break;
+      case 'add-field': setShowAddField(true); break;
+      case 'manage-fields': setShowFieldsModal(true); break;
+      case 'add-row': setShowAddRow(true); break;
+      case 'upload-excel': document.getElementById('excel-upload-input')?.click(); break;
+      case 'export-data': handleExportData(); break;
+      case 'clear-all': setShowClearConfirm(true); break;
+    }
+  };
+
   // Pagination
   const totalPages = Math.ceil(rows.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -527,11 +553,72 @@ export default function BotContentPage() {
   return (
     <div className="w-full mx-auto ">
          <div className="flex flex-col lg:flex-row items-center justify-between">
-         <h1 className="text-3xl font-bold mb-6 text-white">إدارة محتوى البوت</h1>
+         {/* <h1 className="2xl:text-3xl font-bold mb-6 text-white">إدارة محتوى البوت</h1> */}
 
                 {/* Controls */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-wrap gap-2 ">
+        {/* Mobile & Medium Screens: Select Dropdown */}
+        <div className="xl:hidden w-full">
+          <Select onValueChange={handleActionChange}>
+            <SelectTrigger className="w-full text-white border-white/20 bg-[#131240] h-12">
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                <SelectValue placeholder="إجراءات التحكم" />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-[#131240] border-white/20 text-white">
+              <SelectItem value="content-service" className="focus:bg-white/10 focus:text-white">
+                <div className="flex items-center gap-2">
+                  <ExternalLink className="w-4 h-4" />
+                  <span>خدمة اضافة المحتوى</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="add-field" className="focus:bg-white/10 focus:text-white">
+                <div className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  <span>إضافة عمود جديد</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="manage-fields" className="focus:bg-white/10 focus:text-white">
+                <div className="flex items-center gap-2">
+                  <Layout className="w-4 h-4" />
+                  <span>تعديل أو حذف عمود</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="add-row" className="focus:bg-white/10 focus:text-white">
+                <div className="flex items-center gap-2">
+                  <ListPlus className="w-4 h-4" />
+                  <span>إضافة صف جديد</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="upload-excel" className="focus:bg-white/10 focus:text-white">
+                <div className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  <span>رفع ملف Excel</span>
+                </div>
+              </SelectItem>
+              {rows.length > 0 && (
+                <SelectItem value="export-data" className="focus:bg-white/10 focus:text-white">
+                  <div className="flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    <span>تصدير إلى Excel</span>
+                  </div>
+                </SelectItem>
+              )}
+              {(fields.length > 0 || rows.length > 0) && (
+                <SelectItem value="clear-all" className="text-red-400 focus:bg-red-500/20 focus:text-red-400">
+                  <div className="flex items-center gap-2">
+                    <Trash2 className="w-4 h-4" />
+                    <span>حذف جميع البيانات</span>
+                  </div>
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Large Screens: Buttons */}
+        <div className="hidden xl:flex flex-wrap gap-2 ">
           <a href={contentServiceLink} className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded" target={contentServiceLink.startsWith('http') ? '_blank' : undefined}>
             خدمة اضافة المحتوى
           </a>
@@ -558,6 +645,7 @@ export default function BotContentPage() {
           <label className="primary-button after:bg-[#131240]  text-white px-4 py-2 rounded cursor-pointer">
             رفع ملف Excel
             <input
+              id="excel-upload-input"
               type="file"
               accept=".xlsx,.xls"
               onChange={handleExcelUpload}

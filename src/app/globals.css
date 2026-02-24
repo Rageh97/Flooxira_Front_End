@@ -137,6 +137,7 @@
     background-size: cover;
     background-position: center;
     background-color: #131240;
+    /* background-color: #10214c; */
     background-repeat: no-repeat;
     background-attachment: fixed;
     backdrop-filter: blur(30px);
@@ -801,6 +802,22 @@ button {
 .gradient-border {
   position: relative; 
   overflow: hidden; 
+  border: 1px solid rgba(255, 255, 255, 0.2); /* زيادة وضوح الحدود */
+  background: rgba(255, 255, 255, 0.05); /* تفتيح الخلفية قليلاً */
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.1); /* توهج داخلي أبيض أقوى وأوضح */
+}
+
+.gradient-border::before {
+  content: none; 
+}
+/* .gradient-border {
+  position: relative; 
+  overflow: hidden; 
   border: 1px solid rgba(255, 255, 255, 0.2); 
   background: linear-gradient(to bottom, #13124060, rgba(159, 185, 255, 0.35));
   backdrop-filter: blur(15px) saturate(200%);
@@ -826,7 +843,7 @@ button {
   width: 70%;
   border-radius: 9999px;
   top: 0px; 
-}
+} */
 /* #131240
 #74e2ff
 #232670 */

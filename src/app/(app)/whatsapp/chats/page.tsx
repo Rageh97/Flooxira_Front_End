@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createPortal } from "react-dom";
 
 // Memoized Contact Item Component moved outside to prevent re-creation on render
-const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, tags, onClick, cachedProfilePicture }: any) => {
+const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, mentionName, tags, onClick, cachedProfilePicture }: any) => {
   const handleClick = useCallback(() => {
     onClick(contact.contactNumber);
   }, [contact.contactNumber, onClick]);
@@ -45,19 +45,32 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
   return (
     <div
       onClick={handleClick}
-      className={`p-2 ml-1 lg:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between ${
-        isSelected
-          ? ' inner-shadow'
-          : isEscalated ? 'bg-red-500/30 border border-red-500/30'
-          : isOpenNote ? 'bg-yellow-600/30' : 'bg-secondry'
+      className={`p-2 ml-1 lg:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between relative overflow-hidden ${
+        isSelected ? ' inner-shadow' : 'bg-secondry'
       }`}
     >
+      {/* Escalation Indicator (Red Corner Triangle - Top Right) */}
+      {isEscalated && (
+        <div 
+          className="absolute top-0 right-0 w-6 h-6 bg-red-500/90 z-20" 
+          style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }}
+        />
+      )}
+
+      {/* Note Indicator (Yellow Corner Triangle - Top Left) */}
+      {isOpenNote && (
+        <div 
+          className="absolute top-0 right-0 w-6 h-6 bg-yellow-500/90 z-20" 
+          style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }}
+        />
+      )}
+      
       <div className="flex items-center gap-2 flex-1 min-w-0">
         <div className="relative flex-shrink-0">
           {profilePic ? (
-            <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" src={profilePic} alt={contact.contactName || contact.contactNumber} loading="lazy" />
+            <img width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover" src={profilePic} alt={contact.contactName || contact.contactNumber} loading="lazy" />
           ) : (
-            <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="" loading="lazy" />
+            <img width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full" src="/user.gif" alt="" loading="lazy" />
           )}
           {contact.unreadCount > 0 && (
             <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1 shadow-lg animate-pulse z-10 border-1 border-white/20">
@@ -76,19 +89,25 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
           <div className="text-[10px] text-white/30 truncate w-full text-right" dir="ltr">
             {contact.contactNumber?.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '')}
           </div>
+          {(tags && tags.length > 0 || mentionName) && (
+            <div className="flex items-center justify-between w-full mt-1 gap-1">
+              <div className="flex flex-wrap gap-1 min-w-0">
+                {tags && tags.slice(0, 3).map((tag: string, index: number) => (
+                  <span key={index} className="text-[8px] sm:text-[9px] bg-blue-500/10 border border-blue-500/20 text-blue-300 px-1 py-0 rounded-sm truncate max-w-[50px]">
+                    {tag}
+                  </span>
+                ))}
+                {tags && tags.length > 3 && <span className="text-[8px] text-gray-400">+{tags.length - 3}</span>}
+              </div>
+              {mentionName && (
+                <span className="text-[8px] sm:text-[9px] bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 px-1 py-0 rounded-sm flex items-center gap-0.5 flex-shrink-0">
+                   {mentionName}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
-    
-      {tags && tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1">
-          {tags.slice(0, 2).map((tag: string, index: number) => (
-            <span key={index} className="text-xs bg-secondry border-1 border-blue-300 text-white px-2 py-1 rounded-full">
-              {tag}
-            </span>
-          ))}
-          {tags.length > 2 && <span className="text-xs text-gray-400">+{tags.length - 2}</span>}
-        </div>
-      )}
     </div>
   );
 }, (prev, next) => {
@@ -98,6 +117,7 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
          prev.isSelected === next.isSelected &&
          prev.isEscalated === next.isEscalated &&
          prev.isOpenNote === next.isOpenNote &&
+         prev.mentionName === next.mentionName &&
          prev.cachedProfilePicture === next.cachedProfilePicture &&
          prev.onClick === next.onClick &&
          JSON.stringify(prev.tags) === JSON.stringify(next.tags);
@@ -248,6 +268,7 @@ export default function WhatsAppChatsPage() {
   
   // Notes state
   const [openNoteContacts, setOpenNoteContacts] = useState<Set<string>>(new Set());
+  const [openNoteMentions, setOpenNoteMentions] = useState<{[key: string]: string}>({});
   const [activeNote, setActiveNote] = useState<{ id: number; contactNumber: string; note: string; status: 'open' | 'resolved' } | null>(null);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState("");
@@ -404,6 +425,13 @@ export default function WhatsAppChatsPage() {
           const data = await getOpenChatNotes(token);
           if (data.success) {
             setOpenNoteContacts(new Set(data.contacts || []));
+            const mentions: {[key: string]: string} = {};
+            (data.notes || []).forEach((note: any) => {
+              if (note.mentionEmployeeName) {
+                mentions[note.contactNumber] = note.mentionEmployeeName;
+              }
+            });
+            setOpenNoteMentions(mentions);
           }
           
           // Load escalated contacts
@@ -1000,7 +1028,6 @@ export default function WhatsAppChatsPage() {
       const result = await sendWhatsAppMessage(token, targetPhone, targetMessage);
       
       if (result.success) {
-        showToast("تم إرسال الرسالة بنجاح!", 'success');
         console.log(`[WhatsApp Frontend] Message sent successfully`);
         
         // If bot is paused or message is manual, refresh immediately without waiting for interval
@@ -1397,7 +1424,7 @@ export default function WhatsAppChatsPage() {
                       onClick={openNoteModal}
                       className="text-xs bg-transparent text-white border border-text-primary/50 inner-shadow"
                     >
-                      أضف ملاحظة
+                    منشن لموظف
                     </Button>
                   </div>
                 )}
@@ -1442,14 +1469,14 @@ export default function WhatsAppChatsPage() {
             
           </CardHeader>
           <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-6">
-            <div className={`space-y-2 w-full lg:w-1/3 border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto custom-scrollbar ${selectedContact ? 'hidden lg:block' : 'block'}`}>
+            <div className={`space-y-2 w-full lg:w-[25%] border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto scrollbar-hide ${selectedContact ? 'hidden lg:block' : 'block'}`}>
               {loadingContacts && contacts.length === 0 ? (
                 <div className="space-y-3 p-3">
                   {/* Beautiful Skeleton Loader */}
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-md bg-secondry animate-pulse">
                       {/* Avatar Skeleton */}
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 animate-shimmer"></div>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 animate-shimmer"></div>
                       
                       {/* Content Skeleton */}
                       <div className="flex-1 space-y-2">
@@ -1483,6 +1510,7 @@ export default function WhatsAppChatsPage() {
                       isSelected={selectedContact === contact.contactNumber}
                       isEscalated={escalatedContacts.has(contact.contactNumber)}
                       isOpenNote={openNoteContacts.has(contact.contactNumber)}
+                      mentionName={openNoteMentions[contact.contactNumber]}
                       tags={contact.contactNumber ? contactTags[contact.contactNumber] : []}
                       cachedProfilePicture={contact.profilePicture || profilePictureCache[contact.contactNumber]}
                       onClick={handleContactItemClick}
@@ -1683,6 +1711,11 @@ export default function WhatsAppChatsPage() {
                           s.delete(selectedContact);
                           return s;
                         });
+                        setOpenNoteMentions(prev => {
+                          const next = { ...prev };
+                          delete next[selectedContact];
+                          return next;
+                        });
                         showToast('تم تعليم الملاحظة كمحلولة', 'success');
                       } catch (e: any) {
                         showToast(e.message || 'فشل في تحديث الملاحظة', 'error');
@@ -1736,14 +1769,14 @@ export default function WhatsAppChatsPage() {
                             {chat.messageType === 'incoming' && (
                               <div className="flex-shrink-0">
                                 {profilePicture ? (
-                                  <img width={40} height={40} 
-                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" 
+                                  <img width={32} height={32} 
+                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover" 
                                     src={profilePicture} 
                                     alt="Contact" 
                                   />
                                 ) : (
-                                  <img width={40} height={40} 
-                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
+                                  <img width={32} height={32} 
+                                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full" 
                                     src="/user.gif" 
                                     alt="Contact" 
                                   />
@@ -1907,14 +1940,14 @@ export default function WhatsAppChatsPage() {
                             {chat.messageType === 'outgoing' && (
                               (chat.responseSource === 'gemini' || chat.responseSource === 'openai') ? (
                                 <img 
-                                  width={40}
-                                  height={40}
-                                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
+                                  width={32}
+                                  height={32}
+                                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-full" 
                                   src="/Bot.gif" 
                                   alt="Bot" 
                                 />
                               ) : (
-                                <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" src="/user.gif" alt="User" />
+                                <img width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full" src="/user.gif" alt="User" />
                               )
                             )}
                           </div>
@@ -2135,18 +2168,28 @@ export default function WhatsAppChatsPage() {
                     if (!selectedContact || !noteText.trim()) return;
                     try {
                       setSavingNote(true);
-                      const res = await createChatNote(token, { contactNumber: selectedContact, note: noteText.trim() });
+                      const employee = selectedMentionEmployeeId !== "none" ? employees.find(emp => emp.id.toString() === selectedMentionEmployeeId) : null;
+                      
+                      const res = await createChatNote(token, { 
+                        contactNumber: selectedContact, 
+                        note: noteText.trim(),
+                        mentionEmployeeId: employee ? parseInt(selectedMentionEmployeeId) : undefined,
+                        mentionEmployeeName: employee ? employee.name : undefined
+                      } as any);
+
                       if (res.success) {
                         setActiveNote(res.note as any);
                         setOpenNoteContacts(prev => new Set(prev).add(selectedContact));
                         
+                        // Update local mention state
+                        if (employee) {
+                          setOpenNoteMentions(prev => ({ ...prev, [selectedContact]: employee.name }));
+                        }
+                        
                         // Handle Mention Notification
-                        if (selectedMentionEmployeeId !== "none") {
-                          const employee = employees.find(emp => emp.id.toString() === selectedMentionEmployeeId);
-                          if (employee && employee.phone) {
-                            const mentionMsg = `🔔 *إشعار منشن جديد*\n\nقام المدير بمنشن لك في ملاحظة لعميل:\n*العميل:* ${selectedContact}\n*الملاحظة:* ${noteText.trim()}\n\n_يرجى مراجعة المحادثة في لوحة التحكم._`;
-                            await sendWhatsAppMessage(token, employee.phone, mentionMsg);
-                          }
+                        if (employee && employee.phone) {
+                          const mentionMsg = `🔔 *إشعار منشن جديد*\n\nقام المدير بمنشن لك في ملاحظة لعميل:\n*العميل:* ${selectedContact}\n*الملاحظة:* ${noteText.trim()}\n\n_يرجى مراجعة المحادثة في لوحة التحكم._`;
+                          await sendWhatsAppMessage(token, employee.phone, mentionMsg);
                         }
 
                         showToast('تم حفظ الملاحظة بنجاح وإرسال الإشعار إن وجد', 'success');

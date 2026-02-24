@@ -215,10 +215,10 @@ export default function AISettingsPage() {
       )}
 
       {/* Tabs */}
-      <div className="mb-6 gradient-border inner-shadow">
+      <div className="mb-6 gradient-border ">
         <div className="relative">
           <div className="flex overflow-x-auto  pb-0 hide-scrollbar">
-            <div className="flex space-x-1 px-1 sm:px-2">
+            <div className="flex space-x-1 px-1 sm:px-2 py-1">
               {[
                 { id: 'general', label: 'عام' },
                 // { id: 'ai', label: 'نماذج الذكاء الاصطناعي' },
@@ -233,8 +233,8 @@ export default function AISettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`whitespace-nowrap px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${
                     activeTab === tab.id
-                      ? 'bg-secondry text-white shadow-md'
-                      : 'text-white hover:bg-secondry/50'
+                      ? 'gradient-border text-white '
+                      : 'text-white '
                   }`}
                 >
                   {tab.label}
