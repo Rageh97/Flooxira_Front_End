@@ -857,6 +857,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       )}
       </div>
     </div>
+    
   <Script >
       {`window.WIDGET_API_URL = 'https://api.flooxira.com';
       window.WIDGET_SOCKET_URL = 'https://api.flooxira.com';`}
