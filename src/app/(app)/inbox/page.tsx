@@ -26,6 +26,7 @@ import {
 import { getBotSettings, updateBotSettings, BotSettings as IBotSettings } from "@/lib/botSettingsApi";
 import { getBotStatus, pauseBot, resumeBot } from "@/lib/botControlApi";
 import { listTags, addContactToTag, createTag } from "@/lib/tagsApi";
+import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/lib/auth";
 import { createPortal } from "react-dom";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
@@ -90,6 +91,8 @@ const PlatformIcon = ({ platform, className = "" }: { platform: string, classNam
   if (platform === 'whatsapp') return <MessageSquare className={`text-[#25D366] ${className}`} size={16} />;
   if (platform === 'telegram') return <Send className={`text-[#0088cc] ${className}`} size={16} />;
   if (platform === 'livechat') return <Globe className={`text-[#f97316] ${className}`} size={16} />;
+  if (platform === 'facebook') return <MessageSquare className={`text-[#1877F2] ${className}`} size={16} />;
+  if (platform === 'instagram') return <AtSign className={`text-[#E4405F] ${className}`} size={16} />;
   return null;
 };
 
@@ -170,7 +173,7 @@ export default function InboxPage() {
 
   const [newTagName, setNewTagName] = useState("");
   const [creatingTag, setCreatingTag] = useState(false);
-  const [activePlatformFilter, setActivePlatformFilter] = useState<'all' | 'whatsapp' | 'telegram' | 'livechat'>('all');
+  const [activePlatformFilter, setActivePlatformFilter] = useState<'all' | 'whatsapp' | 'telegram' | 'livechat' | 'facebook' | 'instagram'>('all');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [previewMedia, setPreviewMedia] = useState<{url: string, type: string} | null>(null);
@@ -265,6 +268,43 @@ export default function InboxPage() {
         .catch(() => {});
     }
   }, [token]);
+  
+  // Real-time updates via Socket.IO
+  useEffect(() => {
+    if (!token) return;
+    const socket = getSocket(token);
+    if (!socket) return;
+
+    const handleNewSocialMessage = (data: any) => {
+      const { platform, message } = data;
+      
+      // If we are looking at this conversation, add the message
+      if (selectedConversation && 
+          selectedConversation.platform === platform && 
+          selectedConversation.contactId === message.contactId) {
+        setMessages(prev => [...prev, {
+          id: message.id,
+          content: message.content,
+          type: message.type,
+          contentType: message.contentType,
+          timestamp: message.timestamp,
+          mediaUrl: message.mediaUrl,
+          senderName: message.contactName,
+          responseSource: message.type === 'outgoing' ? 'manual' : null,
+        }]);
+        scrollToBottom();
+      }
+      
+      // Always refresh conversation list to update unread counts / last message
+      fetchConversations();
+    };
+
+    socket.on('new_social_message', handleNewSocialMessage);
+
+    return () => {
+      socket.off('new_social_message', handleNewSocialMessage);
+    };
+  }, [token, selectedConversation]);
 
   const handleWaPauseBot = async (mins: number) => {
     try {
@@ -626,6 +666,31 @@ export default function InboxPage() {
             attachments
           })
         });
+      } else if (selectedConversation.platform === 'facebook' || selectedConversation.platform === 'instagram') {
+        let finalMediaUrl = '';
+        if (selectedFile) {
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', selectedFile);
+          const uploadRes = await apiFetch<any>('/api/uploads', {
+            method: 'POST',
+            authToken: token,
+            body: uploadFormData
+          });
+          if (uploadRes.url) {
+            finalMediaUrl = uploadRes.url;
+          }
+        }
+
+        result = await apiFetch<any>('/api/facebook/send-message', {
+          method: 'POST',
+          authToken: token,
+          body: JSON.stringify({
+            platform: selectedConversation.platform,
+            contactId: selectedConversation.contactId,
+            message: newMessage.trim(),
+            mediaUrl: finalMediaUrl
+          })
+        });
       }
 
       if (result?.success || result?.ok || result) {
@@ -788,6 +853,40 @@ export default function InboxPage() {
         </motion.div>
       );
     }
+    
+    if (platform === 'facebook' || platform === 'instagram') {
+      return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className={`w-12 h-12 rounded-xl ${platform === 'facebook' ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'} flex items-center justify-center`}>
+              <User size={22} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">الاسم</p>
+              <p className="text-sm font-bold text-white">{name}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className={`w-12 h-12 rounded-xl ${platform === 'facebook' ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'} flex items-center justify-center`}>
+              <Info size={22} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">رقم التعريف</p>
+              <p className="text-sm font-bold text-white dir-ltr text-right">{contactId}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className={`w-12 h-12 rounded-xl ${platform === 'facebook' ? 'bg-blue-500/10 text-blue-400' : 'bg-pink-500/10 text-pink-400'} flex items-center justify-center`}>
+              <Globe size={22} />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] text-gray-500 font-bold mb-1 uppercase tracking-wider">المنصة</p>
+              <p className="text-sm font-bold text-white uppercase">{platform}</p>
+            </div>
+          </div>
+        </motion.div>
+      );
+    }
     return null;
   }
 
@@ -838,6 +937,8 @@ export default function InboxPage() {
               { id: 'whatsapp', label: 'واتساب' },
               { id: 'telegram', label: 'تليجرام' },
               { id: 'livechat', label: 'لايف شات' },
+              { id: 'facebook', label: 'فيسبوك' },
+              { id: 'instagram', label: 'إنستجرام' },
             ].map((f) => (
               <button
                 key={f.id}
@@ -927,7 +1028,7 @@ export default function InboxPage() {
       </div>
 
       {/* Main Chat Area (WhatsApp Dark Style) */}
-      <div className="flex-1 flex flex-col bg-[#0b141a] relative overflow-hidden border-x border-white/5">
+      <div className="flex-1 flex flex-col bg-fixed-40 relative overflow-hidden border-x border-white/5">
         {selectedConversation ? (
           <>
             {/* Simple Chat Header */}

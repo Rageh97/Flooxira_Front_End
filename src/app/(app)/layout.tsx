@@ -270,7 +270,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             if (name && name !== 'No Plan' && name !== 'Error' && name.toLowerCase() !== 'noplan') {
               setPlanName(name);
             } else {
-              setPlanName('غير محدد');
+              setPlanName('غير مشترك');
             }
             
             if (subRes.subscription.expiresAt) {
@@ -307,7 +307,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
           if (name && name !== 'No Plan' && name !== 'Error' && name.toLowerCase() !== 'noplan') {
             setPlanName(name);
           } else {
-            setPlanName('غير محدد');
+            setPlanName('غير مشترك');
           }
           // Old logic for dates from usage-stats (if available) - likely not needed if we want to rely on the above
         }

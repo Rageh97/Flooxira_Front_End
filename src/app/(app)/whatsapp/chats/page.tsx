@@ -29,7 +29,7 @@ import {
 } from "@/lib/escalationApi";
 
 import { Input } from "@/components/ui/input";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Smile, Plus, SendHorizontal } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { createPortal } from "react-dom";
 
@@ -45,7 +45,7 @@ const ContactItem = React.memo(({ contact, isSelected, isEscalated, isOpenNote, 
   return (
     <div
       onClick={handleClick}
-      className={`p-2 ml-1 lg:p-3 rounded-md cursor-pointer transition-colors flex items-center justify-between relative overflow-hidden ${
+      className={`p-1 ml-1 rounded-md cursor-pointer transition-colors flex items-center justify-between relative overflow-hidden ${
         isSelected ? ' inner-shadow' : 'bg-secondry'
       }`}
     >
@@ -275,6 +275,7 @@ export default function WhatsAppChatsPage() {
   const [savingNote, setSavingNote] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
   const [selectedMentionEmployeeId, setSelectedMentionEmployeeId] = useState<string>("none");
+  const [filterEmployeeId, setFilterEmployeeId] = useState<string>("all");
 
   // Escalation state
   const [escalatedContacts, setEscalatedContacts] = useState<Set<string>>(new Set());
@@ -970,9 +971,13 @@ export default function WhatsAppChatsPage() {
       // Escalation filter
       const matchesEscalation = !showOnlyEscalated || escalatedContacts.has(contact.contactNumber);
 
-      return matchesSearch && matchesTag && matchesEscalation;
+      // Mention filter
+      const matchesMention = filterEmployeeId === "all" || 
+        (openNoteMentions[contact.contactNumber] === employees.find(e => e.id.toString() === filterEmployeeId)?.name);
+
+      return matchesSearch && matchesTag && matchesEscalation && matchesMention;
     });
-  }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter, showOnlyEscalated, escalatedContacts]);
+  }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter, showOnlyEscalated, escalatedContacts, filterEmployeeId, openNoteMentions, employees]);
 
   async function handleSendMessage(phoneNumber?: string, message?: string) {
     const targetPhone = phoneNumber;
@@ -1317,159 +1322,27 @@ export default function WhatsAppChatsPage() {
 
   return (
     <>
-      <div className={`space-y-6 ${(showTagModal || showNoteModal) ? 'blur-sm' : ''}`}>
+      <div className={`space-y-2 ${(showTagModal || showNoteModal) ? 'blur-sm' : ''}`}>
         <div className="w-full h-[calc(100vh-8rem)] lg:h-[calc(100vh-8rem)]">
           {/* Main Chat Container */}
           <Card  className=" border-none  flex flex-col lg:flex-row h-full gradient-border">
           {/* Contacts List */}
           <div className="flex flex-col w-full lg:w-full h-full">
-          <CardHeader className="border-text-primary/50 text-primary flex flex-col gap-2 p-3 lg:p-4">
-            
-            {/* Header Top Row: Title, Bot Status, and Controls */}
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-2 w-full">
-              <div className="flex items-center gap-1 flex-wrap">
-                <div className={`flex items-center gap-1 flex-wrap ${selectedContact ? 'hidden lg:flex' : 'flex'}`}>
-                  <h3 className="text-xs lg:text-sm font-medium text-white p-1 rounded-md inner-shadow">
-                    جهات الاتصال {filteredContacts.length}
-                  </h3>
-                  <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                  <span className="text-xs sm:text-sm text-white">
-                    {botStatus?.isPaused ? 'البوت متوقف' : 'البوت نشط'}
-                  </span>
-                  {botStatus?.isPaused && botStatus.timeRemaining > 0 && (
-                    <span className="text-xs text-yellow-500">
-                      ({botStatus.timeRemaining} دقيقة متبقية)
-                    </span>
-                  )}  
+        
+          <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-2">
+            <div className={`space-y-2 w-full lg:w-[20%] border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto scrollbar-hide p-2 ${selectedContact ? 'hidden lg:block' : 'block'}`}>
+              {/* Desktop Search and Filter inside sidebar */}
+              <div className="hidden lg:flex flex-col gap-2 mb-4 p-1">
+                <div className="relative">
+                  <Search className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="بحث باسم العميل..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pr-8 h-9 text-[10px] bg-[#01191040] border-text-primary/30"
+                  />
                 </div>
               </div>
-
-              {/* Bot Controls & Refresh - Visible when needed */}
-              <div className="flex items-center gap-2">
-                 {/* Only show refresh/controls if not on mobile active chat view or if we want them always accessble */}
-                 {/* ... existing controls ... */}
-              </div>
-            </div>
-
-           
-
-            {/* Selected Contact Header (Mobile View mostly) */}
-            <div className={`flex items-center gap-2 lg:gap-3 lg:ml-70 flex-wrap ${!selectedContact ? 'hidden lg:flex' : 'w-full lg:w-auto justify-between lg:justify-start hidden'}`}>
-            {/* existing selected contact header code... keeping hidden for now as we redesigned structure or keeping purely for logic preservation if needed. 
-                Actually, the original layout had this mixed. Let's simplify. 
-                We will keep the original "Selected Contact" view logic below in the main content area or adjusting here.
-            */}
-            </div>
-            
-            {/* Original Bot Controls were here, let's keep them accessible */}
-            <div className="gap-2 lg:gap-3 flex-shrink-0 flex-col lg:flex-row w-full flex  justify-end">
-              <div className="flex flex-col lg:flex-row  items-start lg:items-center justify-between gap-2 lg:gap-3 w-full">
-                <div className="flex items-center gap-2"></div>
-                {selectedContact && (
-                  <div className="flex items-center gap-1 lg:gap-2 flex-wrap justify-end w-full">
-                     <div className="flex gap-1 lg:gap-2 flex-wrap">
-              {botStatus?.isPaused ? (
-                <Button 
-                  size="sm" 
-                  onClick={handleResumeBot}
-                  disabled={botControlLoading}
-                  className="bg-green-500 hover:bg-green-600 text-xs sm:text-sm"
-                >
-                  {botControlLoading ? 'جاري الاستئناف...' : 'استئناف البوت'}
-                </Button>
-              ) : (
-                <div className="flex gap-1">
-                  <Button 
-                    size="sm" 
-                    onClick={() => handlePauseBot(30)}
-                    disabled={botControlLoading}
-                    className="bg-transparent text-white border border-text-primary/50 inner-shadow text-xs sm:text-sm"
-                  >
-                    إيقاف البوت 30 د
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={() => handlePauseBot(60)}
-                    disabled={botControlLoading}
-                    className="bg-transparent text-white border border-text-primary/50 inner-shadow text-xs sm:text-sm"
-                  >
-                    إيقاف البوت ساعة
-                  </Button>
-                </div>
-              )}
-                  </div>
-                    <Button 
-                      size="sm" 
-                      onClick={openTagModal}
-                      className="text-xs primary-button"
-                    >
-                      + إضافة إلى تصنيف
-                    </Button>
-                    <Button 
-                      size="sm"
-                      onClick={handleToggleAiBlock}
-                      disabled={botControlLoading}
-                      className={`text-xs border border-text-primary/50 inner-shadow ${
-                        contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
-                          ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
-                          : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                      }`}
-                    >
-                      {contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
-                        ? 'تفعيل الذكاء الاصطناعي' 
-                        : ' تعطيل Ai لهذه المحادثة '}
-                    </Button>
-                    <Button 
-                      size="sm"
-                      onClick={openNoteModal}
-                      className="text-xs bg-transparent text-white border border-text-primary/50 inner-shadow"
-                    >
-                    منشن لموظف
-                    </Button>
-                  </div>
-                )}
-              </div>
-               {/* Search and Filter Row - Only visible in contacts list view or desktop */}
-            <div className={`w-full flex flex-col lg:flex-row gap-2 ${selectedContact ? 'hidden lg:flex' : 'flex '}`}>
-              <div className="relative flex-1">
-                <Search className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="بحث بالاسم أو الرقم..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-8 h-9 text-xs bg-[#01191040] border-text-primary/30"
-                />
-              </div>
-              <div className="relative w-full lg:w-1/3">
-                <Filter className="absolute right-2 top-2.5 h-4 w-4 text-primary" />
-                <select
-                  value={filterTagId}
-                  onChange={(e) => setFilterTagId(e.target.value)}
-                  className="w-full h-9 pr-8 pl-2 text-xs bg-[#01191040] border border-text-primary/30 rounded-md text-white appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">كل التصنيفات</option>
-                  {availableTags.map(tag => (
-                    <option key={tag.id} value={tag.id}>{tag.name}</option>
-                  ))}
-                </select>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowOnlyEscalated(!showOnlyEscalated)}
-                className={`h-9 px-3 text-xs border border-text-primary/30 flex items-center gap-1 transition-all ${
-                  showOnlyEscalated ? 'bg-red-500/20 text-red-400 border-red-500/50' : 'bg-[#01191040] text-white'
-                }`}
-              >
-                <div className={`w-2 h-2 rounded-full ${showOnlyEscalated ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
-                محولة لموظف
-              </Button>
-            </div>
-            </div>
-            
-          </CardHeader>
-          <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-6">
-            <div className={`space-y-2 w-full lg:w-[25%] border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto scrollbar-hide ${selectedContact ? 'hidden lg:block' : 'block'}`}>
               {loadingContacts && contacts.length === 0 ? (
                 <div className="space-y-3 p-3">
                   {/* Beautiful Skeleton Loader */}
@@ -1547,7 +1420,7 @@ export default function WhatsAppChatsPage() {
             </div>
             {/* Chat Messages */}
           <div 
-            className={`flex flex-col w-full min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent lg:!static lg:!z-auto lg:!h-full lg:w-full' : 'hidden lg:flex h-full'}`}
+            className={`flex flex-col flex-1 min-h-0 ${selectedContact ? 'mobile-fullscreen-chat bg-dark-custom lg:!bg-transparent lg:!static lg:!z-auto lg:!h-full lg:flex-1' : 'hidden lg:flex h-full'}`}
           >
             {/* Mobile Header (Back button, Contact Info, and Actions) */}
             <div className="lg:hidden flex flex-col border-b border-text-primary/50 bg-secondry/50 backdrop-blur-md z-10">
@@ -1785,10 +1658,10 @@ export default function WhatsAppChatsPage() {
                             )}
                             
                             <div
-                              className={`max-w-[85%] sm:max-w-xs p-2 sm:p-3 rounded-lg ${
+                              className={`max-w-[85%] sm:max-w-xs p-2 sm:p-3 rounded-lg relative ${
                                 chat.messageType === 'outgoing'
-                                  ? 'bg-card inner-shadow text-white'
-                                  : ' inner-shadow text-gray-200'
+                                  ? 'bg-[#005c4b]/80 inner-shadow text-white rounded-tr-none'
+                                  : 'bg-[#202c33]/80 inner-shadow text-gray-200 rounded-tl-none'
                               }`}
                             >
                               {/* Media Content */}
@@ -1959,13 +1832,13 @@ export default function WhatsAppChatsPage() {
                     <div ref={messagesEndRef} />
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">اختر جهة اتصال لعرض سجل المحادثة</p>
+                <p className="text-gray-300 text-center py-8">اختر جهة اتصال لعرض سجل المحادثة</p>
               )}
             </div>
 
             {/* Message Input - Fixed at bottom */}
             {selectedContact && (
-              <div className="border-t border-gray-700 p-2 sm:p-4 flex-shrink-0">
+              <div className="border-t border-gray-700 p-1 flex-shrink-0">
                 {/* Media Upload Section */}
                 {mediaFile && (
                   <div className="mb-4 p-4 bg-dark-custom rounded-lg">
@@ -2024,15 +1897,16 @@ export default function WhatsAppChatsPage() {
                 )}
 
                 <div className="flex items-end gap-2">
-                  <button
-                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="px-0 flex-shrink-0 mb-3"
-                    title="إضافة إيموجي"
-                  >
-                    <img width={40} height={40} className="w-8 h-8 sm:w-10 sm:h-10" src="/imogi.gif" alt="" />
-                  </button>
-                  
                   <div className="flex-1 relative">
+                    {/* Emoji button inside */}
+                    <button
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className="absolute right-12 top-1/2 -translate-y-1/2 z-10 text-gray-400 hover:text-white transition-colors"
+                      title="إضافة إيموجي"
+                    >
+                      <Smile className="w-6 h-6" />
+                    </button>
+
                     <textarea
                       ref={(el) => {
                         inputRef.current = el;
@@ -2048,7 +1922,7 @@ export default function WhatsAppChatsPage() {
                         e.target.style.height = '48px';
                         e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
                       }}
-                      className="w-full px-14 bg-[#01191040] py-3 border border-blue-300 rounded-3xl text-white placeholder-white/50 resize-none outline-none"
+                      className="w-full pl-12 pr-24 bg-[#0b141a]/90 py-3 rounded-lg text-white placeholder-white/50 resize-none outline-none"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -2060,12 +1934,8 @@ export default function WhatsAppChatsPage() {
                     />
                     
                     {/* زر الوسائط على اليمين */}
-                    <label className="absolute  right-2 top-1/2 -translate-y-1/2 cursor-pointer">
-                      <div className="h-9 w-9 mb-1 rounded-full bg-gray-600  flex items-center justify-center transition-all">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
+                    <label className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer z-10 text-gray-400 hover:text-white transition-colors">
+                      <Plus className="w-6 h-6" />
                       <input
                         type="file"
                         accept="image/*,video/*"
@@ -2078,17 +1948,13 @@ export default function WhatsAppChatsPage() {
                     <button 
                       onClick={() => handleSendMessage(selectedContact, testMessage)}
                       disabled={!testMessage.trim()}
-                      className="absolute left-2 top-1/2 -translate-y-1/2"
-                    >
-                      <div className={`h-9 w-9 mb-1 rounded-full flex items-center justify-center transition-all ${
+                      className={`absolute left-3 top-1/2 -translate-y-1/2 z-10 transition-colors ${
                         testMessage.trim() 
-                          ? 'bg-gray-600  text-white' 
-                          : 'bg-gray-600 text-white cursor-not-allowed'
-                      }`}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
+                          ? 'text-blue-500 hover:text-blue-400' 
+                          : 'text-gray-600 cursor-not-allowed'
+                      }`}
+                    >
+                      <SendHorizontal className="w-6 h-6 rtl:rotate-180" />
                     </button>
                   </div>
                 </div>
@@ -2106,6 +1972,161 @@ export default function WhatsAppChatsPage() {
                 )}
               </div>
             )}
+          </div>
+          
+          {/* Actions Sidebar - Right side on Desktop */}
+          <div className={`hidden lg:flex flex-col w-[20%] border-r border-text-primary/50 h-full p-4 gap-6 overflow-y-auto ${!selectedContact ? 'opacity-50 pointer-events-none' : ''}`}>
+             <div className="flex flex-col gap-4">
+                <h3 className="text-sm font-semibold text-white border-b border-text-primary/30 pb-2 mb-2 flex justify-between items-center">
+                  <span>إجراءات وفلاتر</span>
+                  <span className="text-[10px] text-gray-200 font-normal">
+                   <span className="text-yellow-500"> {contacts.length}</span> جهة اتصال
+                  </span>
+                </h3>
+
+                {/* Filters Section (Moved from contacts sidebar) */}
+                <div className="flex flex-col gap-2 p-3 rounded-lg border border-text-primary/20 bg-[#01191020]">
+                  <p className="text-[10px] text-gray-400 mb-2">تصفية القائمة</p>
+                  <div className="relative">
+                    <Filter className="absolute right-2 top-2.5 h-4 w-4 text-primary scale-75" />
+                    <select
+                      value={filterTagId}
+                      onChange={(e) => setFilterTagId(e.target.value)}
+                      className="w-full h-8 pr-7 pl-2 text-[10px] bg-[#01191040] border border-text-primary/30 rounded-md text-white appearance-none focus:outline-none"
+                    >
+                      <option value="">كل التصنيفات</option>
+                      {availableTags.map(tag => (
+                        <option key={tag.id} value={tag.id}>{tag.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowOnlyEscalated(!showOnlyEscalated)}
+                    className={`h-8 px-2 text-[10px] border border-text-primary/30 flex items-center gap-1 transition-all ${
+                      showOnlyEscalated ? 'bg-red-500/20 text-red-400 border-red-500/50' : 'bg-[#01191040] text-white'
+                    }`}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${showOnlyEscalated ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                    عرض المحولة بموظف
+                  </Button>
+
+                  <div className="relative">
+                    <Filter className="absolute right-2 top-2.5 h-4 w-4 text-primary scale-75" />
+                    <select
+                      value={filterEmployeeId}
+                      onChange={(e) => setFilterEmployeeId(e.target.value)}
+                      className="w-full h-8 pr-7 pl-2 text-[10px] bg-[#01191040] border border-text-primary/30 rounded-md text-white appearance-none focus:outline-none"
+                    >
+                      <option value="all">فلترة باسم الموظف (منشن)</option>
+                      {employees.filter(emp => emp.isActive).map(emp => (
+                        <option key={emp.id} value={emp.id}>{emp.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Bot Status Card */}
+                <div className="p-3 rounded-lg inner-shadow bg-secondry/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">حالة البوت:</span>
+                    <div className="flex items-center gap-1">
+                      <div className={`w-2 h-2 rounded-full ${botStatus?.isPaused ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                      <span className="text-[10px] text-white">{botStatus?.isPaused ? 'متوقف' : 'نشط'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    {botStatus?.isPaused ? (
+                      <Button 
+                        size="sm" 
+                        onClick={handleResumeBot}
+                        disabled={botControlLoading}
+                        className="w-full bg-green-500 hover:bg-green-600 text-[10px]"
+                      >
+                        {botControlLoading ? 'جاري الاستئناف...' : 'استئناف البوت'}
+                      </Button>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button 
+                          size="sm" 
+                          onClick={() => handlePauseBot(30)}
+                          disabled={botControlLoading}
+                          className="bg-transparent text-white border border-text-primary/50 inner-shadow text-[9px] px-1"
+                        >
+                          إيقاف 30د
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => handlePauseBot(60)}
+                          disabled={botControlLoading}
+                          className="bg-transparent text-white border border-text-primary/50 inner-shadow text-[9px] px-1"
+                        >
+                          إيقاف ساعة
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contact Actions */}
+                <div className="flex flex-col gap-2">
+                   <p className="text-[10px] text-gray-400 mt-2">إجراءات سريعة للعميل</p>
+                  <Button 
+                    size="sm" 
+                    onClick={openTagModal}
+                    className="w-full text-xs primary-button justify-start gap-2"
+                  >
+                     إضافة إلى تصنيف
+                  </Button>
+                  
+                  <Button 
+                    size="sm"
+                    onClick={handleToggleAiBlock}
+                    disabled={botControlLoading}
+                    className={`w-full text-xs border border-text-primary/50 inner-shadow justify-start gap-2 ${
+                      contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
+                        ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' 
+                        : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                    }`}
+                  >
+                    
+                    {contacts.find(c => c.contactNumber === selectedContact)?.isAiBlocked 
+                      ? 'تفعيل الذكاء الاصطناعي' 
+                      : 'تعطيل AI للعميل'}
+                  </Button>
+                  
+                  <Button 
+                    size="sm"
+                    onClick={openNoteModal}
+                    className="w-full text-xs bg-transparent text-white border border-text-primary/50 inner-shadow justify-start gap-2"
+                  >
+                    منشن لموظف
+                  </Button>
+                </div>
+
+                {/* Selected Contact Mini Info */}
+                {selectedContact && (
+                   <div className="mt-4 p-3 rounded-lg border border-text-primary/20 bg-[#01191020]">
+                      <p className="text-[10px] text-gray-500 mb-2">معلومات العميل الحالية</p>
+                      <div className="flex items-center gap-3">
+                         {contacts.find(c => c.contactNumber === selectedContact)?.profilePicture ? 
+                            <img width={32} height={32} className="w-8 h-8 rounded-full object-cover" src={`${contacts.find(c => c.contactNumber === selectedContact)?.profilePicture}`} alt="" /> : 
+                            <img width={32} height={32} className="w-8 h-8 rounded-full" src="/user.gif" alt="" />
+                         }
+                         <div className="flex flex-col overflow-hidden">
+                            <span className="text-white text-xs font-medium truncate">
+                               {contacts.find(c => c.contactNumber === selectedContact)?.contactName || 'عميل جديد'}
+                            </span>
+                            <span className="text-[9px] text-gray-400 truncate" dir="ltr">
+                               {selectedContact.replace(/@(s\.whatsapp\.net|c\.us|g\.us|lid)$/, '')}
+                            </span>
+                         </div>
+                      </div>
+                   </div>
+                )}
+             </div>
           </div>
           </CardContent>
           </div>
@@ -2140,7 +2161,7 @@ export default function WhatsAppChatsPage() {
               />
 
               <div className="space-y-2">
-                <label className="block text-sm text-gray-300">منشن لموظف (اختياري)</label>
+                <label className="block text-sm text-gray-300">منشن لموظف </label>
                 <div className="flex items-center gap-2">
                   <select
                     className="flex-1 bg-[#01191040] rounded px-3 py-2 text-white outline-none border border-blue-300/30 focus:border-blue-500"

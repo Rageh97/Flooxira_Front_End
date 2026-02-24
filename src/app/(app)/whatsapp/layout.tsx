@@ -161,7 +161,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* {!hasActiveSubscription && (
         <NoActiveSubscription 
           heading="إدارة الواتساب"
@@ -169,7 +169,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
           className="container mx-auto p-6"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
+      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-3" : "space-y-3"}>
       {/* Warning banner if messages are running low */}
       {messagesRemaining > 0 && messagesRemaining <= 10 && (
         <Card className="bg-card border-none">
