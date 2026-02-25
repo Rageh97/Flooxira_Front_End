@@ -1922,7 +1922,7 @@ export default function WhatsAppChatsPage() {
                         e.target.style.height = '48px';
                         e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
                       }}
-                      className="w-full pl-12 pr-24 bg-[#0b141a]/90 py-3 rounded-lg text-white placeholder-white/50 resize-none outline-none"
+                      className="w-full pl-12 pr-24 bg-[#0b141a]/90 py-3 rounded-lg text-white placeholder-white/50 resize-none outline-none scrollbar-hide"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
@@ -1930,7 +1930,7 @@ export default function WhatsAppChatsPage() {
                         }
                       }}
                       rows={1}
-                      style={{ minHeight: '48px', maxHeight: '150px', overflow: 'hidden' }}
+                      style={{ minHeight: '48px', maxHeight: '150px', overflowY: 'auto' }}
                     />
                     
                     {/* زر الوسائط على اليمين */}
@@ -2355,8 +2355,8 @@ export default function WhatsAppChatsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <input
-                  className="flex-1 bg-[#01191040]  rounded px-3 py-2 text-white placeholder-white outline-none border border-blue-300/30"
-                  placeholder="إنشاء تصنيف سريع"
+                  className="flex-1 bg-[#01191040]  rounded px-3 py-2 text-white/50 placeholder-white/50 outline-none border border-blue-300/30"
+                  placeholder=" أدخل اسم التصنيف "
                   value={newTagName}
                   onChange={(e) => setNewTagName(e.target.value)}
                 />

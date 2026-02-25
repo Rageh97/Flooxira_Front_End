@@ -374,7 +374,7 @@ export default function TagsPage() {
                                   </div>
                                   <div className="flex flex-col min-w-0">
                                     <span className="text-sm font-bold text-white truncate">{displayName}</span>
-                                    <span className="text-[10px] text-gray-500 font-mono" dir="ltr">{contact.contactNumber}</span>
+                                    <span className="text-[10px] text-primary font-mono" dir="ltr">{contact.contactNumber}</span>
                                   </div>
                                 </div>
                                 <button
