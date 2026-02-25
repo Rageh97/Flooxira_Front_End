@@ -280,7 +280,7 @@ export default function TagsPage() {
                         </div>
                         <div className={`flex items-center gap-1 transition-opacity ${selectedTag === tag.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                           <button 
-                            className="p-1.5 text-gray-500 hover:text-blue-400 hover:bg-blue-400/10 rounded-md transition-colors" 
+                            className="p-1.5 text-gray-500 text-blue-500 hover:bg-blue-400/10 rounded-md transition-colors" 
                             onClick={(e) => { 
                               e.stopPropagation(); 
                               setEditingTagId(tag.id); 
@@ -290,7 +290,7 @@ export default function TagsPage() {
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button 
-                            className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors" 
+                            className="p-1.5 text-gray-500 text-red-500 hover:bg-red-400/10 rounded-md transition-colors" 
                             onClick={(e) => { 
                               e.stopPropagation(); 
                               setDeleteTagId(tag.id); 
@@ -327,7 +327,7 @@ export default function TagsPage() {
                         <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
                         <h2 className="text-xl font-bold text-white">{selectedTagName}</h2>
                       </div>
-                      <p className="text-xs text-gray-500">تم تحديد {contactsInTag.length} جهة اتصال في هذا التصنيف</p>
+                      <p className="text-xs text-primary">تم تحديد {contactsInTag.length} جهة اتصال في هذا التصنيف</p>
                     </div>
                     
                    
@@ -445,10 +445,10 @@ export default function TagsPage() {
                       </div>
 
                       <div className="bg-blue-500/5 rounded-2xl p-4 border border-blue-500/10">
-                        <div className="flex gap-2 text-blue-400 mb-2">
+                        {/* <div className="flex gap-2 text-blue-400 mb-2">
                           <Users className="w-4 h-4 shrink-0" />
                           <span className="text-xs font-bold">تلميح ذكي</span>
-                        </div>
+                        </div> */}
                         <p className="text-[10px] text-gray-400 leading-relaxed">
                           يمكنك إضافة نفس جهة الاتصال لعدة تصنيفات مختلفة لتسهيل تتبع حملاتك التسويقية أو اهتمامات العملاء.
                         </p>
