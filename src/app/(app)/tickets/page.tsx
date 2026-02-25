@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { useTutorials } from "@/hooks/useTutorials";
 import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Mail } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -1524,11 +1524,11 @@ export default function TicketsPage() {
                               </div>
                             </div>
                             
-                            {ticket.visitorEmail && (
+                            {/* {ticket.visitorEmail && (
                               <p className="text-[11px] text-gray-600 truncate mt-0.5">
                                 {ticket.visitorEmail}
                               </p>
-                            )}
+                            )} */}
                             {ticket.visitorPhone && (
                               <p 
                                 className="text-[11px] text-white/80 mt-0.5 flex items-center gap-1 hover:text-blue-300 cursor-pointer transition-colors" 
@@ -1589,9 +1589,20 @@ export default function TicketsPage() {
                     بدأت: {new Date(selectedTicket.createdAt).toLocaleDateString("ar-SA", { day: 'numeric', month: 'short' })} {new Date(selectedTicket.createdAt).toLocaleTimeString("ar-SA", { hour: '2-digit', minute: '2-digit' })}
                   </p>
                   {selectedTicket.visitorName && (
-                    <p className="text-[10px] md:text-xs text-gray-300 flex items-center gap-1">
-                      <User className="h-3 w-3 text-gray-400" />
+                    <p className="text-[10px] md:text-xs text-white flex items-center gap-1">
+                      <User className="h-3 w-3 text-primary" />
                       {selectedTicket.visitorName}
+                    </p>
+                  )}
+                  {selectedTicket.visitorEmail && (
+                    <p 
+                      className="text-[10px] md:text-xs text-white flex items-center gap-1 cursor-pointer hover:text-gray-300 transition-colors"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedTicket.visitorEmail!);
+                        showSuccess("تم نسخ البريد بنجاح");
+                      }}
+                    >
+                      <Mail className="text-primary" size={12} /> {selectedTicket.visitorEmail}
                     </p>
                   )}
                   {selectedTicket.visitorPhone && (
