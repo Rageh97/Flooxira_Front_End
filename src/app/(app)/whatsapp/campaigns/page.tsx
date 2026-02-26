@@ -157,6 +157,20 @@ export default function WhatsAppCampaignsPage() {
   }, [campaignSchedules]);
 
 
+  // التحقق من وجود حملة نشطة اليوم (pending أو running)
+  function hasActiveCampaignToday(): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return campaignSchedules.some(s => {
+      if (s.status !== 'pending' && s.status !== 'running') return false;
+      const scheduledDate = new Date(s.scheduledAt);
+      return scheduledDate >= today && scheduledDate < tomorrow;
+    });
+  }
+
   async function handleCancelCampaignSchedule(id: number) {
     try {
       setCancellingScheduleId(id);
@@ -175,6 +189,12 @@ export default function WhatsAppCampaignsPage() {
   }
 
   function handleStartCampaign() {
+    // التحقق من حد الحملة اليومية
+    if (hasActiveCampaignToday()) {
+      showError("تنبيه - حد الحملات اليومي", "يُسمح بتفعيل حملة واحدة فقط في اليوم حفاظاً على سياسة الاستخدام وتجنب تقييد الرقم.");
+      return;
+    }
+
     if (!campaignFile || !campaignTemplate) {
       setError("يرجى رفع ملف Excel وتوفير نص المحتوى التسويقي");
       showError("خطأ", "يرجى رفع ملف Excel وتوفير نص المحتوى التسويقي");
@@ -259,6 +279,12 @@ export default function WhatsAppCampaignsPage() {
   }
 
   function handleSendToTag() {
+    // التحقق من حد الحملة اليومية
+    if (hasActiveCampaignToday()) {
+      showError("تنبيه - حد الحملات اليومي", "يُسمح بتفعيل حملة واحدة فقط في اليوم حفاظاً على سياسة الاستخدام وتجنب تقييد الرقم.");
+      return;
+    }
+
     if (!selectedTagId || !tagCampaignTemplate.trim()) {
       setError("يرجى اختيار تصنيف وإدخال نص المحتوى التسويقي");
       showError("خطأ", "يرجى اختيار تصنيف وإدخال نص المحتوى التسويقي");

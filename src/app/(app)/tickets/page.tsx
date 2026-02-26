@@ -193,6 +193,8 @@ export default function TicketsPage() {
     widgetWelcomeTitle: "هلا والله كيف اقدر اساعدك؟",
     whatsappNotifyEnabled: false,
     whatsappNotifyGroupId: "",
+    whatsappTicketReplyNotifyEnabled: false,
+    whatsappTicketReplyNotifyTemplate: "مرحبا {visitorName}  تم الرد على تذكرتك رقم {ticketNumber} يرجي متابعة التذكرة من هنا {ticketUrl}",
   });
   const [savingAiSettings, setSavingAiSettings] = useState(false);
   const [whatsappGroups, setWhatsappGroups] = useState<{id: string, name: string}[]>([]);
@@ -833,6 +835,8 @@ export default function TicketsPage() {
             widgetWelcomeTitle: data.settings.widgetWelcomeTitle || "هلا والله كيف اقدر اساعدك؟",
             whatsappNotifyEnabled: data.settings.whatsappNotifyEnabled === true,
             whatsappNotifyGroupId: data.settings.whatsappNotifyGroupId || "",
+            whatsappTicketReplyNotifyEnabled: data.settings.whatsappTicketReplyNotifyEnabled === true,
+            whatsappTicketReplyNotifyTemplate: data.settings.whatsappTicketReplyNotifyTemplate || "مرحبا {visitorName}  تم الرد على تذكرتك رقم {ticketNumber} يرجي متابعة التذكرة من هنا {ticketUrl}",
           });
         }
       }
@@ -2146,11 +2150,52 @@ export default function TicketsPage() {
                 )}
               </div>
 
-              <div className="border-t border-primary/10 flex items-center justify-between pt-6">
-               <div className="flex flex-col gap-3">
+              <div className="border-t border-primary/10 flex flex-col md:flex-row items-start md:items-center justify-between pt-6 gap-6">
+                <div className="flex flex-col gap-3 flex-1 w-full">
+                   <div className="flex items-center justify-between">
+                     <label htmlFor="reply-notify-enabled" className="text-sm text-gray-300 cursor-pointer">
+                       تفعيل إرسال اشعار  للعميل عند الرد على تذكرته
+                     </label>
+                     <Switch 
+                       id="reply-notify-enabled"
+                       checked={aiSettings.whatsappTicketReplyNotifyEnabled}
+                       onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappTicketReplyNotifyEnabled: checked }))}
+                     />
+                   </div>
+                   
+                   {aiSettings.whatsappTicketReplyNotifyEnabled && (
+                    <div className="space-y-2 mt-2">
+                      <label className="text-sm font-medium text-gray-300">قالب رسالة الإشعار</label>
+                      <textarea 
+                        rows={3}
+                        value={aiSettings.whatsappTicketReplyNotifyTemplate}
+                        onChange={(e) => setAiSettings(prev => ({ ...prev, whatsappTicketReplyNotifyTemplate: e.target.value }))}
+                        placeholder="تم الرد على تذكرتك..."
+                        className="w-full bg-fixed-40 border-primary text-white p-3 rounded-md text-sm outline-none focus:border-primary"
+                      />
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded cursor-help" title="رقم التذكرة">{`{ticketNumber}`}</span>
+                        <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded cursor-help" title="رابط التذكرة">{`{ticketUrl}`}</span>
+                        <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded cursor-help" title="اسم العميل">{`{visitorName}`}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3 flex-1 w-full">
+                   <div className="flex items-center justify-between">
+                    <label htmlFor="notify-enabled-settings" className="text-sm text-gray-300 cursor-pointer">
+                      تفعيل إشعارات الواتساب للتذاكر الجديدة المعلقة
+                    </label>
+                     <Switch 
+                      id="notify-enabled-settings"
+                      checked={aiSettings.whatsappNotifyEnabled}
+                      onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappNotifyEnabled: checked }))}
+                    />
+                   </div>
                    
                    {aiSettings.whatsappNotifyEnabled && (
-                    <div className="space-y-2">
+                    <div className="space-y-2 mt-2">
                       <label className="text-sm font-medium text-gray-300">اختر جروب الواتساب للتنبيهات </label>
                       {loadingGroups ? (
                         <div className="flex items-center gap-2 text-gray-400 w-full">
@@ -2181,17 +2226,6 @@ export default function TicketsPage() {
                       <p className="text-[10px] text-yellow-500">سيتم إرسال تنبيه لهذا الجروب عند الحاجة لتدخل بشري</p>
                     </div>
                   )}
-               </div>
-                <div className="flex items-center flex-wrap gap-6 mx-5">
-                 
-                    <label htmlFor="notify-enabled-settings" className="text-sm text-gray-300 cursor-pointer">
-                      تفعيل إشعارات الواتساب للتذاكر الجديدة المعلقة
-                    </label>
-                     <Switch 
-                      id="notify-enabled-settings"
-                      checked={aiSettings.whatsappNotifyEnabled}
-                      onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappNotifyEnabled: checked }))}
-                    />
                 </div>
               </div>
 
