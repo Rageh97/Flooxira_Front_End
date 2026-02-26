@@ -50,6 +50,7 @@ import {
   RotateCcw,
   ArrowRight,
   Star,
+  Layout,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast-provider";
 import Loader from "@/components/Loader";
@@ -169,6 +170,8 @@ export default function TicketsPage() {
     widgetBottomMobile: 20,
     widgetPrimaryColor: "#667eea",
     widgetSecondaryColor: "#764ba2",
+    widgetSize: 70,
+    hideTooltip: false,
   });
   const [widgetIconPreview, setWidgetIconPreview] = useState<string>("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -722,6 +725,8 @@ export default function TicketsPage() {
           widgetBottomMobile: data.settings.widgetBottomMobile !== undefined ? data.settings.widgetBottomMobile : 20,
           widgetPrimaryColor: data.settings.widgetPrimaryColor || "#667eea",
           widgetSecondaryColor: data.settings.widgetSecondaryColor || "#764ba2",
+          widgetSize: data.settings.widgetSize || 70,
+          hideTooltip: data.settings.hideTooltip || false,
         });
         // إضافة timestamp للأيقونة لتجنب مشكلة التخزين المؤقت
         const iconUrl = data.settings.widgetIconUrl || "";
@@ -1292,7 +1297,7 @@ export default function TicketsPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-0">
-        <TabsList className="grid w-full grid-cols-2 gradient-border">
+        <TabsList className="grid w-full grid-cols-3 gradient-border">
           <TabsTrigger 
             value="tickets" 
             className="data-[state=active]:bg-[#03132c] data-[state=active]:text-white text-white"
@@ -1307,117 +1312,19 @@ export default function TicketsPage() {
             <Database className="h-4 w-4 mr-2" />
             قاعدة البيانات
           </TabsTrigger>
+          <TabsTrigger 
+            value="settings" 
+            className="data-[state=active]:bg-[#03132c] data-[state=active]:text-white text-white"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            إعدادات اللايف شات
+          </TabsTrigger>
         </TabsList>
 
         {/* Tickets Tab */}
         <TabsContent value="tickets" className="space-y-3 mt-2">
 
-      {/* Widget Code Section */}
-      {showWidgetCode && (
-        <Card  className="bg-fixed-40 border-none">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              كود التضمين 
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-400 mb-2">
-                انسخ هذا الكود وضعّه في موقعك أو متجرك لعرض  الدردشة المباشرة:
-              </p>
-              <div className="bg-gray-900 rounded-lg p-4 relative">
-                <code className="text-sm text-green-400 whitespace-pre-wrap block pl-10 font-mono leading-relaxed">{widgetCode}</code>
-                <button
-                  onClick={copyWidgetCode}
-                  className="absolute top-2 left-2 p-2 hover:bg-gray-800 rounded transition-colors"
-                  title="نسخ الكود"
-                >
-                  {copied ? (
-                    <CheckCheck className="h-4 w-4 text-green-400" />
-                  ) : (
-                    <Copy className="h-4 w-4 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-              <p className="text-sm text-blue-300">
-                <strong> نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <bdi className="bg-gray-800 px-1 rounded">&lt;/body&gt;</bdi> في صفحة HTML الخاصة بك
-              </p>
-            </div>
-            <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4">
-              <p className="text-sm text-yellow-300">
-                <strong>⚠️ مهم:</strong> Store ID الخاص بك هو: <code className="bg-gray-800 px-2 py-1 rounded">{storeId}</code>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
      
-   
-
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card className="gradient-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-200">إجمالي التذاكر</p>
-                  <p className="text-2xl font-bold text-white">{stats.total}</p>
-                </div>
-                <MessageSquare className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="gradient-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-200">مفتوحة</p>
-                  <p className="text-2xl font-bold text-green-400">{stats.open}</p>
-                </div>
-                <AlertCircle className="h-8 w-8 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="gradient-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-200">قيد الانتظار</p>
-                  <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-400" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="gradient-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-200">بانتظار العميل</p>
-                  <p className="text-2xl font-bold text-purple-400">{stats.waiting_customer || 0}</p>
-                </div>
-                <User className="h-8 w-8 text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="gradient-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-200">مغلقة</p>
-                  <p className="text-2xl font-bold text-red-400">{stats.closed}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-red-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Tickets Workspace */}
       <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-4 items-start">
@@ -1852,6 +1759,66 @@ export default function TicketsPage() {
         </Card>
       </div>
       {/* ........................... */}
+       {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="gradient-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-200">إجمالي التذاكر</p>
+                  <p className="text-2xl font-bold text-white">{stats.total}</p>
+                </div>
+                <MessageSquare className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="gradient-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-200">مفتوحة</p>
+                  <p className="text-2xl font-bold text-green-400">{stats.open}</p>
+                </div>
+                <AlertCircle className="h-8 w-8 text-green-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="gradient-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-200">قيد الانتظار</p>
+                  <p className="text-2xl font-bold text-yellow-400">{stats.pending}</p>
+                </div>
+                <Clock className="h-8 w-8 text-yellow-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="gradient-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-200">بانتظار العميل</p>
+                  <p className="text-2xl font-bold text-purple-400">{stats.waiting_customer || 0}</p>
+                </div>
+                <User className="h-8 w-8 text-purple-400" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="gradient-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-200">مغلقة</p>
+                  <p className="text-2xl font-bold text-red-400">{stats.closed}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-red-400" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
    {(liveChatUsage || usageLoading || usageError) && (
         <Card className="gradient-border border-none">
           <CardContent className="p-4 flex flex-col gap-4">
@@ -1905,463 +1872,6 @@ export default function TicketsPage() {
           </CardContent>
         </Card>
       )}
-      {/* AI & Notification Settings Section */}
-      <Card className="gradient-border border-none bg-fixed-40 mb-6 mt-2">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            إعدادات الذكاء الاصطناعي والتنبيهات
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between p-4 border border-primary/20 rounded-xl bg-secondry/30">
-            <div className="space-y-1">
-              <h4 className="text-white font-medium">تفعيل الرد الآلي بالذكاء الاصطناعي</h4>
-              <p className="text-xs text-gray-400">عند التعطيل سيتم تحويل جميع المحادثات للموظفين مباشرة</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {!canUseLiveChatAI() && (
-                <span className="text-[10px] text-red-500 font-bold ml-2">غير متوفر في باقتك الحالية</span>
-              )}
-              <span className={`text-xs ${aiSettings.liveChatAiEnabled ? 'text-primary' : 'text-gray-200'}`}>
-                {aiSettings.liveChatAiEnabled ? 'مفعل' : 'معطل'}
-              </span>
-              <Switch 
-                disabled={!canUseLiveChatAI()}
-                checked={aiSettings.liveChatAiEnabled && canUseLiveChatAI()}
-                onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, liveChatAiEnabled: checked }))}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">عنوان الترحيب الرئيسي</label>
-              <Input 
-                value={aiSettings.widgetWelcomeTitle}
-                onChange={(e) => setAiSettings(prev => ({ ...prev, widgetWelcomeTitle: e.target.value }))}
-                placeholder="مثلاً: هلا والله كيف اقدر اساعدك؟"
-                className="text-white"
-              />
-              <p className="text-[10px] text-yellow-500">هذا العنوان يظهر في الصفحة الرئيسية للويدجت</p>
-            </div>
-
-            {(!aiSettings.liveChatAiEnabled || !canUseLiveChatAI()) && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">رسالة ترحيب مخصصة (عند تعطيل AI)</label>
-                <textarea 
-                  rows={1}
-                  value={aiSettings.welcomeMessageCustom}
-                  onChange={(e) => setAiSettings(prev => ({ ...prev, welcomeMessageCustom: e.target.value }))}
-                  placeholder="سيقوم أحد موظفينا بالرد عليك قريباً..."
-                  className="w-full bg-fixed-40 border-primary text-white p-3 rounded-md text-sm outline-none focus:border-primary"
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-primary/10 flex items-center justify-between">
-           <div className="flex flex-col gap-3">
-               
-               {aiSettings.whatsappNotifyEnabled && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">اختر جروب الواتساب للتنبيهات </label>
-                  {loadingGroups ? (
-                    <div className="flex items-center gap-2 text-gray-400 w-full">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      جاري تحميل الجروبات...
-                    </div>
-                  ) : whatsappGroups.length > 0 ? (
-                    <Select
-                      value={aiSettings.whatsappNotifyGroupId}
-                      onValueChange={(value) => setAiSettings(prev => ({ ...prev, whatsappNotifyGroupId: value }))}
-                    >
-                      <SelectTrigger className="bg-secondry border-green-500/30 text-white w-full">
-                        <SelectValue placeholder="اختر جروب..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-secondry border-primary/20">
-                        {whatsappGroups.map((group) => (
-                          <SelectItem key={group.id} value={group.id} className="text-white hover:bg-primary/20">
-                            {group.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="text-sm text-yellow-500 p-3 bg-yellow-500/10 rounded-lg">
-                      ⚠️ لا توجد جروبات متاحة. تأكد من اتصالك بالواتساب.
-                    </div>
-                  )}
-                  <p className="text-[10px] text-yellow-500">سيتم إرسال تنبيه لهذا الجروب عند الحاجة لتدخل بشري</p>
-                </div>
-              )}
-           </div>
-            <div className="flex items-center flex-wrap gap-6 mx-5">
-             
-
-           
-               {/* <div className="flex items-center gap-4 p-4 border border-green-500/20 rounded-xl bg-green-500/5"> */}
-               
-                <label htmlFor="notify-enabled" className="text-sm text-gray-300 cursor-pointer">
-                  تفعيل إشعارات الواتساب للتذاكر الجديدة المعلقة
-                </label>
-                 <Switch 
-                  id="notify-enabled"
-                  checked={aiSettings.whatsappNotifyEnabled}
-                  onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappNotifyEnabled: checked }))}
-                />
-              {/* </div> */}
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button 
-              onClick={saveAiSettings}
-              disabled={savingAiSettings}
-              className="primary-button min-w-[150px]"
-            >
-              {savingAiSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              حفظ الإعدادات
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
- {/* Widget Settings Section */}
-      <Card className="gradient-border border-none">
-        <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            إعدادات الشات - روابط التواصل الاجتماعي
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-gray-400 mb-4">
-            أضف روابط حساباتك على منصات التواصل الاجتماعي لتظهر في نهاية الشات:
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 p-3 border border-gray-700 rounded-lg bg-fixed-40">
-            <div className="flex items-center w-full md:w-auto gap-3">
-              <div className="w-16 h-16 rounded-full  bg-gray-800 border border-gray-700 overflow-hidden flex items-center justify-center">
-                {widgetIconPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={widgetIconPreview} alt="Widget Icon" className="w-full h-full object-contain" />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={DEFAULT_WIDGET_ICON} alt="Default Widget Icon" className="w-full h-full object-contain opacity-70" />
-                )}
-              </div>
-              <div>
-                <p className="text-sm text-white font-medium">أيقونة الويدجت</p>
-                <p className="text-xs text-gray-400">ارفع صورة (PNG/GIF) لاستخدامها كأيقونة</p>
-              </div>
-            </div>
-            <div className="flex-1 flex items-center justify-end gap-2">
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleWidgetIconSelect}
-                disabled={uploadingIcon}
-                className="bg-fixed-40 border-primary cursor-pointer"
-              />
-              <Button disabled={uploadingIcon} className="primary-button">
-                {uploadingIcon ? <Loader2 className="h-4 w-4 animate-spin" /> : "رفع "}
-              </Button>
-              {widgetIconPreview && (
-                <Button 
-                  variant="destructive" 
-                  onClick={handleResetWidgetIcon}
-                  disabled={uploadingIcon || savingSettings}
-                  title="استعادة الافتراضي"
-                  className="h-10 w-10 p-0"
-                >
-                  حذف {/* <RotateCcw className="h-4 w-4" />  */}
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2 mb-4">
-            <label className="text-sm text-primary mb-5 font-bold ">اتجاه الويدجت</label>
-            <div className=" flex items-center gap-5">
-              <div className="flex items-center gap-3 ">
-                <Checkbox
-                  id="position-right"
-                  checked={widgetSettings.widgetPosition === "right"}
-                  onCheckedChange={() => handleWidgetPositionChange("right")}
-                />
-                <label
-                  htmlFor="position-right"
-                  className="text-sm text-gray-300 cursor-pointer"
-                >
-                  يمين (افتراضي)
-                </label>
-              </div>
-              <div className="flex items-center gap-3 ">
-                <Checkbox
-                  id="position-left"
-                  checked={widgetSettings.widgetPosition === "left"}
-                  onCheckedChange={() => handleWidgetPositionChange("left")}
-                />
-                <label
-                  htmlFor="position-left"
-                  className="text-sm text-gray-300 cursor-pointer"
-                >
-                  يسار
-                </label>
-              </div>
-              <div className="flex items-center gap-3 ">
-                <Checkbox
-                  id="position-auto"
-                  checked={widgetSettings.widgetPosition === "auto"}
-                  onCheckedChange={() => handleWidgetPositionChange("auto")}
-                />
-                <label
-                  htmlFor="position-auto"
-                  className="text-sm text-gray-300 cursor-pointer "
-                >
-                  تلقائي (حسب لغة الموقع)
-                </label>
-              </div>
-            </div>
-            <div className="flex flex-col md:flex-row gap-6 p-4 border border-primary/20 rounded-xl bg-secondry/30">
-              <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                   المسافة من الأسفل - PC (بكسل)
-                </label>
-                <Input
-                  type="number"
-                  value={widgetSettings.widgetBottomDesktop}
-                  onChange={(e) =>
-                    setWidgetSettings({
-                      ...widgetSettings,
-                      widgetBottomDesktop: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="bg-fixed-40 border-primary text-white"
-                />
-                <p className="text-[10px] text-primary">القيمة الافتراضية: 20px</p>
-              </div>
-              <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                   المسافة من الأسفل - موبايل (بكسل)
-                </label>
-                <Input
-                  type="number"
-                  value={widgetSettings.widgetBottomMobile}
-                  onChange={(e) =>
-                    setWidgetSettings({
-                      ...widgetSettings,
-                      widgetBottomMobile: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="bg-fixed-40 border-primary text-white"
-                />
-                <p className="text-[10px] text-primary">القيمة الافتراضية: 70px</p>
-              </div>
-            </div>
-            <div className="flex flex-col md:flex-row gap-6 p-4 border border-primary/20 rounded-xl bg-secondry/30">
-              <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                   لون الثيم الرئيسي (Gradient Start)
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={widgetSettings.widgetPrimaryColor}
-                    onChange={(e) =>
-                      setWidgetSettings({
-                        ...widgetSettings,
-                        widgetPrimaryColor: e.target.value,
-                      })
-                    }
-                    className="w-12 h-10 p-1 bg-fixed-40 border-primary"
-                  />
-                  {/* <Input
-                    type="text"
-                    value={widgetSettings.widgetPrimaryColor}
-                    onChange={(e) =>
-                      setWidgetSettings({
-                        ...widgetSettings,
-                        widgetPrimaryColor: e.target.value,
-                      })
-                    }
-                    className="flex-1 bg-fixed-40 border-primary text-white"
-                  /> */}
-                </div>
-              </div>
-              <div className="flex-1 space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                   لون الثيم فرعي (Gradient End)
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={widgetSettings.widgetSecondaryColor}
-                    onChange={(e) =>
-                      setWidgetSettings({
-                        ...widgetSettings,
-                        widgetSecondaryColor: e.target.value,
-                      })
-                    }
-                    className="w-12 h-10 p-1 bg-fixed-40 border-primary"
-                  />
-                  {/* <Input
-                    type="text"
-                    value={widgetSettings.widgetSecondaryColor}
-                    onChange={(e) =>
-                      setWidgetSettings({
-                        ...widgetSettings,
-                        widgetSecondaryColor: e.target.value,
-                      })
-                    }
-                    className="flex-1 bg-fixed-40 border-primary text-white"
-                  /> */}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-      
-          <div className="space-y-4 grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                رابط فيسبوك
-              </label>
-              <Input
-                type="url"
-                value={widgetSettings.facebookUrl}
-                onChange={(e) =>
-                  setWidgetSettings({ ...widgetSettings, facebookUrl: e.target.value })
-                }
-                placeholder="https://facebook.com/yourpage"
-                className="bg-fixed-40 border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                رابط واتساب
-              </label>
-              <Input
-                type="url"
-                value={widgetSettings.whatsappUrl}
-                onChange={(e) =>
-                  setWidgetSettings({ ...widgetSettings, whatsappUrl: e.target.value })
-                }
-                placeholder="https://wa.me/966xxxxxxxxx"
-                className="bg-fixed-40 border-primary"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">رابط تليجرام</label>
-              <Input
-                placeholder="https://t.me/username"
-                value={widgetSettings.telegramUrl}
-                onChange={(e) =>
-                  setWidgetSettings({
-                    ...widgetSettings,
-                    telegramUrl: e.target.value,
-                  })
-                }
-                className="bg-fixed-40 border-primary text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">رابط سناب شات</label>
-              <Input
-                placeholder="https://www.snapchat.com/add/username"
-                value={widgetSettings.snapchatUrl}
-                onChange={(e) =>
-                  setWidgetSettings({
-                    ...widgetSettings,
-                    snapchatUrl: e.target.value,
-                  })
-                }
-                className="bg-fixed-40 border-primary text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">رابط تيك توك</label>
-              <Input
-                placeholder="https://www.tiktok.com/@username"
-                value={widgetSettings.tiktokUrl}
-                onChange={(e) =>
-                  setWidgetSettings({
-                    ...widgetSettings,
-                    tiktokUrl: e.target.value,
-                  })
-                }
-                className="bg-fixed-40 border-primary text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">رابط يوتيوب</label>
-              <Input
-                placeholder="https://www.youtube.com/channel/..."
-                value={widgetSettings.youtubeUrl}
-                onChange={(e) =>
-                  setWidgetSettings({
-                    ...widgetSettings,
-                    youtubeUrl: e.target.value,
-                  })
-                }
-                className="bg-fixed-40 border-primary text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">رابط انستجرام</label>
-              <Input
-                placeholder="https://www.instagram.com/username"
-                value={widgetSettings.instagramUrl}
-                onChange={(e) =>
-                  setWidgetSettings({
-                    ...widgetSettings,
-                    instagramUrl: e.target.value,
-                  })
-                }
-                className="bg-fixed-40 border-primary text-white"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm text-gray-300">رابط تويتر (X)</label>
-              <Input
-                placeholder="https://twitter.com/username"
-                value={widgetSettings.twitterUrl}
-                onChange={(e) =>
-                  setWidgetSettings({
-                    ...widgetSettings,
-                    twitterUrl: e.target.value,
-                  })
-                }
-                className="bg-fixed-40 border-primary text-white"
-              />
-            </div>
-          </div>
-
-          <Button
-            onClick={() => saveWidgetSettings()}
-            disabled={savingSettings}
-            className="w-full primary-button"
-          >
-            {savingSettings ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                جاري الحفظ...
-              </>
-            ) : (
-              "حفظ الإعدادات"
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
         </TabsContent>
 
         {/* Knowledge Base Tab */}
@@ -2532,6 +2042,553 @@ export default function TicketsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Live Chat Settings Tab */}
+        <TabsContent value="settings" className="space-y-6 mt-6">
+          {/* Widget Code Section */}
+          <Card  className="bg-fixed-40 border-none">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-white flex items-center gap-2">
+                <Code className="h-5 w-5 text-primary" />
+                كود التضمين في موقعك
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowWidgetCode(!showWidgetCode)}
+                className="text-xs border-primary text-primary hover:bg-primary/10"
+              >
+                {showWidgetCode ? "إخفاء الكود" : "عرض الكود"}
+              </Button>
+            </CardHeader>
+            {showWidgetCode && (
+              <CardContent className="space-y-4 pt-4">
+                <div>
+                  <p className="text-sm text-gray-400 mb-2">
+                    انسخ هذا الكود وضعّه في موقعك أو متجرك لعرض الدردشة المباشرة:
+                  </p>
+                  <div className="bg-gray-900 rounded-lg p-4 relative">
+                    <code className="text-sm text-green-400 whitespace-pre-wrap block pl-10 font-mono leading-relaxed">{widgetCode}</code>
+                    <button
+                      onClick={copyWidgetCode}
+                      className="absolute top-2 left-2 p-2 hover:bg-gray-800 rounded transition-colors"
+                      title="نسخ الكود"
+                    >
+                      {copied ? (
+                        <CheckCheck className="h-4 w-4 text-green-400" />
+                      ) : (
+                        <Copy className="h-4 w-4 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                  <p className="text-sm text-blue-300">
+                    <strong> نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <bdi className="bg-gray-800 px-1 rounded">&lt;/body&gt;</bdi> في صفحة HTML الخاصة بك
+                  </p>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* AI & Notification Settings Section */}
+          <Card className="gradient-border border-none bg-fixed-40 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2 text-lg">
+                <Bot className="h-6 w-6 text-primary" />
+                إعدادات الذكاء الاصطناعي والتنبيهات
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 border border-primary/20 rounded-xl bg-secondry/30">
+                <div className="space-y-1">
+                  <h4 className="text-white font-medium">تفعيل الرد الآلي بالذكاء الاصطناعي</h4>
+                  <p className="text-xs text-gray-400">عند التعطيل سيتم تحويل جميع المحادثات للموظفين مباشرة</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!canUseLiveChatAI() && (
+                    <span className="text-[10px] text-red-500 font-bold ml-2">غير متوفر في باقتك الحالية</span>
+                  )}
+                  <span className={`text-xs ${aiSettings.liveChatAiEnabled ? 'text-primary' : 'text-gray-200'}`}>
+                    {aiSettings.liveChatAiEnabled ? 'مفعل' : 'معطل'}
+                  </span>
+                  <Switch 
+                    disabled={!canUseLiveChatAI()}
+                    checked={aiSettings.liveChatAiEnabled && canUseLiveChatAI()}
+                    onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, liveChatAiEnabled: checked }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">عنوان الترحيب الرئيسي</label>
+                  <Input 
+                    value={aiSettings.widgetWelcomeTitle}
+                    onChange={(e) => setAiSettings(prev => ({ ...prev, widgetWelcomeTitle: e.target.value }))}
+                    placeholder="مثلاً: هلا والله كيف اقدر اساعدك؟"
+                    className="text-white"
+                  />
+                  <p className="text-[10px] text-yellow-500">هذا العنوان يظهر في الصفحة الرئيسية للويدجت</p>
+                </div>
+
+                {(!aiSettings.liveChatAiEnabled || !canUseLiveChatAI()) && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">رسالة ترحيب مخصصة (عند تعطيل AI)</label>
+                    <textarea 
+                      rows={1}
+                      value={aiSettings.welcomeMessageCustom}
+                      onChange={(e) => setAiSettings(prev => ({ ...prev, welcomeMessageCustom: e.target.value }))}
+                      placeholder="سيقوم أحد موظفينا بالرد عليك قريباً..."
+                      className="w-full bg-fixed-40 border-primary text-white p-3 rounded-md text-sm outline-none focus:border-primary"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-primary/10 flex items-center justify-between pt-6">
+               <div className="flex flex-col gap-3">
+                   
+                   {aiSettings.whatsappNotifyEnabled && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-300">اختر جروب الواتساب للتنبيهات </label>
+                      {loadingGroups ? (
+                        <div className="flex items-center gap-2 text-gray-400 w-full">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          جاري تحميل الجروبات...
+                        </div>
+                      ) : whatsappGroups.length > 0 ? (
+                        <Select
+                          value={aiSettings.whatsappNotifyGroupId}
+                          onValueChange={(value) => setAiSettings(prev => ({ ...prev, whatsappNotifyGroupId: value }))}
+                        >
+                          <SelectTrigger className="bg-secondry border-green-500/30 text-white w-full">
+                            <SelectValue placeholder="اختر جروب..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-secondry border-primary/20">
+                            {whatsappGroups.map((group) => (
+                              <SelectItem key={group.id} value={group.id} className="text-white hover:bg-primary/20">
+                                {group.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="text-sm text-yellow-500 p-3 bg-yellow-500/10 rounded-lg">
+                          ⚠️ لا توجد جروبات متاحة. تأكد من اتصالك بالواتساب.
+                        </div>
+                      )}
+                      <p className="text-[10px] text-yellow-500">سيتم إرسال تنبيه لهذا الجروب عند الحاجة لتدخل بشري</p>
+                    </div>
+                  )}
+               </div>
+                <div className="flex items-center flex-wrap gap-6 mx-5">
+                 
+                    <label htmlFor="notify-enabled-settings" className="text-sm text-gray-300 cursor-pointer">
+                      تفعيل إشعارات الواتساب للتذاكر الجديدة المعلقة
+                    </label>
+                     <Switch 
+                      id="notify-enabled-settings"
+                      checked={aiSettings.whatsappNotifyEnabled}
+                      onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, whatsappNotifyEnabled: checked }))}
+                    />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <Button 
+                  onClick={saveAiSettings}
+                  disabled={savingAiSettings}
+                  className="primary-button min-w-[150px]"
+                >
+                  {savingAiSettings ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  حفظ الإعدادات
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Widget Settings Section */}
+          <Card className="gradient-border border-none bg-fixed-40 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2 text-lg">
+                <Settings className="h-6 w-6 text-primary" />
+                إعدادات الويدجت وروابط التواصل
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-center gap-3 p-3 border border-gray-700 rounded-lg bg-fixed-40">
+                <div className="flex items-center w-full md:w-auto gap-3">
+                  <div className="w-16 h-16 rounded-full  bg-gray-800 border border-gray-700 overflow-hidden flex items-center justify-center">
+                    {widgetIconPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={widgetIconPreview} alt="Widget Icon" className="w-full h-full object-contain" />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={DEFAULT_WIDGET_ICON} alt="Default Widget Icon" className="w-full h-full object-contain opacity-70" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-white font-medium">أيقونة الويدجت</p>
+                    <p className="text-xs text-gray-400">ارفع صورة (PNG/GIF) لاستخدامها كأيقونة</p>
+                  </div>
+                </div>
+                <div className="flex-1 flex items-center justify-end gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleWidgetIconSelect}
+                    disabled={uploadingIcon}
+                    className="bg-fixed-40 border-primary cursor-pointer"
+                  />
+                  <Button disabled={uploadingIcon} className="primary-button">
+                    {uploadingIcon ? <Loader2 className="h-4 w-4 animate-spin" /> : "رفع "}
+                  </Button>
+                  {widgetIconPreview && (
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleResetWidgetIcon}
+                      disabled={uploadingIcon || savingSettings}
+                      title="استعادة الافتراضي"
+                      className="h-10 w-10 p-0"
+                    >
+                      حذف
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-sm font-bold text-primary flex items-center gap-2">
+                  <Layout className="h-4 w-4" />
+                  تصميم وموقع الويدجت
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-primary/10 rounded-xl bg-secondry/20">
+                  <div className="flex items-center gap-3 ">
+                    <Checkbox
+                      id="position-right-settings"
+                      checked={widgetSettings.widgetPosition === "right"}
+                      onCheckedChange={() => handleWidgetPositionChange("right")}
+                    />
+                    <label
+                      htmlFor="position-right-settings"
+                      className="text-sm text-gray-300 cursor-pointer"
+                    >
+                      يمين (افتراضي)
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-3 ">
+                    <Checkbox
+                      id="position-left-settings"
+                      checked={widgetSettings.widgetPosition === "left"}
+                      onCheckedChange={() => handleWidgetPositionChange("left")}
+                    />
+                    <label
+                      htmlFor="position-left-settings"
+                      className="text-sm text-gray-300 cursor-pointer"
+                    >
+                      يسار
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-3 ">
+                    <Checkbox
+                      id="position-auto-settings"
+                      checked={widgetSettings.widgetPosition === "auto"}
+                      onCheckedChange={() => handleWidgetPositionChange("auto")}
+                    />
+                    <label
+                      htmlFor="position-auto-settings"
+                      className="text-sm text-gray-300 cursor-pointer "
+                    >
+                      تلقائي (حسب لغة الموقع)
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-4 p-4 border border-primary rounded-xl bg-secondry/30">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-300">
+                      <span>حجم أيقونة الويدجت (px)</span>
+                      <div className="text-primary font-bold mt-1">{widgetSettings.widgetSize || 70}px</div>
+                    </label>
+                    
+                    {/* Size Preview */}
+                    <div className="flex items-center justify-center bg-gray-900/40 rounded-lg p-2 min-w-[120px] min-h-[120px]">
+                      <div 
+                        className="relative rounded-full overflow-hidden shadow-2xl transition-all duration-200 ease-out border-2 border-primary/30"
+                        style={{ 
+                          width: `${widgetSettings.widgetSize || 70}px`, 
+                          height: `${widgetSettings.widgetSize || 70}px`,
+                          // background: `linear-gradient(135deg, ${widgetSettings.widgetPrimaryColor || '#667eea'}, ${widgetSettings.widgetSecondaryColor || '#764ba2'})`
+                        }}
+                      >
+                        <img 
+                          src={widgetSettings.widgetIconUrl || "https://i.ibb.co/9HzxNrwg/1.gif"} 
+                          alt="Widget Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min="40"
+                      max="100"
+                      value={widgetSettings.widgetSize || 70}
+                      onChange={(e) =>
+                        setWidgetSettings({
+                          ...widgetSettings,
+                          widgetSize: parseInt(e.target.value),
+                        })
+                      }
+                      className="w-full h-1.5 bg-gray-700/50 rounded-lg appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-lg [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-lg"
+                    />
+                    <div className="flex justify-between text-[10px] text-gray-300">
+                      <span>40px</span>
+                      <span>70px</span>
+                      <span>100px</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 p-4 border border-primary rounded-xl bg-secondry/30 flex flex-col justify-center">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="hide-tooltip" className="text-sm font-medium text-gray-300 cursor-pointer">
+                      إخفاء رسالة "كيف يمكننا مساعدتك؟"
+                    </label>
+                    <Switch
+                      id="hide-tooltip"
+                      checked={widgetSettings.hideTooltip || false}
+                      onCheckedChange={(checked) =>
+                        setWidgetSettings({
+                          ...widgetSettings,
+                          hideTooltip: checked,
+                        })
+                      }
+                    />
+                  </div>
+                  <p className="text-[10px] text-yellow-500">سيؤدي هذا لإخفاء الرسالة الصغيرة التي تظهر بجانب الأيقونة</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 p-4 border border-primary/20 rounded-xl bg-secondry/30">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    المسافة من الأسفل (كمبيوتر) - px
+                  </label>
+                  <Input
+                    type="number"
+                    value={widgetSettings.widgetBottomDesktop}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        widgetBottomDesktop: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-white"
+                  />
+                </div>
+                <div className="space-y-2 p-4 border border-primary/20 rounded-xl bg-secondry/30">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    المسافة من الأسفل (جوال) - px
+                  </label>
+                  <Input
+                    type="number"
+                    value={widgetSettings.widgetBottomMobile}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        widgetBottomMobile: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 p-4 border border-primary/20 rounded-xl bg-secondry/30">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                     لون الثيم الرئيسي
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="color"
+                      value={widgetSettings.widgetPrimaryColor}
+                      onChange={(e) =>
+                        setWidgetSettings({
+                          ...widgetSettings,
+                          widgetPrimaryColor: e.target.value,
+                        })
+                      }
+                      className="w-12 h-10 p-1 bg-fixed-40 border-primary"
+                    />
+                    <span className="text-xs text-gray-400 font-mono">{widgetSettings.widgetPrimaryColor}</span>
+                  </div>
+                </div>
+                <div className="space-y-2 p-4 border border-primary/20 rounded-xl bg-secondry/30">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                     لون الثيم فرعي
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="color"
+                      value={widgetSettings.widgetSecondaryColor}
+                      onChange={(e) =>
+                        setWidgetSettings({
+                          ...widgetSettings,
+                          widgetSecondaryColor: e.target.value,
+                        })
+                      }
+                      className="w-12 h-10 p-1 bg-fixed-40 border-primary"
+                    />
+                    <span className="text-xs text-gray-400 font-mono">{widgetSettings.widgetSecondaryColor}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-sm font-bold text-primary">روابط التواصل الاجتماعي</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">فيسبوك</label>
+                  <Input
+                    type="url"
+                    value={widgetSettings.facebookUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({ ...widgetSettings, facebookUrl: e.target.value })
+                    }
+                    placeholder="https://facebook.com/..."
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">واتساب</label>
+                  <Input
+                    type="url"
+                    value={widgetSettings.whatsappUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({ ...widgetSettings, whatsappUrl: e.target.value })
+                    }
+                    placeholder="https://wa.me/..."
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">تليجرام</label>
+                  <Input
+                    placeholder="https://t.me/..."
+                    value={widgetSettings.telegramUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        telegramUrl: e.target.value,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">سناب شات</label>
+                  <Input
+                    placeholder="https://snapchat.com/..."
+                    value={widgetSettings.snapchatUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        snapchatUrl: e.target.value,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">تيك توك</label>
+                  <Input
+                    placeholder="https://tiktok.com/..."
+                    value={widgetSettings.tiktokUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        tiktokUrl: e.target.value,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">يوتيوب</label>
+                  <Input
+                    placeholder="https://youtube.com/..."
+                    value={widgetSettings.youtubeUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        youtubeUrl: e.target.value,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">انستجرام</label>
+                  <Input
+                    placeholder="https://instagram.com/..."
+                    value={widgetSettings.instagramUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        instagramUrl: e.target.value,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">تويتر (X)</label>
+                  <Input
+                    placeholder="https://twitter.com/..."
+                    value={widgetSettings.twitterUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        twitterUrl: e.target.value,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+              </div>
+              </div>
+
+              <Button
+                onClick={() => saveWidgetSettings()}
+                disabled={savingSettings}
+                className="w-full primary-button py-6 text-lg"
+              >
+                {savingSettings ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    جاري حفظ الإعدادات...
+                  </>
+                ) : (
+                  "حفظ كافة إعدادات الويدجت"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
       </Tabs>
 
       {/* View Knowledge Base Dialog */}
@@ -2656,14 +2713,13 @@ export default function TicketsPage() {
         </DialogContent>
       </Dialog>
       </div>
-       {/* Tutorial Video Modal */}
-       <TutorialVideoModal
+      {/* Tutorial Video Modal */}
+      <TutorialVideoModal
         tutorial={selectedTutorial}
         onClose={() => setSelectedTutorial(null)}
         onViewIncrement={incrementViews}
       />
     </div>
-    
   );
 }
 
