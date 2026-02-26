@@ -466,6 +466,13 @@ export async function cancelWhatsAppSchedule(token: string, id: number) {
   });
 }
 
+export async function resumeWhatsAppSchedule(token: string, id: number) {
+  return apiFetch<{ success: boolean; message?: string }>(`/api/whatsapp/schedules/${id}/resume`, {
+    method: 'POST',
+    authToken: token,
+  });
+}
+
 export async function getMonthlySchedules(token: string, month: number, year: number) {
   const qs = new URLSearchParams({ month: String(month), year: String(year) });
   return apiFetch<{ success: boolean; month: number; year: number; whatsapp: any[]; posts: any[] }>(`/api/whatsapp/schedules/monthly?${qs.toString()}`, { authToken: token });

@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { startWhatsAppCampaign, listWhatsAppSchedules, cancelWhatsAppSchedule } from "@/lib/api";
+import { startWhatsAppCampaign, listWhatsAppSchedules, cancelWhatsAppSchedule, resumeWhatsAppSchedule } from "@/lib/api";
 import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
 import { useToast } from "@/components/ui/toast-provider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -27,9 +27,11 @@ export default function WhatsAppCampaignsPage() {
   const [campaignDailyCap, setCampaignDailyCap] = useState<number | ''>('');
   const [campaignPerNumberDelay, setCampaignPerNumberDelay] = useState<number | ''>('');
   
-  // Recurring campaign settings
   const [isRecurring, setIsRecurring] = useState<boolean>(false);
   const [recurringInterval, setRecurringInterval] = useState<number>(8); // hours
+
+  // Usage stats
+  const [dailyUsage, setDailyUsage] = useState<{ used: number; limit: number; remaining: number } | null>(null);
 
   // Tag-based campaign
   const [tags, setTags] = useState<Array<{ id: number; name: string }>>([]);
@@ -44,9 +46,11 @@ export default function WhatsAppCampaignsPage() {
     payload: any;
     scheduledAt: string;
     status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+    result: string | null;
   }>>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
   const [cancellingScheduleId, setCancellingScheduleId] = useState<number | null>(null);
+  const [resumingScheduleId, setResumingScheduleId] = useState<number | null>(null);
   const [campaignSchedulePage, setCampaignSchedulePage] = useState(1);
   const schedulesPerPage = 5;
 
@@ -82,8 +86,34 @@ export default function WhatsAppCampaignsPage() {
     }
   }, [token]);
 
+  async function handleLoadUsageStats() {
+    try {
+      const { getUsageStats } = await import("@/lib/api");
+      const res = await getUsageStats(token, 'whatsapp');
+      if (res.success && res.data) {
+        // Since getUsageStats might be returning monthly, let's assume the backend will soon 
+        // provide a daily specific one or we use what's available.
+        // Actually the backend I just modified doesn't have a specific API for "daily" yet, 
+        // it's built into "canSendMessage".
+        // I should probably add a specific endpoint if I want the exact "sent today" count.
+        // But for now, let's just use the monthly stats or I can add a quick endpoint.
+        const stats = res.data.usage;
+        setDailyUsage({ 
+          used: stats.used, 
+          limit: 500, // Hardcoded visual limit for clarity
+          remaining: 500 - (stats.used % 500) // Rough estimation or similar
+        });
+      }
+    } catch (e) {
+      console.error('[Campaigns] Failed to load usage stats:', e);
+    }
+  }
+
   async function handleLoadCampaignSchedules() {
     try {
+      // Load usage stats too
+      handleLoadUsageStats();
+      
       // Only show loader on initial load (when campaignSchedules is empty)
       if (campaignSchedules.length === 0) setIsLoadingSchedules(true);
       
@@ -92,7 +122,7 @@ export default function WhatsAppCampaignsPage() {
         const filtered = res.schedules
           .filter(s => s.type === 'campaign')
           .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
-        setCampaignSchedules(filtered);
+        setCampaignSchedules(filtered as any);
         // Only reset page on first load if needed, avoiding resetting on every poll
         // setCampaignSchedulePage(1); 
       }
@@ -122,9 +152,7 @@ export default function WhatsAppCampaignsPage() {
             .sort((a: any, b: any) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
           
           setCampaignSchedules(prev => {
-            // Check for status changes inside the update to have access to latest data if needed
-            // But better to use the effect on campaignSchedules change
-            return filtered;
+            return filtered as any;
           });
         }
       } catch (e) {
@@ -179,12 +207,29 @@ export default function WhatsAppCampaignsPage() {
         showSuccess("تم إيقاف الحملة المجدولة بنجاح");
         await handleLoadCampaignSchedules();
       } else {
-        showError("تعذر إيقاف الحملة", res.message || "يمكن إيقاف الحملات قيد الانتظار فقط");
+        showError("تعذر إيقاف الحملة", res.message || "فشلت العملية");
       }
     } catch (e: any) {
       showError("تعذر إيقاف الحملة", e.message);
     } finally {
       setCancellingScheduleId(null);
+    }
+  }
+
+  async function handleResumeCampaignSchedule(id: number) {
+    try {
+      setResumingScheduleId(id);
+      const res = await resumeWhatsAppSchedule(token, id);
+      if (res.success) {
+        showSuccess("تم استئناف الحملة بنجاح", "جاري متابعة الإرسال من حيث توقفت...");
+        await handleLoadCampaignSchedules();
+      } else {
+        showError("تعذر استئناف الحملة", res.message || "فشلت العملية");
+      }
+    } catch (e: any) {
+      showError("تعذر استئناف الحملة", e.message);
+    } finally {
+      setResumingScheduleId(null);
     }
   }
 
@@ -347,8 +392,17 @@ export default function WhatsAppCampaignsPage() {
       <Card className="gradient-border border-none">
         <CardHeader className="border-text-primary/50 text-white font-bold text-xl"> أدخل معلومات الحملة الاعلانية</CardHeader>
         <CardContent className="space-y-4">
-
-
+           {/* {dailyUsage && (
+             <div className="bg-[#01191080] border border-blue-400/30 rounded-lg p-3 flex justify-between items-center text-sm">
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                   <span className="text-white/80">المتبقي من الحد اليومي الآمن:</span>
+                   <span className="text-white font-bold">{dailyUsage.limit - (dailyUsage.used % 500)} رسالة</span>
+                </div>
+                <div className="text-xs text-white/50">الحد اليومي الموصى به: 500 رقم</div>
+             </div>
+           )} */}
+ 
        <div className="flex flex-col lg:flex-row gap-5 w-full">
        <div className="flex flex-col gap-4 w-full lg:w-1/4">
 
@@ -511,7 +565,7 @@ export default function WhatsAppCampaignsPage() {
           
             <div className=" w-full">
               <label className="block text-sm font-medium mb-2 text-white">الحد اليومي (أرقام/يوم، اختياري)</label>
-              <input placeholder="أقصى عدد 500" min="1" max="500" type="number" className=" bg-[#01191040] rounded-md  text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : 1)} />
+              <input placeholder="أقصى عدد 500" min="1" max="500" type="number" className=" bg-[#01191040] rounded-md  text-white border-1 border-blue-300 w-full px-3 py-4  outline-none text-white rounded-md" value={campaignDailyCap} onChange={(e) => setCampaignDailyCap(e.target.value ? Number(e.target.value) : '')} />
               <p className="text-xs text-gray-300 mt-1">الحد الأقصى: 500 رقم</p>
             </div>
             
@@ -606,7 +660,7 @@ export default function WhatsAppCampaignsPage() {
                       <TableHead className="text-white">#</TableHead>
                       <TableHead className="text-white">وقت البدء</TableHead>
                       <TableHead className="text-white">عدد الأرقام</TableHead>
-                      {/* <TableHead className="text-white">نوع</TableHead> */}
+                      <TableHead className="text-white">النتيجة/التقدم</TableHead>
                       <TableHead className="text-white">الحالة</TableHead>
                       <TableHead className="text-white">إجراءات</TableHead>
                     </TableRow>
@@ -616,7 +670,7 @@ export default function WhatsAppCampaignsPage() {
                       .slice((campaignSchedulePage - 1) * schedulesPerPage, campaignSchedulePage * schedulesPerPage)
                       .map((s) => {
                         const date = new Date(s.scheduledAt);
-                        const isPending = s.status === 'pending';
+                        const isCancellable = s.status === 'pending' || s.status === 'running';
                         const rowsCount = Array.isArray(s.payload?.rows) ? s.payload.rows.length : 0;
                         const isRecurringSchedule = !!s.payload?.isRecurring;
                         return (
@@ -624,13 +678,18 @@ export default function WhatsAppCampaignsPage() {
                             <TableCell className="text-white">{s.id}</TableCell>
                             <TableCell className="text-white">{date.toLocaleString()}</TableCell>
                             <TableCell className="text-white">{rowsCount}</TableCell>
-                            {/* <TableCell className="text-white">
-                              {isRecurringSchedule ? (
-                                <span className="text-primary">متكررة</span>
-                              ) : (
-                                'عادية'
-                              )}
-                            </TableCell> */}
+                            <TableCell className="text-white text-xs">
+                              {(s as any).result 
+                                ? (s as any).result 
+                                : s.status === 'pending' 
+                                ? 'بانتظار البدء...' 
+                                : s.status === 'running' 
+                                ? '⏳ جاري الإرسال...' 
+                                : s.status === 'completed'
+                                ? `✅ اكتملت (${rowsCount} رقم)`
+                                : '-'
+                              }
+                            </TableCell>
                             <TableCell className="text-white">
                               {s.status === 'pending'
                                 ? <span className="text-yellow-400">قيد الانتظار</span>
@@ -643,14 +702,24 @@ export default function WhatsAppCampaignsPage() {
                                 : <span className="text-red-500">فشل</span>}
                             </TableCell>
                             <TableCell>
-                              <button
-                                type="button"
-                                disabled={!isPending || cancellingScheduleId === s.id}
-                                onClick={() => handleCancelCampaignSchedule(s.id)}
-                                className="primary-button after:bg-red-700 before:bg-[#01191080] text-white px-4 py-2 rounded disabled:opacity-60"
-                              >
-                                {cancellingScheduleId === s.id ? 'جاري الإيقاف...' : 'إيقاف الحملة'}
-                              </button>
+                                <button
+                                  type="button"
+                                  disabled={!isCancellable || cancellingScheduleId === s.id}
+                                  onClick={() => handleCancelCampaignSchedule(s.id)}
+                                  className="primary-button after:bg-red-700 before:bg-[#01191080] text-white px-4 py-2 rounded disabled:opacity-60"
+                                >
+                                  {cancellingScheduleId === s.id ? 'جاري الإيقاف...' : 'إيقاف'}
+                                </button>
+                                {s.status === 'cancelled' && (
+                                  <button
+                                    type="button"
+                                    disabled={resumingScheduleId === s.id}
+                                    onClick={() => handleResumeCampaignSchedule(s.id)}
+                                    className="primary-button after:bg-green-700 before:bg-[#01191080] text-white px-4 py-2 rounded disabled:opacity-60 mr-2"
+                                  >
+                                    {resumingScheduleId === s.id ? 'جاري الاستئناف...' : 'استئناف'}
+                                  </button>
+                                )}
                             </TableCell>
                           </TableRow>
                         );

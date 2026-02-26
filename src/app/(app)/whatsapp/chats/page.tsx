@@ -263,6 +263,7 @@ export default function WhatsAppChatsPage() {
   const [availableTags, setAvailableTags] = useState<Array<{ id: number; name: string }>>([]);
   const [filterTagId, setFilterTagId] = useState<string>("");
   const [showOnlyEscalated, setShowOnlyEscalated] = useState(false);
+  const [showOnlyUnread, setShowOnlyUnread] = useState(false);
   const [contactsInSelectedFilter, setContactsInSelectedFilter] = useState<Set<string> | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -787,30 +788,48 @@ export default function WhatsAppChatsPage() {
         }
 
         // Update contacts list
+        const existingNumbers = new Set(contacts.map(c => c.contactNumber));
+        const cleanAndMapped = cleanContacts.map(contact => ({
+          ...contact,
+          profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
+        }));
+        
+        const newContactsToAdd = cleanAndMapped.filter(c => !existingNumbers.has(c.contactNumber));
+        
+        // Check how many of the new contacts match current visibility filters
+        const searchLower = searchTerm.toLowerCase();
+        const visibleNewOnes = newContactsToAdd.filter(contact => {
+          const matchesSearch = !searchTerm || 
+            (contact.contactName || '').toLowerCase().includes(searchLower) || 
+            (contact.contactNumber || '').toLowerCase().includes(searchLower);
+          const matchesUnread = !showOnlyUnread || (contact.unreadCount && contact.unreadCount > 0);
+          const matchesEscalation = !showOnlyEscalated || escalatedContacts.has(contact.contactNumber);
+          return matchesSearch && matchesUnread && matchesEscalation;
+        });
+        
+        const newVisibleCount = isInitialLoad ? visibleNewOnes.length : visibleNewOnes.length;
+        
         setContacts(prev => {
-          if (isInitialLoad) {
-            return cleanContacts.map(contact => ({
-              ...contact,
-              profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
-            }));
-          }
+          if (isInitialLoad) return cleanAndMapped;
           
-          const existingNumbers = new Set(prev.map(c => c.contactNumber));
-          const newContactsToAdd = cleanContacts
-            .filter(c => !existingNumbers.has(c.contactNumber))
-            .map(contact => ({
-              ...contact,
-              profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
-            }));
+          const prevNumbers = new Set(prev.map(c => c.contactNumber));
+          const actualNew = cleanAndMapped.filter(c => !prevNumbers.has(c.contactNumber));
           
           const updatedPrev = prev.map(contact => ({
             ...contact,
             profilePicture: contact.profilePicture || finalCache[contact.contactNumber] || null
           }));
           
-          return [...updatedPrev, ...newContactsToAdd];
+          return [...updatedPrev, ...actualNew];
         });
         
+        // ✅ AUTO-FETCH: If we filtered everything out but there's more on the server, get next page automatically
+        if (!isInitialLoad && visibleNewOnes.length === 0 && (data.pagination?.hasMore ?? (data.contacts.length === CONTACTS_PER_PAGE))) {
+          console.log('[Pagination] No new visible contacts after filtering, fetching next batch...');
+          setTimeout(() => loadChatContacts(false, false), 100);
+          return;
+        }
+
         // Load tags for the new contacts
         if (cleanContacts.length > 0) {
           setTimeout(() => loadContactTags(cleanContacts), 500);
@@ -975,9 +994,12 @@ export default function WhatsAppChatsPage() {
       const matchesMention = filterEmployeeId === "all" || 
         (openNoteMentions[contact.contactNumber] === employees.find(e => e.id.toString() === filterEmployeeId)?.name);
 
-      return matchesSearch && matchesTag && matchesEscalation && matchesMention;
+      // Unread filter
+      const matchesUnread = !showOnlyUnread || (contact.unreadCount && contact.unreadCount > 0);
+
+      return matchesSearch && matchesTag && matchesEscalation && matchesMention && matchesUnread;
     });
-  }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter, showOnlyEscalated, escalatedContacts, filterEmployeeId, openNoteMentions, employees]);
+  }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter, showOnlyEscalated, escalatedContacts, filterEmployeeId, openNoteMentions, employees, showOnlyUnread]);
 
   async function handleSendMessage(phoneNumber?: string, message?: string) {
     const targetPhone = phoneNumber;
@@ -1975,7 +1997,7 @@ export default function WhatsAppChatsPage() {
           </div>
           
           {/* Actions Sidebar - Right side on Desktop */}
-          <div className={`hidden lg:flex flex-col w-[20%] border-r border-text-primary/50 h-full p-4 gap-6 overflow-y-auto ${!selectedContact ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className="hidden lg:flex flex-col w-[20%] border-r border-text-primary/50 h-full p-4 gap-6 overflow-y-auto">
              <div className="flex flex-col gap-4">
                 <h3 className="text-sm font-semibold text-white border-b border-text-primary/30 pb-2 mb-2 flex justify-between items-center">
                   <span>إجراءات وفلاتر</span>
@@ -2010,6 +2032,18 @@ export default function WhatsAppChatsPage() {
                   >
                     <div className={`w-1.5 h-1.5 rounded-full ${showOnlyEscalated ? 'bg-red-500 animate-pulse' : 'bg-gray-500'}`}></div>
                     عرض المحولة بموظف
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowOnlyUnread(!showOnlyUnread)}
+                    className={`h-8 px-2 text-[10px] border border-text-primary/30 flex items-center gap-1 transition-all ${
+                      showOnlyUnread ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' : 'bg-[#01191040] text-white'
+                    }`}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${showOnlyUnread ? 'bg-blue-500 animate-pulse' : 'bg-gray-500'}`}></div>
+                    غير مقروء
                   </Button>
 
                   <div className="relative">
@@ -2071,7 +2105,7 @@ export default function WhatsAppChatsPage() {
                 </div>
 
                 {/* Contact Actions */}
-                <div className="flex flex-col gap-2">
+                <div className={`flex flex-col gap-2 ${!selectedContact ? 'opacity-50 pointer-events-none' : ''}`}>
                    <p className="text-[10px] text-gray-400 mt-2">إجراءات سريعة للعميل</p>
                   <Button 
                     size="sm" 
@@ -2107,6 +2141,7 @@ export default function WhatsAppChatsPage() {
                 </div>
 
                 {/* Selected Contact Mini Info */}
+                <div className={`${!selectedContact ? 'hidden' : ''}`}>
                 {selectedContact && (
                    <div className="mt-4 p-3 rounded-lg border border-text-primary/20 bg-[#01191020]">
                       <p className="text-[10px] text-gray-500 mb-2">معلومات العميل الحالية</p>
@@ -2126,6 +2161,7 @@ export default function WhatsAppChatsPage() {
                       </div>
                    </div>
                 )}
+                </div>
              </div>
           </div>
           </CardContent>
