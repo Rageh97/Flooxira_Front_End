@@ -836,7 +836,7 @@ export default function TicketsPage() {
             whatsappNotifyEnabled: data.settings.whatsappNotifyEnabled === true,
             whatsappNotifyGroupId: data.settings.whatsappNotifyGroupId || "",
             whatsappTicketReplyNotifyEnabled: data.settings.whatsappTicketReplyNotifyEnabled === true,
-            whatsappTicketReplyNotifyTemplate: data.settings.whatsappTicketReplyNotifyTemplate || "مرحبا {visitorName}  تم الرد على تذكرتك رقم {ticketNumber} يرجي متابعة التذكرة   ",
+            whatsappTicketReplyNotifyTemplate: data.settings.whatsappTicketReplyNotifyTemplate || "مرحبا {visitorName}، تم الرد على تذكرتك رقم {ticketNumber}",
           });
         }
       }
