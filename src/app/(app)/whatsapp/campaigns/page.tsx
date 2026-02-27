@@ -6,7 +6,7 @@ import { startWhatsAppCampaign, listWhatsAppSchedules, cancelWhatsAppSchedule, r
 import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
 import { useToast } from "@/components/ui/toast-provider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar } from "lucide-react";
+import { Calendar, Info } from "lucide-react";
 
 export default function WhatsAppCampaignsPage() {
   const [loading, setLoading] = useState(false);
@@ -387,6 +387,14 @@ export default function WhatsAppCampaignsPage() {
           {error}
         </div>
       )}
+
+      {/* Important Note */}
+      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex items-start gap-3 text-white">
+        <Info className="w-5 h-5 mt-0.5 text-yellow-500 flex-shrink-0" />
+        <p className="text-sm leading-relaxed">
+          <span className="font-bold text-yellow-500">ملاحظة مهمة جداً:</span> لتجنب التقييد المؤقت يمكنك إيقاف الحملة لبعض الوقت بعد الإرسال لـ 100 رقم ثم استئنافها مرة أخرى من قائمة الحملات المجدولة.
+        </p>
+      </div>
 
 
       <Card className="gradient-border border-none">
