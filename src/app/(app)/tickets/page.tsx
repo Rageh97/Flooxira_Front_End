@@ -194,7 +194,7 @@ export default function TicketsPage() {
     whatsappNotifyEnabled: false,
     whatsappNotifyGroupId: "",
     whatsappTicketReplyNotifyEnabled: false,
-    whatsappTicketReplyNotifyTemplate: "مرحبا {visitorName}  تم الرد على تذكرتك رقم {ticketNumber} يرجي متابعة التذكرة من هنا {ticketUrl}",
+    whatsappTicketReplyNotifyTemplate: "مرحبا {visitorName}، تم الرد على تذكرتك رقم {ticketNumber}",
   });
   const [savingAiSettings, setSavingAiSettings] = useState(false);
   const [whatsappGroups, setWhatsappGroups] = useState<{id: string, name: string}[]>([]);
@@ -2175,7 +2175,6 @@ export default function TicketsPage() {
                       />
                       <div className="flex flex-wrap gap-2 mt-1">
                         <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded cursor-help" title="رقم التذكرة">{`{ticketNumber}`}</span>
-                        <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded cursor-help" title="رابط التذكرة">{`{ticketUrl}`}</span>
                         <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded cursor-help" title="اسم العميل">{`{visitorName}`}</span>
                       </div>
                     </div>
