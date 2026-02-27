@@ -26,7 +26,7 @@ const navItems = [
   { href: "/ask-ai", label: "  أدوات Ai", img: "/اداوات ai.webp" },
   { href: "/whatsapp", label: "ادارة واتساب", img: "/واتساب.webp" },
   { href: "/tickets", label: "لايف شات", img: "/لايف شات.webp" },
-  { href: "/telegram", label: "ادارة تلغرام", img: "/تليغرام.webp" },
+  { href: "/telegram", label: "ادارة تليجرام", img: "/تليغرام.webp" },
   { href: "/customers", label: "العملاء والمحاسبة", img: "/العملاء ولمحاسبة.webp" },
   { href: "/schedule", label: "المحتوى المجدول", img: "/الجدولة.webp" },
   { href: "/events-plugin", label: " Webhook + Api ", img: "/الربط api.webp" },

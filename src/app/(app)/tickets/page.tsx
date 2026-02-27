@@ -2446,7 +2446,7 @@ export default function TicketsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2 p-4 border border-primary/20 rounded-xl bg-secondry/30">
                   <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                     لون الثيم الرئيسي
+                     لون الثيم الرئيسي 
                   </label>
                   <div className="flex items-center gap-2">
                     <Input
