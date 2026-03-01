@@ -17,6 +17,7 @@ type Subscription = {
   startedAt: string;
   expiresAt: string;
   autoRenew: boolean;
+  botResponseCount?: number;
   createdAt: string;
   updatedAt: string;
   user: {
@@ -377,6 +378,7 @@ export default function SubscriptionsAdminPage() {
                     <th className="py-3 px-4 font-medium text-white">السعر</th>
                     <th className="py-3 px-4 font-medium text-white">الحالة</th>
                     <th className="py-3 px-4 font-medium text-white">حالة الواتساب</th>
+                    <th className="py-3 px-4 font-medium text-white">ردود البوت</th>
                     <th className="py-3 px-4 font-medium text-white">استهلاك AI</th>
                     <th className="py-3 px-4 font-medium text-white">تاريخ البداية</th>
                     <th className="py-3 px-4 font-medium text-white">تاريخ الانتهاء</th>
@@ -453,6 +455,13 @@ export default function SubscriptionsAdminPage() {
                                 </div>
                               );
                             })()}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex justify-center">
+                            <Badge variant="outline" className="border-blue-500/30 text-blue-400 bg-blue-500/10">
+                              {(subscription.botResponseCount || 0)} رد
+                            </Badge>
                           </div>
                         </td>
                         <td className="py-3 px-4">
