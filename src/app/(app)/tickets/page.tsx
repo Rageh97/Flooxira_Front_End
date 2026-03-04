@@ -1285,7 +1285,7 @@ export default function TicketsPage() {
         </div>
         {activeTab === "tickets" && (<>
         <div className="flex items-center gap-2">
-        <Button
+        {/* <Button
             onClick={() => setShowWidgetCode(!showWidgetCode)}
             className="primary-button flex"
           >
@@ -1293,7 +1293,7 @@ export default function TicketsPage() {
            <Code className="h-4 w-4 mr-2" />
            <span className="text-sm">{showWidgetCode ? "إخفاء" : "عرض"} كود التضمين</span>
            </div>
-          </Button>
+          </Button> */}
           <AnimatedTutorialButton onClick={handleShowTutorial} text1="شرح الميزة" text2="شاهد" />
         </div>
          </>  )}
