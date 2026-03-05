@@ -125,15 +125,10 @@ export default function SubscriptionsAdminPage() {
 
   const getDaysUntilExpiry = (expiresAt: string) => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
     const expiry = new Date(expiresAt);
-    const expiryDateOnly = new Date(expiry);
-    expiryDateOnly.setHours(0, 0, 0, 0);
-
-    const diffTime = expiryDateOnly.getTime() - today.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
   };
 
   const handleEditExpiry = (subscription: Subscription) => {
