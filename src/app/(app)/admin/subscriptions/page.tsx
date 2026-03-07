@@ -431,7 +431,12 @@ export default function SubscriptionsAdminPage() {
                               return (
                                 <div className="flex flex-col items-center gap-1">
                                   <div className="text-[10px] text-gray-400 font-mono">{cu.whatsappName || '---'}</div>
-                                  {cu.status === 'connected' ? (
+                                  {cu.isBanned ? (
+                                    <Badge className="bg-red-500 text-white border-none flex items-center gap-1 animate-pulse">
+                                      <UserMinus className="w-3 h-3" />
+                                      محظور!
+                                    </Badge>
+                                  ) : cu.status === 'connected' ? (
                                     <Badge className="bg-green-100 text-green-800 border-none flex items-center gap-1">
                                       <UserCheck className="w-3 h-3" />
                                       متصل
