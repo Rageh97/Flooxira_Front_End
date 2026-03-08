@@ -195,19 +195,8 @@ export default function WhatsAppChatsPage() {
   const [sendingMedia, setSendingMedia] = useState(false);
   
   // Chat management state
-  const [chats, setChats] = useState<Array<{ 
-    id: number; 
-    contactNumber: string; 
-    messageType: 'incoming' | 'outgoing'; 
-    messageContent: string; 
-    contentType: 'text' | 'image' | 'video' | 'audio' | 'document';
-    mediaUrl?: string;
-    mediaFilename?: string;
-    mediaMimetype?: string;
-    responseSource: string; 
-    knowledgeBaseMatch: string | null; 
-    timestamp: string 
-  }>>([]);
+  const [chats, setChats] = useState<any[]>([]);
+  const selectedContactRef = useRef<string | null>(null);
   // Contacts state with localStorage persistence
   const [contacts, setContacts] = useState<WhatsAppContact[]>(() => {
     // Load from localStorage on mount
@@ -282,11 +271,16 @@ export default function WhatsAppChatsPage() {
   const [escalatedContacts, setEscalatedContacts] = useState<Set<string>>(new Set());
   const [isEscalating, setIsEscalating] = useState(false);
 
-  // Pagination state
+  // New Chat state
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [newChatNumber, setNewChatNumber] = useState("");
+  const [newChatMessage, setNewChatMessage] = useState("");
+  const [isStartingNewChat, setIsStartingNewChat] = useState(false);
+
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [loadingContacts, setLoadingContacts] = useState(true);
   
   // Contacts pagination
@@ -466,6 +460,12 @@ export default function WhatsAppChatsPage() {
   // Load chat data when contact is selected
   useEffect(() => {
     if (selectedContact && token) {
+      // ✅ Update ref immediately
+      selectedContactRef.current = selectedContact;
+      
+      // ✅ Clear current chats immediately to prevent seeing old data
+      setChats([]);
+      
       setOffset(0);
       setHasMore(true);
       setInitialLoading(true);
@@ -474,11 +474,17 @@ export default function WhatsAppChatsPage() {
       (async () => {
         try {
           const res = await getChatNote(token, selectedContact);
-          setActiveNote(res?.note || null);
+          // Verify we're still on the same contact before setting note
+          if (selectedContactRef.current === selectedContact) {
+            setActiveNote(res?.note || null);
+          }
         } catch (_) {
           setActiveNote(null);
         }
       })();
+    } else {
+      selectedContactRef.current = null;
+      setChats([]);
     }
   }, [selectedContact, token]);
 
@@ -572,6 +578,14 @@ export default function WhatsAppChatsPage() {
       const currentOffset = isLoadMore ? offset : 0;
       console.log(`[WhatsApp] Loading chat history for: ${contactNumber}, offset: ${currentOffset}`);
       const data = await getChatHistory(token, contactNumber, 50, currentOffset);
+      
+      // ✅ CRITICAL: Prevent data interleaving
+      // Discrad results if the user has already switched to a different contact
+      if (contactNumber !== selectedContactRef.current) {
+        console.log(`[WhatsApp] 🛑 Discarding history for ${contactNumber} - active contact is now ${selectedContactRef.current}`);
+        return;
+      }
+      
       console.log(`[WhatsApp] Chat history response:`, data);
       
       if (data.success) {
@@ -1019,6 +1033,7 @@ export default function WhatsAppChatsPage() {
       return;
     }
     
+    let optimisticId: number | null = null;
     try {
       setError("");
       
@@ -1028,9 +1043,10 @@ export default function WhatsAppChatsPage() {
       console.log(`[WhatsApp Frontend] Sending message to ${targetPhone}: ${targetMessage}`);
       
       // Optimistic update: Add message to UI immediately
-      if (selectedContact && phoneNumber === selectedContact) {
+      if (phoneNumber === selectedContactRef.current) {
+        optimisticId = Date.now() + Math.floor(Math.random() * 1000);
         const optimisticMessage = {
-          id: Date.now(), // Temporary ID
+          id: optimisticId, // Temporary ID
           contactNumber: targetPhone,
           messageType: 'outgoing' as 'outgoing',
           messageContent: targetMessage,
@@ -1039,8 +1055,12 @@ export default function WhatsAppChatsPage() {
           knowledgeBaseMatch: null,
           timestamp: new Date().toISOString()
         };
-        setChats(prev => [...prev, optimisticMessage]);
-        console.log(`[WhatsApp Frontend] Added optimistic message to UI`);
+        setChats(prev => {
+          // Double check inside the updater as well
+          if (phoneNumber !== selectedContactRef.current) return prev;
+          return [...prev, optimisticMessage];
+        });
+        console.log(`[WhatsApp Frontend] Added optimistic message to UI with ID: ${optimisticId}`);
         
         // Clear input and scroll immediately for better UX
         setTestMessage("");
@@ -1061,11 +1081,13 @@ export default function WhatsAppChatsPage() {
         const isBotPaused = botStatus?.isPaused;
         const isManualMessage = true; // This is always a manual message from user
         
-        if (selectedContact && phoneNumber && (isBotPaused || isManualMessage)) {
+        if (phoneNumber === selectedContactRef.current && (isBotPaused || isManualMessage)) {
           // Immediate refresh for manual messages or when bot is paused
           console.log(`[WhatsApp Frontend] Immediate refresh (bot paused: ${isBotPaused}, manual: ${isManualMessage})`);
-        setTimeout(() => {
-            loadChatHistory(selectedContact);
+          setTimeout(() => {
+            if (phoneNumber === selectedContactRef.current) {
+              loadChatHistory(phoneNumber);
+            }
           }, 300); // Quick refresh after sending
           
           // Also set up a few quick polls to catch any delayed responses
@@ -1074,20 +1096,26 @@ export default function WhatsAppChatsPage() {
           const pollInterval = setInterval(() => {
             pollCount++;
             if (pollCount <= maxPolls) {
-              console.log(`[WhatsApp Frontend] Polling for new messages (${pollCount}/${maxPolls})`);
-              loadChatHistory(selectedContact, true);
+              if (phoneNumber === selectedContactRef.current) {
+                console.log(`[WhatsApp Frontend] Polling for new messages (${pollCount}/${maxPolls})`);
+                loadChatHistory(phoneNumber, true);
+              } else {
+                clearInterval(pollInterval);
+              }
             } else {
               clearInterval(pollInterval);
             }
           }, 2000); // Poll every 2 seconds for 3 times (6 seconds total)
         } else {
           // Normal refresh for bot responses
-        if (selectedContact && phoneNumber) {
-          setTimeout(() => {
-            console.log(`[WhatsApp Frontend] Refreshing chat history to sync with backend`);
-            loadChatHistory(selectedContact);
-            // Refresh contacts too to update order (move to top)
-            loadChatContacts();
+          if (phoneNumber === selectedContactRef.current) {
+            setTimeout(() => {
+              if (phoneNumber === selectedContactRef.current) {
+                console.log(`[WhatsApp Frontend] Refreshing chat history to sync with backend`);
+                loadChatHistory(phoneNumber);
+                // Refresh contacts too to update order (move to top)
+                loadChatContacts();
+              }
             }, 500);
           }
         }
@@ -1095,16 +1123,19 @@ export default function WhatsAppChatsPage() {
         console.log(`[WhatsApp Frontend] Message send failed:`, result.message);
         showToast(result.message || "فشل في إرسال الرسالة", 'error');
         // Remove optimistic message on failure
-        if (selectedContact && phoneNumber === selectedContact) {
-          setChats(prev => prev.filter(msg => msg.id !== Date.now()));
+        if (phoneNumber === selectedContactRef.current && optimisticId) {
+          setChats(prev => prev.filter(msg => msg.id !== optimisticId));
         }
       }
     } catch (e: any) {
       console.error('[WhatsApp Frontend] Send message error:', e);
       showToast(`فشل في الإرسال: ${e.message}`, 'error');
       // Remove optimistic message on error
-      if (selectedContact && phoneNumber === selectedContact) {
-        setChats(prev => prev.filter(msg => msg.id !== Date.now()));
+      if (phoneNumber === selectedContactRef.current && optimisticId) {
+        setChats(prev => prev.filter(msg => {
+           // We'll usephoneNumber check here too
+           return msg.id !== optimisticId;
+        }));
       }
     } finally {
       // Remove from sending set after completion
@@ -1113,6 +1144,50 @@ export default function WhatsAppChatsPage() {
         newSet.delete(messageKey);
         return newSet;
       });
+    }
+  }
+
+  async function handleStartNewChat() {
+    if (!newChatNumber.trim() || !newChatMessage.trim()) {
+      showToast("يرجى إدخال رقم الهاتف والرسالة", 'error');
+      return;
+    }
+
+    try {
+      setIsStartingNewChat(true);
+      
+      // Basic formatting
+      let cleanNumber = newChatNumber.replace(/\s+/g, '').replace(/-/g, '').replace(/\+/g, '');
+      
+      // Pre-process for common Middle East formats
+      if (cleanNumber.startsWith('01') && cleanNumber.length === 11) {
+        cleanNumber = '20' + cleanNumber.substring(1); // Standardize Egypt (01... -> 201...)
+      } else if (cleanNumber.startsWith('05') && cleanNumber.length === 10) {
+        cleanNumber = '966' + cleanNumber.substring(1); // Standardize Saudi (05... -> 9665...)
+      }
+
+      const jid = cleanNumber.includes('@') ? cleanNumber : `${cleanNumber}@s.whatsapp.net`;
+      
+      // Select the contact
+      setSelectedContact(jid);
+      
+      // Send the message and wait for success
+      await handleSendMessage(jid, newChatMessage);
+      
+      // Logic: Close modal ONLY after successful send
+      setShowNewChatModal(false);
+      
+      // Reset form
+      setNewChatNumber("");
+      setNewChatMessage("");
+      
+      // Refresh list so it appears
+      setTimeout(() => loadChatContacts(false, true), 1000);
+      
+    } catch (e: any) {
+      showToast(e.message || "فشل في بدء المحادثة", 'error');
+    } finally {
+      setIsStartingNewChat(false);
     }
   }
 
@@ -1131,6 +1206,7 @@ export default function WhatsAppChatsPage() {
     setError("");
     setSuccess("");
     
+    let optimisticId: number | null = null;
     try {
       // Add to sending set to prevent duplicates
       setSendingMessages(prev => new Set(prev).add(mediaKey));
@@ -1140,9 +1216,9 @@ export default function WhatsAppChatsPage() {
       const contentType = isImage ? 'image' : isVideo ? 'video' : 'document';
       
       // Optimistic update: Add media message to UI immediately
-      if (selectedContact && contactNumber === selectedContact) {
+      if (contactNumber === selectedContactRef.current) {
         // Store preview in a ref or state to preserve it
-        const optimisticId = Date.now();
+        optimisticId = Date.now() + Math.floor(Math.random() * 1000);
         const optimisticMessage = {
           id: optimisticId, // Temporary ID - store it to track this message
           contactNumber: contactNumber,
@@ -1158,7 +1234,10 @@ export default function WhatsAppChatsPage() {
           _isOptimistic: true, // Flag to identify optimistic messages
           _previewUrl: mediaPreview // Store preview URL separately
         };
-        setChats(prev => [...prev, optimisticMessage]);
+        setChats(prev => {
+          if (contactNumber !== selectedContactRef.current) return prev;
+          return [...prev, optimisticMessage];
+        });
         console.log(`[WhatsApp Frontend] Added optimistic media message to UI with ID: ${optimisticId}`);
         console.log(`[WhatsApp Frontend] Added optimistic media message to UI`);
         
@@ -1204,16 +1283,16 @@ export default function WhatsAppChatsPage() {
       } else {
         showToast(data.message || "فشل في إرسال الوسائط", 'error');
         // Remove optimistic message on failure
-        if (selectedContact && contactNumber === selectedContact) {
-          setChats(prev => prev.filter(msg => msg.id !== Date.now()));
+        if (contactNumber === selectedContactRef.current && optimisticId) {
+          setChats(prev => prev.filter(msg => msg.id !== optimisticId));
         }
       }
     } catch (error) {
       console.error("[WhatsApp] Error sending media:", error);
       showToast("فشل في إرسال الوسائط. حاول مرة أخرى.", 'error');
       // Remove optimistic message on error
-      if (selectedContact && contactNumber === selectedContact) {
-        setChats(prev => prev.filter(msg => msg.id !== Date.now()));
+      if (contactNumber === selectedContactRef.current && optimisticId) {
+        setChats(prev => prev.filter(msg => msg.id !== optimisticId));
       }
     } finally {
       // Remove from sending set after completion
@@ -1354,7 +1433,7 @@ export default function WhatsAppChatsPage() {
           <CardContent className=" overflow-y-auto h-full w-full flex flex-col lg:flex-row p-0 lg:p-2">
             <div className={`space-y-2 w-full lg:w-[20%] border-b lg:border-b-0 lg:border-l border-text-primary/50 h-full lg:h-auto overflow-y-auto scrollbar-hide p-2 ${selectedContact ? 'hidden lg:block' : 'block'}`}>
               {/* Desktop Search and Filter inside sidebar */}
-              <div className="hidden lg:flex flex-col gap-2 mb-4 p-1">
+              <div className="flex flex-col gap-2 mb-4 p-1">
                 <div className="relative">
                   <Search className="absolute right-2 top-2.5 h-4 w-4 text-gray-400" />
                   <Input
@@ -1364,6 +1443,14 @@ export default function WhatsAppChatsPage() {
                     className="pr-8 h-9 text-[10px] bg-[#01191040] border-text-primary/30"
                   />
                 </div>
+                {/* New Chat Button for Mobile & Desktop */}
+                <Button 
+                  onClick={() => setShowNewChatModal(true)}
+                  className="w-full text-[10px] h-8 bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 flex items-center justify-center gap-1 mt-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  بدء محادثة لرقم جديد
+                </Button>
               </div>
               {loadingContacts && contacts.length === 0 ? (
                 <div className="space-y-3 p-3">
@@ -2404,6 +2491,72 @@ export default function WhatsAppChatsPage() {
                 <button className="w-full text-white primary-button after:bg-red-700 before:bg-red-700"  onClick={() => setShowTagModal(false)}>إلغاء</button>
                 <button  onClick={handleAddToTag} disabled={!selectedTagId || !selectedContactForTag || tagLoading} className="after:bg-[#01191040] before:bg-[#01191080]  w-full primary-button">
                   {tagLoading ? 'جاري الإضافة...' : 'إضافة'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* New Chat Modal */}
+      {showNewChatModal && (typeof window !== 'undefined') && createPortal(
+        <div className="fixed inset-0 z-[1000000000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
+          <div className="absolute inset-0" onClick={() => setShowNewChatModal(false)} />
+          <div className="relative z-10 w-full max-w-lg gradient-border rounded-lg p-6 overflow-y-auto border border-text-primary/50">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white text-lg font-semibold">بدء محادثة جديدة</h3>
+              <button onClick={() => setShowNewChatModal(false)} className="text-white/50 hover:text-white cursor-pointer text-xl">✕</button>
+            </div>
+            
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-sm text-gray-300">رقم الهاتف (مع كود الدولة)</label>
+                <Input 
+                  className="w-full bg-[#01191040] text-white border-text-primary/30 focus:border-blue-500"
+                  placeholder="مثال: 201234567890"
+                  value={newChatNumber}
+                  onChange={(e) => setNewChatNumber(e.target.value)}
+                  dir="ltr"
+                />
+                <p className="text-[10px] text-gray-400">يمكنك كتابة الرقم بـ 01XXXXXXXXX وسيتم تحويله تلقائياً</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <textarea 
+                  className="w-full h-32 p-3 rounded-md bg-[#01191040] text-white border border-text-primary/30 outline-none focus:border-blue-500 transition-colors resize-none"
+                  placeholder="اكتب رسالتك لفتح المحادثة..."
+                  value={newChatMessage}
+                  onChange={(e) => setNewChatMessage(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-end gap-3 pt-4">
+                <button 
+                  className="px-4 py-2 text-white border border-text-primary rounded-md hover:bg-white/5 transition-colors"
+                  onClick={() => setShowNewChatModal(false)}
+                >
+                  إلغاء
+                </button>
+                <button 
+                  onClick={handleStartNewChat}
+                  disabled={isStartingNewChat || !newChatNumber.trim() || !newChatMessage.trim()}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md transition-colors font-medium shadow-lg flex items-center justify-center gap-2"
+                >
+                  {isStartingNewChat ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      جاري الارسال...
+                    </>
+                  ) : (
+                    <>
+                      <SendHorizontal className="w-4 h-4 rtl:rotate-180" />
+                      إرسال وبدء المحادثة
+                    </>
+                  )}
                 </button>
               </div>
             </div>
