@@ -88,6 +88,7 @@ interface EmployeePermissions {
   canUseAI: boolean;
 }
 
+
 interface EmployeeStats {
   totalEmployees: number;
   activeEmployees: number;
