@@ -164,6 +164,7 @@ export default function TicketsPage() {
     youtubeUrl: "",
     instagramUrl: "",
     twitterUrl: "",
+    emailUrl: "",
     widgetIconUrl: "",
     widgetPosition: "right",
     widgetBottomDesktop: 20,
@@ -721,6 +722,7 @@ export default function TicketsPage() {
           youtubeUrl: data.settings.youtubeUrl || "",
           instagramUrl: data.settings.instagramUrl || "",
           twitterUrl: data.settings.twitterUrl || "",
+          emailUrl: data.settings.emailUrl || "",
           widgetIconUrl: data.settings.widgetIconUrl || "",
           widgetPosition: data.settings.widgetPosition || "right",
           widgetBottomDesktop: data.settings.widgetBottomDesktop !== undefined ? data.settings.widgetBottomDesktop : 20,
@@ -2596,6 +2598,21 @@ export default function TicketsPage() {
                       setWidgetSettings({
                         ...widgetSettings,
                         twitterUrl: e.target.value,
+                      })
+                    }
+                    className="bg-fixed-40 border-primary text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">البريد الإلكتروني</label>
+                  <Input
+                    placeholder="example@gmail.com"
+                    value={widgetSettings.emailUrl}
+                    onChange={(e) =>
+                      setWidgetSettings({
+                        ...widgetSettings,
+                        emailUrl: e.target.value,
                       })
                     }
                     className="bg-fixed-40 border-primary text-sm"

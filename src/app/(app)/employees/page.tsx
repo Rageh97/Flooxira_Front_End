@@ -85,6 +85,7 @@ interface EmployeePermissions {
   maxEmployees: number;
   canManageTickets: boolean;
   canUseEventsPlugin: boolean;
+  canUseAI: boolean;
 }
 
 interface EmployeeStats {
@@ -137,7 +138,8 @@ export default function EmployeesPage() {
       canManageEmployees: false,
       maxEmployees: 0,
       canManageTickets: false,
-      canUseEventsPlugin: false
+      canUseEventsPlugin: false,
+      canUseAI: false
     }
   });
 
@@ -351,7 +353,8 @@ export default function EmployeesPage() {
         canManageEmployees: false,
         maxEmployees: 0,
         canManageTickets: false,
-        canUseEventsPlugin: false
+        canUseEventsPlugin: false,
+        canUseAI: false
       }
     });
   };
@@ -623,6 +626,14 @@ export default function EmployeesPage() {
                               />
                               <Label htmlFor="employees" className="cursor-pointer">إدارة الموظفين</Label>
                             </div>
+                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                              <Checkbox
+                                id="ai-tools"
+                                checked={formData.permissions.canUseAI}
+                                onCheckedChange={(checked) => handlePermissionChange('canUseAI', checked)}
+                              />
+                              <Label htmlFor="ai-tools" className="cursor-pointer">أدوات الذكاء الاصطناعي</Label>
+                            </div>
                         </CardContent>
                       </Card>
                     </div>
@@ -716,6 +727,7 @@ export default function EmployeesPage() {
                             {employee.permissions.canSallaIntegration && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">سلة</Badge>}
                             {employee.permissions.canManageEmployees && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">إدارة</Badge>}
                             {employee.permissions.canUseEventsPlugin && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">Webhook</Badge>}
+                            {employee.permissions.canUseAI && <Badge variant="secondary" className="text-[10px] px-1 h-5 ">الذكاء الاصطناعي</Badge>}
                           </div>
                         </TableCell>
                         <TableCell className="text-text-primary font-medium hidden md:table-cell">
@@ -919,6 +931,14 @@ export default function EmployeesPage() {
                         />
                         <Label htmlFor="edit-employees" className="cursor-pointer">إدارة الموظفين</Label>
                       </div>
+                      <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <Checkbox
+                          id="edit-ai-tools"
+                          checked={formData.permissions.canUseAI}
+                          onCheckedChange={(checked) => handlePermissionChange('canUseAI', checked)}
+                        />
+                        <Label htmlFor="edit-ai-tools" className="cursor-pointer">أدوات الذكاء الاصطناعي</Label>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1054,6 +1074,7 @@ function ViewEmployeeDialog({
             {employee.permissions.canMarketServices && <Badge variant="secondary">تسويق الخدمات</Badge>}
             {employee.permissions.canManageEmployees && <Badge variant="secondary">إدارة الموظفين</Badge>}
             {employee.permissions.canUseEventsPlugin && <Badge variant="secondary">الربط البرمجي</Badge>}
+            {employee.permissions.canUseAI && <Badge variant="secondary">أدوات الذكاء الاصطناعي</Badge>}
           </div>
 
           <div className="space-y-2">
