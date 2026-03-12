@@ -89,7 +89,6 @@ interface EmployeePermissions {
 }
 
 
-
 interface EmployeeStats {
   totalEmployees: number;
   activeEmployees: number;
