@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { meRequest, AuthUser } from "./api";
+import { meRequest, AuthUser, apiFetch } from "./api";
 
 export function useAuth() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -35,24 +35,18 @@ export function useAuth() {
         setLoading(false);
       })
       .catch(() => {
-        console.log('[useAuth] Not an owner, trying employee authentication...');
-        // إذا فشل، يحاول جلب بيانات الموظف
-        fetch('/api/employees/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        .then(res => res.json())
+        console.log('[useAuth] Not an owner or request failed, trying employee authentication...');
+        // استخدام apiFetch لجلب بيانات الموظف للاستفادة من المعالجة الموحدة للأخطاء
+        apiFetch<any>('/api/employees/me', { authToken: token })
         .then(data => {
           console.log('[useAuth] Employee response:', data);
-          if (data.success) {
+          if (data.success && data.employee) {
             // تحويل بيانات الموظف إلى تنسيق المستخدم
             const employeeUser = {
               id: data.employee.id,
               name: data.employee.name,
               email: data.employee.email,
-              phone: null,
+              phone: data.employee.phone,
               role: 'employee' as const,
               storeId: data.employee.storeId
             };
