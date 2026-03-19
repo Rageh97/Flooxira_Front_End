@@ -28,7 +28,6 @@ export function useAuth() {
     console.log('[useAuth] Token found, authenticating...');
     
     // يحاول جلب بيانات المستخدم العادي أولاً
-    // meRequest يستخدم apiFetch لكن هنا لا بأس إذا فشل لأننا نصطاد الخطأ
     meRequest(token)
       .then((res) => {
         console.log('[useAuth] User authenticated as owner:', res.user);
@@ -37,39 +36,36 @@ export function useAuth() {
       })
       .catch(() => {
         console.log('[useAuth] Not an owner, trying employee authentication...');
-        // ⚠️ مهم: نستخدم fetch عادي وليس apiFetch لمنع المسح التلقائي للتوكن عند 401
-        // apiFetch تمسح التوكن وتحول للـ sign-in عند أي 401، وهذا يسبب طرد الموظف فوراً
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-        fetch(`${API_URL}/api/employees/me`, {
+        // إذا فشل، يحاول جلب بيانات الموظف
+        fetch('/api/employees/me', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         })
         .then(res => res.json())
-        .then((data: any) => {
+        .then(data => {
           console.log('[useAuth] Employee response:', data);
-          if (data.success && data.employee) {
-            const employeeUser: AuthUser = {
+          if (data.success) {
+            // تحويل بيانات الموظف إلى تنسيق المستخدم
+            const employeeUser = {
               id: data.employee.id,
               name: data.employee.name,
               email: data.employee.email,
-              phone: data.employee.phone || null,
+              phone: null,
               role: 'employee' as const,
               storeId: data.employee.storeId
             };
             console.log('[useAuth] Employee authenticated:', employeeUser);
             setUser(employeeUser);
           } else {
-            // فشل التحقق من المالك والموظف معاً → التوكن غير صالح
-            console.log('[useAuth] Both owner and employee checks failed, clearing token');
-            localStorage.removeItem("auth_token");
+            console.log('[useAuth] Employee authentication failed');
             setUser(null);
           }
           setLoading(false);
         })
-        .catch((error: any) => {
-          console.log('[useAuth] Employee authentication network error:', error);
+        .catch((error) => {
+          console.log('[useAuth] Employee authentication error:', error);
           setUser(null);
           setLoading(false);
         });

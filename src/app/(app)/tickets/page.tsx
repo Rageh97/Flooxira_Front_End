@@ -130,7 +130,7 @@ interface KnowledgeBase {
 const DEFAULT_WIDGET_ICON = "https://i.ibb.co/9HzxNrwg/1.gif";
 
 export default function TicketsPage() {
-  const { user, getToken } = useAuth();
+  const [token, setToken] = useState("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
@@ -202,6 +202,7 @@ export default function TicketsPage() {
   const [whatsappGroups, setWhatsappGroups] = useState<{id: string, name: string}[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const { showSuccess, showError } = useToast();
+  const { user } = useAuth();
   const { canUseLiveChat, canUseLiveChatAI, hasActiveSubscription, loading: permissionsLoading, permissions } = usePermissions();
   const socketRef = useRef<Socket | null>(null);
   const selectedTicketRef = useRef<Ticket | null>(null);
@@ -298,11 +299,14 @@ export default function TicketsPage() {
 </script>
 <script src="${API_BASE_URL}/widget.js" data-store-id="${storeId}"></script>`;
 
-
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setToken(localStorage.getItem("auth_token") || "");
+    }
+  }, []);
 
   useEffect(() => {
-    const currentToken = getToken();
-    if (!currentToken) return;
+    if (!token) return;
     if (activeTab === "tickets") {
       setTicketsPage(1);
       loadTickets(1);
@@ -313,33 +317,30 @@ export default function TicketsPage() {
     } else if (activeTab === "knowledge") {
       loadKnowledgeBases();
     }
-  }, [getToken, statusFilter, searchQuery, activeTab, permissions]);
+  }, [token, statusFilter, searchQuery, activeTab, permissions]);
 
   // Load WhatsApp groups when notifications are enabled
   useEffect(() => {
-    const currentToken = getToken();
-    if (aiSettings.whatsappNotifyEnabled && currentToken) {
+    if (aiSettings.whatsappNotifyEnabled && token) {
       loadWhatsappGroups();
     }
-  }, [aiSettings.whatsappNotifyEnabled, getToken]);
+  }, [aiSettings.whatsappNotifyEnabled, token]);
 
   useEffect(() => {
-    const currentToken = getToken();
-    if (!currentToken || activeTab !== "tickets") return;
+    if (!token || activeTab !== "tickets") return;
     if (selectedTicket?.storeId) {
       loadLiveChatUsage(selectedTicket.storeId);
     }
-  }, [selectedTicket?.storeId, activeTab, getToken]);
+  }, [selectedTicket?.storeId, activeTab, token]);
 
   useEffect(() => {
-    const currentToken = getToken();
-    if (!currentToken) {
+    if (!token) {
       return;
     }
 
     const socket = io(`${API_BASE_URL}/tickets/agent`, {
       transports: ["websocket"],
-      auth: { token: currentToken }
+      auth: { token }
     });
 
     socketRef.current = socket;
@@ -364,7 +365,7 @@ export default function TicketsPage() {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [getToken, addMessageToThread]);
+  }, [token, addMessageToThread]);
 
   useEffect(() => {
     if (!socketRef.current || !selectedTicket) return;
@@ -410,7 +411,7 @@ export default function TicketsPage() {
       }
       
       const data = await apiFetch<any>(`/api/dashboard/tickets?${params.toString()}`, {
-        authToken: getToken() || "",
+        authToken: token,
       });
       const fetchedTickets: Ticket[] = data.tickets || [];
       
@@ -449,7 +450,7 @@ export default function TicketsPage() {
   const loadStats = async () => {
     try {
       const data = await apiFetch<any>(`/api/dashboard/tickets/stats`, {
-        authToken: getToken() || "",
+        authToken: token,
       });
       setStats(data.stats);
     } catch (error: any) {
@@ -460,7 +461,7 @@ export default function TicketsPage() {
   const loadTicket = async (ticketId: number) => {
     try {
       const data = await apiFetch<any>(`/api/dashboard/tickets/${ticketId}`, {
-        authToken: getToken() || "",
+        authToken: token,
       });
       const sortedMessages = [...(data.ticket.messages || [])].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -487,7 +488,7 @@ export default function TicketsPage() {
 
       const data = await apiFetch<any>(`/api/dashboard/tickets/upload-image`, {
         method: "POST",
-        authToken: getToken() || "",
+        authToken: token,
         body: formData,
       });
       if (data.success && data.url) {
@@ -531,7 +532,7 @@ export default function TicketsPage() {
     try {
       const data = await apiFetch<any>(`/api/dashboard/tickets/${selectedTicket.id}/messages`, {
         method: "POST",
-        authToken: getToken() || "",
+        authToken: token,
         body: JSON.stringify({
           content,
           senderType: "agent",
@@ -543,12 +544,9 @@ export default function TicketsPage() {
       }
       showSuccess("تم إرسال الرسالة بنجاح!");
     } catch (error: any) {
-      if (error.message.includes('Session expired') || error.message.includes('Unauthorized')) {
-        showError("انتهت الجلسة", "يرجى تسجيل الدخول مرة أخرى.");
-      } else {
-        showError("خطأ", error.message || "فشل في إرسال الرسالة");
-      }
+      showError("خطأ", error.message);
       setInputMessage(content); // Restore message on error
+      // Note: We don't restore the image here as it might be complicated, but we could if needed.
     } finally {
       setSending(false);
     }
@@ -590,7 +588,7 @@ export default function TicketsPage() {
     try {
       await apiFetch<any>(`/api/dashboard/tickets/${ticketId}/status`, {
         method: "PUT",
-        authToken: getToken() || "",
+        authToken: token,
         body: JSON.stringify({ status }),
       });
 
@@ -620,7 +618,7 @@ export default function TicketsPage() {
     formData.append("icon", file);
     const data = await apiFetch<any>(`/api/dashboard/tickets/widget-icon`, {
       method: "POST",
-      authToken: getToken() || "",
+      authToken: token,
       body: formData,
     });
     return data.url as string;
@@ -632,7 +630,7 @@ export default function TicketsPage() {
         `/api/dashboard/tickets/widget-settings`,
         {
           headers: {
-            Authorization: `Bearer ${getToken()}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -675,7 +673,7 @@ export default function TicketsPage() {
         `/api/dashboard/tickets/widget-settings`,
         {
           method: "PUT",
-          authToken: getToken() || "",
+          authToken: token,
           body: JSON.stringify(payload),
         }
       );
@@ -742,7 +740,7 @@ export default function TicketsPage() {
       const data = await apiFetch<any>(
         `/api/dashboard/tickets/ai-settings`,
         {
-          authToken: getToken() || "",
+          authToken: token,
         }
       );
       if (data.success && data.settings) {
@@ -768,7 +766,7 @@ export default function TicketsPage() {
         `/api/dashboard/tickets/ai-settings`,
         {
           method: "PUT",
-          authToken: getToken() || "",
+          authToken: token,
           body: JSON.stringify(aiSettings),
         }
       );
@@ -781,14 +779,13 @@ export default function TicketsPage() {
   };
 
   const loadWhatsappGroups = async () => {
-    const currentToken = getToken();
-    if (!currentToken) return;
+    if (!token) return;
     setLoadingGroups(true);
     try {
       const data = await apiFetch<any>(
         `/api/whatsapp/groups`,
         {
-          authToken: currentToken,
+          authToken: token,
         }
       );
       if (data.success && data.groups) {
@@ -813,8 +810,7 @@ export default function TicketsPage() {
   };
 
   const loadLiveChatUsage = async (storeOverride?: string) => {
-    const currentToken = getToken();
-    if (!currentToken) return;
+    if (!token) return;
     setUsageLoading(true);
     setUsageError(null);
     try {
@@ -824,7 +820,7 @@ export default function TicketsPage() {
         : `/api/dashboard/tickets/live-chat-usage`;
         
       const data = await apiFetch<any>(url, {
-        authToken: currentToken,
+        authToken: token,
       });
       if (data.success && data.usage) {
         const usagePayload = {
@@ -869,13 +865,11 @@ export default function TicketsPage() {
   }, [refreshUsageTrigger]);
 
   const loadKnowledgeBases = async () => {
-    const currentToken = getToken();
-    if (!currentToken) return;
     try {
       const data = await apiFetch<any>(
         `/api/dashboard/knowledge-bases?storeId=${storeId}`,
         {
-          authToken: currentToken,
+          authToken: token,
         }
       );
       setKnowledgeBases(data.knowledgeBases || []);
@@ -910,8 +904,7 @@ export default function TicketsPage() {
   };
 
   const handleUpload = async () => {
-    const currentToken = getToken();
-    if (!selectedFile || !currentToken) {
+    if (!selectedFile || !token) {
       showError("خطأ", "يرجى اختيار ملف أولاً");
       return;
     }
@@ -926,7 +919,7 @@ export default function TicketsPage() {
         `/api/dashboard/knowledge-bases/upload`,
         {
           method: 'POST',
-          authToken: currentToken,
+          authToken: token,
           body: formData,
         }
       );
@@ -950,15 +943,12 @@ export default function TicketsPage() {
   const confirmDeleteKB = async () => {
     if (!deletingKB) return;
 
-    const currentToken = getToken();
-    if (!currentToken) return;
-
     try {
       await apiFetch<any>(
         `/api/dashboard/knowledge-bases/${deletingKB.id}`,
         {
           method: 'DELETE',
-          authToken: currentToken,
+          authToken: token,
         }
       );
 
@@ -972,14 +962,12 @@ export default function TicketsPage() {
   };
 
   const handleToggleKB = async (kbId: number) => {
-    const currentToken = getToken();
-    if (!currentToken) return;
     try {
       const data = await apiFetch<any>(
         `/api/dashboard/knowledge-bases/${kbId}/toggle`,
         {
           method: 'PUT',
-          authToken: currentToken,
+          authToken: token,
         }
       );
       showSuccess("نجح", data.message);
@@ -990,13 +978,11 @@ export default function TicketsPage() {
   };
 
   const handleViewKB = async (kbId: number) => {
-    const currentToken = getToken();
-    if (!currentToken) return;
     try {
       const data = await apiFetch<any>(
         `/api/dashboard/knowledge-bases/${kbId}`,
         {
-          authToken: currentToken,
+          authToken: token,
         }
       );
       setViewingKB(data.knowledgeBase);
@@ -1015,15 +1001,12 @@ export default function TicketsPage() {
   const confirmDeleteTicket = async () => {
     if (!deletingTicket) return;
 
-    const currentToken = getToken();
-    if (!currentToken) return;
-
     try {
       await apiFetch<any>(
         `/api/dashboard/tickets/${deletingTicket.id}`,
         {
           method: "DELETE",
-          authToken: currentToken,
+          authToken: token,
         }
       );
 
