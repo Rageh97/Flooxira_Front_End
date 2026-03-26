@@ -60,6 +60,7 @@ import NoActiveSubscription from "@/components/NoActiveSubscription";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { io, Socket } from "socket.io-client";
 import AnimatedTutorialButton from "@/components/YoutubeButton";
+import { apiFetch } from "@/lib/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -409,20 +410,9 @@ export default function TicketsPage() {
         params.append("search", searchQuery);
       }
       
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في جلب التذاكر");
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<any>(`/api/dashboard/tickets?${params.toString()}`, {
+        authToken: token,
+      });
       const fetchedTickets: Ticket[] = data.tickets || [];
       
       if (isLoadMore) {
@@ -459,20 +449,9 @@ export default function TicketsPage() {
 
   const loadStats = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/stats`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في جلب الإحصائيات");
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<any>(`/api/dashboard/tickets/stats`, {
+        authToken: token,
+      });
       setStats(data.stats);
     } catch (error: any) {
       console.error("Failed to load stats:", error);
@@ -481,20 +460,9 @@ export default function TicketsPage() {
 
   const loadTicket = async (ticketId: number) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/${ticketId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في جلب التذكرة");
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<any>(`/api/dashboard/tickets/${ticketId}`, {
+        authToken: token,
+      });
       const sortedMessages = [...(data.ticket.messages || [])].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
@@ -518,22 +486,11 @@ export default function TicketsPage() {
       const formData = new FormData();
       formData.append('image', file);
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/upload-image`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في رفع الصورة");
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<any>(`/api/dashboard/tickets/upload-image`, {
+        method: "POST",
+        authToken: token,
+        body: formData,
+      });
       if (data.success && data.url) {
         return data.url;
       }
@@ -573,27 +530,15 @@ export default function TicketsPage() {
     setSending(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/${selectedTicket.id}/messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            content,
-            senderType: "agent",
-            attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في إرسال الرسالة");
-      }
-
-      const data = await response.json();
+      const data = await apiFetch<any>(`/api/dashboard/tickets/${selectedTicket.id}/messages`, {
+        method: "POST",
+        authToken: token,
+        body: JSON.stringify({
+          content,
+          senderType: "agent",
+          attachments: finalAttachments.length > 0 ? finalAttachments : undefined,
+        }),
+      });
       if (data.message) {
         addMessageToThread(data.message);
       }
@@ -641,21 +586,11 @@ export default function TicketsPage() {
 
   const updateTicketStatus = async (ticketId: number, status: string) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/${ticketId}/status`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في تحديث حالة التذكرة");
-      }
+      await apiFetch<any>(`/api/dashboard/tickets/${ticketId}/status`, {
+        method: "PUT",
+        authToken: token,
+        body: JSON.stringify({ status }),
+      });
 
       await loadTickets();
       if (selectedTicket?.id === ticketId) {
@@ -681,25 +616,18 @@ export default function TicketsPage() {
   const uploadWidgetIcon = async (file: File) => {
     const formData = new FormData();
     formData.append("icon", file);
-    const res = await fetch(`${API_BASE_URL}/api/dashboard/tickets/widget-icon`, {
+    const data = await apiFetch<any>(`/api/dashboard/tickets/widget-icon`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      authToken: token,
       body: formData,
     });
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`فشل رفع الأيقونة: ${res.status} ${errText}`);
-    }
-    const data = await res.json();
     return data.url as string;
   };
 
   const loadWidgetSettings = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/widget-settings`,
+      const response = await apiFetch<{ success: boolean; settings: any }>(
+        `/api/dashboard/tickets/widget-settings`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -707,11 +635,7 @@ export default function TicketsPage() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error("فشل في جلب إعدادات الويدجت");
-      }
-
-      const data = await response.json();
+      const data = response;
       if (data.success && data.settings) {
         setWidgetSettings({
           facebookUrl: data.settings.facebookUrl || "",
@@ -745,21 +669,14 @@ export default function TicketsPage() {
     setSavingSettings(true);
     try {
       const payload = override ?? widgetSettings;
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/widget-settings`,
+      await apiFetch<any>(
+        `/api/dashboard/tickets/widget-settings`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
           body: JSON.stringify(payload),
         }
       );
-
-      if (!response.ok) {
-        throw new Error("فشل في حفظ إعدادات الويدجت");
-      }
 
       if (override) {
         setWidgetSettings(override);
@@ -820,27 +737,22 @@ export default function TicketsPage() {
 
   const loadAiSettings = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/ai-settings`,
+      const data = await apiFetch<any>(
+        `/api/dashboard/tickets/ai-settings`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
         }
       );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.settings) {
-          setAiSettings({
-            liveChatAiEnabled: data.settings.liveChatAiEnabled === true,
-            welcomeMessageCustom: data.settings.welcomeMessageCustom || "",
-            widgetWelcomeTitle: data.settings.widgetWelcomeTitle || "هلا والله كيف اقدر اساعدك؟",
-            whatsappNotifyEnabled: data.settings.whatsappNotifyEnabled === true,
-            whatsappNotifyGroupId: data.settings.whatsappNotifyGroupId || "",
-            whatsappTicketReplyNotifyEnabled: data.settings.whatsappTicketReplyNotifyEnabled === true,
-            whatsappTicketReplyNotifyTemplate: data.settings.whatsappTicketReplyNotifyTemplate || "مرحبا {visitorName}، تم الرد على تذكرتك رقم {ticketNumber}",
-          });
-        }
+      if (data.success && data.settings) {
+        setAiSettings({
+          liveChatAiEnabled: data.settings.liveChatAiEnabled === true,
+          welcomeMessageCustom: data.settings.welcomeMessageCustom || "",
+          widgetWelcomeTitle: data.settings.widgetWelcomeTitle || "هلا والله كيف اقدر اساعدك؟",
+          whatsappNotifyEnabled: data.settings.whatsappNotifyEnabled === true,
+          whatsappNotifyGroupId: data.settings.whatsappNotifyGroupId || "",
+          whatsappTicketReplyNotifyEnabled: data.settings.whatsappTicketReplyNotifyEnabled === true,
+          whatsappTicketReplyNotifyTemplate: data.settings.whatsappTicketReplyNotifyTemplate || "مرحبا {visitorName}، تم الرد على تذكرتك رقم {ticketNumber}",
+        });
       }
     } catch (error) {
       console.error("Failed to load AI settings:", error);
@@ -850,20 +762,14 @@ export default function TicketsPage() {
   const saveAiSettings = async () => {
     setSavingAiSettings(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/ai-settings`,
+      await apiFetch<any>(
+        `/api/dashboard/tickets/ai-settings`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
           body: JSON.stringify(aiSettings),
         }
       );
-      if (!response.ok) {
-        throw new Error("فشل في حفظ إعدادات الذكاء الاصطناعي");
-      }
       showSuccess("تم حفظ إعدادات الذكاء الاصطناعي بنجاح!");
     } catch (error: any) {
       showError("خطأ", error.message);
@@ -876,22 +782,17 @@ export default function TicketsPage() {
     if (!token) return;
     setLoadingGroups(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/whatsapp/groups`,
+      const data = await apiFetch<any>(
+        `/api/whatsapp/groups`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
         }
       );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.groups) {
-          setWhatsappGroups(data.groups.map((g: any) => ({
-            id: g.id,
-            name: g.name || 'مجموعة بدون اسم'
-          })));
-        }
+      if (data.success && data.groups) {
+        setWhatsappGroups(data.groups.map((g: any) => ({
+          id: g.id,
+          name: g.name || 'مجموعة بدون اسم'
+        })));
       }
     } catch (error) {
       console.error("Failed to load WhatsApp groups:", error);
@@ -914,39 +815,13 @@ export default function TicketsPage() {
     setUsageError(null);
     try {
       const activeStoreId = resolveActiveStoreId(storeOverride);
-      const response = await fetch(
-        activeStoreId
-          ? `${API_BASE_URL}/api/dashboard/tickets/live-chat-usage?storeId=${encodeURIComponent(
-              activeStoreId
-            )}`
-          : `${API_BASE_URL}/api/dashboard/tickets/live-chat-usage`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          if (permissions?.liveChatAiResponses) {
-            setLiveChatUsage({
-              total: permissions.liveChatAiResponses,
-              used: 0,
-              remaining: permissions.liveChatAiResponses,
-              isUnlimited: false,
-            });
-            setUsageError(null);
-          } else {
-            setLiveChatUsage(null);
-            setUsageError(null);
-          }
-          return;
-        }
-        throw new Error("فشل في جلب رصيد الردود التلقائية");
-      }
-
-      const data = await response.json();
+      const url = activeStoreId
+        ? `/api/dashboard/tickets/live-chat-usage?storeId=${encodeURIComponent(activeStoreId)}`
+        : `/api/dashboard/tickets/live-chat-usage`;
+        
+      const data = await apiFetch<any>(url, {
+        authToken: token,
+      });
       if (data.success && data.usage) {
         const usagePayload = {
           total:
@@ -991,20 +866,12 @@ export default function TicketsPage() {
 
   const loadKnowledgeBases = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/knowledge-bases?storeId=${storeId}`,
+      const data = await apiFetch<any>(
+        `/api/dashboard/knowledge-bases?storeId=${storeId}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
         }
       );
-
-      if (!response.ok) {
-        throw new Error("فشل في جلب قواعد المعرفة");
-      }
-
-      const data = await response.json();
       setKnowledgeBases(data.knowledgeBases || []);
     } catch (error: any) {
       showError("خطأ", error.message);
@@ -1048,23 +915,14 @@ export default function TicketsPage() {
       formData.append('file', selectedFile);
       formData.append('storeId', storeId);
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/knowledge-bases/upload`,
+      const data = await apiFetch<any>(
+        `/api/dashboard/knowledge-bases/upload`,
         {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
           body: formData,
         }
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "فشل في رفع الملف");
-      }
-
-      const data = await response.json();
       showSuccess("نجح", data.message || "تم رفع قاعدة البيانات بنجاح!");
       setSelectedFile(null);
       await loadKnowledgeBases();
@@ -1086,19 +944,13 @@ export default function TicketsPage() {
     if (!deletingKB) return;
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/knowledge-bases/${deletingKB.id}`,
+      await apiFetch<any>(
+        `/api/dashboard/knowledge-bases/${deletingKB.id}`,
         {
           method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
         }
       );
-
-      if (!response.ok) {
-        throw new Error("فشل في حذف قاعدة البيانات");
-      }
 
       showSuccess("نجح", "تم حذف قاعدة البيانات بنجاح!");
       setDeletingKB(null);
@@ -1111,21 +963,13 @@ export default function TicketsPage() {
 
   const handleToggleKB = async (kbId: number) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/knowledge-bases/${kbId}/toggle`,
+      const data = await apiFetch<any>(
+        `/api/dashboard/knowledge-bases/${kbId}/toggle`,
         {
           method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
         }
       );
-
-      if (!response.ok) {
-        throw new Error("فشل في تحديث حالة قاعدة البيانات");
-      }
-
-      const data = await response.json();
       showSuccess("نجح", data.message);
       await loadKnowledgeBases();
     } catch (error: any) {
@@ -1135,20 +979,12 @@ export default function TicketsPage() {
 
   const handleViewKB = async (kbId: number) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/knowledge-bases/${kbId}`,
+      const data = await apiFetch<any>(
+        `/api/dashboard/knowledge-bases/${kbId}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
         }
       );
-
-      if (!response.ok) {
-        throw new Error("فشل في جلب قاعدة البيانات");
-      }
-
-      const data = await response.json();
       setViewingKB(data.knowledgeBase);
     } catch (error: any) {
       showError("خطأ", error.message);
@@ -1166,19 +1002,13 @@ export default function TicketsPage() {
     if (!deletingTicket) return;
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/dashboard/tickets/${deletingTicket.id}`,
+      await apiFetch<any>(
+        `/api/dashboard/tickets/${deletingTicket.id}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          authToken: token,
         }
       );
-
-      if (!response.ok) {
-        throw new Error("فشل في حذف التذكرة");
-      }
 
       showSuccess("تم حذف التذكرة بنجاح");
       
