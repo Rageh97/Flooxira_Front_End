@@ -20,15 +20,11 @@ export async function apiFetch<T>(path: string, options: FetchOptions = {}): Pro
     // ignore parse errors
   }
   if (!res.ok) {
-    if (res.status === 401) {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem("auth_token");
-        window.location.href = "/sign-in";
-      }
-    }
     const errorMessage = data?.error || data?.message || `Request failed with ${res.status} (${url})`;
     const fullMessage = data?.error ? `${data.message}: ${data.error}` : errorMessage;
-    throw new Error(fullMessage);
+    const err = new Error(fullMessage) as any;
+    err.status = res.status;
+    throw err;
   }
   return data as T;
 }
