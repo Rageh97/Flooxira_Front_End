@@ -50,7 +50,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
-  const { permissions } = usePermissions();
+  const { permissions, loading: permissionsLoading } = usePermissions();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -155,7 +155,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         
         // الصفحات المرتبطة بصلاحيات محددة
         { path: '/ask-ai', allowed: permissions.canUseAI },
-        { path: '/tickets', allowed: permissions.canManageTickets },
+        { path: '/tickets', allowed: permissions.canManageTickets || permissions.canUseLiveChat },
         { path: '/whatsapp', allowed: permissions.canManageWhatsApp },
         { path: '/telegram', allowed: permissions.canManageTelegram },
         { path: '/customers', allowed: permissions.canManageCustomers },
@@ -198,28 +198,31 @@ export default function AppLayout({ children }: PropsWithChildren) {
       console.log('[Sidebar] User is EMPLOYEE, filtering nav items');
       return filteredItems.filter(item => {
         if (!item) return false;
-        // إخفاء العناصر الإدارية الإضافية للمالك
-        if (item.href === '/employees' || 
-            item.href === '/plans' || 
-            item.href === '/my-subscription' ||
-            item.href === '/my-subscription-requests' ||
-            item.href === '/settings') {
         
-          return false;
-        }
+        // 1. Pages allowed for all employees (non-functional/general)
+        const commonPages = ['/dashboard', '/tutorials', '/reviews', '/policy', '/profile'];
+        if (commonPages.includes(item.href)) return true;
+
+        // 2. Hidden administration pages (explicitly rejected for employees)
+        const adminPages = ['/employees', '/plans', '/my-subscription', '/my-subscription-requests', '/settings', '/admin'];
+        if (adminPages.includes(item.href)) return false;
+
+        // 3. Functional tools based on specific permissions (Strict opt-in)
+        if (item.href === '/ask-ai') return !!permissions?.canUseAI;
+        if (item.href === '/tickets') return !!(permissions?.canManageTickets || permissions?.canUseLiveChat);
+        if (item.href === '/whatsapp') return !!permissions?.canManageWhatsApp;
+        if (item.href === '/telegram') return !!permissions?.canManageTelegram;
+        if (item.href === '/customers') return !!permissions?.canManageCustomers;
+        if (item.href === '/services') return !!permissions?.canMarketServices;
+        if (item.href === '/events-plugin') return !!permissions?.canUseEventsPlugin;
+        if (item.href === '/salla') return !!permissions?.canSallaIntegration;
         
-        // إظهار العناصر حسب الصلاحيات
-        if (item.href === '/ask-ai' && !permissions?.canUseAI) return false;
-        if (item.href === '/tickets' && !permissions?.canManageTickets) return false;
-        if (item.href === '/whatsapp' && !permissions?.canManageWhatsApp) return false;
-        if (item.href === '/telegram' && !permissions?.canManageTelegram) return false;
-        if (item.href === '/customers' && !permissions?.canManageCustomers) return false;
-        if ((item.href === '/content' || item.href === '/create-post' || item.href === '/schedule') && !permissions?.canManageContent) return false;
-        if (item.href === '/services' && !permissions?.canMarketServices) return false;
-        if (item.href === '/salla' && !permissions?.canSallaIntegration) return false;
-        if (item.href === '/events-plugin' && !permissions?.canUseEventsPlugin) return false;
+        // Content-related items (Grouped)
+        const contentPages = ['/content', '/create-post', '/schedule'];
+        if (contentPages.includes(item.href) || item.href === '/schedule') return !!permissions?.canManageContent;
         
-        return true;
+        // Default: If it's something unknown/not explicitly allowed, hide it for employees
+        return false;
       });
     }
     
@@ -431,27 +434,33 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 <Image src={'/اعدادات.png'} width={25} height={25} alt="الملف الشخصي"/>
             </Link>
             
-            <Link href="/tickets" className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all relative" title="لايف شات">
-             <Image src={'/لايف شات.webp'} width={25} height={25} alt="لايف شات"/>
-             {pendingTicketsCount > 0 && (
-               <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
-                 {pendingTicketsCount}
-               </span>
-             )}
-            </Link>
+            {(permissions?.canManageTickets || permissions?.canUseLiveChat) && (
+              <Link href="/tickets" className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all relative" title="لايف شات">
+               <Image src={'/لايف شات.webp'} width={25} height={25} alt="لايف شات"/>
+               {pendingTicketsCount > 0 && (
+                 <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
+                   {pendingTicketsCount}
+                 </span>
+               )}
+              </Link>
+            )}
             
-            <Link href="/schedule" className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all" title="الجدولة">
-             <Image src={'/الجدولة.webp'} width={25} height={25} alt="الجدولة"/>
-            </Link>
+            {permissions?.canManageContent && (
+              <Link href="/schedule" className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all" title="الجدولة">
+               <Image src={'/الجدولة.webp'} width={25} height={25} alt="الجدولة"/>
+              </Link>
+            )}
             
-            <Link href="/whatsapp/chats" className="p-2 text-gray-400 hover:text-green-500 hover:bg-white/5 rounded-xl transition-all relative" title="واتساب">
-              <Image src={'/واتساب.webp'} width={25} height={25} alt="واتساب"/>
-              {whatsappPendingCount > 0 && (
-                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
-                  {whatsappPendingCount}
-                </span>
-              )}
-            </Link>
+            {permissions?.canManageWhatsApp && (
+              <Link href="/whatsapp/chats" className="p-2 text-gray-400 hover:text-green-500 hover:bg-white/5 rounded-xl transition-all relative" title="واتساب">
+                <Image src={'/واتساب.webp'} width={25} height={25} alt="واتساب"/>
+                {whatsappPendingCount > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
+                    {whatsappPendingCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
         {/* Center: Logo */}
@@ -720,16 +729,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
             )}>
               <div className="grid grid-cols-3 gap-4 px-4">
                  {[
-                   { name: "الاتصال", href: "/whatsapp", icon: <LinkIcon size={20} /> },
-                   { name: "المحادثات", href: "/whatsapp/chats", icon: <MessageCircle size={20} /> },
-                   { name: "المجموعات", href: "/whatsapp/groups", icon: <UsersIcon size={20} /> },
-                   { name: "الحملات", href: "/whatsapp/campaigns", icon: <Megaphone size={20} /> },
-                   { name: "محتوى البوت", href: "/whatsapp/bot-content", icon: <Bot size={20} /> },
-                   { name: "اعدادات الذكاء الاصطناعي", href: "/whatsapp/ai-settings", icon: <MessageCircle size={20} /> },
-                   { name: "اوقات العمل", href: "/whatsapp/settings", icon: <SettingsIcon size={20} /> },
-                   { name: "الاحصائيات", href: "/whatsapp/stats", icon: <ChartNoAxesColumn size={20} /> },
-                   { name: "التصنيفات", href: "/whatsapp/tags", icon: <TagIcon size={20} /> },
-                 ].map((item) => (
+                   { name: "الاتصال", href: "/whatsapp", icon: <LinkIcon size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "المحادثات", href: "/whatsapp/chats", icon: <MessageCircle size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "المجموعات", href: "/whatsapp/groups", icon: <UsersIcon size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "الحملات", href: "/whatsapp/campaigns", icon: <Megaphone size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "محتوى البوت", href: "/whatsapp/bot-content", icon: <Bot size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "اعدادات الذكاء الاصطناعي", href: "/whatsapp/ai-settings", icon: <MessageCircle size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "اوقات العمل", href: "/whatsapp/settings", icon: <SettingsIcon size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "الاحصائيات", href: "/whatsapp/stats", icon: <ChartNoAxesColumn size={20} />, permission: permissions?.canManageWhatsApp },
+                   { name: "التصنيفات", href: "/whatsapp/tags", icon: <TagIcon size={20} />, permission: permissions?.canManageWhatsApp },
+                 ].filter(item => item.permission !== false).map((item) => (
                    <Link 
                      key={item.href} 
                      href={item.href} 
@@ -764,45 +773,54 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     {/* <span className="text-[10px] font-medium">الرئيسية</span> */}
                   </Link>
 
-                  <button 
-                    onClick={() => setWhatsappMenuOpen(!whatsappMenuOpen)}
-                    className={clsx(
-                      "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
-                      whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "text-primary" : "text-gray-400 hover:text-white"
-                    )}
-                  >
-                    <div className="relative">
-                      {/* <MessageCircle size={30} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} /> */}
-                      <Image src="data:image/webp;base64,UklGRlgEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSDEBAAABkGvb1rE957dt276Cv7Nt27bZOk6Z0raNS7Bt/T7RoxO1ETEB8D+qHZbZMjTSlhWhQ8Kk9PISMpevV5ipsptfRMGlTfYqNFsWUeJip6Y0m0so+ZqdJI+nKP2VnxSv96jwk48Em2eo9KWtkMZpVHxTS6QJlbcK2HxVt2jDN40EZ7mMFiksmvAUIclinnM0LnJofaXxVYsVgEQDWClUklk1VOpY3VR6We1UelhlVGpYiVQSWW5UfFnwmcZnTY4jNE4BZxqNLB6DzxS+6PPAKIUp4LYm8MmML5JAKfDPqDsOgreU3TcVsFpX9doZBHNQ8QMXEN2p6Lg5CL9V8qEAxAPxl+t3t8cOfxD5PGoCElsQ8dmONEsAAL3U/R9ZH46k6ILUul3FzsDtFFvU1FwW5Q7/pQBWUDggAAMAABARAJ0BKjAAMAA+FQiDQSEGq1WqBABRLUATplhH4vL/MEqv9m+8HFplo5G9Lv8zbynzRdDv/TeaB1kvoAeWp+zPwjYfv4Y/gGizn626juItwczP/oead6as9FGOPcmI9Ljmjee5txLeQKUIaY/qJkMrsPQ0FLjaAW9GaCglJ+VhfJTh8htJ9R9zxszqqBmrwIAA/v9Cmb/5uANcFreUIV/8phr8ESOxIdmNcZ8Krf3aVm5h7XCnAzc5VkKZn/M8FVc++/NV4fZVTW5diKiYUzerL2ZSBrJCbN6WamAiSDSkfRDK74xp/Njf8cgjsdr/M+vkCgF7RVGNUwpFik2s3/PXvSL7n5MYyGBVC/+JRTMamw8j4BftS6t847V16f//wcS9WBg2bYEpVDgKd3R3JM4h7l/X+TDkP35a9TDKUpR77Sty8qpHgXlMk4qQAchsKR81n/lfsEkiV9apaKQ8ONNSl4KeRWfoW+aTYvv75yT3yEXzsspzF68m8rTbqTSP+sodqIO1UeMyhGuy9ztJOu15FfoyeIv+FZ/tugjg+a8ehhP9fOeBSGFvZhUZBDEP3vN32by90hgQkHO/H0XDinzzwp5b6CEv90vPgTmwfKLSMAfxWXu+9FaCp5r++lHsYKykGIECSU2GPEtzf5wtmW+fXwG/EMNC8FgT/Fm1jMJbvQqlmy3n3rXoGgsfzqSnnMDsjpWCKPplslUisCHh8QTECXTFunWcvqf5SAdg2OKpHNqiqBEMA3bB1njoh53zOgzNOKXuJsOIA8qKzbD9BnWmqHAhnFkN6FHpo3Us5Z3NBXxToyfuaPXYQ6hVnHNA9gIceB1exx1fM1bZY2Wlt602Kczu9KCXS1Qsga8cRsGhqQJdkpivXulf6kUjKhGzkGtms0viTaEhp37cDi3rFMiivKWQOeBbDXNFugGxRJJYWdgb1r0mAeAQPoIEzhod+MJSNr6J2LFNx377IaXIr/+RnDXxXC94Nt3rvpMI9pt8Hp1LWgWFglFkTVsPw/gAAA==" alt="WhatsApp" width={40} height={40} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
-                      {whatsappPendingCount > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
-                          {whatsappPendingCount}
-                        </span>
+                  {permissionsLoading ? (
+                    <div className="w-14 h-full flex items-center justify-center">
+                       <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : permissions?.canManageWhatsApp && (
+                    <button 
+                      onClick={() => setWhatsappMenuOpen(!whatsappMenuOpen)}
+                      className={clsx(
+                        "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
+                        whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "text-primary" : "text-gray-400 hover:text-white"
                       )}
-                      {/* {(whatsappMenuOpen || pathname.startsWith('/whatsapp')) && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" /> } */}
-                    </div>
-                    {/* <span className="text-[10px] font-medium">واتساب</span> */}
-                  </button>
+                    >
+                      <div className="relative">
+                        {/* <MessageCircle size={30} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} /> */}
+                        <Image src="data:image/webp;base64,UklGRlgEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSDEBAAABkGvb1rE957dt276Cv7Nt27bZOk6Z0raNS7Bt/T7RoxO1ETEB8D+qHZbZMjTSlhWhQ8Kk9PISMpevV5ipsptfRMGlTfYqNFsWUeJip6Y0m0so+ZqdJI+nKP2VnxSv96jwk48Em2eo9KWtkMZpVHxTS6QJlbcK2HxVt2jDN40EZ7mMFiksmvAUIclinnM0LnJofaXxVYsVgEQDWClUklk1VOpY3VR6We1UelhlVGpYiVQSWW5UfFnwmcZnTY4jNE4BZxqNLB6DzxS+6PPAKIUp4LYm8MmML5JAKfDPqDsOgreU3TcVsFpX9doZBHNQ8QMXEN2p6Lg5CL9V8qEAxAPxl+t3t8cOfxD5PGoCElsQ8dmONEsAAL3U/R9ZH46k6ILUul3FzsDtFFvU1FwW5Q7/pQBWUDggAAMAABARAJ0BKjAAMAA+FQiDQSEGq1WqBABRLUATplhH4vL/MEqv9m+8HFplo5G9Lv8zbynzRdDv/TeaB1kvoAeWp+zPwjYfv4Y/gGizn626juItwczP/oead6as9FGOPcmI9Ljmjee5txLeQKUIaY/qJkMrsPQ0FLjaAW9GaCglJ+VhfJTh8htJ9R9zxszqqBmrwIAA/v9Cmb/5uANcFreUIV/8phr8ESOxIdmNcZ8Krf3aVm5h7XCnAzc5VkKZn/M8FVc++/NV4fZVTW5diKiYUzerL2ZSBrJCbN6WamAiSDSkfRDK74xp/Njf8cgjsdr/M+vkCgF7RVGNUwpFik2s3/PXvSL7n5MYyGBVC/+JRTMamw8j4BftS6t847V16f//wcS9WBg2bYEpVDgKd3R3JM4h7l/X+TDkP35a9TDKUpR77Sty8qpHgXlMk4qQAchsKR81n/lfsEkiV9apaKQ8ONNSl4KeRWfoW+aTYvv75yT3yEXzsspzF68m8rTbqTSP+sodqIO1UeMyhGuy9ztJOu15FfoyeIv+FZ/tugjg+a8ehhP9fOeBSGFvZhUZBDEP3vN32by90hgQkHO/H0XDinzzwp5b6CEv90vPgTmwfKLSMAfxWXu+9FaCp5r++lHsYKykGIECSU2GPEtzf5wtmW+fXwG/EMNC8FgT/Fm1jMJbvQqlmy3n3rXoGgsfzqSnnMDsjpWCKPplslUisCHh8QTECXTFunWcvqf5SAdg2OKpHNqiqBEMA3bB1njoh53zOgzNOKXuJsOIA8qKzbD9BnWmqHAhnFkN6FHpo3Us5Z3NBXxToyfuaPXYQ6hVnHNA9gIceB1exx1fM1bZY2Wlt602Kczu9KCXS1Qsga8cRsGhqQJdkpivXulf6kUjKhGzkGtms0viTaEhp37cDi3rFMiivKWQOeBbDXNFugGxRJJYWdgb1r0mAeAQPoIEzhod+MJSNr6J2LFNx377IaXIr/+RnDXxXC94Nt3rvpMI9pt8Hp1LWgWFglFkTVsPw/gAAA==" alt="WhatsApp" width={40} height={40} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
+                        {whatsappPendingCount > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
+                            {whatsappPendingCount}
+                          </span>
+                        )}
+                        {/* {(whatsappMenuOpen || pathname.startsWith('/whatsapp')) && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" /> } */}
+                      </div>
+                      {/* <span className="text-[10px] font-medium">واتساب</span> */}
+                    </button>
+                  )}
 
-                  <Link 
-                    href="/telegram" 
-                    onClick={() => setWhatsappMenuOpen(false)}
-                    className={clsx(
-                      "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
-                      pathname === '/telegram' ? "text-primary" : "text-gray-400 hover:text-white"
-                    )}
-                  >
-                    <div className="relative">
-                      {/* <Send size={30} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} /> */}
-                      <Image src="data:image/webp;base64,UklGRsQEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSP8AAAABgBsAbBpJx1BSRVvgNM+/y9EENADDFExz5FM9OsnJFUlPbURMAPw/I43uzvUQvZdttx6mKw3fpfb7oEiTX6E0xnmO4NmTVr0HW7GVtD6PWUkfJeEpbSF2lKSXuNlKEs+MniX5g0HWo/NyeivJcKpVRA5Y1hlKlgON8DuP94iqIZlWVV0uTdWOy1rlcnFUHhehQi74fTwuQuVycVQ7LhtVl0tTVedSUYXfeLyGVTDg0QPNInLAgg7MOYxBOyPoRE4P7unuwHRGNQLjyIZmHzWD9IFilwabsZm9URQs3ws74gbsZ6dohuMMkBb6b3pvvQKQh6utjeMhes66WQnD/xMAVlA4IJ4DAAAwFQCdASowADAAPhkIg0GhBxpIBABhLYATplCQIfXPMEpX8z+4/7T5Szxf4nfUB5gH6XdJbzAft9+oHsV+rP0AP3M6yz0FvLe9j39uP2G9mzRWfAH8A/EDv2/qv0gdRcfr4gLbpCAavf589gD+Q/0L/fdfL9mfYr/U1tIF3QvRyt3SwATvp1vRW1x38qrDbEd2lF2oH5VZ/FE5cKMjHE3K1S2fDAoAF08ZoN/bCuJQXelAAP79Cmb/HLDFhmaPM/4H8yj/n+3xhvdRrZNT/ZKuF/JYNMUECXT0ZBPZ79GA7kxDEZhKYKZCbXpDxnslKZjTGVVqhaYmerUqUwhxXnKa7oINqqLEF7Lylpb+JNb3xllvON2gPj9pPExJGJ54mnbOCfSFs6l/gtIGsdbQ1H2I1zPLsn/282OBiO6OmlHsWoPszz0YWScTfGhaDqv52v0j9dglratldg5duIW541LDWowYNopqUM4WBgJycb7w/D48L8I5tL9eCxNvSCwy/J1+h9d//lSrrBfy4l6IKhJu+o0Wfu0ckZcw0tAoOp2YZKnN5sBXoh7uc3zV+MD522aQgPBiFKzFToPlY/2Zn6f8vY3pyfnxN8avgpdMbpVvca7fe9qB1YAQNBN32YMNq0t+0xNfdk3ERRP8X+ZpwPAGKBu/MgDKV9Q6q4TLLwkbEedEFtjmsih2eDdpF7Yfvd8ex48fQQTib7YwYZ6hWTAYWpPaB+D/I3ZTlJtin9oi9zGW8xD6ZdCf+UPd/zJA9fvNMa/EXXmUYFo317GwKe2TNdQeTLzjclcXmLTMyhTWzCRsF/fBGWO0p8fseZ8xkG6w+YlR8zhRESODfpCIhp1N9h7bFP9fEkCKQvuFzeNqfSUpDvn6lSRdQfcIICry+5MY+fNRv3OEUCb1dmcd5yKdcNSS5dlCgWKc/79/qPoeGirkKyAynganpb/tuM3p/LYjUZeceCZNcT8ddN8SAqyBEh8qI2b5tPfQ5qiLNoNd4sLI0f2ysNN+H2zy8t3uZv1MJu/4NU/3Wk+3zqxElU9VCrWz3a65FI9fbp8Fkfglbirt63hinYdyzB1sm7nkS4WZy600j9vpvPcvP0yrPXtQiJ/PkWxCo/vn8j1ZJRiKhygAClJdlfRt6WHIH7kHXzEeg95VOkO5J1Mm1dl1DYv0gLGR6z++fTANRo+JvAp/gZSeYrQa+/qQJvFbiwwVobPo6XT2UFiQsT/dkAAAAA==" alt="Telegram" width={40} height={40} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} />
-                      {pathname === '/telegram' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
-                    </div>
-                    {/* <span className="text-[10px] font-medium">تليجرام</span> */}
-                  </Link>
+                  {permissions?.canManageTelegram && (
+                    <Link 
+                      href="/telegram" 
+                      onClick={() => setWhatsappMenuOpen(false)}
+                      className={clsx(
+                        "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
+                        pathname === '/telegram' ? "text-primary" : "text-gray-400 hover:text-white"
+                      )}
+                    >
+                      <div className="relative">
+                        {/* <Send size={30} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} /> */}
+                        <Image src="data:image/webp;base64,UklGRsQEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSP8AAAABgBsAbBpJx1BSRVvgNM+/y9EENADDFExz5FM9OsnJFUlPbURMAPw/I43uzvUQvZdttx6mKw3fpfb7oEiTX6E0xnmO4NmTVr0HW7GVtD6PWUkfJeEpbSF2lKSXuNlKEs+MniX5g0HWo/NyeivJcKpVRA5Y1hlKlgON8DuP94iqIZlWVV0uTdWOy1rlcnFUHhehQi74fTwuQuVycVQ7LhtVl0tTVedSUYXfeLyGVTDg0QPNInLAgg7MOYxBOyPoRE4P7unuwHRGNQLjyIZmHzWD9IFilwabsZm9URQs3ws74gbsZ6dohuMMkBb6b3pvvQKQh6utjeMhes66WQnD/xMAVlA4IJ4DAAAwFQCdASowADAAPhkIg0GhBxpIBABhLYATplCQIfXPMEpX8z+4/7T5Szxf4nfUB5gH6XdJbzAft9+oHsV+rP0AP3M6yz0FvLe9j39uP2G9mzRWfAH8A/EDv2/qv0gdRcfr4gLbpCAavf589gD+Q/0L/fdfL9mfYr/U1tIF3QvRyt3SwATvp1vRW1x38qrDbEd2lF2oH5VZ/FE5cKMjHE3K1S2fDAoAF08ZoN/bCuJQXelAAP79Cmb/HLDFhmaPM/4H8yj/n+3xhvdRrZNT/ZKuF/JYNMUECXT0ZBPZ79GA7kxDEZhKYKZCbXpDxnslKZjTGVVqhaYmerUqUwhxXnKa7oINqqLEF7Lylpb+JNb3xllvON2gPj9pPExJGJ54mnbOCfSFs6l/gtIGsdbQ1H2I1zPLsn/282OBiO6OmlHsWoPszz0YWScTfGhaDqv52v0j9dglratldg5duIW541LDWowYNopqUM4WBgJycb7w/D48L8I5tL9eCxNvSCwy/J1+h9d//lSrrBfy4l6IKhJu+o0Wfu0ckZcw0tAoOp2YZKnN5sBXoh7uc3zV+MD522aQgPBiFKzFToPlY/2Zn6f8vY3pyfnxN8avgpdMbpVvca7fe9qB1YAQNBN32YMNq0t+0xNfdk3ERRP8X+ZpwPAGKBu/MgDKV9Q6q4TLLwkbEedEFtjmsih2eDdpF7Yfvd8ex48fQQTib7YwYZ6hWTAYWpPaB+D/I3ZTlJtin9oi9zGW8xD6ZdCf+UPd/zJA9fvNMa/EXXmUYFo317GwKe2TNdQeTLzjclcXmLTMyhTWzCRsF/fBGWO0p8fseZ8xkG6w+YlR8zhRESODfpCIhp1N9h7bFP9fEkCKQvuFzeNqfSUpDvn6lSRdQfcIICry+5MY+fNRv3OEUCb1dmcd5yKdcNSS5dlCgWKc/79/qPoeGirkKyAynganpb/tuM3p/LYjUZeceCZNcT8ddN8SAqyBEh8qI2b5tPfQ5qiLNoNd4sLI0f2ysNN+H2zy8t3uZv1MJu/4NU/3Wk+3zqxElU9VCrWz3a65FI9fbp8Fkfglbirt63hinYdyzB1sm7nkS4WZy600j9vpvPcvP0yrPXtQiJ/PkWxCo/vn8j1ZJRiKhygAClJdlfRt6WHIH7kHXzEeg95VOkO5J1Mm1dl1DYv0gLGR6z++fTANRo+JvAp/gZSeYrQa+/qQJvFbiwwVobPo6XT2UFiQsT/dkAAAAA==" alt="Telegram" width={40} height={40} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} />
+                        {pathname === '/telegram' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
+                      </div>
+                      {/* <span className="text-[10px] font-medium">تليجرام</span> */}
+                    </Link>
+                  )}
 
-                  <Link 
-                    href="/tickets" 
-                    onClick={() => setWhatsappMenuOpen(false)}
+                  {(permissions?.canManageTickets || permissions?.canUseLiveChat) && (
+                    <Link 
+                      href="/tickets" 
+                      onClick={() => setWhatsappMenuOpen(false)}
                     className={clsx(
                       "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
                       pathname === '/tickets' ? "text-primary" : "text-gray-400 hover:text-white"
@@ -824,6 +842,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     </div>
                     {/* <span className="text-[10px] font-medium">لايف شات</span> */}
                   </Link>
+                  )}
 
                   <button 
                     onClick={() => { signOut(); router.push('/sign-in'); }}

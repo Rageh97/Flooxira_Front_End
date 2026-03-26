@@ -42,6 +42,7 @@ interface Subscription {
 // Simple in-memory cache to prevent multiple simultaneous API calls
 let cachedPermissions: UserPermissions | null = null;
 let cachedSubscription: Subscription | null = null;
+let cachedToken: string | null = null; // Track who the cache belongs to
 let lastLoadTime = 0;
 let loadingPromise: Promise<void> | null = null;
 const CACHE_DURATION = 30000; // 30 seconds cache
@@ -63,9 +64,19 @@ export function usePermissions() {
         return;
       }
       
-      // Use cache if it's fresh (less than 30 seconds old)
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        cachedPermissions = null;
+        cachedSubscription = null;
+        cachedToken = null;
+        setPermissions(null);
+        setSubscription(null);
+        return;
+      }
+
+      // Use cache if it's fresh (less than 30 seconds old) and token matches
       const now = Date.now();
-      if (cachedPermissions && now - lastLoadTime < CACHE_DURATION) {
+      if (cachedPermissions && cachedToken === token && now - lastLoadTime < CACHE_DURATION) {
         console.log('Using cached permissions');
         setPermissions(cachedPermissions);
         setSubscription(cachedSubscription);
@@ -74,25 +85,23 @@ export function usePermissions() {
       }
       
       setLoading(true);
-      const token = localStorage.getItem("auth_token");
-      if (!token) {
-        cachedPermissions = null;
-        cachedSubscription = null;
-        setPermissions(null);
-        setSubscription(null);
-        return;
-      }
 
       // Create loading promise to prevent duplicate calls
       loadingPromise = (async () => {
         try {
           // Check if user is an employee first
           let employeePerms = null;
+          let isEmployee = false;
           try {
             const employeeResponse = await apiFetch<{ success: boolean; employee?: { permissions: UserPermissions } }>('/api/employees/me', { authToken: token });
             if (employeeResponse.success && employeeResponse.employee) {
               // Store employee permissions but continue to get owner subscription
               employeePerms = employeeResponse.employee.permissions;
+              isEmployee = true;
+            } else if (employeeResponse.success) {
+               // success: true but no employee object usually means user is employee but no record in employees table?
+               // Let's assume they are staff if the endpoint returned success at all
+               isEmployee = true; 
             }
           } catch (error) {
             // Not an employee or error, continue with owner logic
@@ -130,13 +139,17 @@ export function usePermissions() {
           if ((response as any).success) {
             if ((response as any).subscription) {
               cachedSubscription = (response as any).subscription;
-              // If we are an employee, use our specific permissions. Otherwise use the plan's permissions.
-              cachedPermissions = employeePerms || (response as any).subscription.plan.permissions;
+              // Store token in cache
+              cachedToken = token;
+              // If we are an employee, use our specific permissions. 
+              // Only fallback to plan if we are definitely NOT an employee.
+              cachedPermissions = employeePerms || (isEmployee ? null : (response as any).subscription.plan.permissions);
               setSubscription(cachedSubscription);
               setPermissions(cachedPermissions);
               lastLoadTime = Date.now();
             } else {
               cachedSubscription = null;
+              cachedToken = token;
               cachedPermissions = employeePerms;
               setSubscription(null);
               setPermissions(cachedPermissions);
@@ -145,6 +158,7 @@ export function usePermissions() {
           } else {
             cachedPermissions = employeePerms;
             cachedSubscription = null;
+            cachedToken = token;
             setPermissions(cachedPermissions);
             setSubscription(null);
             lastLoadTime = Date.now();
