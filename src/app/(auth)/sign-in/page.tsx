@@ -66,7 +66,7 @@ export default function SignInPage() {
     
     <div className="space-y-2 ">
       <div>
-        <Image src="/Logo.gif" alt="logo" width={400} height={100} />
+        <Image src="/Logoo.png" alt="logo" width={400} height={100} />
       </div>
       <div className="flex items-center justify-center flex-col gap-2">
         <h1 className="text-xl font-semibold text-white">تسجيل الدخول</h1>

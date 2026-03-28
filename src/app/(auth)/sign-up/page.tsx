@@ -79,7 +79,7 @@ export default function SignUpPage() {
   return (
     <div className="space-y-6 ">
       <div>
-        <Image src="/Logo.gif" alt="logo" width={400} height={100} />
+        <Image src="/Logoo.png" alt="logo" width={400} height={100} />
       </div>
       <div>
         <h1 className="text-xl font-semibold text-white">إنشاء حساب</h1>

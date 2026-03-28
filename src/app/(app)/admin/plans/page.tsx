@@ -90,12 +90,14 @@ const AI_TOOLS_LIST = [
   { id: 'video_lipsync', label: 'حركة الشفاه (LipSync)', category: 'الفيديو' },
   { id: 'video_resize', label: 'تغيير أبعاد الفيديو', category: 'الفيديو' },
   { id: 'video_upscale', label: 'تحسين جودة الفيديو', category: 'الفيديو' },
+  { id: 'voice_gen', label: 'توليد التعليق الصوتي (TTS)', category: 'الصوت' },
 ];
 
 const AI_MODEL_CATEGORIES = {
   image: 'نماذج توليد الصور',
   video: 'نماذج الفيديو',
   motion: 'نماذج التحريك',
+  voice: 'نماذج التعليق الصوتي',
   chat: 'نماذج الدردشة'
 };
 
@@ -121,6 +123,10 @@ const MODEL_PRICING_OPTIONS: Record<string, { label: string, defaultCost: number
   'veo-3.1-fast-motion': { label: 'Veo 3.1 Fast Motion', defaultCost: 45, type: 'motion' },
   'veo-3.0-motion': { label: 'Veo 3.0 Pro Motion', defaultCost: 40, type: 'motion' },
   'veo-2.0-motion': { label: 'Veo 2.0 Legacy Motion', defaultCost: 30, type: 'motion' },
+
+  // Voice Models
+  'gemini-2.5-flash-tts': { label: 'Gemini 2.5 Flash TTS', defaultCost: 15, type: 'voice' },
+  'gemini-2.5-pro-tts': { label: 'Gemini 2.5 Pro TTS', defaultCost: 30, type: 'voice' },
 
   // Chat Models 
   'gemini-1.5-flash': { label: 'Gemini 1.5 Flash', defaultCost: 1, type: 'chat' },
@@ -1322,7 +1328,7 @@ export default function PlansAdminPage() {
                     <div className="mt-4 p-4 bg-gray-900/60 rounded-2xl border border-white/5">
                         <Label className="text-primary mb-3 block font-bold">الأدوات الذكية المتاحة</Label>
                         <div className="space-y-4">
-                          {['الدردشة', 'الصور', 'الفيديو'].map(cat => (
+                          {['الدردشة', 'الصور', 'الفيديو', 'الصوت'].map(cat => (
                             <div key={cat} className="space-y-2">
                               <div className="flex items-center justify-between border-b border-white/5 pb-1">
                                 <span className="text-xs font-bold text-gray-400">{cat}</span>
@@ -1931,7 +1937,7 @@ export default function PlansAdminPage() {
                     <div className="mt-4 p-4 bg-gray-900/60 rounded-2xl border border-white/5">
                       <Label className="text-primary mb-3 block font-bold">الأدوات الذكية المتاحة</Label>
                       <div className="space-y-4">
-                        {['الدردشة', 'الصور', 'الفيديو'].map(cat => (
+                        {['الدردشة', 'الصور', 'الفيديو', 'الصوت'].map(cat => (
                           <div key={cat} className="space-y-2">
                             <div className="flex items-center justify-between border-b border-white/5 pb-1">
                               <span className="text-xs font-bold text-gray-400">{cat}</span>

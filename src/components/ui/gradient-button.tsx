@@ -67,9 +67,9 @@ export function GradientButton({
             </div>
           )}
           {/* <div className="shrink-0 bg-border w-[1px] h-4" role="none"></div> */}
-          <span className="inline animate-gradient whitespace-pre bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent [--bg-size:300%] text-center font-bold">
+          <div className="flex-1 flex items-center justify-center">
             {children}
-          </span>
+          </div>
           {showArrow && (
             <ChevronRight className="text-[#9c40ff] size-4 transition group-hover:translate-x-[3px]" />
           )}

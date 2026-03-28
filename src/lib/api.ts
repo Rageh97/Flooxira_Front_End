@@ -2856,6 +2856,30 @@ export async function enhanceVideo(token: string, payload: { videoUrl: string; e
   });
 }
 
+export async function generateAIAudio(token: string, payload: { 
+  text: string; 
+  model?: string; 
+  voice?: string; 
+  gender?: string; 
+  dialect?: string; 
+  pace?: string; 
+  emotion?: string;
+  language?: string;
+  extraPrompt?: string;
+}) {
+  return apiFetch<{ 
+    success: boolean; 
+    audioUrl: string; 
+    historyId?: number; 
+    remainingCredits: number; 
+    creditsUsed: number 
+  }>("/api/ai/tts", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
 // ===== APPOINTMENTS API =====
 export interface Appointment {
   id: number;

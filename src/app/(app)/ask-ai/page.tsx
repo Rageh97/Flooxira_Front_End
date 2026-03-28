@@ -73,9 +73,10 @@ export default function AskAIPage() {
     {
       id: 'voice-gen',
       title: 'توليد الصوت',
-      desc: 'حول النصوص إلى تعليق صوتي احترافي',
+      desc: 'حول النصوص إلى تعليق صوتي احترافي بصوت طبيعي',
       image: '/انشاء تعليق صوتي.webp',
-      status: 'soon'
+      status: 'active',
+      path: '/ask-ai/voice'
     },
     {
       id: 'image-to-text',

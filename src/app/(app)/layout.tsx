@@ -466,7 +466,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         {/* Center: Logo */}
         <div className="flex items-center justify-center ">
           <Link href="/dashboard" className="flex items-center">
-            <Image src="/Logo.gif" alt="logo" width={130} height={80} className="w-[100px] md:w-[130px] object-contain" />
+            <Image src="/Logoo.png" alt="logo" width={130} height={80} className="w-[100px] md:w-[150px] object-contain" />
           </Link>
         </div>
   {/* Left side: Mobile Menu Button (only mobile) */}
