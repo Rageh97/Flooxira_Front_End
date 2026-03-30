@@ -20,6 +20,7 @@ const adminTabs = [
   { href: "/admin/tickets", label: "التذاكر" },
   { href: "/admin/islamic-quotes", label: "أذكار وأحاديث" },
   { href: "/admin/whatsapp-templates", label: "قوالب الواتساب" },
+  { href: "/admin/custom-package-pricing", label: "تسعير الباقة المخصصة" },
 ];
 
 export default function AdminLayout({ children }: PropsWithChildren) {

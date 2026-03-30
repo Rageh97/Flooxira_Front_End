@@ -36,6 +36,7 @@ const navItems = [
   { href: "/settings", label: "إدارة الحسابات", img: "/اعدادات.png" },
   { href: "/employees", label: "إدارة الموظفين", img: "/الموظفين.webp" },
   { href: "/plans", label: "باقات الاشتراك", img: "/الباقات.webp" },
+  // { href: "/plans/custom", label: "الباقة المخصصة", img: "/الباقات.webp" },
   { href: "/my-subscription", label: "الاشتراك الفعال", img: "/الاشتراك الفعال.webp" },
   { href: "/tutorials", label: "شروحات المنصة", img: "/الشروحات.webp" },
   { href: "/reviews", label: "تقييمات المنصة ", img: "/التقييمات.webp" },

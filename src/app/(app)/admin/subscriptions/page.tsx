@@ -26,6 +26,7 @@ type Subscription = {
     email: string;
     phone?: string;
     isActive: boolean;
+    liveChatAiEnabled?: boolean;
   };
   plan: {
     id: number;
@@ -35,6 +36,24 @@ type Subscription = {
     features: any;
     permissions: any;
   };
+  aiCreditsUsed?: number;
+  telegramAiCreditsUsed?: number;
+};
+
+type ConnectedUser = {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  status: 'connected' | 'initializing' | 'disconnected';
+  isBanned?: boolean;
+  whatsappName?: string;
+  role?: string;
+  aiCreditsUsed?: number;
+  telegramConnected?: boolean;
+  telegramBotName?: string;
+  liveChatUsed?: boolean;
+  liveChatAiEnabled?: boolean;
 };
 
 export default function SubscriptionsAdminPage() {
@@ -46,9 +65,10 @@ export default function SubscriptionsAdminPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalSubscriptions, setTotalSubscriptions] = useState<number>(0);
+  const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, cancelled: 0 });
   const subscriptionsPerPage = 10;
   const [isExporting, setIsExporting] = useState<boolean>(false);
-  const [connectedUsers, setConnectedUsers] = useState<any[]>([]);
+  const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([]);
 
   // Edit expiry date modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -75,6 +95,21 @@ export default function SubscriptionsAdminPage() {
         setSubscriptions(res.subscriptions);
         setTotalPages(res.totalPages || 1);
         setTotalSubscriptions(res.total || 0);
+        
+        // Accurate stats from the API response if available, otherwise calculate from result
+        if (res.stats) {
+          setStats(res.stats);
+        } else {
+          // Fallback calculation for stats if API doesn't provide global stats
+          // Note: This only works well if the API returns total counts in the response
+          setStats({
+            total: res.total || 0,
+            active: res.activeCount || 0,
+            expired: res.expiredCount || 0,
+            cancelled: res.cancelledCount || 0
+          });
+        }
+
         if (connectedRes.success) {
           setConnectedUsers(connectedRes.users);
         }
@@ -221,16 +256,6 @@ export default function SubscriptionsAdminPage() {
     return connectedUsers.find(cu => cu.id === userId);
   };
 
-  const stats = {
-    total: totalSubscriptions, // Use total from API response if available, otherwise subscriptions.length is wrong for pagination
-    // Note: These stats are currently only accurate for the current page/filter. 
-    // To get accurate global stats, we would need a separate API endpoint.
-    // For now, we'll just use the current list counts which is better than nothing, 
-    // but ideally this should be fixed in the future.
-    active: subscriptions.filter(sub => sub.status === 'active' && getDaysUntilExpiry(sub.expiresAt) > 0).length,
-    expired: subscriptions.filter(sub => sub.status === 'expired' || (sub.status === 'active' && getDaysUntilExpiry(sub.expiresAt) <= 0)).length,
-    cancelled: subscriptions.filter(sub => sub.status === 'cancelled').length,
-  };
 
   if (loading) {
     return (
@@ -372,7 +397,7 @@ export default function SubscriptionsAdminPage() {
                     <th className="py-3 px-4 font-medium text-white">الباقة</th>
                     <th className="py-3 px-4 font-medium text-white">السعر</th>
                     <th className="py-3 px-4 font-medium text-white">الحالة</th>
-                    <th className="py-3 px-4 font-medium text-white">حالة الواتساب</th>
+                    <th className="py-3 px-4 font-medium text-white">الأجهزة المتصلة</th>
                     <th className="py-3 px-4 font-medium text-white">ردود البوت</th>
                     <th className="py-3 px-4 font-medium text-white">استهلاك AI</th>
                     <th className="py-3 px-4 font-medium text-white">تاريخ البداية</th>
@@ -423,33 +448,77 @@ export default function SubscriptionsAdminPage() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="flex justify-center">
+                          <div className="flex flex-col items-center gap-2">
+                            {/* WhatsApp Status */}
                             {(() => {
                               const cu = getConnectedData(subscription.userId);
-                              if (!cu) return <span className="text-gray-500 text-xs">غير مسجل</span>;
+                              if (!cu) return <span className="text-gray-500 text-[10px]">واتساب: غير مسجل</span>;
                               
                               return (
-                                <div className="flex flex-col items-center gap-1">
-                                  <div className="text-[10px] text-gray-400 font-mono">{cu.whatsappName || '---'}</div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-gray-400">واتساب:</span>
                                   {cu.isBanned ? (
-                                    <Badge className="bg-red-500 text-white border-none flex items-center gap-1 animate-pulse">
-                                      <UserMinus className="w-3 h-3" />
+                                    <Badge className="bg-red-500 text-white text-[10px] py-0 px-1 border-none flex items-center gap-1 animate-pulse">
                                       محظور!
                                     </Badge>
                                   ) : cu.status === 'connected' ? (
-                                    <Badge className="bg-green-100 text-green-800 border-none flex items-center gap-1">
-                                      <UserCheck className="w-3 h-3" />
+                                    <Badge className="bg-green-100 text-green-800 text-[10px] py-0 px-1 border-none flex items-center gap-1">
                                       متصل
                                     </Badge>
                                   ) : cu.status === 'initializing' ? (
-                                    <Badge className="bg-blue-100 text-blue-800 border-none flex items-center gap-1">
-                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    <Badge className="bg-blue-100 text-blue-800 text-[10px] py-0 px-1 border-none flex items-center gap-1">
                                       جاري...
                                     </Badge>
                                   ) : (
-                                    <Badge className="bg-red-100 text-red-800 border-none flex items-center gap-1">
-                                      <UserMinus className="w-3 h-3" />
+                                    <Badge className="bg-red-100 text-red-800 text-[10px] py-0 px-1 border-none flex items-center gap-1">
                                       غير متصل
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Telegram Status */}
+                            {(() => {
+                              const cu = getConnectedData(subscription.userId);
+                              const hasTelegram = subscription.plan.permissions?.canManageTelegram;
+                              if (!hasTelegram) return null;
+
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-gray-400">تليجرام:</span>
+                                  {cu?.telegramConnected ? (
+                                    <Badge className="bg-blue-100 text-blue-800 text-[10px] py-0 px-1 border-none">
+                                      متصل
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-gray-100 text-gray-800 text-[10px] py-0 px-1 border-none">
+                                      غير متصل
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Live Chat Status */}
+                            {(() => {
+                              const cu = getConnectedData(subscription.userId);
+                              const hasLiveChat = subscription.plan.permissions?.canUseLiveChat;
+                              if (!hasLiveChat) return null;
+                              
+                              const isUsed = cu?.liveChatUsed;
+                              const isAiEnabled = cu?.liveChatAiEnabled !== false;
+
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-gray-400">لايف شات:</span>
+                                  {isUsed ? (
+                                    <Badge className="bg-purple-100 text-purple-800 text-[10px] py-0 px-1 border-none">
+                                      مستخدم {isAiEnabled ? '(AI)' : '(يدوي)'}
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-gray-100 text-gray-800 text-[10px] py-0 px-1 border-none">
+                                      غير مستخدم
                                     </Badge>
                                   )}
                                 </div>
@@ -467,10 +536,10 @@ export default function SubscriptionsAdminPage() {
                         <td className="py-3 px-4">
                           <div className="flex justify-center">
                             {(() => {
-                              const cu = getConnectedData(subscription.userId);
+                              const totalAiUsed = (subscription.aiCreditsUsed || 0) + (subscription.telegramAiCreditsUsed || 0);
                               return (
                                 <Badge variant="outline" className="border-purple-500/30 text-purple-400 bg-purple-500/10">
-                                  {(cu?.aiCreditsUsed || 0)} كريديت
+                                  {totalAiUsed} كريديت
                                 </Badge>
                               );
                             })()}

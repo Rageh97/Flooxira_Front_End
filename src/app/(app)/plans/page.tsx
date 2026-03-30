@@ -7,6 +7,7 @@ import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { useToast } from "@/components/ui/toast-provider";
 import { Check, CheckCircle, X, XCircle } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -656,6 +657,30 @@ export default function PlansPage() {
       )}
     
       
+      {/* Custom Package CTA */}
+      {/* <div className="w-full">
+        <Link href="/plans/custom">
+          <div className="relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-purple-600/10 to-fuchsia-600/10 p-6 hover:border-primary/50 transition-all duration-300 cursor-pointer group">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-2xl shadow-lg shadow-primary/20">
+                  ✨
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">صمم باقتك المخصصة</h3>
+                  <p className="text-sm text-gray-400">اختر الميزات التي تحتاجها فقط وادفع مقابل ما تستخدمه</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl font-medium group-hover:scale-105 transition-transform">
+                ابدأ التخصيص
+                <span className="text-lg">←</span>
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div> */}
+
       {/* Subscription Modal */}
       {selectedPlan && (
         <SubscriptionModal
@@ -666,8 +691,6 @@ export default function PlansPage() {
           token={token}
         />
       )}
-      
-      {/* <p className="text-xs text-primary">الدفع عبر USDT أو القسائم. يمكنك الإلغاء في أي وقت.</p> */}
     </div>
   );
 }

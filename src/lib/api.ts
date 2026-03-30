@@ -3242,6 +3242,72 @@ export async function getUnifiedMessages(token: string, platform: string, contac
   }>(`/api/unified-inbox/conversations/${platform}/${contactId}/messages`, { authToken: token });
 }
 
+// ===== Custom Package Pricing API =====
+export type CustomPackagePricing = {
+  id: number;
+  socialMediaPostingPrice: number;
+  socialMediaPostingPosts: number;
+  whatsappPrice: number;
+  whatsappAiMessagesPrice: number;
+  whatsappAiMessagesPerBundle: number;
+  telegramPrice: number;
+  telegramAiMessagesPrice: number;
+  telegramAiMessagesPerBundle: number;
+  contentManagementPrice: number;
+  customerManagementPrice: number;
+  serviceMarketingPrice: number;
+  serviceMarketingPricePerUnit: number;
+  employeeManagementPrice: number;
+  employeePricePerUnit: number;
+  aiToolsPrice: number;
+  aiToolsCreditsPrice: number;
+  aiToolsCreditsPerBundle: number;
+  liveChatPrice: number;
+  liveChatAiResponsesPrice: number;
+  liveChatAiResponsesPerBundle: number;
+  eventsPluginPrice: number;
+  availablePlatforms: string[];
+  isActive: boolean;
+};
 
+export async function getCustomPackagePricing(token: string) {
+  return apiFetch<{ success: boolean; pricing: CustomPackagePricing }>('/api/custom-package-pricing', { authToken: token });
+}
 
+export async function updateCustomPackagePricing(token: string, updates: Partial<CustomPackagePricing>) {
+  return apiFetch<{ success: boolean; pricing: CustomPackagePricing }>('/api/custom-package-pricing', {
+    method: 'PUT',
+    authToken: token,
+    body: JSON.stringify(updates),
+  });
+}
 
+export type SelectedFeature = {
+  featureKey: string;
+  aiMessageBundles?: number;
+};
+
+export type PriceBreakdownItem = {
+  featureKey: string;
+  name: string;
+  basePrice: number;
+  totalFeaturePrice: number;
+  bundles: number;
+  aiMessages?: number;
+  aiMessagesPrice?: number;
+  aiCredits?: number;
+  aiCreditsPrice?: number;
+  aiResponses?: number;
+  aiResponsesPrice?: number;
+  eventsPerMonth?: number;
+  eventsPrice?: number;
+  postsIncluded?: number;
+};
+
+export async function calculateCustomPackagePrice(token: string, selectedFeatures: SelectedFeature[]) {
+  return apiFetch<{ success: boolean; totalPrice: number; breakdown: PriceBreakdownItem[] }>('/api/custom-package-pricing/calculate', {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify({ selectedFeatures }),
+  });
+}
