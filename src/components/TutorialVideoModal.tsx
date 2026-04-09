@@ -11,6 +11,7 @@ interface TutorialVideoModalProps {
   onViewIncrement?: (tutorialId: number) => void;
 }
 
+
 export function TutorialVideoModal({ 
   tutorial, 
   onClose,
