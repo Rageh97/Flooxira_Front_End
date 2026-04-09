@@ -71,6 +71,7 @@ export function usePermissions() {
         cachedToken = null;
         setPermissions(null);
         setSubscription(null);
+        setLoading(false); // Make sure to stop loading for guests!
         return;
       }
 

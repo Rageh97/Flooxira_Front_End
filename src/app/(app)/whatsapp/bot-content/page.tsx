@@ -2,6 +2,8 @@
 import React from "react";
 import { botAddField, botCreateRow, botListData, botListFields, botUploadExcel, botDeleteRow, botUpdateRow, botDeleteField, botExportData, botUpdateField, botClearAll, type BotField, type BotDataRow } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
+import { useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -50,6 +52,20 @@ function EditableCell({ value, onChange, type = 'text' }: EditableCellProps) {
 
 export default function BotContentPage() {
   const { user, loading: authLoading } = useAuth();
+  const { hasActiveSubscription, permissionsLoading } = usePermissions();
+  const router = useRouter();
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+      type === 'success' ? 'bg-green-100 border border-green-400 text-green-800' :
+      type === 'error' ? 'bg-red-100 border border-red-400 text-red-800' :
+      'bg-blue-100 border border-blue-400 text-blue-800'
+    }`;
+    toast.innerHTML = `<div class="flex items-center"><span>${message}</span></div>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  };
+  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const [fields, setFields] = React.useState<BotField[]>([]);
   const [rows, setRows] = React.useState<BotDataRow[]>([]);
   const [loading, setLoading] = React.useState(false);
@@ -123,11 +139,6 @@ export default function BotContentPage() {
 
   React.useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      alert('يجب تسجيل الدخول أولاً');
-      window.location.href = '/sign-in';
-      return;
-    }
     loadData();
   }, [user, authLoading]);
 
@@ -136,7 +147,7 @@ export default function BotContentPage() {
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
+        setLoading(false);
         return;
       }
 
@@ -175,6 +186,16 @@ export default function BotContentPage() {
   };
 
   const handleAddField = async () => {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
     if (!newFieldName.trim()) return;
     
     try {
@@ -217,6 +238,16 @@ export default function BotContentPage() {
 
   const handleUpdateFieldDetails = async () => {
     if (!fieldToEdit) return;
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
     if (!editFieldName.trim()) {
       alert('يرجى إدخال اسم العمود');
       return;
@@ -224,13 +255,6 @@ export default function BotContentPage() {
 
     try {
       setIsUpdatingField(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsUpdatingField(false);
-        return;
-      }
-
       const res = await botUpdateField(token, fieldToEdit.id, {
         fieldName: editFieldName.trim(),
         fieldType: editFieldType
@@ -261,15 +285,19 @@ export default function BotContentPage() {
   const confirmDeleteField = async () => {
     if (!fieldPendingDelete) return;
 
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
+
     try {
       setIsDeletingField(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsDeletingField(false);
-        return;
-      }
-
       const res = await botDeleteField(token, fieldPendingDelete.id);
       if (res.ok) {
         setSuccessMessage('تم حذف العمود بنجاح');
@@ -289,15 +317,17 @@ export default function BotContentPage() {
   };
 
   const handleAddRow = async () => {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
     try {
-      setIsAddingRow(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsAddingRow(false);
-        return;
-      }
-
       const res = await botCreateRow(token, editingData);
       
       if (res.row) {
@@ -318,15 +348,17 @@ export default function BotContentPage() {
   };
 
   const handleUpdateRow = async (rowId: number) => {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
     try {
-      setIsUpdatingRow(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsUpdatingRow(false);
-        return;
-      }
-
       const res = await botUpdateRow(token, rowId, editingData);
       
       if (res.row) {
@@ -353,15 +385,19 @@ export default function BotContentPage() {
   const confirmDeleteRow = async () => {
     if (!rowPendingDelete) return;
     
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
+
     try {
       setIsDeletingRow(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsDeletingRow(false);
-        return;
-      }
-
       const res = await botDeleteRow(token, rowPendingDelete.id);
       
       if (res.ok) {
@@ -382,15 +418,17 @@ export default function BotContentPage() {
   };
 
   const handleClearAllData = async () => {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
     try {
-      setIsClearingData(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsClearingData(false);
-        return;
-      }
-
       const res = await botClearAll(token);
       
       if (res.success) {
@@ -413,18 +451,20 @@ export default function BotContentPage() {
   };
 
   const handleExcelUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
-      setIsUploadingExcel(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsUploadingExcel(false);
-        return;
-      }
-
       const res = await botUploadExcel(token, file);
       
       if (res.success) {
@@ -443,17 +483,21 @@ export default function BotContentPage() {
   };
 
   const handleExportData = async () => {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", "error");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
+      router.push("/plans");
+      return;
+    }
     try {
       setIsExportingData(true);
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        alert('يجب تسجيل الدخول أولاً');
-        setIsExportingData(false);
-        return;
-      }
 
       if (rows.length === 0) {
-        alert('لا توجد بيانات للتصدير');
+        showToast("لا توجد بيانات للتصدير", "info");
         setIsExportingData(false);
         return;
       }
@@ -538,7 +582,19 @@ export default function BotContentPage() {
     );
   }
 
-  if (authLoading || loading) {
+  if (authLoading) {
+    return (
+      <Loader 
+        text="جاري تحميل الصفحة..." 
+        size="lg" 
+        variant="warning"
+        showDots
+        fullScreen
+      />
+    );
+  }
+
+  if (loading) {
     return (
       <Loader 
         text="جاري تحميل البيانات..." 

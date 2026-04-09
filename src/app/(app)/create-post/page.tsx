@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,7 @@ import { TutorialVideoModal } from "@/components/TutorialVideoModal";
 import { Tutorial } from "@/types/tutorial";
 import { BookOpen } from "lucide-react";
 import AnimatedTutorialButton from "@/components/YoutubeButton";
+import { useAuth } from "@/lib/auth";
 
 // Platform configuration with icons and supported content types
 const PLATFORMS = {
@@ -81,7 +83,10 @@ const PLATFORMS = {
 
 export default function CreatePostPage() {
   const { hasActiveSubscription, hasPlatformAccess, loading: permissionsLoading } = usePermissions();
+  const { user, loading: authLoading } = useAuth();
+  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const { showSuccess, showError } = useToast();
+  const router = useRouter();
   
   const [error, setError] = useState<string>("");
   const [text, setText] = useState("");
@@ -129,11 +134,7 @@ export default function CreatePostPage() {
       showError("لم يتم العثور على شرح خاص بإنشاء المنشور");
     }
   };
-  useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
+
   // Post usage stats state
   const [postUsageStats, setPostUsageStats] = useState<{
     monthlyLimit: number;
@@ -367,8 +368,18 @@ export default function CreatePostPage() {
       const token = localStorage.getItem("auth_token") || "";
       
       // ✅ Enhanced validation: Check platforms first
+      if (!token) {
+        showError("يجب تسجيل الدخول أولاً");
+        router.push('/sign-in');
+        return;
+      }
+      if (!hasActiveSubscription && !permissionsLoading) {
+        showError("يجب الاشتراك في باقة لتفعيل ميزة النشر");
+        return;
+      }
       if (platforms.length === 0) {
-        throw new Error('يرجى اختيار منصة واحدة على الأقل للنشر');
+        showError("يرجى اختيار منصة واحدة على الأقل");
+        return;
       }
       
       // ✅ Enhanced validation: Check text content for text-only posts
@@ -849,7 +860,7 @@ export default function CreatePostPage() {
           className="mb-8"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-4" : "space-y-2"}>
+      <div className="space-y-2">
       {/* Error Message Display */}
       {error && (
         <div className="p-4 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-300 rounded-xl shadow-lg">
@@ -1640,6 +1651,17 @@ export default function CreatePostPage() {
           <div className="flex gap-4 pt-4">
             <Button 
               onClick={() => {
+                const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+                if (!token) {
+                  showError("يجب تسجيل الدخول أولاً");
+                  router.push('/sign-in');
+                  return;
+                }
+                if (!hasActiveSubscription) {
+                  showError("يجب الاشتراك في باقة لتفعيل هذه الميزة");
+                  router.push('/plans');
+                  return;
+                }
                 setError(""); // Clear any previous errors
                 if (!when) {
                   setError('يرجى اختيار تاريخ ووقت للجدولة');
@@ -1651,7 +1673,7 @@ export default function CreatePostPage() {
               disabled={
                 mutation.isPending || 
                 platforms.length === 0 || 
-                !when ||
+                (!hasActiveSubscription && false) || // Allow clicking for guests to show toast
                 (contentType === 'stories' && platforms.includes('telegram') && telegramGroups.length === 0) ||
                 (postUsageStats?.isAtLimit || false)
               }
@@ -1664,6 +1686,17 @@ export default function CreatePostPage() {
             
             <Button  
               onClick={() => { 
+                const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+                if (!token) {
+                  showError("يجب تسجيل الدخول أولاً");
+                  router.push('/sign-in');
+                  return;
+                }
+                if (!hasActiveSubscription) {
+                  showError("يجب الاشتراك في باقة لتفعيل هذه الميزة");
+                  router.push('/plans');
+                  return;
+                }
                 setError(""); // Clear any previous errors
                 setWhen(""); 
                 setActionType('publish');
@@ -1672,6 +1705,7 @@ export default function CreatePostPage() {
               disabled={
                 mutation.isPending || 
                 platforms.length === 0 ||
+                (!hasActiveSubscription && false) || // Allow clicking for guests to show toast
                 (contentType === 'stories' && platforms.includes('telegram') && telegramGroups.length === 0) ||
                 (postUsageStats?.isAtLimit || false)
               }

@@ -306,7 +306,10 @@ export default function TicketsPage() {
   }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     if (activeTab === "tickets") {
       setTicketsPage(1);
       loadTickets(1);
@@ -502,6 +505,16 @@ export default function TicketsPage() {
   };
 
   const sendMessage = async (attachments: string[] = []) => {
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans';
+      return;
+    }
     const content = inputMessage.trim();
     if ((!content && !selectedImage && attachments.length === 0) || !selectedTicket || sending) return;
 
@@ -1110,7 +1123,7 @@ export default function TicketsPage() {
           className="mb-8"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
+      <div className="space-y-6">
       <div className="flex flex-col lg:flex-row gap-3 items-center justify-between">
         <div>
           <h1 className="lg:text-3xl text-2xl font-bold text-white">نظام التذاكر والدردشة المباشرة</h1>
@@ -1888,42 +1901,56 @@ export default function TicketsPage() {
                 <Code className="h-5 w-5 text-primary" />
                 كود التضمين في موقعك
               </CardTitle>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowWidgetCode(!showWidgetCode)}
-                className="text-xs border-primary text-primary hover:bg-primary/10"
-              >
-                {showWidgetCode ? "إخفاء الكود" : "عرض الكود"}
-              </Button>
+              {hasActiveSubscription && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowWidgetCode(!showWidgetCode)}
+                  className="text-xs border-primary text-primary hover:bg-primary/10"
+                >
+                  {showWidgetCode ? "إخفاء الكود" : "عرض الكود"}
+                </Button>
+              )}
             </CardHeader>
-            {showWidgetCode && (
-              <CardContent className="space-y-4 pt-4">
-                <div>
-                  <p className="text-sm text-gray-400 mb-2">
-                    انسخ هذا الكود وضعّه في موقعك أو متجرك لعرض الدردشة المباشرة:
-                  </p>
-                  <div className="bg-gray-900 rounded-lg p-4 relative">
-                    <code className="text-sm text-green-400 whitespace-pre-wrap block pl-10 font-mono leading-relaxed">{widgetCode}</code>
-                    <button
-                      onClick={copyWidgetCode}
-                      className="absolute top-2 left-2 p-2 hover:bg-gray-800 rounded transition-colors"
-                      title="نسخ الكود"
-                    >
-                      {copied ? (
-                        <CheckCheck className="h-4 w-4 text-green-400" />
-                      ) : (
-                        <Copy className="h-4 w-4 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-                  <p className="text-sm text-blue-300">
-                    <strong> نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <bdi className="bg-gray-800 px-1 rounded">&lt;/body&gt;</bdi> في صفحة HTML الخاصة بك
-                  </p>
+            {!hasActiveSubscription ? (
+              <CardContent className="pt-4">
+                <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 text-center">
+                  <p className="text-sm text-yellow-500 font-bold mb-2">هذه الميزة متاحة للمشتركين فقط</p>
+                  <p className="text-xs text-gray-400 mb-4">اشترك الآن للحصول على كود التضمين وتفعيل الدردشة المباشرة في موقعك</p>
+                  <Button onClick={() => (window.location.href = "/plans")} className="bg-green-600 hover:bg-green-700 h-8 text-xs">
+                    تصفح الباقات
+                  </Button>
                 </div>
               </CardContent>
+            ) : (
+              showWidgetCode && (
+                <CardContent className="space-y-4 pt-4">
+                  <div>
+                    <p className="text-sm text-gray-400 mb-2">
+                      انسخ هذا الكود وضعّه في موقعك أو متجرك لعرض الدردشة المباشرة:
+                    </p>
+                    <div className="bg-gray-900 rounded-lg p-4 relative">
+                      <code className="text-sm text-green-400 whitespace-pre-wrap block pl-10 font-mono leading-relaxed">{widgetCode}</code>
+                      <button
+                        onClick={copyWidgetCode}
+                        className="absolute top-2 left-2 p-2 hover:bg-gray-800 rounded transition-colors"
+                        title="نسخ الكود"
+                      >
+                        {copied ? (
+                          <CheckCheck className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                    <p className="text-sm text-blue-300">
+                      <strong> نصيحة:</strong> ضع هذا الكود قبل إغلاق tag <bdi className="bg-gray-800 px-1 rounded">&lt;/body&gt;</bdi> في صفحة HTML الخاصة بك
+                    </p>
+                  </div>
+                </CardContent>
+              )
             )}
           </Card>
 

@@ -211,6 +211,21 @@ export default function EmployeesPage() {
     }
   }, [hasActiveSubscription, canManageEmployees, getToken]);
 
+  const checkSubscriptionAction = () => {
+    const token = getToken();
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      window.setTimeout(() => window.location.href = "/sign-in", 1500);
+      return false;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.setTimeout(() => window.location.href = "/plans", 1500);
+      return false;
+    }
+    return true;
+  };
+
   const validateForm = () => {
     // التحقق من الاسم
     if (!formData.name || formData.name.trim().length < 2) {
@@ -304,6 +319,7 @@ export default function EmployeesPage() {
   };
 
   const openDeleteDialog = (employee: Employee) => {
+    if (!checkSubscriptionAction()) return;
     setDeletingEmployee(employee);
     setIsDeleteDialogOpen(true);
   };
@@ -361,6 +377,7 @@ export default function EmployeesPage() {
   };
 
   const openEditDialog = (employee: Employee) => {
+    if (!checkSubscriptionAction()) return;
     setEditingEmployee(employee);
     setFormData({
       name: employee.name,
@@ -411,7 +428,7 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div  className={`w-full space-y-6 ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
+    <div className="w-full space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row gap-2 justify-between items-center">
         <div>
@@ -468,7 +485,10 @@ export default function EmployeesPage() {
               />
             </div>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+              if (open && !checkSubscriptionAction()) return;
+              setIsCreateDialogOpen(open);
+            }}>
               <DialogTrigger asChild>
                 <Button disabled={!canCreateMore} className="primary-button">
                   <div className="flex items-center gap-2">

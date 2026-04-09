@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { listPlans, type Plan, createSubscriptionRequest } from "@/lib/api";
+import { listPlans, listPublicPlans, type Plan, createSubscriptionRequest } from "@/lib/api";
 import { SubscriptionModal } from "@/components/SubscriptionModal";
 import { useToast } from "@/components/ui/toast-provider";
 import { Check, CheckCircle, X, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -17,6 +18,7 @@ export default function PlansPage() {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const { showSuccess, showError } = useToast();
+  const router = useRouter();
 
   const availablePlatforms = [
     { key: 'facebook', name: 'Facebook', icon: <Image width={25} height={25} src="/facebook.gif" alt="Facebook" /> },
@@ -36,12 +38,16 @@ export default function PlansPage() {
   }, []);
 
   useEffect(() => {
-    if (!token) return;
-    
     setLoading(true);
-    listPlans(token, 'standard')
+    // Use listPublicPlans for guests, and listPlans for authenticated users
+    const fetchPlans = token ? listPlans(token, 'standard') : listPublicPlans('standard');
+    
+    fetchPlans
       .then((res) => setPlans(res.plans))
-      .catch((e) => setError(e.message))
+      .catch((e) => {
+        console.error("Failed to fetch plans:", e);
+        setError(e.message);
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -68,6 +74,11 @@ export default function PlansPage() {
   };
 
   const openSubscriptionModal = (plan: Plan) => {
+    if (!token) {
+      showError("يجب تسجيل الدخول للاشتراك");
+      router.push('/sign-in');
+      return;
+    }
     setSelectedPlan(plan);
     setSubscriptionModalOpen(true);
   };

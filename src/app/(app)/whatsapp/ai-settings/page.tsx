@@ -20,10 +20,39 @@ import {
   type PromptCategory
 } from '@/lib/aiPromptApi';
 import { useRouter } from 'next/navigation';
+import { usePermissions } from "@/lib/permissions";
 import { Copy, Check, Filter } from 'lucide-react';
+
+const DEFAULT_SETTINGS: BotSettings = {
+  id: 0,
+  userId: 0,
+  aiProvider: 'openai',
+  openaiModel: 'gpt-4o-mini',
+  geminiModel: 'gemini-1.5-flash',
+  temperature: 0.7,
+  maxTokens: 1000,
+  personality: 'professional',
+  language: 'arabic',
+  dialect: 'saudi',
+  tone: 'formal',
+  responseLength: 'medium',
+  includeEmojis: true,
+  includeGreetings: true,
+  includeFarewells: true,
+  enableContextMemory: true,
+  contextWindow: 10,
+  enableFallback: true,
+  trackConversations: true,
+  trackPerformance: true,
+  isActive: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
 
 export default function AISettingsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const [settings, setSettings] = useState<BotSettings | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,14 +69,24 @@ export default function AISettingsPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      window.location.href = '/sign-in';
-      return;
+    
+    if (user) {
+      loadData();
+    } else {
+      // For guests, use default settings and stop loading
+      setSettings(DEFAULT_SETTINGS);
+      setLoading(false);
     }
-    loadData();
   }, [user, authLoading]);
 
   const loadData = async () => {
+    const currentToken = typeof window !== 'undefined' ? localStorage.getItem("auth_token") : null;
+    if (!currentToken) {
+      setSettings(DEFAULT_SETTINGS);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const [settingsRes, modelsRes, templatesRes] = await Promise.all([
@@ -61,10 +100,39 @@ export default function AISettingsPage() {
       if (templatesRes.success) setTemplates(templatesRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
-      setError('فشل في تحميل الإعدادات');
+      // Fallback to defaults on error
+      setSettings(DEFAULT_SETTINGS);
+      // Don't show error to guests
+      if (user) setError('فشل في تحميل الإعدادات');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveWrapper = async () => {
+    const currentToken = localStorage.getItem("auth_token");
+    if (!currentToken) {
+      router.push("/sign-in");
+      return;
+    }
+    if (currentToken && !hasActiveSubscription && !permissionsLoading) {
+      router.push("/plans");
+      return;
+    }
+    await handleSave();
+  };
+
+  const handleResetWrapper = async () => {
+    const currentToken = localStorage.getItem("auth_token");
+    if (!currentToken) {
+      router.push("/sign-in");
+      return;
+    }
+    if (currentToken && !hasActiveSubscription && !permissionsLoading) {
+      router.push("/plans");
+      return;
+    }
+    await handleReset();
   };
 
   const handleSave = async () => {
@@ -131,6 +199,11 @@ export default function AISettingsPage() {
 
 
   const loadPrompts = async () => {
+    const currentToken = localStorage.getItem("auth_token");
+    if (!currentToken) {
+      setPromptsLoading(false);
+      return;
+    }
     setPromptsLoading(true);
     try {
       const params: any = {
@@ -1234,7 +1307,7 @@ export default function AISettingsPage() {
       {/* Action Buttons */}
       <div className="flex gap-4">
         <Button
-          onClick={handleSave}
+          onClick={handleSaveWrapper}
           disabled={saving}
           className="primary-button "
         >
@@ -1242,7 +1315,7 @@ export default function AISettingsPage() {
         </Button>
         
         <Button
-          onClick={handleReset}
+          onClick={handleResetWrapper}
           disabled={saving}
           variant="secondary"
           className="primary-button after:bg-red-500"

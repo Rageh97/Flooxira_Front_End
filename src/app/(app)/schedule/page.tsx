@@ -371,7 +371,7 @@ export default function SchedulePage() {
           className="mb-8"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}>
+      <div className="">
       <div className="mb-4 sm:mb-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">ادارة وجدولة المحتوى</h1>

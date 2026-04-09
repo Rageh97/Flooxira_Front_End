@@ -83,7 +83,11 @@ export default function EventsPluginPage() {
   });
 
   useEffect(() => {
-    if (token) loadConfigs();
+    if (token) {
+      loadConfigs();
+    } else {
+      setLoading(false);
+    }
   }, [token]);
 
   const loadConfigs = async () => {
@@ -187,7 +191,7 @@ export default function EventsPluginPage() {
     setConfigs(configs.filter(c => c.id !== deletedConfigId));
   };
 
-  if (loading || permissionsLoading) return <AuthGuard><div className="flex h-screen items-center justify-center"><RefreshCw className="animate-spin h-10 w-10 text-primary" /></div></AuthGuard>;
+  if (loading || (token && permissionsLoading)) return <div className="flex h-screen items-center justify-center"><RefreshCw className="animate-spin h-10 w-10 text-primary" /></div>;
   
   const isFeatureRestricted = error === "feature_not_available" || !hasActiveSubscription;
 
@@ -204,7 +208,7 @@ export default function EventsPluginPage() {
           </div>
         )} */}
 
-        <div className={`space-y-6 mx-auto p-4 md:p-8 transition-all duration-500 ${isFeatureRestricted ? "blur- grayscale opacity-50 pointer-events-none select-none" : ""}`}>
+        <div className={`space-y-6 mx-auto p-4 md:p-8 transition-all duration-500  ""}`}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -239,7 +243,7 @@ export default function EventsPluginPage() {
                   <Zap className="h-10 w-10 text-primary" />
                 </div>
                 <h3 className="text-xl font-semibold text-white">ابدأ بربط أول منصة لك</h3>
-                <p className="text-gray-400 text-sm">يمكنك استقبال الأحداث من سلة، زد، ووردبريس أو أي نظام مخصص مباشرة إلى هنا وتحويلها لرسائل واتساب تلقائية.</p>
+                <p className="text-gray-400 text-sm">يمكنك استقبال الأحداث من سلة، سكربت اياب كلاود، ووردبريس أو أي نظام مخصص مباشرة إلى هنا وتحويلها لرسائل واتساب تلقائية.</p>
                 <Button onClick={() => setSetupOpen(true)} className="primary-button pr-8 pl-8">إضافة تكامل الآن</Button>
               </div>
             </div>
@@ -789,7 +793,6 @@ function getEventTitle(eventType: string): string {
     'order.delivered': ' تم التسليم',
     'order.cancelled': ' طلب ملغي',
     'order.refunded': ' استرجاع',
-    'order.updated': ' تحديث طلب',
     'customer.created': ' عميل جديد',
     'customer.updated': ' تحديث عميل',
     'customer.login': ' تسجيل دخول',

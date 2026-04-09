@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { signInRequest, employeeLogin } from "@/lib/api";
+import { signInRequest, employeeLogin, googleSignInRequest } from "@/lib/api";
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
@@ -17,30 +18,21 @@ export default function SignInPage() {
   const router = useRouter();
   const mutation = useMutation({
     mutationFn: async () => {
-      // يحاول تسجيل الدخول كموظف أولاً
       try {
         const employeeData = await employeeLogin(email, password);
         if (employeeData.success) {
           return { ...employeeData, userType: 'employee' };
         }
-      } catch (error) {
-        // ليس موظف، يحاول كمالك عادي
-      }
+      } catch (error) {}
       
-      // يحاول تسجيل الدخول كمالك عادي
       const ownerData = await signInRequest(email, password);
       return { ...ownerData, userType: 'owner' };
     },
     onSuccess: (data) => {
       localStorage.setItem("auth_token", data.token);
       setIsLoading(false);
-      
-      // Show success message
       setShowSuccess(true);
-      
-      // Redirect after 3 seconds
       setTimeout(() => {
-        // كلاهما يذهب لنفس الصفحة - النظام سيخفي العناصر حسب الصلاحيات
         router.push("/dashboard");
       }, 1000);
     },
@@ -48,6 +40,33 @@ export default function SignInPage() {
       setIsLoading(false);
     },
   });
+
+  const googleMutation = useMutation({
+    mutationFn: async (credential: string) => {
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+      return googleSignInRequest(credential, clientId);
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("auth_token", data.token);
+      setIsLoading(false);
+      setShowSuccess(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    },
+    onError: () => {
+      setIsLoading(false);
+    },
+  });
+
+  const handleGoogleSuccess = (credentialResponse: any) => {
+    setIsLoading(true);
+    if (credentialResponse.credential) {
+      googleMutation.mutate(credentialResponse.credential);
+    } else {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,10 +78,10 @@ export default function SignInPage() {
     }, 3000);
   };
 
-  const isSubmitting = isLoading || mutation.isPending;
+  const isSubmitting = isLoading || mutation.isPending || googleMutation.isPending;
 
   return (
-    <>
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
     
     <div className="space-y-2 ">
       <div>
@@ -97,7 +116,18 @@ export default function SignInPage() {
             "تسجيل الدخول"
           )}
         </Button>
-        {mutation.isError && <p className="text-sm text-red-600">{(mutation.error as Error).message}</p>}
+        <div className="flex items-center justify-center my-4">
+           <div className="w-full h-px bg-white/20"></div>
+           <span className="px-2 text-white/80 text-sm">أو</span>
+           <div className="w-full h-px bg-white/20"></div>
+        </div>
+        <div className="flex justify-center w-full">
+           <GoogleLogin
+             onSuccess={handleGoogleSuccess}
+             onError={() => console.error('Google Login Failed')}
+           />
+        </div>
+        {(mutation.isError || googleMutation.isError) && <p className="text-sm text-red-600">{(mutation.error || googleMutation.error)?.message}</p>}
         {showSuccess && (
           <div className="p-4 bg-green-500/20 border border-green-500 rounded-lg">
             <p className="text-sm text-green-500 text-center font-medium">تم تسجيل الدخول بنجاح! </p>
@@ -107,7 +137,8 @@ export default function SignInPage() {
 
       </form>
     </div>
-    </>  );
+    </GoogleOAuthProvider>
+  );
 }
 
 

@@ -30,7 +30,10 @@ export default function AskAIPage() {
   }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     loadStats();
   }, [token]);
 

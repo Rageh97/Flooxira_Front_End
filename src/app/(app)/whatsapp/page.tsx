@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AnimatedTutorialButton from "@/components/YoutubeButton";
@@ -24,6 +25,7 @@ import { useToast } from "@/components/ui/toast-provider";
 
 export default function WhatsAppPage() {
   const { canManageWhatsApp, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const router = useRouter();
   const [selectedTutorial, setSelectedTutorial] = useState<Tutorial | null>(null);
 
   const [status, setStatus] = useState<any>(null);
@@ -469,25 +471,7 @@ export default function WhatsAppPage() {
 
 
 
-  if (hasActiveSubscription && !canManageWhatsApp()) {
-    return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">إدارة الواتساب</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية إدارة الواتساب</h3>
-            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل إدارة الواتساب</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              ترقية الباقة
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Action handlers continue...
 
   async function checkStatus() {
     try {
@@ -608,6 +592,20 @@ export default function WhatsAppPage() {
   }
 
   async function startSession() {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push('/sign-in');
+      return;
+    }
+    // Removed direct block to allow view-only access
+    /*
+    if (!hasActiveSubscription) {
+      showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
+      router.push('/plans');
+      return;
+    }
+    */
     try {
       setLoading(true);
       setError("");
@@ -723,6 +721,20 @@ export default function WhatsAppPage() {
   }
 
   async function handleToggleBot() {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push('/sign-in');
+      return;
+    }
+    // Removed direct block to allow view-only access
+    /*
+    if (!hasActiveSubscription) {
+      showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
+      router.push('/plans');
+      return;
+    }
+    */
     try {
       setLoading(true);
       const result = await toggleWhatsAppBotStatus(token);
@@ -738,6 +750,16 @@ export default function WhatsAppPage() {
   }
 
   async function handleSendMessage() {
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push('/sign-in');
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
+      router.push('/plans');
+      return;
+    }
     if (!testPhoneNumber || !testMessage) {
       setError("يرجى إدخال رقم الهاتف والرسالة");
       return;
@@ -776,8 +798,32 @@ export default function WhatsAppPage() {
       
       <div className="flex flex-col lg:flex-row w-full gap-3">
         <div className="w-full">
-          {canManageWhatsApp() && hasActiveSubscription && (
+          {canManageWhatsApp() && hasActiveSubscription ? (
             <UsageStats platform="whatsapp" />
+          ) : (
+            <div className={`gradient-border rounded-lg p-5 shadow w-full`}>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-white capitalize">عدد الرسائل المستخدمة</h3>
+                <span className={`text-sm px-2 py-1 rounded bg-green-100 text-green-800`}>
+                  في انتظار التفعيل
+                </span>
+              </div>
+              <div className="mb-2">
+                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                  <span className='text-primary'><span className='text-white'>0</span> / 0</span>
+                  <span className='text-white'>0%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full bg-green-500`}
+                    style={{ width: `0%` }}
+                  ></div>
+                </div>
+              </div>
+              <p className="text-xs text-yellow-500">
+                اشترك في إحدى باقاتنا لبدء إرسال واستقبال الرسائل
+              </p>
+            </div>
           )}
         </div>
 
@@ -810,14 +856,28 @@ export default function WhatsAppPage() {
                  <Button 
                 className={`w-1/2 primary-button after:bg-[#01191080] text-[9px] lg:text-sm ${status?.botPaused ? 'after:bg-green-500' : 'after:bg-red-500'}`} 
                 onClick={handleToggleBot} 
-                disabled={loading || (status?.status !== 'connected' && status?.status !== 'CONNECTED' && status?.status !== 'inChat')} 
+                disabled={(loading && hasActiveSubscription) || (status?.status !== 'connected' && status?.status !== 'CONNECTED' && status?.status !== 'inChat')} 
                 variant={status?.botPaused ? "secondary" : "destructive"}
               >
                 {status?.botPaused ? 'استئناف  (البوت متوقف حالياً)' : 'ايقاف  (البوت يعمل حالياً)'}
               </Button>
                 
                 {status?.status === 'disconnected' || !status ? (
-                  <button className="w-1/2 primary-button after:bg-[#131240] relative overflow-hidden" onClick={startSession} disabled={loading}>
+                  <button className="w-1/2 primary-button after:bg-[#131240] relative overflow-hidden" 
+                    onClick={() => {
+                      if (!token) {
+                        showError("يجب تسجيل الدخول أولاً");
+                        router.push('/sign-in');
+                        return;
+                      }
+                      if (!hasActiveSubscription && !permissionsLoading) {
+                        showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
+                        router.push('/plans');
+                        return;
+                      }
+                      startSession();
+                    }} 
+                    disabled={loading}>
                     {loading ? (
                       <span className="flex items-center justify-center gap-3">
                         <div className="relative">

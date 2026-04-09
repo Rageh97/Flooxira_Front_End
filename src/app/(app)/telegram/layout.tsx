@@ -23,11 +23,7 @@ export default function TelegramLayout({ children }: PropsWithChildren) {
   const { hasActiveSubscription, canManageTelegram, loading: permissionsLoading } = usePermissions();
   const { showError } = useToast();
   
-  useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
+
 
   // Loading state
   if (permissionsLoading) {
@@ -55,7 +51,7 @@ export default function TelegramLayout({ children }: PropsWithChildren) {
 
   return (
     <div className="space-y-6">
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-6" : "space-y-6"}>
+      <div className="space-y-6">
       {/* Header */}
       {/* <div className="bg-semidark-custom border border-gray-700 rounded-lg p-6">
         <h1 className="text-2xl font-bold text-white mb-4">إدارة التليجرام</h1>

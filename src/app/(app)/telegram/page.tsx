@@ -260,13 +260,14 @@ export default function TelegramBotPage() {
   // }
 
   async function loadBotInfo() {
+    if (!token || (permissions && !hasActiveSubscription)) return; // Don't try if not subscribed
     try {
       const res = await telegramBotInfo(token);
       console.log('Bot info response:', res); // Debug log
       setBotInfo(res.bot || null);
     } catch (e) {
       console.error('Error loading bot info:', e); // Debug log
-      // ignore
+      // ignore silently to avoid annoying toasts for non-active users
     }
   }
 

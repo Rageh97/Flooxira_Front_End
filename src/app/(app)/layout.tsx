@@ -16,9 +16,7 @@ import RippleGrid from '@/components/RippleGrid';
 import { X, Megaphone, Menu, Home, MessageCircle, Send, LogOut, MessageSquare, Link as LinkIcon, Users as UsersIcon, Settings as SettingsIcon, Bot, LayoutGrid, TagIcon, ChartNoAxesColumn, User, Stars, Webhook, PanelRightOpen, PanelRightClose, MessageCircleCode, MessageCircleCodeIcon, Zap, ArrowUpCircle, Calendar, Crown, CrownIcon, Coins } from "lucide-react";
 import { toast } from "sonner";
 import { getActiveIslamicQuotes, IslamicQuote } from "@/lib/islamicQuoteApi";
-
-
-
+import CompleteProfileModal from "@/components/CompleteProfileModal";
 
 const navItems = [
   { href: "/dashboard", label: " الرئيسية", img: "/الرئيسية.webp" },
@@ -51,7 +49,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
-  const { permissions, loading: permissionsLoading } = usePermissions();
+  const { permissions, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -85,6 +83,9 @@ export default function AppLayout({ children }: PropsWithChildren) {
       }
 
       try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
         console.log("Fetching islamic quotes...");
         const res = await getActiveIslamicQuotes();
         console.log("Islamic quotes response:", res);
@@ -139,6 +140,64 @@ export default function AppLayout({ children }: PropsWithChildren) {
     loadNews();
   }, []);
 
+  // حماية الأفعال (Tour Mode / Freemium Action Guard)
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      // Find the closest interactive element
+      const target = e.target as HTMLElement;
+      
+      // Let standard navigation links pass
+      if (target.closest('a')) return;
+
+      const button = target.closest('button');
+      if (!button) return;
+
+      const text = button.innerText.toLowerCase();
+      // action words list in Arabic and English
+      const actionWords = [
+        'حفظ', 'إضافة', 'انشاء', 'إنشاء', 'إرسال', 'تعديل', 'تحديث', 'حذف', 'جدولة', 'نشر', 
+        'ربط', 'تفعيل', 'تأكيد', 'save', 'submit', 'add', 'create', 'update', 'delete', 'send', 
+        'confirm', 'استيراد', 'تصدير', 'import', 'export', 'رد', 'إنهاء', 'طلب', 'دفع', 'pay'
+      ];
+      
+      // Let basic UI toggles pass
+      const ignoreWords = ['إلغاء', 'رجوع', 'إغلاق', 'بحث', 'التالي', 'السابق', 'تخطي', 'المتابعة', 'استكمال', 'cancel', 'close', 'search', 'back', 'next', 'prev', 'menu', 'skip'];
+      
+      const isIgnore = ignoreWords.some(w => text.includes(w)) || button.hasAttribute('data-bypass');
+      const type = button.getAttribute('type');
+      const isAction = (actionWords.some(w => text.includes(w)) || type === 'submit') && !isIgnore;
+
+      // Don't block admin actions or subscription-related actions
+      const isSubscriptionRoute = window.location.pathname.startsWith('/plans') || 
+                                 window.location.pathname.startsWith('/my-subscription');
+      const isAdminRoute = window.location.pathname.startsWith('/admin');
+      
+      if (isAdminRoute || isSubscriptionRoute) return;
+
+      if (isAction && !isIgnore) {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          e.preventDefault();
+          e.stopPropagation();
+          toast.error("يجب تسجيل الدخول أولاً");
+          router.push('/sign-in');
+          return;
+        }
+        if (!hasActiveSubscription && !permissionsLoading) {
+          e.preventDefault();
+          e.stopPropagation();
+          toast.error("يجب الاشتراك في باقة لتفعيل الميزة");
+          router.push('/plans');
+          return;
+        }
+      }
+    };
+    
+    // Use capture phase to intercept the click BEFORE it reaches the button
+    document.addEventListener('click', handleGlobalClick, true);
+    return () => document.removeEventListener('click', handleGlobalClick, true);
+  }, [hasActiveSubscription, permissionsLoading, router]);
+
   // حماية المسارات (Route Protection) للموظفين
   useEffect(() => {
     // ننتظر تحميل البيانات
@@ -182,12 +241,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
   // تحديد العناصر المتاحة حسب نوع المستخدم
   const visibleNavItems = useMemo(() => {
     // التحقق من أن البيانات محملة
-    if (!user) {
-      return navItems;
-    }
-    
     // تصفية العناصر حسب نوع المستخدم
     let filteredItems = navItems;
+    
+    // إذا كان المستخدم ضيف (غير مسجل)، نعرض كل العناصر ليراها (ما عدا الإدارة)
+    if (!user) {
+      return filteredItems.filter(item => item.href !== '/admin');
+    }
 
     // إخفاء إدارة المنصة عن غير الأدمن
     if (user.role !== 'admin') {
@@ -222,13 +282,20 @@ export default function AppLayout({ children }: PropsWithChildren) {
         const contentPages = ['/content', '/create-post', '/schedule'];
         if (contentPages.includes(item.href) || item.href === '/schedule') return !!permissions?.canManageContent;
         
-        // Default: If it's something unknown/not explicitly allowed, hide it for employees
-        return false;
-      });
-    }
-    
-    return filteredItems;
-  }, [user, permissions]);
+      // Default: If it's something unknown/not explicitly allowed, hide it for employees
+      return false;
+    });
+  }
+  
+ return filteredItems;
+}, [user, permissions]);
+
+  const handleLinkClick = (e: React.MouseEvent, href: string) => {
+    // We now allow all routes to be viewable for engagement (except /admin handled in AuthGuard)
+    // Actions inside pages will be protected instead of navigation.
+    setSidebarOpen(false);
+    setWhatsappMenuOpen(false);
+  };
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -380,50 +447,50 @@ export default function AppLayout({ children }: PropsWithChildren) {
       {/* Header - Fixed at top for both Desktop and Mobile */}
       <header className="flex items-center justify-between  px-3 md:px-6 py-2 bg-secondry border-b border-gray-600/50 z-30  h-16">
       
- {/* Right side: User Info */}
-        <div className="flex items-center justify-end  gap-2 md:gap-4">
-          
-          <Link href="/profile" className="flex items-center gap-2 md:gap-3 hover:bg-white/5 p-1.5 md:p-2 rounded-xl transition-colors shrink-0">
-            <img 
-              src={!loading && user ? (user.avatar || (typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null) || "/user.gif") : "/user.gif"} 
-              alt="User" 
-              className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border border-gray-600/50" 
-            />
-            <div className="hidden md:flex flex-col items-start">
-              {!loading && user && <span className="font-medium text-sm text-white">{user.name || user.email || "مستخدم"}</span>}
-              {planName && (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[10px] text-primary gradient-border px-1.5 py-0.5 rounded">{planName}</span>
-                  {subscriptionStatus.daysRemaining !== null && (
-                    <span className={`text-[10px] font-bold ${subscriptionStatus.colorClass}  rounded px-1`}>
-                      {subscriptionStatus.daysRemaining}يوم
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            <div className="md:hidden flex flex-col items-start">
-               {planName && (
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] text-primary gradient-border text-center px-1.5 py-0.5 rounded-md">{planName}</span>
-                  {subscriptionStatus.daysRemaining !== null && (
-                    <span className={`text-[9px] font-bold ${subscriptionStatus.colorClass} mr-1`}>
-                      {subscriptionStatus.daysRemaining}D
-                    </span>
-                  )} 
-                </div>
-              )}
-            </div>
-
-             
-           
-          </Link>
+         {/* Right side: User Info or Sign In */}
+        <div className="flex items-center justify-end gap-2 md:gap-4">
+          {!loading && user ? (
+            <Link href="/profile" className="flex items-center gap-2 md:gap-3 hover:bg-white/5 p-1.5 md:p-2 rounded-xl transition-colors shrink-0">
+              <img 
+                src={user.avatar || (typeof window !== 'undefined' ? localStorage.getItem(`user_avatar_${user.id}`) : null) || "/user.gif"} 
+                alt="User" 
+                className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover border border-gray-600/50" 
+                referrerPolicy="no-referrer"
+              />
+              <div className="hidden md:flex flex-col items-start">
+                <span className="font-medium text-sm text-white">{user.name || user.email || "مستخدم"}</span>
+                {planName && (
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] text-primary gradient-border px-1.5 py-0.5 rounded">{planName}</span>
+                    {subscriptionStatus.daysRemaining !== null && (
+                      <span className={`text-[10px] font-bold ${subscriptionStatus.colorClass} rounded px-1`}>
+                        {subscriptionStatus.daysRemaining}يوم
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <div className="md:hidden flex flex-col items-start">
+                {planName && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-[9px] text-primary gradient-border text-center px-1.5 py-0.5 rounded-md">{planName}</span>
+                  </div>
+                )}
+              </div>
+            </Link>
+          ) : !loading && (
+            <Link href="/sign-in">
+              <Button size="sm" className="primary-button text-white px-4 h-9 md:h-10 text-xs md:text-sm">
+                تسجيل الدخول
+              </Button>
+            </Link>
+          )}
              
           {/* Divider and Quick Access Icons */}
           <div className="hidden md:flex items-center gap-1.5 h-10">
+            {user && <div className="w-px h-6 bg-gray-200 mx-2" />}
             
-            <div className="w-px h-6 bg-gray-200 mx-2" />
             <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="hidden md:flex p-2 hover:bg-white/5 rounded-xl transition-all"
@@ -431,14 +498,24 @@ export default function AppLayout({ children }: PropsWithChildren) {
           >
             {sidebarCollapsed ? <PanelRightOpen className="w-6 h-6 text-primary" /> : <PanelRightClose className="w-6 h-6 text-primary" />}
           </button>
-            <Link href="/profile" className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all group" title="الملف الشخصي">
+            <Link 
+              href={user ? "/profile" : "/sign-in"} 
+              onClick={(e) => handleLinkClick(e, "/profile")}
+              className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all group" 
+              title="الملف الشخصي"
+            >
                 <Image src={'/اعدادات.png'} width={25} height={25} alt="الملف الشخصي"/>
             </Link>
             
-            {(permissions?.canManageTickets || permissions?.canUseLiveChat) && (
-              <Link href="/tickets" className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all relative" title="لايف شات">
+            {(permissions?.canManageTickets || permissions?.canUseLiveChat || !user) && (
+              <Link 
+                href="/tickets" 
+                onClick={(e) => handleLinkClick(e, "/tickets")}
+                className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all relative" 
+                title="لايف شات"
+              >
                <Image src={'/لايف شات.webp'} width={25} height={25} alt="لايف شات"/>
-               {pendingTicketsCount > 0 && (
+               {user && pendingTicketsCount > 0 && (
                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
                    {pendingTicketsCount}
                  </span>
@@ -446,16 +523,26 @@ export default function AppLayout({ children }: PropsWithChildren) {
               </Link>
             )}
             
-            {permissions?.canManageContent && (
-              <Link href="/schedule" className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all" title="الجدولة">
+            {(permissions?.canManageContent || !user) && (
+              <Link 
+                href="/schedule" 
+                onClick={(e) => handleLinkClick(e, "/schedule")}
+                className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all" 
+                title="الجدولة"
+              >
                <Image src={'/الجدولة.webp'} width={25} height={25} alt="الجدولة"/>
               </Link>
             )}
             
-            {permissions?.canManageWhatsApp && (
-              <Link href="/whatsapp/chats" className="p-2 text-gray-400 hover:text-green-500 hover:bg-white/5 rounded-xl transition-all relative" title="واتساب">
+            {(permissions?.canManageWhatsApp || !user) && (
+              <Link 
+                href="/whatsapp/chats" 
+                onClick={(e) => handleLinkClick(e, "/whatsapp/chats")}
+                className="p-2 text-gray-400 hover:text-green-500 hover:bg-white/5 rounded-xl transition-all relative" 
+                title="واتساب"
+              >
                 <Image src={'/واتساب.webp'} width={25} height={25} alt="واتساب"/>
-                {whatsappPendingCount > 0 && (
+                {user && whatsappPendingCount > 0 && (
                   <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
                     {whatsappPendingCount}
                   </span>
@@ -484,7 +571,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
           
           {/* Desktop Left Spacer or something if needed */}
           <div className="hidden md:flex items-center gap-3">
-             {aiStats && (
+             {user && aiStats && (
                 <div className="flex items-center gradient-border border-0.5 border-primary gap-2 px-4 py-1  rounded-2xl  transition-all ">
                   <div className="flex items-center justify-center w-5 h-5 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
                     <Coins size={16} className="text-yellow-500 " />
@@ -505,7 +592,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
                 className="flex items-center gradient-border gap-2 px-5 py-1.5 border-0.5 border-primary text-white rounded-2xl text-sm font-bold  transition-all"
              >
                <CrownIcon className="text-yellow-500 mb-1" size={16} />
-                <span className="text-[10px]">ترقية الباقة</span>
+                <span className="text-[10px]">{user ? "ترقية الباقة" : "باقات الاشتراك"}</span>
              </Link>
 
              {(!loading && user && (subscriptionStatus.colorClass.includes('yellow') || subscriptionStatus.colorClass.includes('red'))) && (
@@ -557,6 +644,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
       `}</style>
   
       {/* Mobile sidebar + overlay */}
+      <CompleteProfileModal />
       <div className={clsx("fixed inset-0 z-40 md:hidden", sidebarOpen ? "block" : "hidden")}> 
         <div
           className="absolute inset-0 bg-black/40"
@@ -580,6 +668,10 @@ export default function AppLayout({ children }: PropsWithChildren) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={(e) => {
+                  setSidebarOpen(false);
+                  handleLinkClick(e, item.href);
+                }}
                 className={clsx(
                   "block rounded-md px-3 py-2 text-sm ",
                   pathname === item.href ? "gradient-border" : ""
@@ -653,6 +745,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
             <div key={item.href} className="relative">
               <Link
                 href={item.href}
+                onClick={(e) => handleLinkClick(e, item.href)}
                 className={clsx(
                   "flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-200 relative",
                   sidebarCollapsed ? "justify-center px-2" : "",
@@ -767,18 +860,16 @@ export default function AppLayout({ children }: PropsWithChildren) {
                     )}
                   >
                     <div className="relative">
-                      {/* <Home size={22} className={pathname === '/dashboard' ? "fill-[#08c47d]/20" : ""} /> */}
-                    <Image src="data:image/webp;base64,UklGRnwEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSNAAAAABgGLb2rLl+XF3t+TSvlEwCx8EkcU4PLklaK7VST/J3Z33It//ysVJETEB8k2uXlqsoqpVgGoiaoZvC00bQvZwBMagORuQIN5vOQhfhvZmJPztxW7D8MBV6gVs2yq6B5f3BK4aBa56Ba5WuLXQDcejJoEJOF8I04rYAGEwUiN+H5THSSEyr0B6m+tT8gjapyoR8Z5B/OyJXIP6SgIgD8glgGeOZwCXIuWn6qCYo/hQnZaJP4do//+4ZbjWG2cY0Cu7dHdWoCeFo7durgcL5KcIVlA4IIYDAAAQFgCdASowADAAPhkKg0EhBcd/mQQAYS2AF2cxv8A4hR+XVfMEpH9A+337SZSVyN/oPs57SfiYf2P8kP5z3K/Mv+w3Un/Ub2AP7h/Oet4/gHqAfrt6Xn68fB3+0/okZoB/APor7+XRHemjgH5AcjH/nwUP9H9oHx7/6nmJ+e/YG6M37HNBoOA0Fw3o+POTzusqEMWXAva+UTLRsXLfob96jPCOcaSXPsBfdvgVS604l/+Pqublb8lPgAD+/dgXD/hMDYuuYUnZn0A6j8UZN+jbiPa5t7ZsUo1YSQx8bRIew3hz0v4mYaIKqotiXzhfY4XhUqV/JWhTtTJay9N3dv5GFE5E96y1uaHoe0Aw3/rtKKWbST171mzyA83fGyv1U8jkYGXrBTUnFh6Ew5IZ76HD5Dt9hsQzS2bRJIpaLpwy1/w1lXTUhwR99w4OiaziA2+Tomzk7+OA2Y2YH//aeHe1lBgnOxff8+CZDN4dc2a0R/dwHdXPhb8e5LP6DFoshlrvUAxKAD/hyfjod/DQan69tNHdlWK/fDehY3oGFH9H/4lGR8R1MF4f+I1TZwxceYn5ng83hl79G7zZZJrVbZ44w24veUyWcqrXl90/0nIX6z8fZgW/pyaG5eivPL9pbI1YuoMeQHNOyfiBtBV+dk3mo6W4KWTQLCAOmgFjbu/GqQYMqA/BfvqM/kly3SYpiI56EGfg5ad4S+xYJSQc5NzI1mZkmcjxxmmAUC5zDg25p/y5jUaae/AUnqkEsTDMqUCtqO+kqDTrSnf7IzV5FL3M2uH9dXNalAV8x450jG5jU7jWCBBH/a0Ugp/3Zdud0f8Gsrbf90JGL5n+n/+eLq6XViKR+HFqCciWqH3vYGNE+Ge6gPaP7BEerD7FtG9qigf61/aom8PKEpU1tCD/gpfTxJcPoKVHoRGyeYpViz7z6Vj1UnC1GV1G0HFFJ7S7mmMXSO0Dzbfj7EwSq7EbdMxuMW2fSa6XBuPAOdh87A4ZmEYgkd0i0/19FWgZ5bv9oNmpucI+BYLQOYktRLMBmnOa2KCsAUbI5fqUb96aQ99YG1yerlERHvdijNiX//GDbDfCXWT/3A+CayrRBi1Q9WLZ++v3TKbPrd0/DF8Dk0cxBGA48n5VTKNTaMyhkA63DxFiTbrX61olr63fZUuKYR99SiMqQICUItqKNJPfXQxcHjzCBgAAAA==" alt="Home" width={40} height={40} className={pathname === '/dashboard' ? "fill-[#08c47d]/20" : ""} />
+                      <Image src="data:image/webp;base64,UklGRnwEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSNAAAAABgGLb2rLl+XF3t+TSvlEwCx8EkcU4PLklaK7VST/J3Z33It//ysVJETEB8k2uXlqsoqpVgGoiaoZvC00bQvZwBMagORuQIN5vOQhfhvZmJPztxW7D8MBV6gVs2yq6B5f3BK4aBa56Ba5WuLXQDcejJoEJOF8I04rYAGEwUiN+H5THSSEyr0B6m+tT8gjapyoR8Z5B/OyJXIP6SgIgD8glgGeOZwCXIuWn6qCYo/hQnZaJP4do//+4ZbjWG2cY0Cu7dHdWoCeFo7durgcL5KcIVlA4IIYDAAAQFgCdASowADAAPhkKg0EhBcd/mQQAYS2AF2cxv8A4hR+XVfMEpH9A+337SZSVyN/oPs57SfiYf2P8kP5z3K/Mv+w3Un/Ub2AP7h/Oet4/gHqAfrt6Xn68fB3+0/okZoB/APor7+XRHemjgH5AcjH/nwUP9H9oHx7/6nmJ+e/YG6M37HNBoOA0Fw3o+POTzusqEMWXAva+UTLRsXLfob96jPCOcaSXPsBfdvgVS604l/+Pqublb8lPgAD+/dgXD/hMDYuuYUnZn0A6j8UZN+jbiPa5t7ZsUo1YSQx8bRIVE6ZunpIpaLpwy1/w1lXTUhwR99w4OiaziA2+Tomzk7+OA2Y2YH//aeHe1lBgnOxff8+CZDN4dc2a0R/dwHdXPhb8e5LP6DFoshlrvUAxKAD/hyfjod/DQan69tNHdlWK/fDehY3oGFH9H/4lGR8R1MF4f+I1TZwxceYn5ng83hl79G7zZZJrVbZ44w24veUyWcqrXl90/0nIX6z8fZgW/pyaG5eivPL9pbI1YuoMeQHNOyfiBtBV+dk3mo6W4KWTQLCAOmgFjbu/GqQYMqA/BfvqM/kly3SYpiI56EGfg5ad4S+xYJSQc5NzI1mZkmcjxxmmAUC5zDg25p/y5jUaae/AUnqkEsTDMqUCtqO+kqDTrSnf7IzV5FL3M2uH9dXNalAV8x450jG5jU7jWCBBH/a0Ugp/3Zdud0f8Gsrbf90JGL5n+n/+eLq6XViKR+HFqCciWqH3vYGNE+Ge6gPaP7BEerD7FtG9qigf61/aom8PKEpU1tCD/gpfTxJcPoKVHoRGyeYpViz7z6Vj1UnC1GV1G0HFFJ7S7mmMXSO0Dzbfj7EwSq7EbdMxuMW2fSa6XBuPAOdh87A4ZmEYgkd0i0/19FWgZ5bv9oNmpucI+BYLQOYktRLMBmnOa2KCsAUbI5fqUb96aQ99YG1yerlERHvdijNiX//GDbDfCXWT/3A+CayrRBi1Q9WLZ++v3TKbPrd0/DF8Dk0cxBGA48n5VTKNTaMyhkA63DxFiTbrX61olr63fZUuKYR99SiMqQICUItqKNJPfXQxcHjzCBgAAAA==" alt="Home" width={40} height={40} className={pathname === '/dashboard' ? "fill-[#08c47d]/20" : ""} />
                       {pathname === '/dashboard' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
                     </div>
-                    {/* <span className="text-[10px] font-medium">الرئيسية</span> */}
                   </Link>
 
                   {permissionsLoading ? (
                     <div className="w-14 h-full flex items-center justify-center">
                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
-                  ) : permissions?.canManageWhatsApp && (
+                  ) : (permissions?.canManageWhatsApp || !user) && (
                     <button 
                       onClick={() => setWhatsappMenuOpen(!whatsappMenuOpen)}
                       className={clsx(
@@ -787,72 +878,67 @@ export default function AppLayout({ children }: PropsWithChildren) {
                       )}
                     >
                       <div className="relative">
-                        {/* <MessageCircle size={30} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} /> */}
-                        <Image src="data:image/webp;base64,UklGRlgEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSDEBAAABkGvb1rE957dt276Cv7Nt27bZOk6Z0raNS7Bt/T7RoxO1ETEB8D+qHZbZMjTSlhWhQ8Kk9PISMpevV5ipsptfRMGlTfYqNFsWUeJip6Y0m0so+ZqdJI+nKP2VnxSv96jwk48Em2eo9KWtkMZpVHxTS6QJlbcK2HxVt2jDN40EZ7mMFiksmvAUIclinnM0LnJofaXxVYsVgEQDWClUklk1VOpY3VR6We1UelhlVGpYiVQSWW5UfFnwmcZnTY4jNE4BZxqNLB6DzxS+6PPAKIUp4LYm8MmML5JAKfDPqDsOgreU3TcVsFpX9doZBHNQ8QMXEN2p6Lg5CL9V8qEAxAPxl+t3t8cOfxD5PGoCElsQ8dmONEsAAL3U/R9ZH46k6ILUul3FzsDtFFvU1FwW5Q7/pQBWUDggAAMAABARAJ0BKjAAMAA+FQiDQSEGq1WqBABRLUATplhH4vL/MEqv9m+8HFplo5G9Lv8zbynzRdDv/TeaB1kvoAeWp+zPwjYfv4Y/gGizn626juItwczP/oead6as9FGOPcmI9Ljmjee5txLeQKUIaY/qJkMrsPQ0FLjaAW9GaCglJ+VhfJTh8htJ9R9zxszqqBmrwIAA/v9Cmb/5uANcFreUIV/8phr8ESOxIdmNcZ8Krf3aVm5h7XCnAzc5VkKZn/M8FVc++/NV4fZVTW5diKiYUzerL2ZSBrJCbN6WamAiSDSkfRDK74xp/Njf8cgjsdr/M+vkCgF7RVGNUwpFik2s3/PXvSL7n5MYyGBVC/+JRTMamw8j4BftS6t847V16f//wcS9WBg2bYEpVDgKd3R3JM4h7l/X+TDkP35a9TDKUpR77Sty8qpHgXlMk4qQAchsKR81n/lfsEkiV9apaKQ8ONNSl4KeRWfoW+aTYvv75yT3yEXzsspzF68m8rTbqTSP+sodqIO1UeMyhGuy9ztJOu15FfoyeIv+FZ/tugjg+a8ehhP9fOeBSGFvZhUZBDEP3vN32by90hgQkHO/H0XDinzzwp5b6CEv90vPgTmwfKLSMAfxWXu+9FaCp5r++lHsYKykGIECSU2GPEtzf5wtmW+fXwG/EMNC8FgT/Fm1jMJbvQqlmy3n3rXoGgsfzqSnnMDsjpWCKPplslUisCHh8QTECXTFunWcvqf5SAdg2OKpHNqiqBEMA3bB1njoh53zOgzNOKXuJsOIA8qKzbD9BnWmqHAhnFkN6FHpo3Us5Z3NBXxToyfuaPXYQ6hVnHNA9gIceB1exx1fM1bZY2Wlt602Kczu9KCXS1Qsga8cRsGhqQJdkpivXulf6kUjKhGzkGtms0viTaEhp37cDi3rFMiivKWQOeBbDXNFugGxRJJYWdgb1r0mAeAQPoIEzhod+MJSNr6J2LFNx377IaXIr/+RnDXxXC94Nt3rvpMI9pt8Hp1LWgWFglFkTVsPw/gAAA==" alt="WhatsApp" width={40} height={40} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
-                        {whatsappPendingCount > 0 && (
+                        <Image src="data:image/webp;base64,UklGRlgEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSDEBAAABkGvb1rE957dt276Cv7Nt27bZOk6Z0raNS7Bt/T7RoxO1ETEB8D+qHZbZMjTSlhWhQ8Kk9PISMpevV5ipsptfRMGlTfYqNFsWUeJip6Y0m0so+ZqdJI+nKP2VnxSv96jwk48Em2eo9KWtkMZpVHxTS6QJlbcK2HxVt2jDN40EZ7mMFiksmvAUIclinnM0LnJofaXxVYsVgEQDWClUklk1VOpY3VR6We1UelhlVGpYiVQSWW5UfFnwmcZnTY4jNE4BZxqNLB6DzxS+6PPAKIUp4LYm8MmML5JAKfDPqDsOgreU3TcVsFpX9doZBHNQ8QMXEN2p6Lg5CL9V8qEAxAPxl+t3t8cOfxD5PGoCElsQ8dmONEsAAL3U/R9ZH46k6ILUul3FzsDtFFvU1FwW5Q7/pQBWUDggAAMAABARAJ0BKjAAMAA+FQiDQSEGq1WqBABRLUATplhH4vL/MEqv9m+8HFplo5G9Lv8zbynzRdDv/TeaB1kvoAeWp+zPwjYfv4Y/gGizn626juItwczP/oead6as9FGOPcmI9Ljmjee5txLeQKUIaY/qJkMrsPQ0FLjaAW9GaCglJ+VhfJTh8htJ9R9zxszqqBmrwIAA/v9Cmb/5uANcFreUIV/8phr8ESOxIdmNcZ8Krf3aVm5h7XCnAzc5VkKZn/M8FVc++/NV4++/NV4fZVTW5diKiYUzerL2ZSBrJCbN6WamAiSDSkfRDK74xp/Njf8cgjsdr/M+vkCgF7RVGNUwpFik2s3/PXvSL7n5MYyGBVC/+JRTMamw8j4BftS6t847V16f//wcS9WBg2bYEpVDgKd3R3JM4h7l/X+TDkP35a9TDKUpR77Sty8qpHgXlMk4qQAchsKR81n/lfsEkiV9apaKQ8ONNSl4KeRWfoW+aTYvv75yT3yEXzsspzF68m8rTbqTSP+sodqIO1UeMyhGuy9ztJOu15FfoyeIv+FZ/tugjg+a8ehhP9fOeBSGFvZhUZBDEP3vN32by90hgQkHO/H0XDinzzwp5b6CEv90vPgTmwfKLSMAfxWXu+9FaCp5r++lHsYKykGIECSU2GPEtzf5wtmW+fXwG/EMNC8FgT/Fm1jMJbvQqlmy3n3rXoGgsfzqSnnMDsj" alt="WhatsApp" width={40} height={40} className={whatsappMenuOpen || pathname.startsWith('/whatsapp') ? "fill-[#08c47d]/20" : ""} />
+                        {user && whatsappPendingCount > 0 && (
                           <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
                             {whatsappPendingCount}
                           </span>
                         )}
-                        {/* {(whatsappMenuOpen || pathname.startsWith('/whatsapp')) && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" /> } */}
                       </div>
-                      {/* <span className="text-[10px] font-medium">واتساب</span> */}
                     </button>
                   )}
 
-                  {permissions?.canManageTelegram && (
+                  {(permissions?.canManageTelegram || !user) && (
                     <Link 
                       href="/telegram" 
-                      onClick={() => setWhatsappMenuOpen(false)}
+                      onClick={(e) => {
+                        setWhatsappMenuOpen(false);
+                        handleLinkClick(e, "/telegram");
+                      }}
                       className={clsx(
                         "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
                         pathname === '/telegram' ? "text-primary" : "text-gray-400 hover:text-white"
                       )}
                     >
                       <div className="relative">
-                        {/* <Send size={30} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} /> */}
-                        <Image src="data:image/webp;base64,UklGRsQEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSP8AAAABgBsAbBpJx1BSRVvgNM+/y9EENADDFExz5FM9OsnJFUlPbURMAPw/I43uzvUQvZdttx6mKw3fpfb7oEiTX6E0xnmO4NmTVr0HW7GVtD6PWUkfJeEpbSF2lKSXuNlKEs+MniX5g0HWo/NyeivJcKpVRA5Y1hlKlgON8DuP94iqIZlWVV0uTdWOy1rlcnFUHhehQi74fTwuQuVycVQ7LhtVl0tTVedSUYXfeLyGVTDg0QPNInLAgg7MOYxBOyPoRE4P7unuwHRGNQLjyIZmHzWD9IFilwabsZm9URQs3ws74gbsZ6dohuMMkBb6b3pvvQKQh6utjeMhes66WQnD/xMAVlA4IJ4DAAAwFQCdASowADAAPhkIg0GhBxpIBABhLYATplCQIfXPMEpX8z+4/7T5Szxf4nfUB5gH6XdJbzAft9+oHsV+rP0AP3M6yz0FvLe9j39uP2G9mzRWfAH8A/EDv2/qv0gdRcfr4gLbpCAavf589gD+Q/0L/fdfL9mfYr/U1tIF3QvRyt3SwATvp1vRW1x38qrDbEd2lF2oH5VZ/FE5cKMjHE3K1S2fDAoAF08ZoN/bCuJQXelAAP79Cmb/HLDFhmaPM/4H8yj/n+3xhvdRrZNT/ZKuF/JYNMUECXT0ZBPZ79GA7kxDEZhKYKZCbXpDxnslKZjTGVVqhaYmerUqUwhxXnKa7oINqqLEF7Lylpb+JNb3xllvON2gPj9pPExJGJ54mnbOCfSFs6l/gtIGsdbQ1H2I1zPLsn/282OBiO6OmlHsWoPszz0YWScTfGhaDqv52v0j9dglratldg5duIW541LDWowYNopqUM4WBgJycb7w/D48L8I5tL9eCxNvSCwy/J1+h9d//lSrrBfy4l6IKhJu+o0Wfu0ckZcw0tAoOp2YZKnN5sBXoh7uc3zV+MD522aQgPBiFKzFToPlY/2Zn6f8vY3pyfnxN8avgpdMbpVvca7fe9qB1YAQNBN32YMNq0t+0xNfdk3ERRP8X+ZpwPAGKBu/MgDKV9Q6q4TLLwkbEedEFtjmsih2eDdpF7Yfvd8ex48fQQTib7YwYZ6hWTAYWpPaB+D/I3ZTlJtin9oi9zGW8xD6ZdCf+UPd/zJA9fvNMa/EXXmUYFo317GwKe2TNdQeTLzjclcXmLTMyhTWzCRsF/fBGWO0p8fseZ8xkG6w+YlR8zhRESODfpCIhp1N9h7bFP9fEkCKQvuFzeNqfSUpDvn6lSRdQfcIICry+5MY+fNRv3OEUCb1dmcd5yKdcNSS5dlCgWKc/79/qPoeGirkKyAynganpb/tuM3p/LYjUZeceCZNcT8ddN8SAqyBEh8qI2b5tPfQ5qiLNoNd4sLI0f2ysNN+H2zy8t3uZv1MJu/4NU/3Wk+3zqxElU9VCrWz3a65FI9fbp8Fkfglbirt63hinYdyzB1sm7nkS4WZy600j9vpvPcvP0yrPXtQiJ/PkWxCo/vn8j1ZJRiKhygAClJdlfRt6WHIH7kHXzEeg95VOkO5J1Mm1dl1DYv0gLGR6z++fTANRo+JvAp/gZSeYrQa+/qQJvFbiwwVobPo6XT2UFiQsT/dkAAAAA==" alt="Telegram" width={40} height={40} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} />
+                        <Image src="data:image/webp;base64,UklGRsQEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSP8AAAABgBsAbBpJx1BSRVvgNM+/y9EENADDFExz5FM9OsnJFUlPbURMAPw/I43uzvUQvZdttx6mKw3fpfb7oEiTX6E0xnmO4NmTVr0HW7GVtD6PWUkfJeEpbSF2lKSXuNlKEs+MniX5g0HWo/NyeivJcKpVRA5Y1hlKlgON8DuP94iqIZlWVV0uTdWOy1rlcnFUHhehQi74fTwuQuVycVQ7LhtVl0tTVedSUYXfeLyGVTDg0QPNInLAgg7MOYxBOyPoRE4P7unuwHRGNQLjyIZmHzWD9IFilwabsZm9URQs3ws74gbsZ6dohuMMkBb6b3pvvQKQh6utjeMhes66WQnD/xMAVlA4IJ4DAAAwFQCdASowADAAPhkIg0GhBxpIBABhLYATplCQIfXPMEpX8z+4/7T5Szxf4nfUB5gH6XdJbzAft9+oHsV+rP0AP3M6yz0FvLe9j39uP2G9mzRWfAH8A/EDv2/qv0gdRcfr4gLbpCAavf589gD+Q/0L/fdfL9mfYr/U1tIF3QvRyt3SwATvp1vRW1x38qrDbEd2lF2oH5VZ/FE5cKMjHE3K1S2fDAoAF08ZoN/bCuJQXelAAP79Cmb/HLDFhmaPM/4H8yj/n+3xhvdRrZNT/ZKuF/JYNMUECXT0ZBPZ79GA7kxDEZhKYKZCbXpDxnslKZjTGVVqhaYmerUqUwhxXnKa7oINqqLEF7Lylpb+JNb3xllvON2gPj9pPExJGJ54mnbOCfSFs6l/gtIGsdbQ1H2I1zPLsn/282OBiO6OmlHsWoPszz0YWScTfGhaDqv52v0j9dglratldg5duIW541LDWowYNopqUM4WBgJycb7w/D48L8I5tL9eCxNvSCwy/J1+h9d//lSrrBfy4l6IKhJu+o0Wfu0ckZcw0tAoOp2YZKnN5sBXoh7uc3zV+MD522aQgPBiFKzFToPlY/2Zn6f8vY3pyfnxN8avgpdMbpVvca7fe9qB1YAQNBN32YMNq0t+0xNfdk3ERRP8X+ZpwPAGKBu/MgDKV9Q6q4TLLwkbEedEFtjmsih2eDdpF7Yfvd8ex48fQQTib7YwYZ6hWTAYWPaB+D/I3ZTlJtin9oi9zGW8xD6ZdCf+UPd/zJA9fvNMa/EXXmUYFo317GwKe2TNdQeTLzjclcXmLTMyhTWzCRsF/fBGWO0p8fseZ8xkG6w+YlR8zhRESODfpCIhp1N9h7bFP9fEkCKQvuFzeNqfSUpDvn6lSRdQfcIICry+5MY+fNRv3OEUCb1dmcd5yKdcNSS5dlCgWKc/79/qPoeGirkKyAynganpb/tuM3p/LYjUZeceCZNcT8ddN8SAqyBEh8qI2b5tPfQ5qiLNoNd4sLI0f2ysNN+H2zy8t3uZv1MJu/4NU/3Wk+3zqxElU9VCrWz3a65FI9fbp8Fkfglbirt63hinYdyzB1sm7nkS4WZy600j9vpvPcvP0yrPXtQiJ/PkWxCo/vn8j1ZJRiKhygAClJdlfRt6WHIH7kHXzEeg95VOkO5J1Mm1dl1DYv0gLGR6z++fTANRo+JvAp/gZSeYrQa+/qQJvFbiwwVobPo6XT2UFiQsT/dkAAAAA==" alt="Telegram" width={40} height={40} className={pathname === '/telegram' ? "fill-[#08c47d]/20" : ""} />
                         {pathname === '/telegram' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
                       </div>
-                      {/* <span className="text-[10px] font-medium">تليجرام</span> */}
                     </Link>
                   )}
 
-                  {(permissions?.canManageTickets || permissions?.canUseLiveChat) && (
+                  {(permissions?.canManageTickets || permissions?.canUseLiveChat || !user) && (
                     <Link 
                       href="/tickets" 
-                      onClick={() => setWhatsappMenuOpen(false)}
-                    className={clsx(
-                      "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
-                      pathname === '/tickets' ? "text-primary" : "text-gray-400 hover:text-white"
-                    )}
-                  >
-                    <div className="relative">
+                      onClick={(e) => {
+                        setWhatsappMenuOpen(false);
+                        handleLinkClick(e, "/tickets");
+                      }}
+                      className={clsx(
+                        "flex flex-col items-center justify-center gap-1 w-14 h-full transition-colors",
+                        pathname === '/tickets' ? "text-primary" : "text-gray-400 hover:text-white"
+                      )}
+                    >
                       <div className="relative">
-                        <div className="relative">
-                            {/* <MessageSquare size={30} className={pathname === '/tickets' ? "fill-[#08c47d]/20" : ""} /> */}
-                           <Image src="data:image/webp;base64,UklGRrwEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSCgBAAABgGttm2nnP1YZuzLag1xDOusi7M52Z9usnFZ3YNvOzppoZvb8URsREwD/T1VI9uTmrSTdbkxm2VTiPMvOCPNpqYcYh2aJcEuNDgLib4isN7FyaVuJ7M0aWUxzROCsSQbNDBG6qONrJYKbuOKJ8FgOu2txNw5szQRhPZOHhEHyYiklKEsZlCc4TlW0EILURsvGkk2bwjJF28SyQbvBckt7wfJKe0Z3juWWto5lgzaMZYqWgiWLZsVipSkOcJyqaFCIoxQYXZ4xSF4sUIuhHpjDEFzbsfUhiAb2C3H1wO5HhE+rOdKEzRiBc1VUvQY4DS9irqOA2498uZvqXf3C91JnB/yqJUIeO4MBANxz9tlOit1BVkNcqBaoCnPC0NrZ88vN+kSGWQn/T1ZQOCBuAwAA0BIAnQEqMAAwAD4VBoJBIQePPgQAUS2AFiPQjnaRFRn6B99P2cypUZPxQOln5oP2N6pO8o+hB5cX65fBph1XhT+q/gB4B/0vn7fQWQEz1/n84i8oD1J9Cbzn/z/cH/jX8z/2XA4frk6SBdP1jmQiW1LWJVrWavMjzRKVhjzC4gyyh540ldmaneOcDISI/qC9k3/7kK7Z/+ipSs3vQEAAAP792Fz/a0g//6PkA9mff8KEzi/Mj90HjpTF2dooK4faaMfg/+DEWOALq7U3x/XOTR9WQ3yO/P6Ut6Ina9+3/5qdO1uSg9VBrpBiSr/F/jOGBNoerdyd+lHdjIwBqEWrV7DvGDe7Tdj83Vk5Tj7kujBc8JgntPsv/KD5/Fsmn1kh7SQZJ83y5KAsL2B0D/73h03c9dHnosjcxUgdh9EhASPi4h137netnP7RjM39bw63COPZPsRQde5Ib+FFph9X9n3ZozFonhHfOiu6DqW/098cl/xZ3JFZfBoIZJDi+QE4joAyhGJavSMO/3uIJ6vTbIJ85GHoFFtT7YforAaBmNtHN08dGaqmqJO+OblJhclHDBwNThBR/0O23xGsotsZxlyabqYvlIeRO9z/iOrh8h7nixqbSouT/P/XD1Ek+DCv+ltbXLRGYL/q5X0AbPNAiy70W/i7f/HN5IVZhpTHX0f5R+6N3Q/8zZi/LH83HDzT1HzU+pbs8AwdbJx6j/wYNAx6kz4aEeXPtc2PpzCYgogv8RRKTtA8fZGqZ1HdslCPImVvHH2m8Fl7CxjeiH/9nyIGQv1UGtwhiJdxVM9H1/FVxnWYF0bQowlZ0oUIzgq98EUeJu7V0He07vvCrg5wOJS6rWXU1A72hqtSE9UPut/PqdLkSVDJS3UPdIhanxYms/Gw779QqWkTKWJZOQ1ahyeuD1il4Rsxnt4/bE46Zr7XqPg58YcZ86MfmL/I8n6cEMRRqXP/Ozz1FWXLMcyw2sT0oHHz5g8u80k9y5izhXd71now3vOusB5gK7zOkfGE+WMWW57NnGpT496e8SlqoipCfDv6n452YrbcLidSOmzAhzRBjJ43QG/XJrqfRrn4qVIEzQhbqj+H1K3w5UbmVCnLIS2D1b8p/P+NgoX/+5AijOxjHG1tSk/0tor59X4sX9LaK+fySqFaUBI0oAA=" alt="Tickets" width={40} height={40} className={pathname === '/tickets' ? "fill-[#08c47d]/20" : ""} />
-                            {pendingTicketsCount > 0 && (
-                              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
-                                {pendingTicketsCount}
-                              </span>
-                            )}
-                        </div>
+                        <Image src="data:image/webp;base64,UklGRrwEAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSCgBAAABgGttm2nnP1YZuzLag1xDOusi7M52Z9usnFZ3YNvOzppoZvb8URsREwD/T1VI9uTmrSTdbkxm2VTiPMvOCPNpqYcYh2aJcEuNDgLib4isN7FyaVuJ7M0aWUxzROCsSQbNDBG6qONrJYKbuOKJ8FgOu2txNw5szQRhPZOHhEHyYiklKEsZlCc4TlW0EILURsvGkk2bwjJF28SyQbvBckt7wfJKe0Z3juWWto5lgzaMZYqWgiWLZsVipSkOcJyqaFCIoxQYXZ4xSF4sUIuhHpjDEFzbsfUhiAb2C3H1wO5HhE+rOdKEzRiBc1VUvQY4DS9irqOA2498uZvqXf3C91JnB/yqJUIeO4MBANxz9tlOit1BVkNcqBaoCnPC0NrZ88vN+kSGWQn/T1ZQOCBuAwAA0BIAnQEqMAAwAD4VBoJBIQePPgQAUS2AFiPQjnaRFRn6B99P2cypUZPxQOln5oP2N6pO8o+hB5cX65fBph1XhT+q/gB4B/0vn7fQWQEz1/n84i8oD1J9Cbzn/z/cH/jX8z/2XA4frk6SBdP1jmQiW1LWJVrWavMjzRKVhjzC4gyyh540ldmaneOcDISI/qC9k3/7kK7Z/+ipSs3vQEAAAP792Fz/a0g//6PkA9mff8KEzi/Mj90HjpTF2dooK4faaMfg/+DEWOALq7U3x/XOTR9WQ3yO/P6Ut6Ina9+3/5qdO1uSg9VBrpBiSr/F/jOGBNoerdyd+lHdjIwBqEWrV7DvGDe7Tdj83Vk5Tj7kujBc8JgntPsv/KD5/Fsmn1kh7SQZJ83y5KAsL2B0D/73h03c9dHnosjcxUgdh9EhASPi4h137netnP7RjM39bw63COPZPsRQde5Ib+FFph9X9n3ZozFonhHfOiu6DqW/098cl/xZ3JFZfBoIZJDi+QE4joAyhGJavSMO/3uIJ6vTbIJ85GHoFFtT7YforAaBmNtHN08dGaqmqJO+OblJhclHDBwNThBR/0O23xGsotsZxlyabqYvlIeRO9z/iOrh8h7nixqbSouT/P/XD1Ek+DCv+ltbXLRGYL/q5X0AbPNAiy70W/i7f/HN5IVZhpTHX0f5R+6N3Q/8zZi/LH83HDzT1HzU+pbs8AwdbJx6j/wYNAx6kz4aEeXPtc2PpzCYgogv8RRKTtA8fZGqZ1HdslCPImVvHH2m8Fl7CxjeiH/9nyIGQv1UGtwhiJdxVM9H1/FVxnWYF0bQowlZ0oUIzgq98EUeJu7V0He07vvCrg5wOJS6rWXU1A72hqtSE9UPut/PqdLkSVDJS3UPdIhanxYms/Gw779QqWkTKWJZOQ1ahyeuD1il4Rsxnt4/bE46Zr7XqPg58YcZ86MfmL/I8n6cEMRRqXP/Ozz1FWXLMcyw2sT0oHHz5g8u80k9y5izhXd71now3vOusB5gK7zOkfGE+WMWW57NnGpT496e8SlqoipCfDv6n452YrbcLidSOmzAhzRBjJ43QG/XJrqfRrn4qVIEzQhbqj+H1K3w5UbmVCnLIS2D1b8p/P+NgoX/+5AijOxjHG1tSk/0tor59X4sX9LaK+fySqFaUBI0oAA=" alt="Tickets" width={40} height={40} className={pathname === '/tickets' ? "fill-[#08c47d]/20" : ""} />
+                        {user && pendingTicketsCount > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm animate-pulse">
+                            {pendingTicketsCount}
+                          </span>
+                        )}
+                        {pathname === '/tickets' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
                       </div>
-                      {pathname === '/tickets' && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#08c47d] rounded-full" />}
-                    </div>
-                    {/* <span className="text-[10px] font-medium">لايف شات</span> */}
-                  </Link>
+                    </Link>
                   )}
 
-                  <button 
-                    onClick={() => { signOut(); router.push('/sign-in'); }}
-                    className="flex flex-col items-center justify-center gap-1 w-14 h-full text-red-500 hover:text-red-400 transition-colors"
-                  >
-                    {/* <LogOut size={30} /> */}
-                    <Image src="data:image/webp;base64,UklGRlIDAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSIgAAAABcFtr25P8hiprz18bt0k1I9imxaiNMzCG2Q8Or9mXjF1ETIBKlXorIMquRdM3kEWztqCvWcITFnz8g5X3zjxYJgC7EaQJALjj4HjeC2AVg/LluR80SNSd+wGziiogzemLO1A/+qFMAHZDBai0dxbqd1/I/xfhCWvHW7JawroZLKVXwpCloVIlVlA4IKQCAAAQEQCdASowADAAPhkMhUGhBHEABABhLYAQJUgX27zJ7I/ZPuTxcxeusiMB/VfUx/tO6A/W79QOEA/tfURc+R7NH7C/sZ7QGaAdMfkpD8j8BmTaMA9mvzd4AH+j5p3zX/t/cI/hv9C/2PAAILi2rjwJqZizwpQRHnpVgc8Jd8VWEYkycP8LINCeqiSwZ6z8wj2AAP7/+hTN//1DRlu3R64BvCXdTxD2nvSQEOPr28LbMPeDx8sMFq73pft19MaoIuj//hRxyL+jwh/XkZzejRLRzuhAFI+V1qDTe6ThISf/+MTujv6O2pf4AQhv00iYL4TAd5t85/zRlQe8CHzzEttDr4+in9H//EGdA8/7RNylOR7qhwTh1sbPogyRi6IfsQ9HFK/mvUzlcl2ilvcwoeg39//0P3PzmPnu9zZL5ZRS9vjv1wVgF118OPjl9/DsX/edu/PxwcVXm6X9uH/N8lVIyxy2jkyYtKQlz9nsVnDjfyjLN2n95+3mHpVdGgxT+h2jhZ4Kk8tU4DKLw4vMiuaSA9QTt9Jnd05aAXU99ebP/+eNi/31v99nx42K7tJhyvWgX/DX9eqeK9MsYDes0LbdCcxsG0GABiN5uBPAhWHG/iPVScvpsIzkc9OP301W+EwpZ/ts/gdBk5sR987FqKJ/9D/78VVcV1gcKw/T6/7Ud8ctxXuJ2TisfvhVjdTzvniIdyj8h4e3jxrOv4ih3wmO/xhv3Z87s6hyXg2n715crlF+QOKv8LPhY5CY/NTPIiem9lCFnOx6Djd9/Hj/uui/Aobcl6QIJWixWR3nZWS2YqgOuX7OlHgn+/VMyvuTif/0mC5ORK/b+xDRllRoKjo9/uypBUdM7IoWrsNMwttxcv7XvY/FC4Kl0RVnRKJbza9qSoAA" alt="Logout" width={40} height={40} />
-                    {/* <span className="text-[10px] font-medium">خروج</span> */}
-                  </button>
+                  {user && (
+                    <button 
+                      onClick={() => { signOut(); router.push('/sign-in'); }}
+                      className="flex flex-col items-center justify-center gap-1 w-14 h-full text-red-500 hover:text-red-400 transition-colors"
+                    >
+                      <Image src="data:image/webp;base64,UklGRlIDAABXRUJQVlA4WAoAAAAQAAAALwAALwAAQUxQSIgAAAABcFtr25P8hiprz18bt0k1I9imxaiNMzCG2Q8Or9mXjF1ETIBKlXorIMquRdM3kEWztqCvWcITFnz8g5X3zjxYJgC7EaQJALjj4HjeC2AVg/LluR80SNSd+wGziiogzemLO1A/+qFMAHZDBai0dxbqd1/I/xfhCWvHW7JawroZLKVXwpCloVIlVlA4IKQCAAAQEQCdASowADAAPhkMhUGhBHEABABhLYAQJUgX27zJ7I/ZPuTxcxeusiMB/VfUx/tO6A/W79QOEA/tfURc+R7NH7C/sZ7QGaAdMfkpD8j8BmTaMA9mvzd4AH+j5p3zX/t/cI/hv9C/2PAAILi2rjwJqZizwpQRHnpVgc8Jd8VWEYkycP8LINCeqiSwZ6z8wj2AAP7/+hTN//1DRlu3R64BvCXdTxD2nvSQEOPr28LbMPeDx8sMFq73pft19MaoIuj//hRxyL+jwh/XkZzejRLRzuhAFI+V1qDTe6ThISf/+MTujv6O2pf4AQhv00iYL4TAd5t85/zRlQe8CHzzEttDr4+in9H//EGdA8/7RNylOR7qhwTh1sbPogyRi6IfsQ9HFK/mvUzlcl2ilvcwoeg39//0P3PzmPnu9zZL5ZRS9vjv1wVgF118OPjl9/DsX/edu/PxwcVXm6X9uH/N8lVIyxy2jkyYtKQlz9nsVnDjfyjLN2n95+3mHpVdGgxT+h2jhZ4Kk8tU4DKLw4vMiuaSA9QTt9Jnd05aAXU99ebP/+eNi/31v99nx42K7tJhyvWgX/DX9eqeK9MsYDes0LbdCcxsG0GABiN5uBPAhWHG/iPVScvpsIzkc9OP301W+EwpZ/ts/gdBk5sR987FqKJ/9D/78VVcV1gcKw/T6/7Ud8ctxXuJ2TisfvhVjdTzvniIdyj8h4e3jxrOv4ih3wmO/xhv3Z87s6hyXg2n715crlF+QOKv8LPhY5CY/NTPIiem9lCFnOx6Djd9/Hj/uui/Aobcl6QIJWixWR3nZWS2YqgOuX7OlHgn+/VMyvuTif/0mC5ORK/b+xDRllRoKjo9/uypBUdM7IoWrsNMwttxcv7XvY/FC4Kl0RVnRKJbza9qSoAA" alt="Logout" width={40} height={40} />
+                    </button>
+                  )}
                 </div>
             </div>
         </div>

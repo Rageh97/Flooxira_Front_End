@@ -42,7 +42,10 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
   const checkMessagesRemaining = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      if (!token) return;
+      if (!token) {
+        setCheckingMessages(false);
+        return;
+      }
 
       const response = await fetch('/api/billing/analytics', {
         headers: {
@@ -86,11 +89,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
       setCheckingMessages(false);
     }
   };
-  useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
+
   // Check permissions loading state
   if (permissionsLoading || checkingMessages) {
     return (
@@ -169,7 +168,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
           className="container mx-auto p-6"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-3" : "space-y-3"}>
+      <div className="space-y-3">
       {/* Warning banner if messages are running low */}
       {messagesRemaining > 0 && messagesRemaining <= 10 && (
         <Card className="bg-card border-none">

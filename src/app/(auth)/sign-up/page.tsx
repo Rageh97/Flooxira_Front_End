@@ -3,7 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
-import { signUpRequest } from "@/lib/api";
+import { signUpRequest, googleSignInRequest } from "@/lib/api";
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
@@ -42,8 +43,9 @@ export default function SignUpPage() {
       return signUpRequest(name, email, "+" + phone, password);
     },
     onSuccess: (data) => {
+      // For standard sign-up, redirect to sign-in or auto-login.
       localStorage.setItem("auth_token", data.token);
-      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_token"); // Based on original logic
       setShowSuccess(true);
       setTimeout(() => {
         router.push("/sign-in");
@@ -53,6 +55,29 @@ export default function SignUpPage() {
       toast.error(error.message || "حدث خطأ أثناء إنشاء الحساب");
     }
   });
+
+  const googleMutation = useMutation({
+    mutationFn: async (credential: string) => {
+      const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+      return googleSignInRequest(credential, clientId);
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("auth_token", data.token);
+      setShowSuccess(true);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "حدث خطأ أثناء التسجيل عبر جوجل");
+    },
+  });
+
+  const handleGoogleSuccess = (credentialResponse: any) => {
+    if (credentialResponse.credential) {
+      googleMutation.mutate(credentialResponse.credential);
+    }
+  };
 
   const [password, setPassword] = useState("");
 
@@ -77,6 +102,7 @@ export default function SignUpPage() {
   };
 
   return (
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID"}>
     <div className="space-y-6 ">
       <div>
         <Image src="/Logoo.png" alt="logo" width={400} height={100} />
@@ -115,10 +141,21 @@ export default function SignUpPage() {
           <Input className="placeholder-white/60 text-white" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
         </div>
         <div className="text-sm text-white">لديك حساب بالفعل؟ <Link href="/sign-in" className="text-gray-300 hover:underline">تسجيل الدخول</Link></div>
-        <Button className="w-full primary-button" disabled={mutation.isPending || showSuccess}>
-          {mutation.isPending ? <Loader size="lg" variant="warning" fullScreen={false} className="py-16" /> : "إنشاء حساب"}
+        <Button className="w-full primary-button" disabled={mutation.isPending || googleMutation.isPending || showSuccess}>
+          {mutation.isPending || googleMutation.isPending ? <Loader size="lg" variant="warning" fullScreen={false} className="py-16" /> : "إنشاء حساب"}
         </Button>
-        {mutation.isError && <p className="text-sm text-red-600 mt-2">{(mutation.error as Error).message}</p>}
+        <div className="flex items-center justify-center my-4">
+           <div className="w-full h-px bg-white/20"></div>
+           <span className="px-2 text-white/80 text-sm">أو</span>
+           <div className="w-full h-px bg-white/20"></div>
+        </div>
+        <div className="flex justify-center w-full">
+           <GoogleLogin
+             onSuccess={handleGoogleSuccess}
+             onError={() => console.error('Google Login Failed')}
+           />
+        </div>
+        {(mutation.isError || googleMutation.isError) && <p className="text-sm text-red-600 mt-2">{(mutation.error || googleMutation.error)?.message}</p>}
         {showSuccess && (
           <div className="p-4 bg-green-500/20 border border-green-500 rounded-lg">
             <p className="text-sm text-green-500 text-center font-medium">تم إنشاء الحساب بنجاح!</p>
@@ -126,5 +163,6 @@ export default function SignUpPage() {
         )}
       </form>
     </div>
+    </GoogleOAuthProvider>
   );
 }

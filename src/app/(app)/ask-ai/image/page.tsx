@@ -181,12 +181,19 @@ export default function TextToImagePage() {
     }
   };
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return showError("تنبيه", "أطلق العنان لخيالك واكتب وصفاً للصورة!");
-    if (!hasActiveSubscription) {
-      setSubscriptionModalOpen(true);
-      return;
-    }
+    const handleGenerate = async () => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+      if (!prompt.trim()) return showError("تنبيه", "أطلق العنان لخيالك واكتب وصفاً للصورة!");
+      if (!token) {
+        showError("يجب تسجيل الدخول أولاً");
+        router.push('/sign-in');
+        return;
+      }
+      if (!hasActiveSubscription) {
+        showError("يجب الاشتراك في باقة لتفعيل ميزات الذكاء الاصطناعي");
+        router.push('/plans');
+        return;
+      }
     if (stats && !stats.isUnlimited && stats.remainingCredits < 10) return showError("تنبيه", "رصيدك غير كافٍ");
 
     const placeholderId = Date.now().toString();

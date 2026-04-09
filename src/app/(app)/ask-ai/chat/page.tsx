@@ -176,7 +176,10 @@ export default function ChatPage() {
   }, [selectedConversation, isMobileListOpen, isMobile]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     loadConversations();
     loadStats();
     checkAIPlans();
@@ -293,8 +296,15 @@ export default function ChatPage() {
   };
 
   const handleSendMessage = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push('/sign-in');
+      return;
+    }
     if (!hasActiveSubscription) {
-      setSubscriptionModalOpen(true);
+      showError("يجب الاشتراك في باقة لتفعيل ميزات الذكاء الاصطناعي");
+      router.push('/plans');
       return;
     }
 

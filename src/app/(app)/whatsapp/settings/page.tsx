@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Notebook } from "lucide-react";
+import { Notebook, Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface BotSettings {
   workingHoursEnabled: boolean;
@@ -56,6 +57,7 @@ const TIMEZONES = [
 export default function WhatsAppSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const router = useRouter();
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [settings, setSettings] = useState<BotSettings>({
@@ -78,8 +80,8 @@ export default function WhatsAppSettingsPage() {
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
 
   useEffect(() => {
+    loadSettings();
     if (token) {
-      loadSettings();
       loadGroups();
     }
   }, [token]);
@@ -104,6 +106,10 @@ export default function WhatsAppSettingsPage() {
   const loadSettings = async () => {
     try {
       setLoading(true);
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       const response = await fetch('/api/bot-settings', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -128,11 +134,14 @@ export default function WhatsAppSettingsPage() {
             whatsappNotifyGroupId: data.data.whatsappNotifyGroupId || ''
           });
         }
+      } else {
+          // If 403 or other, we just don't set error to keep it in view-only with defaults
+          console.log("Using default settings for view-only mode");
       }
 
     } catch (error) {
       console.error('Error loading settings:', error);
-      setError('فشل في تحميل الإعدادات');
+      // Suppress error message to show defaults in view-only mode
     } finally {
       setLoading(false);
     }
@@ -156,8 +165,12 @@ export default function WhatsAppSettingsPage() {
       if (response.ok) {
         setSuccess('تم حفظ الإعدادات بنجاح');
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'فشل في حفظ الإعدادات');
+        if (response.status === 401 || response.status === 403) {
+           setError('يجب تسجيل الدخول والاشتراك لحفظ التغييرات');
+        } else {
+           const errorData = await response.json();
+           setError(errorData.message || 'فشل في حفظ الإعدادات');
+        }
       }
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -169,15 +182,15 @@ export default function WhatsAppSettingsPage() {
 
   const handleWorkingDayChange = (dayValue: number, checked: boolean) => {
     if (checked) {
-      setSettings(prev => ({
+      setSettings(prev => prev ? ({
         ...prev,
         workingDays: [...prev.workingDays, dayValue]
-      }));
+      }) : prev);
     } else {
-      setSettings(prev => ({
+      setSettings(prev => prev ? ({
         ...prev,
         workingDays: prev.workingDays.filter(day => day !== dayValue)
-      }));
+      }) : prev);
     }
   };
 
@@ -188,6 +201,8 @@ export default function WhatsAppSettingsPage() {
       </div>
     );
   }
+
+  // No blocking settings check to allow viewing defaults
 
   return (
     <div className="space-y-1">

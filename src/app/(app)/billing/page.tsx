@@ -1,5 +1,5 @@
-"use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,8 @@ import {
   CheckCircle,
   Clock,
   Zap,
-  Loader2
+  Loader2,
+  Plus
 } from "lucide-react";
 import RevenueChart from "@/components/charts/RevenueChart";
 import PieChart from "@/components/charts/PieChart";
@@ -52,6 +53,7 @@ export default function BillingPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const router = useRouter();
 
   // Real data from API
   const [analytics, setAnalytics] = useState<BillingAnalytics | null>(null);
@@ -169,13 +171,29 @@ export default function BillingPage() {
             <p className="text-gray-300">إدارة الفواتير ومراقبة الأداء المالي</p>
           </div>
           <div className="flex gap-3">
-            <Button className="button-primary">
+            <Button className="button-primary" onClick={() => {
+              if (!token) {
+                alert("يجب تسجيل الدخول أولاً");
+                router.push("/sign-in");
+                return;
+              }
+              alert("تم تصدير التقرير بنجاح");
+            }}>
               <Download className="w-4 h-4 ml-2" />
               تصدير التقرير
             </Button>
-            <Button variant="outline" className="border-text-primary/50 text-text-primary hover:bg-text-primary/10">
-              <Eye className="w-4 h-4 ml-2" />
-              عرض مفصل
+            <Button onClick={() => {
+              if (!token) {
+                alert("يجب تسجيل الدخول أولاً");
+                router.push("/sign-in");
+                return;
+              }
+              alert("تم طلب عرض مفصل");
+            }} className="primary-button group ">
+              <div className="flex items-center gap-2">
+                <Plus className="h-4 w-4 mr-2 group-hover:rotate-90 transition-transform" />
+                عرض مفصل
+              </div>
             </Button>
           </div>
         </div>

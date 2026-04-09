@@ -45,6 +45,13 @@ export async function signUpRequest(name: string, email: string, phone: string, 
   });
 }
 
+export async function googleSignInRequest(credential: string, clientId?: string) {
+  return apiFetch<{ user: AuthUser; token: string }>("/api/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ credential, clientId }),
+  });
+}
+
 export async function meRequest(token: string) {
   return apiFetch<{ user: AuthUser }>("/api/auth/me", { authToken: token });
 }
@@ -182,6 +189,14 @@ export async function listPlans(token: string, type?: string) {
   return apiFetch<{ plans: Plan[] }>(url, { authToken: token });
 }
 
+export async function listPublicPlans(type?: string) {
+  let url = "/api/plans/public";
+  if (type) {
+    url += `?type=${type}`;
+  }
+  return apiFetch<{ plans: Plan[] }>(url);
+}
+
 export async function createPlan(token: string, plan: Partial<Plan>) {
   return apiFetch<{ plan: Plan }>("/api/plans", {
     method: "POST",
@@ -224,7 +239,7 @@ export async function startWhatsAppSession(token: string) {
 }
 
 export async function getWhatsAppStatus(token: string) {
-  return apiFetch<{ success: boolean; status: string; message: string; initializing?: boolean; botPaused?: boolean }>("/api/whatsapp/status", { authToken: token });
+  return apiFetch<{ success: boolean; status: string; message: string; initializing?: boolean; botPaused?: boolean; qrCode?: string }>("/api/whatsapp/status", { authToken: token });
 }
 
 export async function toggleWhatsAppBotStatus(token: string) {

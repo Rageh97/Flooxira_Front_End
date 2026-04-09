@@ -6,6 +6,8 @@ import { getAllBanners, type Banner } from "@/lib/settingsApi";
 import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import ServicesSlider from "@/components/ServicesSlider";
 import AnimatedBanner from "@/components/AnimatedBanner";
 import PremiumLoader from "@/components/PremiumLoader";
@@ -58,6 +60,7 @@ interface CustomerStats {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [stats, setStats] = useState<PostStats | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [whatsappStats, setWhatsappStats] = useState<WhatsAppStats | null>(null);
@@ -92,7 +95,15 @@ export default function DashboardPage() {
   const loadStats = async () => {
     const startTime = Date.now();
     try {
-      const token = localStorage.getItem("auth_token") || "";
+      const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
+      
+      if (!token) {
+        setStats(null);
+        setUserStats(null);
+        setCustomerStats(null);
+        setLoading(false);
+        return;
+      }
       const [postsResponse, userResponse, customerResponse] = await Promise.all([
         apiFetch<PostStats>("/api/posts/stats", { authToken: token }),
         apiFetch<UserStats>("/api/usage/stats", { authToken: token }).catch(() => ({
@@ -228,22 +239,19 @@ export default function DashboardPage() {
       }
     };
 
-    if (user && !loading) {
-      loadPendingTicketsCount();
+    // if (user && !loading) {
+    //   loadPendingTicketsCount();
       
-      // Refresh count every 30 seconds
-      const interval = setInterval(loadPendingTicketsCount, 30000);
-      return () => clearInterval(interval);
-    }
+    //   // Refresh count every 30 seconds
+    //   const interval = setInterval(loadPendingTicketsCount, 30000);
+    //   return () => clearInterval(interval);
+    // }
   }, [user, loading]);
-  if (loading) {
-    return (
-      <PremiumLoader />
-      // <div className="flex items-center justify-center h-64">
-      //   <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-      // </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <PremiumLoader />
+  //   );
+  // }
 
   return (
     <div className="space-y-2">

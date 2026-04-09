@@ -20,6 +20,7 @@ import { sendWhatsAppMedia } from "@/lib/mediaApi";
 import { getBotStatus, pauseBot, resumeBot, BotStatus } from "@/lib/botControlApi";
 import AnimatedEmoji, { EmojiPickerInline } from "@/components/AnimatedEmoji";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 import Image from "next/image";
 import { 
   getPendingEscalationContacts, 
@@ -141,7 +142,8 @@ export default function WhatsAppChatsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { hasActiveSubscription, permissionsLoading } = usePermissions();
   // Toast function
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const toast = document.createElement('div');
@@ -927,6 +929,16 @@ export default function WhatsAppChatsPage() {
   }
 
   async function handleAddToTag() {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
     if (!selectedTagId || !selectedContactForTag) return;
     try {
       setTagLoading(true);
@@ -945,6 +957,16 @@ export default function WhatsAppChatsPage() {
   }
 
   async function handleCreateTagQuick() {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
     if (!newTagName.trim()) return;
     try {
       setTagLoading(true);
@@ -1016,6 +1038,17 @@ export default function WhatsAppChatsPage() {
   }, [contacts, searchTerm, filterTagId, contactsInSelectedFilter, showOnlyEscalated, escalatedContacts, filterEmployeeId, openNoteMentions, employees, showOnlyUnread]);
 
   async function handleSendMessage(phoneNumber?: string, message?: string) {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
+
     const targetPhone = phoneNumber;
     const targetMessage = message || testMessage;
     
@@ -1148,6 +1181,16 @@ export default function WhatsAppChatsPage() {
   }
 
   async function handleStartNewChat() {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
     if (!newChatNumber.trim() || !newChatMessage.trim()) {
       showToast("يرجى إدخال رقم الهاتف والرسالة", 'error');
       return;
@@ -1192,6 +1235,16 @@ export default function WhatsAppChatsPage() {
   }
 
   async function handleSendMedia(contactNumber: string) {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
     if (!mediaFile) return;
     
     // Create a unique key for this media to prevent duplicates
@@ -1357,6 +1410,16 @@ export default function WhatsAppChatsPage() {
   }
 
   async function handlePauseBot(minutes: number = 30) {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
     try {
       setBotControlLoading(true);
       setError("");
@@ -1375,6 +1438,16 @@ export default function WhatsAppChatsPage() {
   }
 
   async function handleResumeBot() {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
     try {
       setBotControlLoading(true);
       setError("");
@@ -1393,6 +1466,16 @@ export default function WhatsAppChatsPage() {
   }
 
   async function handleToggleAiBlock() {
+    if (!token) {
+      showToast("يجب تسجيل الدخول أولاً", 'error');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+      window.location.href = '/plans';
+      return;
+    }
     if (!selectedContact || !token) return;
     try {
       setBotControlLoading(true);

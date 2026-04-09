@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,6 +145,8 @@ export default function CustomersPage() {
   const [platforms, setPlatforms] = useState<{ id: number; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(true);
+  const router = useRouter();
+  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [isCustomFieldsDialogOpen, setIsCustomFieldsDialogOpen] = useState(false);
   const [editingCustomField, setEditingCustomField] = useState<CustomField | null>(null);
@@ -299,11 +302,7 @@ export default function CustomersPage() {
       setIsSavingNotif(false);
     }
   };
-useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
+  // Subscription check moved to individual actions instead of auto-toast on load
   useEffect(() => {
     fetchCustomers();
     fetchStats();
@@ -748,6 +747,15 @@ useEffect(() => {
   };
 
   const handleCreateCustomer = async () => {
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      return;
+    }
     try {
       setIsCreatingCustomer(true);
       const token = localStorage.getItem('auth_token');
@@ -788,8 +796,16 @@ useEffect(() => {
   };
 
   const handleUpdateCustomer = async () => {
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      return;
+    }
     if (!selectedCustomer) return;
-
     try {
       setIsUpdatingCustomer(true);
       const token = localStorage.getItem('auth_token');
@@ -832,6 +848,15 @@ useEffect(() => {
   };
 
   const confirmDeleteCustomer = async () => {
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      return;
+    }
     if (!customerToDelete) return;
 
     try {
@@ -859,6 +884,16 @@ useEffect(() => {
   };
 
   const handleExportToExcel = async () => {
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push("/plans");
+      return;
+    }
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) return;
@@ -1148,12 +1183,18 @@ useEffect(() => {
     );
   }
 
-  const showBlurOverlay = !hasActiveSubscription;
-  const hasInadequatePlan = hasActiveSubscription && (!canManageCustomers() || !hasAccess);
+  const showBlurOverlay = false; // Blur removed for free exploration
+  const hasInadequatePlan = false; // Logic moved to action guards
 
   const handleRestrictedAction = (action: () => void) => {
-    if (hasInadequatePlan) {
-      showError("هذه الميزة غير متاحة في الباقة الحالية، يرجى ترقية الباقة");
+    if (!token) {
+      showError("يجب تسجيل الدخول أولاً");
+      router.push("/sign-in");
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل هذه الميزة");
+      router.push("/plans");
       return;
     }
     action();
@@ -1161,18 +1202,7 @@ useEffect(() => {
 
   return (
     <div className="w-full space-y-3 relative">
-      {showBlurOverlay && (
-        <div className="absolute inset-0 z-50 flex items-center justify-start pt-20 flex-col bg-black/5">
-          {/* <NoActiveSubscription 
-            heading=" "
-            featureName="إدارة العملاء"
-            cardTitle="لا يوجد اشتراك نشط"
-            description="تحتاج إلى اشتراك نشط للوصول إلى إدارة العملاء."
-            className="w-full max-w-2xl px-4"
-          /> */}
-        </div>
-      )}
-      <div className={showBlurOverlay ? "opacity-60 pointer-events-none select-none grayscale-[0.3] blur-[2px] space-y-3" : "space-y-3"}>
+      <div className="space-y-3">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start mx-2 md:mx-0 md:items-center gap-1">
         <div >

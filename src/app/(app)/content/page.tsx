@@ -873,7 +873,7 @@ export default function ContentHomePage() {
           className="container mx-auto w-full mb-8 pt-6"
         />
       )} */}
-      <div className={` w-full ${!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5]" : ""}`}>
+      <div className={` w-full`}>
         {/* Header */}
         <div className="mb-2">
          <div className="flex items-center justify-between">

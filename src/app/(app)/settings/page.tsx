@@ -113,11 +113,9 @@ function SettingsContent() {
       showError(`لم يتم العثور على شرح خاص بـ ${platformName}`);
     }
   };
-useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
+  useEffect(() => {
+    // Freemium Exploration
+  }, []);
   // .......................
   
   useEffect(() => {
@@ -233,7 +231,10 @@ useEffect(() => {
   }, [token, searchParams]);
 
   const loadPlatformConnections = async () => {
-    if (!token) return;
+    if (!token) {
+        setLoading(false);
+        return;
+    }
     
     setLoading(true);
     try {
@@ -301,8 +302,8 @@ useEffect(() => {
         console.log('Response:', pagesData);
         setAvailableFacebookPages([]);
         
-        if (pagesData.message) {
-          showError(`⚠️ ${pagesData.message}`);
+        if ((pagesData as any).message) {
+          showError(`⚠️ ${(pagesData as any).message}`);
         }
       }
       
@@ -310,13 +311,13 @@ useEffect(() => {
       const currentPageData = await getCurrentFacebookPage(token);
       console.log('Current page data:', currentPageData);
       
-      if (currentPageData.success) {
+      if (currentPageData && currentPageData.success) {
         setCurrentFacebookPage({
-          pageId: currentPageData.pageId,
-          pageName: currentPageData.pageName,
-          fanCount: currentPageData.fanCount,
-          instagramId: currentPageData.instagramId,
-          instagramUsername: currentPageData.instagramUsername
+          pageId: (currentPageData as any).pageId || '',
+          pageName: (currentPageData as any).pageName || '',
+          fanCount: (currentPageData as any).fanCount || 0,
+          instagramId: (currentPageData as any).instagramId,
+          instagramUsername: (currentPageData as any).instagramUsername
         });
       }
     } catch (error) {
@@ -444,6 +445,17 @@ useEffect(() => {
   };
 
   const handleConnect = (platformKey: string) => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      showError('يجب تسجيل الدخول أولاً');
+      window.location.href = '/sign-in';
+      return;
+    }
+    if (!hasActiveSubscription) {
+      showError('يجب الاشتراك في باقة لتفعيل الميزة');
+      window.location.href = '/plans';
+      return;
+    }
     if (!userId) {
       showError('يجب تسجيل الدخول أولاً');
       return;
@@ -451,7 +463,6 @@ useEffect(() => {
     
     const platform = PLATFORMS[platformKey as keyof typeof PLATFORMS];
     if (platform) {
-      // Add userId parameter to OAuth URL for platforms that need it
       if (['facebook', 'instagram', 'pinterest', 'youtube', 'twitter', 'tiktok'].includes(platformKey)) {
         window.location.href = `${platform.connectUrl}?userId=${userId}`;
       } else {
@@ -519,7 +530,7 @@ useEffect(() => {
           className="space-y-8"
         />
       )} */}
-      <div className={!hasActiveSubscription ? "opacity-50 pointer-events-none select-none grayscale-[0.5] space-y-3" : "space-y-3"}>
+      <div className="space-y-3">
   <Card className="bg-secondry border-none inner-shadow">
         <CardHeader className="border-text-primary/50 text-white">
           <h2 className="text-lg font-semibold">ملخص الاتصالات</h2>
@@ -594,9 +605,18 @@ useEffect(() => {
                   </div>
                  
                   <div className="flex flex-col gap-2">
-                    <Button size="lg" className="primary-button flex-1" onClick={() => setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '' })}>تعيين/تعديل</Button>
+                    <Button size="lg" className="primary-button flex-1" onClick={() => {
+                      if (!localStorage.getItem('auth_token')) { showError('يجب تسجيل الدخول'); return; }
+                      if (!hasActiveSubscription) { showError('يجب الاشتراك'); return; }
+                      setEdit({ platform: key, clientId: creds[key]?.clientId || '', clientSecret: '' });
+                    }}>تعيين/تعديل</Button>
                     {creds[key]?.clientId && (
-                      <Button size="lg" variant="secondary" className="flex-1 primary-button after:bg-red-500" onClick={async () => { await deletePlatformCredential(token, key); await loadCredentials(); }}>حذف</Button>
+                      <Button size="lg" variant="secondary" className="flex-1 primary-button after:bg-red-500" onClick={async () => { 
+                        if (!localStorage.getItem('auth_token')) { showError('يجب تسجيل الدخول'); return; }
+                        if (!hasActiveSubscription) { showError('يجب الاشتراك'); return; }
+                        await deletePlatformCredential(token, key); 
+                        await loadCredentials(); 
+                      }}>حذف</Button>
                     )}
                     {'href' in platform && platform.href ? (
                       <Link href={platform.href} target="_blank" className="primary-button">
