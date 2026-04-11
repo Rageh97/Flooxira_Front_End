@@ -129,6 +129,25 @@ export default function PolicyPage() {
         "يحق للمنصة إيقاف الحساب في حال مخالفة الشروط، الإضرار بسمعة المنصة، الاستخدام غير المشروع، أو مخالفة الضوابط الشرعية.",
         "لا يحق المطالبة بأي تعويض في حال ثبتت المخالفة."
       ]
+    },
+    {
+      title: "سياسة التسليم (Delivery Policy)",
+      icon: <Globe className="w-6 h-6 text-blue-500" />,
+      content: [
+        "فلوكسيرا هي منصة رقمية (SaaS). يتم تسليم الخدمة فوراً وبشكل آلي بعد إتمام عملية الدفع وتأكيدها.",
+        "يتم تفعيل الميزات في حساب المستخدم مباشرة، ولا توجد شحنات ملموسة أو توصيل فيزيائي للخدمات.",
+        "في حال واجه المستخدم أي مشكلة في التفعيل الآلي، يلتزم الدعم الفني بحل المشكلة خلال فترة لا تتجاوز 24 ساعة عمل."
+      ]
+    },
+    {
+      title: "معلومات الاتصال والكيان القانوني",
+      icon: <Headphones className="w-6 h-6 text-primary" />,
+      content: [
+       
+        "البريد الإلكتروني الرسمي: support@flooxira.com",
+        "رقم التواصل (واتساب): +90 551 958 54 15",
+        "نسعد باستقبال استفساراتكم على مدار الساعة عبر البريد الإلكتروني."
+      ]
     }
   ];
 
@@ -142,9 +161,21 @@ export default function PolicyPage() {
         <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
           الشروط والأحكام الرسمية لمنصة <span className="text-primary">فلوكسيرا</span>
         </h1>
-        <div className="flex items-center justify-center gap-2 text-gray-400 bg-white/5 w-fit mx-auto px-4 py-1.5 rounded-full border border-white/10">
-          <FileText className="w-4 h-4" />
-          <p className="text-sm">آخر تحديث: {currentDate || "..."}</p>
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-gray-400 bg-white/5 w-fit mx-auto px-6 py-3 rounded-2xl border border-white/10">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" />
+            <p className="text-sm">آخر تحديث: {currentDate || "..."}</p>
+          </div>
+          <div className="hidden md:block w-px h-4 bg-white/10"></div>
+          <div className="flex items-center gap-2">
+            <Headphones className="w-4 h-4 text-primary" />
+            <p className="text-sm">support@flooxira.com</p>
+          </div>
+          <div className="hidden md:block w-px h-4 bg-white/10"></div>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-primary" />
+            <p className="text-sm">+90 551 958 54 15</p>
+          </div>
         </div>
       </div>
 

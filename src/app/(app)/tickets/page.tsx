@@ -239,11 +239,6 @@ export default function TicketsPage() {
     }
   };
 
-  useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
 
   const addMessageToThread = useCallback((newMessage: TicketMessage | null) => {
     if (!newMessage) return;

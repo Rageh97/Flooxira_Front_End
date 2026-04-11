@@ -5,10 +5,13 @@ import { useMutation } from "@tanstack/react-query";
 import { resetPasswordRequest } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [confirm, setConfirm] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
   const [sent, setSent] = useState(false);
@@ -49,11 +52,41 @@ export default function ResetPasswordPage() {
         </div>
         <div>
           <label className="block text-sm text-white font-medium mb-1">كلمة المرور الجديدة</label>
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          <div className="relative">
+            <Input 
+              className="placeholder-white/60 text-white pl-10" 
+              type={showPassword ? "text" : "password"} 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="••••••••" 
+            />
+            <button
+              type="button"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
         <div>
           <label className="block text-sm text-white font-medium mb-1">تأكيد كلمة المرور</label>
-          <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" />
+          <div className="relative">
+            <Input 
+              className="placeholder-white/60 text-white pl-10" 
+              type={showConfirm ? "text" : "password"} 
+              value={confirm} 
+              onChange={(e) => setConfirm(e.target.value)} 
+              placeholder="••••••••" 
+            />
+            <button
+              type="button"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+              onClick={() => setShowConfirm(!showConfirm)}
+            >
+              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
         <Button className="w-full" disabled={mutation.isPending || password !== confirm}>{mutation.isPending ? "جاري إعادة التعيين..." : "إعادة تعيين كلمة المرور"}</Button>
         {password !== confirm && <p className="text-sm text-red-600">كلمات المرور غير متطابقة</p>}

@@ -145,11 +145,6 @@ export default function ContentHomePage() {
     }
   };
 
-  useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
   
   // Helper function to convert local datetime to ISO string without timezone conversion
   const localDateTimeToISO = (localDateTime: string): string => {

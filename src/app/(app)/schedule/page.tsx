@@ -62,11 +62,6 @@ export default function SchedulePage() {
       showError("لم يتم العثور على شرح خاص بالجدولة");
     }
   };
-  useEffect(() => {
-    if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
-    }
-  }, [hasActiveSubscription, permissionsLoading]);
   // Debug localStorage
   if (typeof window !== 'undefined') {
     console.log('LocalStorage keys:', Object.keys(localStorage));

@@ -186,7 +186,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         if (!hasActiveSubscription && !permissionsLoading) {
           e.preventDefault();
           e.stopPropagation();
-          toast.error("يجب الاشتراك في باقة لتفعيل الميزة");
+          // toast.error("يجب الاشتراك في باقة لتفعيل الميزة");
           router.push('/plans');
           return;
         }

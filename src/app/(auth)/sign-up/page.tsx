@@ -14,6 +14,7 @@ import "react-phone-input-2/lib/style.css";
 import "../../phone-input.css";
 import { toast } from "sonner";
 import { PhoneNumberUtil } from "google-libphonenumber";
+import { Eye, EyeOff } from "lucide-react";
 
 const phoneUtil = PhoneNumberUtil.getInstance();
 
@@ -21,6 +22,8 @@ export default function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [valid, setValid] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
@@ -79,8 +82,6 @@ export default function SignUpPage() {
     }
   };
 
-  const [password, setPassword] = useState("");
-
   const handleChange = (value: string, data: any) => {
     setPhone(value);
     setValid(validatePhone(value));
@@ -138,7 +139,23 @@ export default function SignUpPage() {
         </div>
         <div>
           <label className="block text-sm font-medium mb-1 text-white">كلمة المرور</label>
-          <Input className="placeholder-white/60 text-white" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+          <div className="relative">
+            <Input 
+              className="placeholder-white/60 text-white pl-10" 
+              type={showPassword ? "text" : "password"} 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="••••••••" 
+              required 
+            />
+            <button
+              type="button"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
         <div className="text-sm text-white">لديك حساب بالفعل؟ <Link href="/sign-in" className="text-gray-300 hover:underline">تسجيل الدخول</Link></div>
         <Button className="w-full primary-button" disabled={mutation.isPending || googleMutation.isPending || showSuccess}>

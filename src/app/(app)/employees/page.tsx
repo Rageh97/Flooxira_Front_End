@@ -170,17 +170,23 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     if (!permissionsLoading && !hasActiveSubscription) {
-      showError("لا يوجد اشتراك نشط");
+      setLoading(false);
     }
-  }, [hasActiveSubscription, permissionsLoading]);
+  }, [permissionsLoading, hasActiveSubscription]);
 
   const loadEmployees = useCallback(async () => {
-    if (!hasActiveSubscription || !canManageEmployees) return;
+    if (!hasActiveSubscription || !canManageEmployees) {
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
       const token = getToken();
-      if (!token) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       
       const response = await apiFetch<{ success: boolean; employees: any[]; pagination: any }>(`/api/employees?page=${currentPage}&search=${searchTerm}`, { authToken: token });
       if (response.success) {
@@ -412,7 +418,6 @@ export default function EmployeesPage() {
   };
 
   useEffect(() => {
-    if (!hasActiveSubscription || !canManageEmployees) return;
     loadStats();
     loadEmployees();
   }, [hasActiveSubscription, canManageEmployees, loadEmployees, loadStats]);
@@ -705,7 +710,7 @@ export default function EmployeesPage() {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8">جاري التحميل...</div>
+                <div className="text-center py-8">{!hasActiveSubscription && !loading ? "لا يوجد موظفين" : "جاري التحميل..."}</div>
               ) : employees.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
                   لا يوجد موظفين

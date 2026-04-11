@@ -651,7 +651,7 @@ export default function CustomersPage() {
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
-      toast.error('فشل في جلب العملاء');
+      // showError('فشل في جلب العملاء');
     } finally {
       setLoading(false);
     }

@@ -243,21 +243,9 @@ export default function TelegramBotPage() {
         setKnowledgeEntries(data.entries);
       }
     } catch (e: any) {
-      showError(e.message);
+      console.error("Knowledge base load error:", e.message);
     }
   }
-
-  // async function loadGroups() {
-  //   if (!token) return;
-  //   setLoadingGroups(true);
-  //   try {
-  //     const res = await tgWebGroups(token);
-  //     setGroups(res.groups || []);
-  //   } catch (e: any) {
-  //     setError("Failed to load groups and channels");
-  //   }
-  //   setLoadingGroups(false);
-  // }
 
   async function loadBotInfo() {
     if (!token || (permissions && !hasActiveSubscription)) return; // Don't try if not subscribed
@@ -267,7 +255,6 @@ export default function TelegramBotPage() {
       setBotInfo(res.bot || null);
     } catch (e) {
       console.error('Error loading bot info:', e); // Debug log
-      // ignore silently to avoid annoying toasts for non-active users
     }
   }
 
@@ -302,7 +289,7 @@ export default function TelegramBotPage() {
         setTelegramGroups(groupsData.groups);
       }
     } catch (e: any) {
-      showError(e.message);
+      console.error("Bot settings load error:", e.message);
     } finally {
       setLoading(false);
     }
@@ -334,7 +321,7 @@ export default function TelegramBotPage() {
         setContacts(res.contacts || []);
       }
     } catch (e:any) {
-      showError(e.message);
+      console.error("Contacts load error:", e.message);
     } finally { setLoading(false); }
   }
 
@@ -346,7 +333,6 @@ export default function TelegramBotPage() {
       if (res.success) setCampaigns(res.jobs || []);
     } catch (e:any) {
       console.error('Error loading campaigns:', e); // Debug log
-      showError(e.message);
     } finally { setLoading(false); }
   }
 
@@ -902,7 +888,7 @@ export default function TelegramBotPage() {
               {telegramAiEnabled && canUseTelegramAI() && (
                 <div className="pt-4 border-t border-gray-700">
                   <p className="text-xs text-purple-300 bg-purple-900/20 p-3 rounded-lg border border-purple-500/20">
-                     سيستخدم البوت قاعدة المعرفة وإعدادات الشخصية المكونة في واتساب للرد على الرسائل 
+                     سيستخدم البوت قاعدة المعرفة وإعدادات الشخصية المكونة في تليجرام للرد على الرسائل 
                   </p>
                 </div>
               )}

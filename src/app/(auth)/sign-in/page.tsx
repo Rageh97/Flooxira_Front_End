@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/Loader";
 import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
@@ -98,7 +100,22 @@ export default function SignInPage() {
         </div>
         <div>
           <label className="block text-sm font-medium mb-1 text-white">كلمة المرور</label>
-          <Input className="placeholder-white/60 text-white" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+          <div className="relative">
+            <Input 
+              className="placeholder-white/60 text-white pl-10" 
+              type={showPassword ? "text" : "password"} 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="••••••••" 
+            />
+            <button
+              type="button"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
         <div className="flex items-center justify-between text-sm">
           <Link href="/forgot-password" className="text-gray-300 hover:underline">نسيت كلمة المرور؟</Link>

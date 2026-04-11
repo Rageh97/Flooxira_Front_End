@@ -75,7 +75,7 @@ interface Subscription {
 
 export default function MySubscriptionPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [token, setToken] = useState<string>("");
 
@@ -87,7 +87,10 @@ export default function MySubscriptionPage() {
   }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     
     loadSubscription();
   }, [token]);
@@ -107,7 +110,8 @@ export default function MySubscriptionPage() {
       if (result.success) {
         setSubscription(result.subscription);
       } else {
-        setError(result.message || 'فشل في تحميل معلومات الاشتراك');
+        // Just set subscription to null if call fails (likely not subscribed)
+        setSubscription(null);
       }
     } catch (e: any) {
       setError(e.message);
@@ -171,7 +175,7 @@ export default function MySubscriptionPage() {
           <p className="text-sm text-gray-300">معلومات اشتراكك وصلاحياتك</p>
         </div>
         <div className="text-center py-8">
-          <p className="text-gray-600">جاري التحميل...</p>
+          <p className="text-gray-600">جاري تحميل بيانات الاشتراك...</p>
         </div>
       </div>
     );
