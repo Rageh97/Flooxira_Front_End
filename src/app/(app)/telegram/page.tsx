@@ -46,13 +46,14 @@ import { usePermissions } from "@/lib/permissions";
 import Loader from "@/components/Loader";
 import { Calendar } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import AnimatedTutorialButton from "@/components/YoutubeButton";
 
 export default function TelegramBotPage() {
   const { canManageTelegram, canUseTelegramAI, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
-     const { showSuccess, showError } = useToast();
+  const router = useRouter();
+  const { showSuccess, showError } = useToast();
 
   const [loading, setLoading] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -223,18 +224,8 @@ export default function TelegramBotPage() {
 
 
 
-  if (hasActiveSubscription && !canManageTelegram()) {
-    return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold text-white">إدارة التليجرام</h1>
-        <NoActiveSubscription 
-          heading=""
-          cardTitle="ليس لديك صلاحية إدارة التليجرام"
-          description="باقتك الحالية أو صلاحياتك لا تشمل إدارة التليجرام"
-        />
-      </div>
-    );
-  }
+  // REMOVED: Blocking early return. Users can now see the Telegram UI.
+  const hasTelegramPermission = canManageTelegram();
 
   async function loadKnowledgeBase() {
     try {
@@ -296,6 +287,11 @@ export default function TelegramBotPage() {
   }
 
   async function saveBotSettingsUI() {
+    if (!canManageTelegram()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة التليجرام لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       await updateBotSettings(token, {
         autoReplyEnabled,
@@ -314,6 +310,11 @@ export default function TelegramBotPage() {
   }
 
   async function loadContacts() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setLoading(true);
       const res = await telegramBotGetContacts(token);
@@ -337,6 +338,11 @@ export default function TelegramBotPage() {
   }
 
   async function createCampaign() {
+    if (!canManageTelegram()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة التليجرام لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
+      return;
+    }
     if (selectedTargets.length === 0 || !campaignMessage.trim()) {
       showError('اختر هدف واحد على الأقل وأدخل رسالة');
       return;
@@ -365,6 +371,11 @@ export default function TelegramBotPage() {
   }
 
   async function sendCampaignNow() {
+    if (!canManageTelegram()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة التليجرام لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
+      return;
+    }
     if (selectedTargets.length === 0 || !campaignMessage.trim()) {
       showError('اختر محادثة على الأقل وأدخل رسالة');
       return;
@@ -385,6 +396,11 @@ export default function TelegramBotPage() {
   }
 
   async function loadChatInfo() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!chatId) return;
     try {
       setLoading(true);
@@ -401,6 +417,11 @@ export default function TelegramBotPage() {
   }
 
   async function loadChatAdmins() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!chatId) return;
     try {
       setLoading(true);
@@ -417,6 +438,11 @@ export default function TelegramBotPage() {
   }
 
   async function promoteMember() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!chatId || !promoteMemberId) return;
     try {
       setLoading(true);
@@ -434,6 +460,11 @@ export default function TelegramBotPage() {
   }
 
   async function loadUpdates() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setLoading(true);
       const res = await telegramBotGetUpdates(token);
@@ -449,6 +480,11 @@ export default function TelegramBotPage() {
   }
 
   async function loadChatMembers() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!chatId) return;
     try {
       setLoading(true);
@@ -469,6 +505,11 @@ export default function TelegramBotPage() {
   }
 
   async function exportMembers() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!chatId) return;
     try {
       setLoading(true);
@@ -484,6 +525,11 @@ export default function TelegramBotPage() {
   }
 
   async function loadBotChats() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setLoadingChats(true);
       const res = await telegramBotGetBotChats(token);
@@ -497,6 +543,11 @@ export default function TelegramBotPage() {
   }
 
   async function handleFileUpload() {
+    if (!canManageTelegram()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة التليجرام لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
+      return;
+    }
     if (!file) return;
     
     try {
@@ -517,6 +568,11 @@ export default function TelegramBotPage() {
   }
 
   const handleSyncGroups = async () => {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setIsSyncingGroups(true);
       const res = await syncTelegramGroups(token);
@@ -536,6 +592,11 @@ export default function TelegramBotPage() {
   };
 
   async function handleDeleteEntry(id: number) {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       await deleteKnowledgeEntry(token, id);
       await loadKnowledgeBase();
@@ -545,6 +606,11 @@ export default function TelegramBotPage() {
   }
 
   async function saveOpenAISettings() {
+    if (!canManageTelegram()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة التليجرام لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setLoading(true);
       // Save OpenAI key and auto-response settings
@@ -655,6 +721,11 @@ export default function TelegramBotPage() {
                   className="primary-button after:bg-red-700 text-white px-8 py-3 rounded-lg font-medium transition-colors"
                   disabled={loading}
                     onClick={async () => {
+                      if (!canManageTelegram() && !permissionsLoading) {
+                        showError("يجب الاشتراك في باقة لتفعيل الميزة");
+                        router.push('/plans/custom');
+                        return;
+                      }
                       try {
                         setLoading(true);
                       const res = await telegramBotDisconnect(token);
@@ -745,6 +816,11 @@ export default function TelegramBotPage() {
                    className={`${!botToken ? 'primary-button after:bg-[#011910]' : 'primary-button'} w-50 text-white py-3 rounded-lg font-medium transition-colors`}
                   disabled={loading || !botToken}
                   onClick={async () => {
+                    if (!canManageTelegram()) {
+                      showError("يجب الاشتراك في باقة تشمل إدارة التليجرام لتنفيذ هذا الإجراء");
+                      router.push('/plans/custom');
+                      return;
+                    }
                     try {
                       setLoading(true);
                       const res = await telegramBotConnect(token, botToken);

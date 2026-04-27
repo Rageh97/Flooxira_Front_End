@@ -21,7 +21,7 @@ export default function AskAIPage() {
   const [stats, setStats] = useState<AIStats | null>(null);
   const [toolSearchQuery, setToolSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const { loading: permissionsLoading } = usePermissions();
+  const { loading: permissionsLoading, canUseAI } = usePermissions();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -266,10 +266,10 @@ export default function AskAIPage() {
             )}
             <button 
               className="hidden lg:flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-6 py-3 rounded-[20px] transition-all whitespace-nowrap"
-              onClick={() => router.push('/ask-ai/plans')}
+              onClick={() => router.push('/plans/custom')}
             >
               <Sparkles className="w-5 h-5" />
-              <span className="font-bold">باقات AI </span>
+              <span className="font-bold">شحن الرصيد  </span>
             </button>
           </div>
         </div>
@@ -298,11 +298,11 @@ export default function AskAIPage() {
             <span className="font-bold">أدوات الميديا</span>
           </Button>
           <Button
-            onClick={() => router.push('/ask-ai/plans')}
+            onClick={() => router.push('/plans/custom')}
             className="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 px-4 py-2 rounded-[20px] transition-all whitespace-nowrap text-xs"
           >
             <Sparkles className="w-4 h-4" />
-            <span className="font-bold">الباقات</span>
+            <span className="font-bold">شحن الرصيد</span>
           </Button>
         </div>
 

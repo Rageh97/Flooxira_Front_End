@@ -7,11 +7,15 @@ import { listTags, sendCampaignToTag } from "@/lib/tagsApi";
 import { useToast } from "@/components/ui/toast-provider";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, Info } from "lucide-react";
+import { usePermissions } from "@/lib/permissions";
+import { useRouter } from "next/navigation";
 
 export default function WhatsAppCampaignsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const { showSuccess, showError } = useToast();
+  const { canManageWhatsApp, loading: permissionsLoading } = usePermissions();
+  const router = useRouter();
   
   // Loading states for operations
   const [isStartingCampaign, setIsStartingCampaign] = useState(false);
@@ -200,6 +204,11 @@ export default function WhatsAppCampaignsPage() {
   }
 
   async function handleCancelCampaignSchedule(id: number) {
+    if (!canManageWhatsApp() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setCancellingScheduleId(id);
       const res = await cancelWhatsAppSchedule(token, id);
@@ -217,6 +226,11 @@ export default function WhatsAppCampaignsPage() {
   }
 
   async function handleResumeCampaignSchedule(id: number) {
+    if (!canManageWhatsApp() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setResumingScheduleId(id);
       const res = await resumeWhatsAppSchedule(token, id);
@@ -234,6 +248,11 @@ export default function WhatsAppCampaignsPage() {
   }
 
   function handleStartCampaign() {
+    if (!canManageWhatsApp() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     // التحقق من حد الحملة اليومية
     if (hasActiveCampaignToday()) {
       showError("تنبيه - حد الحملات اليومي", "يُسمح بتفعيل حملة واحدة فقط في اليوم حفاظاً على سياسة الاستخدام وتجنب تقييد الرقم.");
@@ -324,6 +343,11 @@ export default function WhatsAppCampaignsPage() {
   }
 
   function handleSendToTag() {
+    if (!canManageWhatsApp() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     // التحقق من حد الحملة اليومية
     if (hasActiveCampaignToday()) {
       showError("تنبيه - حد الحملات اليومي", "يُسمح بتفعيل حملة واحدة فقط في اليوم حفاظاً على سياسة الاستخدام وتجنب تقييد الرقم.");

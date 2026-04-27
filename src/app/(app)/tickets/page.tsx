@@ -61,6 +61,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { io, Socket } from "socket.io-client";
 import AnimatedTutorialButton from "@/components/YoutubeButton";
 import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -130,6 +131,7 @@ interface KnowledgeBase {
 const DEFAULT_WIDGET_ICON = "https://i.ibb.co/9HzxNrwg/1.gif";
 
 export default function TicketsPage() {
+  const router = useRouter();
   const [token, setToken] = useState("");
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -505,9 +507,9 @@ export default function TicketsPage() {
       window.location.href = '/sign-in';
       return;
     }
-    if (!hasActiveSubscription) {
-      showError("يجب الاشتراك في باقة لتفعيل الميزة");
-      window.location.href = '/plans';
+    if (!canUseLiveChat()) {
+      showError("يجب الاشتراك في باقة تشمل لايف شات والتذاكر لتنفيذ هذا الإجراء");
+      window.location.href = '/plans/custom';
       return;
     }
     const content = inputMessage.trim();
@@ -593,6 +595,11 @@ export default function TicketsPage() {
   };
 
   const updateTicketStatus = async (ticketId: number, status: string) => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       await apiFetch<any>(`/api/dashboard/tickets/${ticketId}/status`, {
         method: "PUT",
@@ -611,6 +618,11 @@ export default function TicketsPage() {
   };
 
   const copyWidgetCode = async () => {
+    if (!canUseLiveChat()) {
+      showError("يجب الاشتراك في باقة تشمل لايف شات والتذاكر لتنفيذ هذا الإجراء");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       await navigator.clipboard.writeText(widgetCode);
       setCopied(true);
@@ -674,6 +686,11 @@ export default function TicketsPage() {
   };
 
   const saveWidgetSettings = async (override?: typeof widgetSettings) => {
+    if (!canUseLiveChat()) {
+      showError("يجب الاشتراك في باقة تشمل لايف شات والتذاكر لتنفيذ هذا الإجراء");
+      window.location.href = '/plans/custom';
+      return;
+    }
     setSavingSettings(true);
     try {
       const payload = override ?? widgetSettings;
@@ -768,6 +785,11 @@ export default function TicketsPage() {
   };
 
   const saveAiSettings = async () => {
+    if (!canUseLiveChat()) {
+      showError("يجب الاشتراك في باقة تشمل لايف شات والتذاكر لتنفيذ هذا الإجراء");
+      window.location.href = '/plans/custom';
+      return;
+    }
     setSavingAiSettings(true);
     try {
       await apiFetch<any>(
@@ -787,6 +809,9 @@ export default function TicketsPage() {
   };
 
   const loadWhatsappGroups = async () => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      return;
+    }
     if (!token) return;
     setLoadingGroups(true);
     try {
@@ -912,6 +937,11 @@ export default function TicketsPage() {
   };
 
   const handleUpload = async () => {
+    if (!canUseLiveChat()) {
+      showError("يجب الاشتراك في باقة تشمل لايف شات والتذاكر لتنفيذ هذا الإجراء");
+      window.location.href = '/plans/custom';
+      return;
+    }
     if (!selectedFile || !token) {
       showError("خطأ", "يرجى اختيار ملف أولاً");
       return;
@@ -949,6 +979,11 @@ export default function TicketsPage() {
   };
 
   const confirmDeleteKB = async () => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!deletingKB) return;
 
     try {
@@ -970,6 +1005,11 @@ export default function TicketsPage() {
   };
 
   const handleToggleKB = async (kbId: number) => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       const data = await apiFetch<any>(
         `/api/dashboard/knowledge-bases/${kbId}/toggle`,
@@ -1007,6 +1047,11 @@ export default function TicketsPage() {
   };
 
   const confirmDeleteTicket = async () => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!deletingTicket) return;
 
     try {
@@ -1069,6 +1114,7 @@ export default function TicketsPage() {
     }
   };
 
+  const hasLiveChatPermission = canUseLiveChat();
   const filteredTickets = tickets.filter((ticket) => {
     // Filter by status first
     if (statusFilter !== "all" && ticket.status !== statusFilter) {
@@ -1098,16 +1144,8 @@ export default function TicketsPage() {
     );
   }
 
-  if (hasActiveSubscription && !canUseLiveChat()) {
-    return (
-      <NoActiveSubscription
-        heading="ميزة Live Chat والتذاكر"
-        featureName="ميزة Live Chat والتذاكر"
-        description="هذه الميزة غير متوفرة في باقتك الحالية."
-        className="h-screen flex items-center justify-center"
-      />
-    );
-  }
+  // REMOVED: Blocking early return. Users can now see the Tickets UI.
+  const hasLiveChatPerm = canUseLiveChat();
 
   return (
     <div  className=" w-full space-y-3">
@@ -1912,7 +1950,7 @@ export default function TicketsPage() {
                 <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 text-center">
                   <p className="text-sm text-yellow-500 font-bold mb-2">هذه الميزة متاحة للمشتركين فقط</p>
                   <p className="text-xs text-gray-400 mb-4">اشترك الآن للحصول على كود التضمين وتفعيل الدردشة المباشرة في موقعك</p>
-                  <Button onClick={() => (window.location.href = "/plans")} className="bg-green-600 hover:bg-green-700 h-8 text-xs">
+                  <Button onClick={() => (window.location.href = "/plans/custom")} className="bg-green-600 hover:bg-green-700 h-8 text-xs">
                     تصفح الباقات
                   </Button>
                 </div>

@@ -35,6 +35,7 @@ import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 import { BorderBeam } from "@/components/ui/border-beam";
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
@@ -65,6 +66,7 @@ export default function AvatarPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -125,11 +127,18 @@ export default function AvatarPage() {
 
   const handleGenerate = async () => {
     if (!previewUrl) return showError("تنبيه", "ارفع صورة واضحة لوجهك!");
-    if (!hasActiveSubscription) {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
 
     const placeholderId = Date.now().toString();
     const styleConfig = AVATAR_STYLES.find(s => s.id === selectedStyle);
@@ -557,6 +566,11 @@ export default function AvatarPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Modal */}
       <SubscriptionRequiredModal

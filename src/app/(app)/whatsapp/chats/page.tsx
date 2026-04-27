@@ -28,6 +28,7 @@ import {
   escalateChat,
   ChatEscalation
 } from "@/lib/escalationApi";
+import SignInModal from "@/components/SignInModal";
 
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Smile, Plus, SendHorizontal } from "lucide-react";
@@ -137,13 +138,14 @@ interface WhatsAppContact {
 }
 
 export default function WhatsAppChatsPage() {
-  const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState("");
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const { user, loading: authLoading } = useAuth();
-  const { hasActiveSubscription, permissionsLoading } = usePermissions();
+  const { hasActiveSubscription, loading: permissionsLoading, canManageWhatsApp } = usePermissions();
   // Toast function
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const toast = document.createElement('div');
@@ -177,6 +179,16 @@ export default function WhatsAppChatsPage() {
     }, 5000);
   };
   const [testMessage, setTestMessage] = useState("");
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedToken = localStorage.getItem("auth_token") || "";
+      setToken(storedToken);
+      if (!storedToken) {
+        setIsSignInOpen(true);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (inputRef.current && !testMessage) {
       inputRef.current.style.height = '48px';
@@ -936,7 +948,7 @@ export default function WhatsAppChatsPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     if (!selectedTagId || !selectedContactForTag) return;
@@ -964,7 +976,7 @@ export default function WhatsAppChatsPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     if (!newTagName.trim()) return;
@@ -1039,13 +1051,12 @@ export default function WhatsAppChatsPage() {
 
   async function handleSendMessage(phoneNumber?: string, message?: string) {
     if (!token) {
-      showToast("يجب تسجيل الدخول أولاً", 'error');
-      window.location.href = '/sign-in';
+      setIsSignInOpen(true);
       return;
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
 
@@ -1182,13 +1193,12 @@ export default function WhatsAppChatsPage() {
 
   async function handleStartNewChat() {
     if (!token) {
-      showToast("يجب تسجيل الدخول أولاً", 'error');
-      window.location.href = '/sign-in';
+      setIsSignInOpen(true);
       return;
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     if (!newChatNumber.trim() || !newChatMessage.trim()) {
@@ -1236,13 +1246,12 @@ export default function WhatsAppChatsPage() {
 
   async function handleSendMedia(contactNumber: string) {
     if (!token) {
-      showToast("يجب تسجيل الدخول أولاً", 'error');
-      window.location.href = '/sign-in';
+      setIsSignInOpen(true);
       return;
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     if (!mediaFile) return;
@@ -1417,7 +1426,7 @@ export default function WhatsAppChatsPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     try {
@@ -1445,7 +1454,7 @@ export default function WhatsAppChatsPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     try {
@@ -1473,7 +1482,7 @@ export default function WhatsAppChatsPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     if (!selectedContact || !token) return;
@@ -1737,6 +1746,11 @@ export default function WhatsAppChatsPage() {
                     size="sm" 
                     onClick={async () => {
                       if (!selectedContact) return;
+                      if (!canManageWhatsApp() && !permissionsLoading) {
+                        showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+                        window.location.href = '/plans/custom';
+                        return;
+                      }
                       try {
                         const res = await resolveEscalationByContact(selectedContact);
                         if (res.success) {
@@ -1768,6 +1782,11 @@ export default function WhatsAppChatsPage() {
                     size="sm" 
                     onClick={async () => {
                       if (!activeNote) return;
+                      if (!canManageWhatsApp() && !permissionsLoading) {
+                        showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+                        window.location.href = '/plans/custom';
+                        return;
+                      }
                       try {
                         await resolveChatNote(token, activeNote.id);
                         setActiveNote(null);
@@ -2342,6 +2361,9 @@ export default function WhatsAppChatsPage() {
         </div>
       </div>
 
+      {/* Sign In Modal */}
+      <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
+
       {/* Note Modal */}
       {showNoteModal && (typeof window !== 'undefined') && createPortal(
         <div className="fixed inset-0 z-[1000000000] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
@@ -2393,6 +2415,11 @@ export default function WhatsAppChatsPage() {
                 <button 
                   onClick={async () => {
                     if (!selectedContact || !noteText.trim()) return;
+                    if (!canManageWhatsApp() && !permissionsLoading) {
+                      showToast("يجب الاشتراك في باقة لتفعيل الميزة", 'error');
+                      window.location.href = '/plans/custom';
+                      return;
+                    }
                     try {
                       setSavingNote(true);
                       const employee = selectedMentionEmployeeId !== "none" ? employees.find(emp => emp.id.toString() === selectedMentionEmployeeId) : null;
@@ -2648,6 +2675,10 @@ export default function WhatsAppChatsPage() {
         document.body
       )}
 
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
     </>
   );
 }

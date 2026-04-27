@@ -28,6 +28,7 @@ import { getBotStatus, pauseBot, resumeBot } from "@/lib/botControlApi";
 import { listTags, addContactToTag, createTag } from "@/lib/tagsApi";
 import { getSocket } from "@/lib/socket";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/permissions";
 import { createPortal } from "react-dom";
 import EmojiPicker, { EmojiClickData, Theme } from "emoji-picker-react";
 import { 
@@ -120,6 +121,7 @@ export default function InboxPage() {
   const [sending, setSending] = useState(false);
   const { showSuccess, showError } = useToast();
   const { user } = useAuth();
+  const { canUseLiveChat, loading: permissionsLoading } = usePermissions();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
@@ -307,6 +309,11 @@ export default function InboxPage() {
   }, [token, selectedConversation]);
 
   const handleWaPauseBot = async (mins: number) => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       const res = await pauseBot(mins);
       if(res.success) {
@@ -317,6 +324,11 @@ export default function InboxPage() {
   };
 
   const handleWaResumeBot = async () => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       const res = await resumeBot();
       if(res.success) {
@@ -327,6 +339,11 @@ export default function InboxPage() {
   };
 
   const handleTgPauseBot = async (mins: number) => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       const res = await telegramBotPause(token, mins);
       if(res.success) {
@@ -337,6 +354,11 @@ export default function InboxPage() {
   };
 
   const handleTgResumeBot = async () => {
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       const res = await telegramBotResume(token);
       if(res.success) {
@@ -348,6 +370,11 @@ export default function InboxPage() {
 
   const handleToggleAiBlock = async () => {
     if (!selectedConversation || !token) return;
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       const res = await toggleAiBlock(token, selectedConversation.contactId);
       if (res.success) {
@@ -366,6 +393,11 @@ export default function InboxPage() {
 
   const handleResolveEscalation = async () => {
     if(!selectedConversation) return;
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       const { platform, contactId } = selectedConversation;
       const res = await fetch(`/api/escalation/resolve-contact/${contactId}?platform=${platform}`, {
@@ -396,6 +428,11 @@ export default function InboxPage() {
 
   async function handleAddToTag() {
     if (!selectedTagId || !selectedConversation) return;
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       setTagLoading(true);
       const res = await addContactToTag(selectedTagId, { contactNumber: selectedConversation.contactId });
@@ -429,6 +466,11 @@ export default function InboxPage() {
 
   async function handleAssignTicket() {
     if (!selectedConversation || selectedAssignee === "none") return;
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       setAssignLoading(true);
       const res = await apiFetch<{ success: boolean; ok?: boolean }>(`/api/dashboard/tickets/${selectedConversation.contactId}/assign`, {
@@ -452,6 +494,11 @@ export default function InboxPage() {
 
   async function handleUpdateTicketStatus(status: string) {
     if (!selectedConversation) return;
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
     try {
       const res = await apiFetch<{ success: boolean; ok?: boolean }>(`/api/dashboard/tickets/${selectedConversation.contactId}/status`, {
         method: 'PUT',
@@ -460,7 +507,7 @@ export default function InboxPage() {
       });
       if (res.success || res.ok) {
         showSuccess(status === 'closed' ? "تم إغلاق المحادثة بنجاح" : "تم إعادة فتح المحادثة");
-        setSelectedConversation(prev => prev ? { ...prev, status: status as any } : null);
+        setSelectedConversation((prev: any) => prev ? { ...prev, status: status as any } : null);
         fetchConversations();
       } else {
         showError("فشل تحديث حالة المحادثة");
@@ -606,6 +653,11 @@ export default function InboxPage() {
 
   const handleSendMessage = async () => {
     if ((!newMessage.trim() && !selectedFile) || !selectedConversation) return;
+    if (!canUseLiveChat() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      window.location.href = '/plans/custom';
+      return;
+    }
 
     setSending(true);
     try {
@@ -1590,6 +1642,11 @@ export default function InboxPage() {
                 <button 
                   onClick={async () => {
                     if (!selectedConversation || !noteText.trim()) return;
+                    if (!canUseLiveChat() && !permissionsLoading) {
+                      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+                      window.location.href = '/plans/custom';
+                      return;
+                    }
                     try {
                       setSavingNote(true);
                       const res = await createChatNote(token, { contactNumber: selectedConversation.contactId, note: noteText.trim() });

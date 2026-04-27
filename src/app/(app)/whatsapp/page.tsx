@@ -599,13 +599,11 @@ export default function WhatsAppPage() {
       return;
     }
     // Removed direct block to allow view-only access
-    /*
-    if (!hasActiveSubscription) {
-      showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
-      router.push('/plans');
+    if (!canManageWhatsApp()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة الواتساب لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
       return;
     }
-    */
     try {
       setLoading(true);
       setError("");
@@ -728,13 +726,11 @@ export default function WhatsAppPage() {
       return;
     }
     // Removed direct block to allow view-only access
-    /*
-    if (!hasActiveSubscription) {
-      showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
-      router.push('/plans');
+    if (!canManageWhatsApp()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة الواتساب لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
       return;
     }
-    */
     try {
       setLoading(true);
       const result = await toggleWhatsAppBotStatus(token);
@@ -755,9 +751,9 @@ export default function WhatsAppPage() {
       router.push('/sign-in');
       return;
     }
-    if (!hasActiveSubscription && !permissionsLoading) {
-      showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
-      router.push('/plans');
+    if (!canManageWhatsApp()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة الواتساب لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
       return;
     }
     if (!testPhoneNumber || !testMessage) {
@@ -872,7 +868,7 @@ export default function WhatsAppPage() {
                       }
                       if (!hasActiveSubscription && !permissionsLoading) {
                         showError("يجب الاشتراك في باقة لتفعيل ميزة الواتساب");
-                        router.push('/plans');
+                        router.push('/plans/custom');
                         return;
                       }
                       startSession();

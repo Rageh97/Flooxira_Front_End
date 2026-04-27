@@ -8,9 +8,13 @@ import LinkedInPosts from "./components/LinkedInPosts";
 import LinkedInAnalytics from "./components/LinkedInAnalytics";
 import LinkedInCompanies from "./components/LinkedInCompanies";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/toast-provider";
 
 export default function LinkedInPage() {
   const { hasPlatformAccess, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const router = useRouter();
+  const { showError } = useToast();
   
   const [account, setAccount] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,7 +25,8 @@ export default function LinkedInPage() {
     load();
   }, []);
 
-  // Check permissions
+  // We now use Teaser UI, so no early returns based on subscriptions
+  // But we still show a loader while checking
   if (permissionsLoading) {
     return (
       <div className="space-y-8">
@@ -33,35 +38,9 @@ export default function LinkedInPage() {
     );
   }
 
-  if (!hasActiveSubscription) {
-    return (
-      <NoActiveSubscription 
-        heading="LinkedIn"
-        featureName="LinkedIn"
-        className="space-y-8"
-      />
-    );
-  }
 
-  if (!hasPlatformAccess('linkedin')) {
-    return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">LinkedIn</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية الوصول إلى LinkedIn</h3>
-            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل LinkedIn</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              ترقية الباقة
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
+
 
   async function load() {
     const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '';
@@ -76,6 +55,11 @@ export default function LinkedInPage() {
   }
 
   async function handleTest() {
+    if ((!hasActiveSubscription || !hasPlatformAccess('linkedin')) && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     const token = localStorage.getItem('auth_token');
     if (!token) return;
     const res = await testLinkedIn(token);
@@ -83,6 +67,11 @@ export default function LinkedInPage() {
   }
 
   async function handleDisconnect() {
+    if ((!hasActiveSubscription || !hasPlatformAccess('linkedin')) && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     const token = localStorage.getItem('auth_token');
     if (!token) return;
     await disconnectLinkedIn(token);
@@ -109,7 +98,14 @@ export default function LinkedInPage() {
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">Not connected</p>
               <Button 
-                onClick={() => startLinkedInOAuth()} 
+                onClick={() => {
+                  if ((!hasActiveSubscription || !hasPlatformAccess('linkedin')) && !permissionsLoading) {
+                    showError("يجب الاشتراك في باقة لتفعيل الميزة");
+                    router.push('/plans/custom');
+                    return;
+                  }
+                  startLinkedInOAuth();
+                }} 
                 disabled={loading} 
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >

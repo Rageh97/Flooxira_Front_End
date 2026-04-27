@@ -25,6 +25,7 @@ import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
@@ -48,6 +49,7 @@ export default function ImageEditPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -114,9 +116,12 @@ export default function ImageEditPage() {
   };
 
   const handleProcess = async () => {
-    // Check if user has active subscription OR remaining credits
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
     const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
-    if (!hasActiveSubscription && !hasCredits) {
+    if (!hasActiveSubscription && !hasCredits && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -531,6 +536,11 @@ export default function ImageEditPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Modal */}
       <SubscriptionRequiredModal

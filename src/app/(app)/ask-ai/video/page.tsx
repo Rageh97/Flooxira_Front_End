@@ -35,6 +35,7 @@ import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 const ASPECT_RATIOS = [
@@ -101,6 +102,7 @@ export default function TextToVideoPage() {
   const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -197,8 +199,9 @@ export default function TextToVideoPage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return showError("تنبيه", "أطلق العنان لخيالك واكتب وصفاً للفيديو!");
-    if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 50) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (!token) { setIsSignInOpen(true); return; }
+    if (!hasActiveSubscription && !permissionsLoading) { setSubscriptionModalOpen(true); return; }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 50) { setSubscriptionModalOpen(true); return; }
 
     const placeholderId = Date.now().toString();
     const placeholder: GeneratedVideo = {
@@ -318,8 +321,9 @@ export default function TextToVideoPage() {
 
   const handleAddAudio = async () => {
     if (!selectedVideo || !audioText.trim()) return showError("تنبيه", "يرجى كتابة النص الصوتي");
-    if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 30) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (!token) { setIsSignInOpen(true); return; }
+    if (!hasActiveSubscription && !permissionsLoading) { setSubscriptionModalOpen(true); return; }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 30) { setSubscriptionModalOpen(true); return; }
 
     setIsProcessing(true);
     try {
@@ -351,8 +355,9 @@ export default function TextToVideoPage() {
 
   const handleEnhanceVideo = async (enhancement: 'stabilize' | 'denoise' | 'upscale' | 'colorgrade') => {
     if (!selectedVideo) return;
-    if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 40) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (!token) { setIsSignInOpen(true); return; }
+    if (!hasActiveSubscription && !permissionsLoading) { setSubscriptionModalOpen(true); return; }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 40) { setSubscriptionModalOpen(true); return; }
 
     setIsProcessing(true);
     try {
@@ -884,6 +889,11 @@ export default function TextToVideoPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}

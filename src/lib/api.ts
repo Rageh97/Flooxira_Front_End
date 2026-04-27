@@ -1764,7 +1764,7 @@ export type SubscriptionRequest = {
   id: number;
   userId: number;
   planId: number;
-  paymentMethod: 'usdt' | 'coupon';
+  paymentMethod: 'usdt' | 'coupon' | 'edfapay';
   status: 'pending' | 'approved' | 'rejected';
   usdtWalletAddress?: string;
   receiptImage?: string;
@@ -1776,7 +1776,7 @@ export type SubscriptionRequest = {
   createdAt: string;
   updatedAt: string;
   Plan?: Plan;
-  User?: { id: number; name?: string; email: string };
+  user?: { id: number; name?: string; email: string };
 };
 
 export async function createSubscriptionRequest(token: string, payload: {
@@ -3324,5 +3324,64 @@ export async function calculateCustomPackagePrice(token: string, selectedFeature
     method: 'POST',
     authToken: token,
     body: JSON.stringify({ selectedFeatures }),
+  });
+}
+
+// ─── EdfaPay Payment Gateway ──────────────────────────────────────────────────
+
+export type PaymentBreakdownItem = {
+  featureKey: string;
+  label: string;
+  basePrice: number;
+  aiPrice: number;
+  totalPrice: number;
+  aiCount: number;
+  aiUnit: string;
+};
+
+export type InitiatePaymentPayload = {
+  selectedFeatures: SelectedFeature[];
+  totalPrice: number;
+  breakdownItems: PaymentBreakdownItem[];
+};
+
+export type InitiatePaymentResponse = {
+  success: boolean;
+  redirectUrl: string;
+  orderId: string;
+};
+
+export async function initiateEdfaPayment(
+  token: string,
+  payload: InitiatePaymentPayload,
+): Promise<InitiatePaymentResponse> {
+  return apiFetch<InitiatePaymentResponse>('/api/payment/initiate', {
+    method: 'POST',
+    authToken: token,
+    body: JSON.stringify(payload),
+  });
+}
+
+export type PaymentStatusResponse = {
+  success: boolean;
+  payment: {
+    orderId: string;
+    status: 'pending' | 'approved' | 'rejected';
+    edfaStatus: string | null;
+    transId: string | null;
+    paidAmount: string | null;
+    totalPrice: number | null;
+    currency: string;
+    createdAt: string;
+    processedAt: string | null;
+  };
+};
+
+export async function getPaymentStatus(
+  token: string,
+  orderId: string,
+): Promise<PaymentStatusResponse> {
+  return apiFetch<PaymentStatusResponse>(`/api/payment/status/${encodeURIComponent(orderId)}`, {
+    authToken: token,
   });
 }

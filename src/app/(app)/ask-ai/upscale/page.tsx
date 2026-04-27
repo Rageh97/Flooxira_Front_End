@@ -24,6 +24,7 @@ import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 import clsx from "clsx";
 
@@ -48,6 +49,7 @@ export default function UpscalePage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -117,11 +119,18 @@ export default function UpscalePage() {
 
   const handleProcess = async () => {
     if (!previewUrl) return showError("تنبيه", "يرجى اختيار صورة أولاً!");
-    if (!hasActiveSubscription) {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
 
     if (selectedFile) {
       const maxSize = 5 * 1024 * 1024;
@@ -530,6 +539,11 @@ export default function UpscalePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Modal */}
       <SubscriptionRequiredModal

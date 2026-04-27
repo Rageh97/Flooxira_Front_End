@@ -16,6 +16,8 @@ import { EmojiPickerModal } from "@/components/AnimatedEmoji";
 import { ArrowLeft } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast-provider";
+import { usePermissions } from "@/lib/permissions";
+import { useRouter } from "next/navigation";
 
 type Contact = {
   chatId: string;
@@ -44,6 +46,8 @@ export default function TelegramChatsPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "";
   const { user, loading } = useAuth();
   const { showSuccess, showError } = useToast();
+  const { canManageTelegram, permissionsLoading } = usePermissions();
+  const router = useRouter();
   
   // All state and refs at the top
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -139,6 +143,11 @@ export default function TelegramChatsPage() {
   };
 
   const handlePauseBot = async () => {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!token) return;
     try {
       const res = await telegramBotPause(token, 30);
@@ -154,6 +163,11 @@ export default function TelegramChatsPage() {
   };
 
   const handleResumeBot = async () => {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!token) return;
     try {
       const res = await telegramBotResume(token);
@@ -267,6 +281,11 @@ export default function TelegramChatsPage() {
   }, [history, activeChatId, loadingHistory]);
 
   async function handleResolve() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!token || !activeChatId) return;
     try {
       const res = await fetch(`/api/escalation/resolve-contact/${activeChatId}?platform=telegram`, {
@@ -286,6 +305,11 @@ export default function TelegramChatsPage() {
   }
 
   async function handleSend() {
+    if (!canManageTelegram() && !permissionsLoading) {
+      showError("يرجى ترقية اشتراكك لتتمكن من إرسال الرسائل");
+      router.push('/plans/custom');
+      return;
+    }
     if (sending || !token || !activeChatId || (!messageText.trim() && !selectedMedia)) return;
     
     try {

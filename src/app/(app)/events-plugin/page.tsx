@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
+import { useRouter } from "next/navigation";
 import {
   listEventsPluginConfigs,
   createEventsPluginConfig,
@@ -67,7 +68,8 @@ const EVENT_TYPES = [
 export default function EventsPluginPage() {
   const auth = useAuth();
   const { showSuccess, showError } = useToast();
-  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const { hasActiveSubscription, loading: permissionsLoading, canUseEventsPlugin } = usePermissions();
+  const router = useRouter();
   const token = auth.getToken() || "";
 
   const [configs, setConfigs] = useState<EventsPluginConfig[]>([]);
@@ -173,6 +175,11 @@ export default function EventsPluginPage() {
   };
 
   const handleCreateNew = async () => {
+    if (!canUseEventsPlugin() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       const res = await createEventsPluginConfig(token!, newPlatformData);
       setConfigs([res.config, ...configs]);
@@ -292,6 +299,8 @@ export default function EventsPluginPage() {
 
 function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: EventsPluginConfig, token: string, onUpdate: (c: EventsPluginConfig) => void, onDelete: (id: number) => void }) {
   const { showSuccess, showError } = useToast();
+  const { canUseEventsPlugin, loading: permissionsLoading } = usePermissions();
+  const router = useRouter();
   
   // Local state for this config
   const [activeLogs, setActiveLogs] = useState<EventLog[]>([]);
@@ -323,6 +332,11 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
   };
 
   const handleUpdate = async (updates: Partial<EventsPluginConfig>) => {
+    if (!canUseEventsPlugin() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       const res = await updateEventsPluginConfig(token, config.id, updates);
       onUpdate(res.config);
@@ -333,6 +347,11 @@ function EventConfigDetail({ config, token, onUpdate, onDelete }: { config: Even
   };
 
   const handleDelete = async () => {
+    if (!canUseEventsPlugin() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       setIsDeleting(true);
       await deleteEventsPluginConfig(token, config.id);

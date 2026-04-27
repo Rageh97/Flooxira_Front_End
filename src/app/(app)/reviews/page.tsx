@@ -16,6 +16,9 @@ import { API_URL } from "@/lib/api";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ReviewForm } from "@/components/ReviewForm";
+import { usePermissions } from "@/lib/permissions";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/toast-provider";
 
 type Review = {
   id: number;
@@ -43,6 +46,9 @@ type ReviewStats = {
 };
 
 export default function ReviewsPage() {
+  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const router = useRouter();
+  const { showError } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -327,7 +333,17 @@ export default function ReviewsPage() {
           </p>
           <Dialog>
             <DialogTrigger asChild>
-              <button className="primary-button mx-auto flex items-center justify-center gap-2">
+              <button 
+                onClick={(e) => {
+                  if (!hasActiveSubscription && !permissionsLoading) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showError("يجب الاشتراك في باقة لتتمكن من إضافة تقييم");
+                    router.push('/plans/custom');
+                  }
+                }}
+                className="primary-button mx-auto flex items-center justify-center gap-2"
+              >
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
                 اترك تقييمك

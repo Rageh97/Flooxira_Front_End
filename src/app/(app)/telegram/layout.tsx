@@ -35,19 +35,8 @@ export default function TelegramLayout({ children }: PropsWithChildren) {
     );
   }
 
-  // Check if user has Telegram management permission
-  if (hasActiveSubscription && !canManageTelegram()) {
-    return (
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-6 text-white text-right">إدارة التليجرام</h1>
-        <NoActiveSubscription 
-          heading=""
-          cardTitle="ليس لديك صلاحية إدارة التليجرام"
-          description="باقتك الحالية أو صلاحياتك لا تشمل إدارة التليجرام"
-        />
-      </div>
-    );
-  }
+  // Removed blocking early return for !canManageTelegram()
+  // const hasTelegramPermission = canManageTelegram();
 
   return (
     <div className="space-y-6">

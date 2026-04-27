@@ -48,6 +48,7 @@ import { usePermissions } from "@/lib/permissions";
 import { useAuth } from "@/lib/auth";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import { useToast } from "@/components/ui/toast-provider";
 import { useTutorials } from "@/hooks/useTutorials";
@@ -106,6 +107,7 @@ const PLATFORMS = [
 export default function EmployeesPage() {
   const { permissions, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   const { getToken } = useAuth();
+  const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stats, setStats] = useState<EmployeeStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -224,9 +226,9 @@ export default function EmployeesPage() {
       window.setTimeout(() => window.location.href = "/sign-in", 1500);
       return false;
     }
-    if (!hasActiveSubscription && !permissionsLoading) {
-      showError("يجب الاشتراك في باقة لتفعيل الميزة");
-      window.setTimeout(() => window.location.href = "/plans", 1500);
+    if (!canManageEmployees) {
+      showError("يجب الاشتراك في باقة تشمل إدارة الموظفين لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
       return false;
     }
     return true;
@@ -422,15 +424,8 @@ export default function EmployeesPage() {
     loadEmployees();
   }, [hasActiveSubscription, canManageEmployees, loadEmployees, loadStats]);
 
-  if (hasActiveSubscription && !canManageEmployees) {
-    return (
-      <NoActiveSubscription
-      heading="" 
-        featureName="إدارة الموظفين"
-        className="container mx-auto p-6"
-      />
-    );
-  }
+  // REMOVED: Blocking view for !canManageEmployees. Users can now see the layout.
+    const hasEmployeePermission = canManageEmployees;
 
   return (
     <div className="w-full space-y-6">

@@ -24,6 +24,7 @@ import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 import clsx from "clsx";
 
@@ -47,6 +48,7 @@ export default function RestorePage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -115,10 +117,18 @@ export default function RestorePage() {
 
   const handleProcess = async () => {
     if (!previewUrl) return showError("تنبيه", "يرجى اختيار صورة!");
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
     
     // Check if user has active subscription OR remaining credits
     const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
-    if (!hasActiveSubscription && !hasCredits) {
+    if (!hasActiveSubscription && !hasCredits && !permissionsLoading) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -520,6 +530,11 @@ export default function RestorePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Modal */}
       <SubscriptionRequiredModal

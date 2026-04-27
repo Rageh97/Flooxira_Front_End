@@ -453,7 +453,7 @@ function SettingsContent() {
     }
     if (!hasActiveSubscription) {
       showError('يجب الاشتراك في باقة لتفعيل الميزة');
-      window.location.href = '/plans';
+      window.location.href = '/plans/custom';
       return;
     }
     if (!userId) {
@@ -650,7 +650,7 @@ function SettingsContent() {
                 </p>
                 <Button 
                   size="sm" 
-                  onClick={() => window.location.href = '/plans'}
+                  onClick={() => window.location.href = '/plans/custom'}
                   className="bg-red-600 hover:bg-red-700"
                 >
                   ترقية الباقة

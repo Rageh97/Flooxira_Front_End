@@ -12,10 +12,11 @@ import {
   deleteWhatsAppSchedule,
   updatePlatformPostSchedule,
   deletePlatformPostSchedule,
-  telegramMonthlySchedules,
   telegramUpdateSchedule,
-  telegramDeleteSchedule
+  telegramDeleteSchedule,
+  telegramMonthlySchedules
 } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import Loader from "@/components/Loader";
 import NoActiveSubscription from "@/components/NoActiveSubscription";
 import { useTutorials } from "@/hooks/useTutorials";
@@ -28,6 +29,7 @@ import AnimatedTutorialButton from "@/components/YoutubeButton";
 export default function SchedulePage() {
   const { showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const router = useRouter();
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [monthlySchedules, setMonthlySchedules] = useState<any>({ whatsapp: [], posts: [], telegram: [] });
@@ -182,6 +184,11 @@ export default function SchedulePage() {
   };
 
   const handleUpdateSchedule = async (id: number, newDate: string, newContent?: string, newMedia?: File | null) => {
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!token) return;
     try {
       await updateWhatsAppSchedule(token, id, newDate, newContent, newMedia);
@@ -194,6 +201,11 @@ export default function SchedulePage() {
   };
 
   const handleDeleteSchedule = async (id: number) => {
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!token) return;
     try {
       await deleteWhatsAppSchedule(token, id);
@@ -206,6 +218,11 @@ export default function SchedulePage() {
   };
 
   const handleUpdatePost = async (id: number, newDate: string, newContent?: string, newMedia?: File | null) => {
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!token) return;
     try {
       await updatePlatformPostSchedule(token, id, { 
@@ -222,6 +239,11 @@ export default function SchedulePage() {
   };
 
   const handleDeletePost = async (id: number) => {
+    if (!hasActiveSubscription && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!token) return;
     try {
       await deletePlatformPostSchedule(token, id);
@@ -628,6 +650,11 @@ export default function SchedulePage() {
                                 handleUpdatePost(item.id, item.__newDate || item.scheduledAt, item.__newContent, item.__newMedia);
                               } else {
                                 // Telegram schedule update
+                                if (!hasActiveSubscription && !permissionsLoading) {
+                                  showError("يجب الاشتراك في باقة لتفعيل الميزة");
+                                  router.push('/plans/custom');
+                                  return;
+                                }
                                 const newDate = item.__newDate || item.scheduledAt;
                                 telegramUpdateSchedule(token as string, item.id, newDate, item.__newContent ? { message: item.__newContent } : undefined)
                                   .then(()=> { toast.success('تم تحديث جدولة تليجرام بنجاح'); handleLoadMonthlySchedules(); setIsEditModalOpen(false); })
@@ -643,6 +670,11 @@ export default function SchedulePage() {
                           className="primary-button after:bg-red-500 text-xs sm:text-sm"
                           variant="destructive" 
                           onClick={() => {
+                            if (!hasActiveSubscription && !permissionsLoading) {
+                              showError("يجب الاشتراك في باقة لتفعيل الميزة");
+                              router.push('/plans/custom');
+                              return;
+                            }
                             if (type === 'whatsapp') {
                               handleDeleteSchedule(item.id);
                             } else {

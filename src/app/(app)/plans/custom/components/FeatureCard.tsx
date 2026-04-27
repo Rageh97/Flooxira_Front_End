@@ -143,7 +143,7 @@ function FeatureCardComponent({
                     e.stopPropagation();
                     onBundlesChange(aiMessageBundles - 1);
                   }}
-                  disabled={aiMessageBundles <= 0}
+                  disabled={aiMessageBundles <= (feature.minUnits || 0)}
                   className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors disabled:opacity-30"
                 >
                   <Minus className="h-3 w-3 text-white" />

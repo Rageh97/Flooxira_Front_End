@@ -101,19 +101,8 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
 
 
 
-  // Check if user has WhatsApp management permission
-  if (hasActiveSubscription && !canManageWhatsApp()) {
-    return (
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-6 text-white text-right">إدارة الواتساب</h1>
-        <NoActiveSubscription 
-          heading=""
-          cardTitle="ليس لديك صلاحية إدارة الواتساب"
-          description="باقتك الحالية أو صلاحياتك لا تشمل إدارة الواتساب"
-        />
-      </div>
-    );
-  }
+  // REMOVED: Blocked access if no permission. Now we allow users to see the UI but restrict actions.
+  const hasWhatsAppPermission = canManageWhatsApp();
 
   // Check if messages have run out
   if (hasActiveSubscription && messagesRemaining === 0) {
@@ -140,7 +129,7 @@ export default function WhatsAppLayout({ children }: PropsWithChildren) {
             </div>
             <div className="space-y-3">
               <Button 
-                onClick={() => window.location.href = '/plans'}
+                onClick={() => window.location.href = '/plans/custom'}
                 className="w-full bg-red-600 hover:bg-red-700"
               >
                 ترقية الباقة

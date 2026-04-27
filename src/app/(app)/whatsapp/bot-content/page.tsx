@@ -52,7 +52,7 @@ function EditableCell({ value, onChange, type = 'text' }: EditableCellProps) {
 
 export default function BotContentPage() {
   const { user, loading: authLoading } = useAuth();
-  const { hasActiveSubscription, permissionsLoading } = usePermissions();
+  const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
   const router = useRouter();
   const showToast = (message: string, type: 'success' | 'error' | 'info') => {
     const toast = document.createElement('div');
@@ -193,7 +193,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     if (!newFieldName.trim()) return;
@@ -245,7 +245,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     if (!editFieldName.trim()) {
@@ -292,7 +292,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
 
@@ -324,7 +324,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     try {
@@ -355,7 +355,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     try {
@@ -392,7 +392,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
 
@@ -425,7 +425,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     try {
@@ -458,7 +458,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     const file = event.target.files?.[0];
@@ -490,7 +490,7 @@ export default function BotContentPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showToast("يجب الاشتراك في باقة لتفعيل الميزة", "error");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     try {

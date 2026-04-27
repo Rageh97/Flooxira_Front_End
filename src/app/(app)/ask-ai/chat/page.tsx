@@ -33,6 +33,7 @@ import { clsx } from "clsx";
 import { useToast } from "@/components/ui/toast-provider";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
+import SignInModal from "@/components/SignInModal";
 import {
   getAIConversations,
   createAIConversation,
@@ -74,6 +75,7 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const [userName, setUserName] = useState("");
   // جديد: دعم المرفقات
   const [attachments, setAttachments] = useState<{type: 'image'; data: string; mimeType: string; preview: string}[]>([]);
@@ -236,7 +238,11 @@ export default function ChatPage() {
   };
 
   const handleCreateConversation = async () => {
-    if (!hasActiveSubscription) {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -296,20 +302,17 @@ export default function ChatPage() {
   };
 
   const handleSendMessage = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
     if (!token) {
-      showError("يجب تسجيل الدخول أولاً");
-      router.push('/sign-in');
+      setIsSignInOpen(true);
       return;
     }
-    if (!hasActiveSubscription) {
-      showError("يجب الاشتراك في باقة لتفعيل ميزات الذكاء الاصطناعي");
-      router.push('/plans');
+    if (!hasActiveSubscription && !permissionsLoading) {
+      setSubscriptionModalOpen(true);
       return;
     }
 
     if (isOutOfCredits) {
-      showError("تنبيه", "لقد استنفدت كريديت AI الخاص بك. يرجى ترقية باقتك.");
+      setSubscriptionModalOpen(true);
       return;
     }
 
@@ -816,7 +819,7 @@ export default function ChatPage() {
                         variant="none" 
                         size="sm" 
                         className="w-full mt-4 text-[10px] text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 rounded-xl"
-                        onClick={() => router.push('/ask-ai/plans')}
+                        onClick={() => router.push('/plans/custom')}
                       >
                         شحن الرصيد
                       </Button>
@@ -893,6 +896,12 @@ export default function ChatPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Sign In Modal */}
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Required Modal */}
       <SubscriptionRequiredModal

@@ -24,7 +24,7 @@ export function SubscriptionRequiredModal({
   const handleGoToPlans = () => {
     onClose();
     if (hasAIPlans) {
-      router.push('/ask-ai/plans');
+      router.push('/plans/custom');
     } else {
       router.push('/plans');
     }

@@ -68,7 +68,7 @@ export default function ContentHomePage() {
     };
   }, []);
   const router = useRouter();
-  const { canManageContent, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
+  const { canManageContent, canUseAI, hasActiveSubscription, loading: permissionsLoading } = usePermissions();
     const { showSuccess, showError } = useToast();
 
   const [categories, setCategories] = useState<ContentCategory[]>([]);
@@ -261,27 +261,15 @@ export default function ContentHomePage() {
 
 
 
-  if (hasActiveSubscription && !canManageContent()) {
-    return (
-      <div className="space-y-8">
-        <h1 className="text-2xl font-semibold">إدارة المحتوى</h1>
-        <Card>
-          <CardContent className="text-center py-12">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">ليس لديك صلاحية إدارة المحتوى</h3>
-            <p className="text-gray-600 mb-4">باقتك الحالية لا تشمل إدارة المحتوى</p>
-            <Button 
-              onClick={() => window.location.href = '/plans'}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              ترقية الباقة
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // REMOVED: Blocking early return. Users can now see content management UI.
+  const hasContentPermission = canManageContent();
 
   const onCreateCategory = async () => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!name.trim()) return;
     await createContentCategory(token, { name, description });
     setName("");
@@ -291,6 +279,11 @@ export default function ContentHomePage() {
   };
 
   const onDeleteCategory = async (id: number) => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     const category = categories.find(c => c.id === id);
     if (category) {
       setCategoryToDelete(category);
@@ -316,6 +309,11 @@ export default function ContentHomePage() {
   };
 
   const onDeleteItem = async (itemId: number) => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     const item = items.find(i => i.id === itemId);
     if (item) {
       setItemToDelete(item);
@@ -343,6 +341,11 @@ export default function ContentHomePage() {
   };
 
   const onCreateItem = async () => {
+    if (!canManageContent()) {
+      showError("يجب الاشتراك في باقة تشمل إدارة المحتوى لتنفيذ هذا الإجراء");
+      router.push('/plans/custom');
+      return;
+    }
     if (!itemTitle.trim() || !selectedCategory) return;
     
     try {
@@ -416,6 +419,11 @@ export default function ContentHomePage() {
   };
 
   const onScheduleItem = async () => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!itemTitle.trim() || !selectedCategory) {
       showMessage('يرجى إدخال عنوان العنصر', 'error');
       return;
@@ -504,6 +512,11 @@ export default function ContentHomePage() {
   };
 
   const handleFileUpload = async (files: FileList) => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     setIsUploading(true);
     try {
       const arr = Array.from(files);
@@ -522,6 +535,11 @@ export default function ContentHomePage() {
   };
 
   const generateAIContentHandler = async () => {
+    if (!canUseAI() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!aiPrompt.trim()) return;
     setIsGenerating(true);
     setAiGeneratedContent(""); // Clear previous
@@ -539,7 +557,8 @@ export default function ContentHomePage() {
       
       // Update stats immediately if returned
       if (response.remainingCredits !== undefined) {
-        setStats(prev => prev ? { ...prev, remainingCredits: response.remainingCredits } : null);
+        const remaining = response.remainingCredits;
+        setStats(prev => prev ? { ...prev, remainingCredits: remaining as number } : null);
       } else {
         loadStats();
       }
@@ -588,6 +607,11 @@ export default function ContentHomePage() {
   };
 
   const onUpdateItem = async () => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!editingItem || !itemTitle.trim()) return;
     
     try {
@@ -617,6 +641,11 @@ export default function ContentHomePage() {
   };
 
   const onScheduleEditedItem = async () => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!editingItem || !itemTitle.trim()) {
       showMessage('يرجى إدخال عنوان العنصر', 'error');
       return;
@@ -719,6 +748,11 @@ export default function ContentHomePage() {
   };
 
   const onCreateReminder = async () => {
+    if (!canManageContent() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!itemToRemind || !reminderWhatsApp.trim() || !reminderMessage.trim()) {
       showMessage('يرجى إدخال رقم الواتساب ورسالة التذكير', 'error');
       return;

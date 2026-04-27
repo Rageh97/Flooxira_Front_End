@@ -45,6 +45,7 @@ import Loader from "@/components/Loader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 const ASPECT_RATIOS = [
@@ -85,6 +86,7 @@ export default function NanoPage() {
   const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -159,11 +161,18 @@ export default function NanoPage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return showError("تنبيه", "اكتب وصفاً سريعاً!");
-    if (!hasActiveSubscription) {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 5) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 5) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
 
     const placeholderId = Date.now().toString();
     const placeholder: GeneratedImage = {
@@ -671,6 +680,11 @@ export default function NanoPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Modal */}
       <SubscriptionRequiredModal

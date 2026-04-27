@@ -26,6 +26,7 @@ import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
@@ -39,6 +40,7 @@ export default function ColorizePage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -96,14 +98,23 @@ export default function ColorizePage() {
   };
 
   const handleProcess = async () => {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
     // Check if user has active subscription OR remaining credits
     const hasCredits = stats && (stats.isUnlimited || stats.remainingCredits > 0);
-    if (!hasActiveSubscription && !hasCredits) {
+    if (!hasActiveSubscription && !hasCredits && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
     
     if (!previewUrl) return showError("تنبيه", "ارفع صورة أبيض وأسود أولاً!");
+
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 15) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
     setIsProcessing(true);
     try {
       const res = await processAIImage(token, {
@@ -343,6 +354,11 @@ export default function ColorizePage() {
           </div>
         </main>
       </div>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       <SubscriptionRequiredModal
         isOpen={subscriptionModalOpen}

@@ -53,6 +53,7 @@ import {
 import { clsx } from "clsx";
 import Loader from "@/components/Loader";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { useRouter } from "next/navigation";
 
@@ -110,6 +111,7 @@ export default function TextToImagePage() {
   const [modelCosts, setModelCosts] = useState<Record<string, number>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { showSuccess, showError } = useToast();
@@ -182,19 +184,19 @@ export default function TextToImagePage() {
   };
 
     const handleGenerate = async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
       if (!prompt.trim()) return showError("تنبيه", "أطلق العنان لخيالك واكتب وصفاً للصورة!");
       if (!token) {
-        showError("يجب تسجيل الدخول أولاً");
-        router.push('/sign-in');
+        setIsSignInOpen(true);
         return;
       }
-      if (!hasActiveSubscription) {
-        showError("يجب الاشتراك في باقة لتفعيل ميزات الذكاء الاصطناعي");
-        router.push('/plans');
+      if (!hasActiveSubscription && !permissionsLoading) {
+        setSubscriptionModalOpen(true);
         return;
       }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 10) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 10) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
 
     const placeholderId = Date.now().toString();
     const placeholder: GeneratedImage = {
@@ -335,8 +337,9 @@ export default function TextToImagePage() {
 
   const handleUpscale = async () => {
     if (!selectedImage || selectedImage.isGenerating) return;
-    if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 20) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (!token) { setIsSignInOpen(true); return; }
+    if (!hasActiveSubscription && !permissionsLoading) { setSubscriptionModalOpen(true); return; }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 20) { setSubscriptionModalOpen(true); return; }
 
     setIsProcessing(true);
     try {
@@ -370,8 +373,9 @@ export default function TextToImagePage() {
 
   const handleRemoveBackground = async () => {
     if (!selectedImage || selectedImage.isGenerating) return;
-    if (!hasActiveSubscription) { setSubscriptionModalOpen(true); return; }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 10) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (!token) { setIsSignInOpen(true); return; }
+    if (!hasActiveSubscription && !permissionsLoading) { setSubscriptionModalOpen(true); return; }
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 10) { setSubscriptionModalOpen(true); return; }
 
     setIsProcessing(true);
     try {
@@ -839,6 +843,12 @@ export default function TextToImagePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Subscription Modal */}
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Modal */}
       <SubscriptionRequiredModal

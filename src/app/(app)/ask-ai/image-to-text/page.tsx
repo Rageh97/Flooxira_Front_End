@@ -27,6 +27,7 @@ import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
@@ -41,6 +42,7 @@ export default function ImageToTextPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   
   const { showSuccess, showError } = useToast();
   const { hasActiveSubscription, loading: permissionsLoading } = usePermissions();
@@ -107,7 +109,11 @@ export default function ImageToTextPage() {
   };
 
   const handleAnalyze = async () => {
-    if (!hasActiveSubscription) {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
@@ -421,6 +427,11 @@ export default function ImageToTextPage() {
           </div>
         </main>
       </div>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Required Modal */}
       <SubscriptionRequiredModal

@@ -17,6 +17,7 @@ import { X, Megaphone, Menu, Home, MessageCircle, Send, LogOut, MessageSquare, L
 import { toast } from "sonner";
 import { getActiveIslamicQuotes, IslamicQuote } from "@/lib/islamicQuoteApi";
 import CompleteProfileModal from "@/components/CompleteProfileModal";
+import SignInModal from "@/components/SignInModal";
 
 const navItems = [
   { href: "/dashboard", label: " الرئيسية", img: "/الرئيسية.webp" },
@@ -33,7 +34,7 @@ const navItems = [
   { href: "/services", label: "تسويق للموردين", img: "/تسويق للموردين.webp" },
   { href: "/settings", label: "إدارة الحسابات", img: "/اعدادات.png" },
   { href: "/employees", label: "إدارة الموظفين", img: "/الموظفين.webp" },
-  { href: "/plans", label: "باقات الاشتراك", img: "/الباقات.webp" },
+  { href: "/plans/custom", label: "باقات الاشتراك", img: "/الباقات.webp" },
   // { href: "/plans/custom", label: "الباقة المخصصة", img: "/الباقات.webp" },
   { href: "/my-subscription", label: "الاشتراك الفعال", img: "/الاشتراك الفعال.webp" },
   { href: "/tutorials", label: "شروحات المنصة", img: "/الشروحات.webp" },
@@ -70,6 +71,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const [telegramPendingCount, setTelegramPendingCount] = useState<number>(0);
   const [newsItems, setNewsItems] = useState<NewsTicker[]>([]);
   const [aiStats, setAiStats] = useState<AIStats | null>(null);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -180,7 +182,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
           e.preventDefault();
           e.stopPropagation();
           toast.error("يجب تسجيل الدخول أولاً");
-          router.push('/sign-in');
+          setIsSignInModalOpen(true);
           return;
         }
         if (!hasActiveSubscription && !permissionsLoading) {
@@ -480,11 +482,13 @@ export default function AppLayout({ children }: PropsWithChildren) {
               </div>
             </Link>
           ) : !loading && (
-            <Link href="/sign-in">
-              <Button size="sm" className="primary-button text-white px-4 h-9 md:h-10 text-xs md:text-sm">
-                تسجيل الدخول
-              </Button>
-            </Link>
+            <Button 
+              onClick={() => setIsSignInModalOpen(true)}
+              size="sm" 
+              className="primary-button text-white px-4 h-9 md:h-10 text-xs md:text-sm"
+            >
+              تسجيل الدخول
+            </Button>
           )}
              
           {/* Divider and Quick Access Icons */}
@@ -499,8 +503,15 @@ export default function AppLayout({ children }: PropsWithChildren) {
             {sidebarCollapsed ? <PanelRightOpen className="w-6 h-6 text-primary" /> : <PanelRightClose className="w-6 h-6 text-primary" />}
           </button>
             <Link 
-              href={user ? "/profile" : "/sign-in"} 
-              onClick={(e) => handleLinkClick(e, "/profile")}
+              href={user ? "/profile" : "#"} 
+              onClick={(e) => {
+                if (!user) {
+                  e.preventDefault();
+                  setIsSignInModalOpen(true);
+                } else {
+                  handleLinkClick(e, "/profile");
+                }
+              }}
               className="p-2 text-gray-400 hover:text-primary hover:bg-white/5 rounded-xl transition-all group" 
               title="الملف الشخصي"
             >
@@ -588,11 +599,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
              )}
              
              <Link 
-                href="/plans" 
+                href="/plans/custom" 
                 className="flex items-center gradient-border gap-2 px-5 py-1.5 border-0.5 border-primary text-white rounded-2xl text-sm font-bold  transition-all"
              >
                <CrownIcon className="text-yellow-500 mb-1" size={16} />
-                <span className="text-[10px]">{user ? "ترقية الباقة" : "باقات الاشتراك"}</span>
+                <span className="text-[10px]">{user ? "ترقية الباقة" : "خصص باقتك"}</span>
              </Link>
 
              {(!loading && user && (subscriptionStatus.colorClass.includes('yellow') || subscriptionStatus.colorClass.includes('red'))) && (
@@ -645,6 +656,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
   
       {/* Mobile sidebar + overlay */}
       <CompleteProfileModal />
+      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} />
       <div className={clsx("fixed inset-0 z-40 md:hidden", sidebarOpen ? "block" : "hidden")}> 
         <div
           className="absolute inset-0 bg-black/40"

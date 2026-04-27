@@ -39,6 +39,7 @@ import AILoader from "@/components/AILoader";
 import Link from "next/link";
 import { BorderBeam } from "@/components/ui/border-beam";
 import { SubscriptionRequiredModal } from "@/components/SubscriptionRequiredModal";
+import SignInModal from "@/components/SignInModal";
 import AskAIToolHeader from "@/components/AskAIToolHeader";
 
 interface GeneratedImage {
@@ -60,6 +61,7 @@ export default function LogoMakerPage() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [hasAIPlans, setHasAIPlans] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   const { showSuccess, showError } = useToast();
@@ -125,11 +127,18 @@ export default function LogoMakerPage() {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return showError("تنبيه", "ادخل اسم الشركة أو فكرة الشعار!");
-    if (!hasActiveSubscription) {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    if (!hasActiveSubscription && !permissionsLoading) {
       setSubscriptionModalOpen(true);
       return;
     }
-    if (stats && !stats.isUnlimited && stats.remainingCredits < 10) return showError("تنبيه", "رصيدك غير كافٍ");
+    if (stats && !stats.isUnlimited && stats.remainingCredits < 10) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
 
     const placeholderId = Date.now().toString();
     const placeholder: GeneratedImage = {
@@ -506,6 +515,11 @@ export default function LogoMakerPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SignInModal 
+        isOpen={isSignInOpen} 
+        onClose={() => setIsSignInOpen(false)} 
+      />
 
       {/* Subscription Modal */}
       <SubscriptionRequiredModal

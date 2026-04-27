@@ -172,13 +172,14 @@ export default function ServicesPage() {
       router.push('/sign-in');
       return;
     }
-    if (!hasActiveSubscription) {
+    if (!hasActiveSubscription && !permissionsLoading) {
       showError("هذه الميزة غير متاحة في الباقة الحالية، يرجى ترقية الباقة");
-      router.push('/plans');
+      router.push('/plans/custom');
       return;
     }
-    if (!canMarketServices()) {
+    if (!canMarketServices() && !permissionsLoading) {
         showError("هذه الميزة غير متاحة في باقتك الحالية");
+        router.push('/plans/custom');
         return;
     }
     action();
@@ -676,7 +677,6 @@ export default function ServicesPage() {
       </Dialog>
       
       <TutorialVideoModal
-        isOpen={!!selectedTutorial}
         onClose={() => setSelectedTutorial(null)}
         tutorial={selectedTutorial!}
       />

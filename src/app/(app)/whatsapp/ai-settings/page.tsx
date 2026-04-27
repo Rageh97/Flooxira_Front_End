@@ -116,7 +116,7 @@ export default function AISettingsPage() {
       return;
     }
     if (currentToken && !hasActiveSubscription && !permissionsLoading) {
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     await handleSave();
@@ -129,7 +129,7 @@ export default function AISettingsPage() {
       return;
     }
     if (currentToken && !hasActiveSubscription && !permissionsLoading) {
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     await handleReset();

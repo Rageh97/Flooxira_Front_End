@@ -82,7 +82,7 @@ const PLATFORMS = {
 };
 
 export default function CreatePostPage() {
-  const { hasActiveSubscription, hasPlatformAccess, loading: permissionsLoading } = usePermissions();
+  const { hasActiveSubscription, hasPlatformAccess, canManageContent, loading: permissionsLoading } = usePermissions();
   const { user, loading: authLoading } = useAuth();
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const { showSuccess, showError } = useToast();
@@ -185,10 +185,7 @@ export default function CreatePostPage() {
       availablePlatforms = Object.entries(PLATFORMS);
     }
     
-    // Filter by user permissions
-    return availablePlatforms.filter(([key, platform]) => {
-      return hasPlatformAccess(key);
-    });
+    return availablePlatforms;
   };
 
   // Helper function to check if platform is connected
@@ -373,8 +370,9 @@ export default function CreatePostPage() {
         router.push('/sign-in');
         return;
       }
-      if (!hasActiveSubscription && !permissionsLoading) {
-        showError("يجب الاشتراك في باقة لتفعيل ميزة النشر");
+      if (!canManageContent()) {
+        showError("يجب الاشتراك في باقة تشمل إدارة المحتوى لتنفيذ هذا الإجراء");
+        router.push('/plans/custom');
         return;
       }
       if (platforms.length === 0) {
@@ -665,6 +663,12 @@ export default function CreatePostPage() {
 
 
   const togglePlatform = (platform: string) => {
+    if (!hasPlatformAccess(platform) && !permissionsLoading) {
+      showError(`هذه المنصة (${platform}) غير متاحة في اشتراكك الحالي`);
+      router.push('/plans/custom');
+      return;
+    }
+
     if (platforms.includes(platform)) {
       setPlatforms(platforms.filter(p => p !== platform));
       if (platform === 'pinterest') {
@@ -1100,7 +1104,7 @@ export default function CreatePostPage() {
                         باقتك الحالية لا تشمل أي منصات اجتماعية. يرجى ترقية باقتك للوصول إلى المنصات.
                       </p>
                       <Button 
-                        onClick={() => window.location.href = '/plans'}
+                        onClick={() => window.location.href = '/plans/custom'}
                         className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-3 text-lg font-semibold shadow-lg"
                       >
                         ترقية الباقة الآن
@@ -1659,7 +1663,7 @@ export default function CreatePostPage() {
                 }
                 if (!hasActiveSubscription) {
                   showError("يجب الاشتراك في باقة لتفعيل هذه الميزة");
-                  router.push('/plans');
+                  router.push('/plans/custom');
                   return;
                 }
                 setError(""); // Clear any previous errors
@@ -1694,7 +1698,7 @@ export default function CreatePostPage() {
                 }
                 if (!hasActiveSubscription) {
                   showError("يجب الاشتراك في باقة لتفعيل هذه الميزة");
-                  router.push('/plans');
+                  router.push('/plans/custom');
                   return;
                 }
                 setError(""); // Clear any previous errors
@@ -1750,7 +1754,7 @@ export default function CreatePostPage() {
                 يرجى ترقية باقتك أو انتظار بداية الشهر الجديد لإنشاء المزيد من المنشورات
               </p>
               <Button 
-                onClick={() => window.location.href = '/plans'}
+                onClick={() => window.location.href = '/plans/custom'}
                 className="mt-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-2 text-sm font-semibold shadow-lg"
               >
                 ترقية الباقة

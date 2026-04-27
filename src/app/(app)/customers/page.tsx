@@ -284,6 +284,11 @@ export default function CustomersPage() {
   }, [isNotificationSettingsOpen]);
 
   const handleSaveNotificationSettings = async () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     const token = localStorage.getItem('auth_token');
     if (!token) return;
 
@@ -344,6 +349,11 @@ export default function CustomersPage() {
 
 
   const handleAddCustomField = async () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if ( !newCustomField.label) {
       toast.error('يرجى ملء جميع الحقول المطلوبة');
       return;
@@ -394,6 +404,11 @@ export default function CustomersPage() {
   };
 
   const handleUpdateCustomField = async () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!editingCustomField) return;
 
     try {
@@ -442,6 +457,11 @@ export default function CustomersPage() {
   };
 
   const confirmDeleteField = async () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!fieldToDelete) return;
 
     try {
@@ -477,6 +497,11 @@ export default function CustomersPage() {
 
   // Export contacts function - فقط الأرقام
   const handleExportContacts = () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       // تصدير الأرقام فقط
       const phoneNumbers = customers
@@ -507,6 +532,11 @@ export default function CustomersPage() {
 
   // Export active subscriptions contacts - أرقام الاشتراكات النشطة فقط
   const handleExportActiveSubscriptions = () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       const activePhoneNumbers = customers
         .filter(customer => {
@@ -539,6 +569,11 @@ export default function CustomersPage() {
 
   // Export expired subscriptions contacts - أرقام الاشتراكات المنتهية فقط
   const handleExportExpiredSubscriptions = () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       const expiredPhoneNumbers = customers
         .filter(customer => {
@@ -571,6 +606,11 @@ export default function CustomersPage() {
 
   // Export failed subscriptions contacts - أرقام الاشتراكات الفاشلة فقط
   const handleExportFailedSubscriptions = () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     try {
       const failedPhoneNumbers = customers
         .filter(customer => {
@@ -645,9 +685,8 @@ export default function CustomersPage() {
         setPagination(response.data.pagination);
         setHasAccess(true);
       } else {
-        if ((response as any).code === 'CUSTOMER_MANAGEMENT_DENIED') {
-          setHasAccess(false);
-        }
+        // Even if denied, we set hasAccess to true to show the UI
+        setHasAccess(true);
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -716,6 +755,11 @@ export default function CustomersPage() {
   };
 
   const handleSaveEntity = async () => {
+    if (!canManageCustomers() && !permissionsLoading) {
+      showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
+      return;
+    }
     if (!entityName.trim()) {
       toast.error('يرجى إدخال الاسم');
       return;
@@ -752,8 +796,9 @@ export default function CustomersPage() {
       router.push("/sign-in");
       return;
     }
-    if (!hasActiveSubscription && !permissionsLoading) {
+    if (!canManageCustomers() && !permissionsLoading) {
       showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
       return;
     }
     try {
@@ -801,8 +846,9 @@ export default function CustomersPage() {
       router.push("/sign-in");
       return;
     }
-    if (!hasActiveSubscription && !permissionsLoading) {
+    if (!canManageCustomers() && !permissionsLoading) {
       showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
       return;
     }
     if (!selectedCustomer) return;
@@ -853,8 +899,9 @@ export default function CustomersPage() {
       router.push("/sign-in");
       return;
     }
-    if (!hasActiveSubscription && !permissionsLoading) {
+    if (!canManageCustomers() && !permissionsLoading) {
       showError("يجب الاشتراك في باقة لتفعيل الميزة");
+      router.push('/plans/custom');
       return;
     }
     if (!customerToDelete) return;
@@ -891,7 +938,7 @@ export default function CustomersPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showError("يجب الاشتراك في باقة لتفعيل الميزة");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     try {
@@ -1194,7 +1241,7 @@ export default function CustomersPage() {
     }
     if (!hasActiveSubscription && !permissionsLoading) {
       showError("يجب الاشتراك في باقة لتفعيل هذه الميزة");
-      router.push("/plans");
+      router.push("/plans/custom");
       return;
     }
     action();

@@ -8,6 +8,7 @@ import { useToast } from "@/components/ui/toast-provider";
 import FeatureCard from "./components/FeatureCard";
 import CustomPackageSummary from "./components/CustomPackageSummary";
 import { Loader2, Sparkles, Package } from "lucide-react";
+import SignInModal from "@/components/SignInModal";
 
 export type FeatureSelection = {
   featureKey: string;
@@ -31,6 +32,7 @@ export type FeatureDefinition = {
   extraField?: keyof CustomPackagePricing;
   extraLabel?: string;
   maxUnits?: number;
+  minUnits?: number;
 };
 
 export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
@@ -58,7 +60,8 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     aiPriceField: "whatsappAiMessagesPrice",
     aiBundleField: "whatsappAiMessagesPerBundle",
     aiLabel: "رسائل AI",
-    aiUnit: "رسالة"
+    aiUnit: "رسالة",
+    minUnits: 1
   },
   {
     key: "telegram",
@@ -72,7 +75,8 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     aiPriceField: "telegramAiMessagesPrice",
     aiBundleField: "telegramAiMessagesPerBundle",
     aiLabel: "رسائل AI",
-    aiUnit: "رسالة"
+    aiUnit: "رسالة",
+    minUnits: 1
   },
   {
     key: "contentManagement",
@@ -107,7 +111,8 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     aiBundleField: "id",
     aiLabel: "عدد الخدمات",
     aiUnit: "خدمة",
-    maxUnits: 5
+    maxUnits: 5,
+    minUnits: 1
   },
   {
     key: "employeeManagement",
@@ -121,7 +126,8 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     aiPriceField: "employeePricePerUnit",
     aiBundleField: "id", // Dummy since it's per 1 unit
     aiLabel: "عدد الموظفين",
-    aiUnit: "موظف"
+    aiUnit: "موظف",
+    minUnits: 1
   },
   {
     key: "aiTools",
@@ -135,7 +141,8 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     aiPriceField: "aiToolsCreditsPrice",
     aiBundleField: "aiToolsCreditsPerBundle",
     aiLabel: "كريديت AI",
-    aiUnit: "كريديت"
+    aiUnit: "كريديت",
+    minUnits: 1
   },
   {
     key: "liveChat",
@@ -149,7 +156,8 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
     aiPriceField: "liveChatAiResponsesPrice",
     aiBundleField: "liveChatAiResponsesPerBundle",
     aiLabel: "ردود AI",
-    aiUnit: "رد"
+    aiUnit: "رد",
+    minUnits: 1
   },
   {
     key: "eventsPlugin",
@@ -163,16 +171,44 @@ export const FEATURE_DEFINITIONS: FeatureDefinition[] = [
   }
 ];
 
+const DEFAULT_PRICING: CustomPackagePricing = {
+  id: 0,
+  socialMediaPostingPrice: 50,
+  socialMediaPostingPosts: 30,
+  whatsappPrice: 100,
+  whatsappAiMessagesPrice: 200,
+  whatsappAiMessagesPerBundle: 1000,
+  telegramPrice: 75,
+  telegramAiMessagesPrice: 150,
+  telegramAiMessagesPerBundle: 1000,
+  contentManagementPrice: 150,
+  customerManagementPrice: 200,
+  serviceMarketingPrice: 300,
+  serviceMarketingPricePerUnit: 50,
+  employeeManagementPrice: 250,
+  employeePricePerUnit: 30,
+  aiToolsPrice: 500,
+  aiToolsCreditsPrice: 100,
+  aiToolsCreditsPerBundle: 50,
+  liveChatPrice: 150,
+  liveChatAiResponsesPrice: 100,
+  liveChatAiResponsesPerBundle: 500,
+  eventsPluginPrice: 400,
+  availablePlatforms: ["facebook", "instagram", "twitter", "linkedin", "youtube"],
+  isActive: true,
+};
+
 export default function CustomPackagePage() {
-  const [pricing, setPricing] = useState<CustomPackagePricing | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [pricing, setPricing] = useState<CustomPackagePricing>(DEFAULT_PRICING);
+  const [loading, setLoading] = useState(false);
   const [token, setToken] = useState("");
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   const { showError } = useToast();
   const [selections, setSelections] = useState<FeatureSelection[]>(
     FEATURE_DEFINITIONS.map((f) => ({
       featureKey: f.key,
       selected: false,
-      aiMessageBundles: 0
+      aiMessageBundles: f.minUnits || 0
     }))
   );
 
@@ -183,39 +219,65 @@ export default function CustomPackagePage() {
   }, []);
 
   const fetchPricing = useCallback(async () => {
-    if (!token) return;
     try {
       setLoading(true);
-      const res = await getCustomPackagePricing(token);
+      // Use an empty string if no token, allowing the backend to potentially serve public pricing
+      const res = await getCustomPackagePricing(token || "");
       setPricing(res.pricing);
     } catch (e: any) {
-      showError("خطأ", e.message);
+      // If unauthorized and we definitely need a token, we might show guest-friendly error 
+      // but the user wants "everything to appear normally".
+      console.error("Failed to fetch custom pricing:", e);
+      // Instead of blocking, we could show an error toast if it's critical
+      // showError("خطأ", e.message);
     } finally {
       setLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
-    fetchPricing();
-  }, [fetchPricing]);
+    if (token) {
+      fetchPricing();
+    }
+  }, [fetchPricing, token]);
 
   const toggleFeature = useCallback((featureKey: string) => {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    const def = FEATURE_DEFINITIONS.find(f => f.key === featureKey);
+    const minUnits = def?.minUnits || 0;
+
     setSelections((prev) =>
       prev.map((s) =>
         s.featureKey === featureKey
-          ? { ...s, selected: !s.selected, aiMessageBundles: !s.selected ? s.aiMessageBundles : 0 }
+          ? { 
+              ...s, 
+              selected: !s.selected, 
+              aiMessageBundles: !s.selected 
+                ? (s.aiMessageBundles || minUnits) 
+                : 0 
+            }
           : s
       )
     );
-  }, []);
+  }, [token]);
 
   const updateBundles = useCallback((featureKey: string, bundles: number) => {
+    if (!token) {
+      setIsSignInOpen(true);
+      return;
+    }
+    const def = FEATURE_DEFINITIONS.find(f => f.key === featureKey);
+    const minUnits = def?.minUnits || 0;
+
     setSelections((prev) =>
       prev.map((s) =>
-        s.featureKey === featureKey ? { ...s, aiMessageBundles: Math.max(0, bundles) } : s
+        s.featureKey === featureKey ? { ...s, aiMessageBundles: Math.max(minUnits, bundles) } : s
       )
     );
-  }, []);
+  }, [token]);
 
   // Calculate prices locally for instant feedback
   const { totalPrice, breakdownItems } = useMemo(() => {
@@ -267,7 +329,7 @@ export default function CustomPackagePage() {
     return { totalPrice: Math.round(total * 100) / 100, breakdownItems: items };
   }, [selections, pricing]);
 
-  if (loading) {
+  if (loading && pricing === DEFAULT_PRICING) {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="flex flex-col items-center gap-4">
@@ -278,7 +340,10 @@ export default function CustomPackagePage() {
     );
   }
 
-  if (!pricing || !pricing.isActive) {
+  // Use a softer check for pricing visibility
+  const displayPricing = pricing || DEFAULT_PRICING;
+
+  if (!displayPricing.isActive && token) {
     return (
       <div className="flex items-center justify-center min-h-[500px]">
         <div className="text-center space-y-3">
@@ -312,7 +377,7 @@ export default function CustomPackagePage() {
               <FeatureCard
                 key={feature.key}
                 feature={feature}
-                pricing={pricing}
+                pricing={displayPricing}
                 selected={sel.selected}
                 aiMessageBundles={sel.aiMessageBundles}
                 onToggle={() => toggleFeature(feature.key)}
@@ -328,7 +393,14 @@ export default function CustomPackagePage() {
         totalPrice={totalPrice}
         breakdownItems={breakdownItems}
         selectedCount={selections.filter((s) => s.selected).length}
+        selections={selections
+          .filter((s) => s.selected)
+          .map((s) => ({ featureKey: s.featureKey, aiMessageBundles: s.aiMessageBundles }))}
+        onRequireAuth={() => setIsSignInOpen(true)}
       />
+
+      {/* Sign In Modal */}
+      <SignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
     </div>
   );
 }
