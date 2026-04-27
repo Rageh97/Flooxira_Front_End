@@ -11,7 +11,7 @@ export default function LandingFooter() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           <div className="lg:col-span-2">
             <Link href="/" className="inline-flex items-center gap-2 mb-6">
-              <Image src="/logo.png" alt="Logo" width={200} height={200}  />
+              <Image src="/Logoo.png" alt="Logo" width={200} height={200}  />
             </Link>
             <p className="text-white/80 max-w-sm mb-6 leading-relaxed font-medium">
               المنصة الأقوى والإختيار الأول لإدارة السوشيال ميديا وربط واتساب بالذكاء الاصطناعي بشكل يضمن لك تحقيق أعلى مبيعات وبأقل مجهود.
