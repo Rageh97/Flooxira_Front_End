@@ -101,7 +101,7 @@ export default function TelegramBotPage() {
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
   const [loadingSend, setLoadingSend] = useState(false);
-  const [permissions, setPermissions] = useState<any>({
+  const [promotionPermissions, setPromotionPermissions] = useState<any>({
     can_manage_chat: false,
     can_delete_messages: false,
     can_manage_video_chats: false,
@@ -163,7 +163,7 @@ export default function TelegramBotPage() {
   }, []);
 
   useEffect(() => {
-    if (token) {
+    if (token && !permissionsLoading) {
       loadKnowledgeBase();
       // loadGroups();
       loadBotInfo();
@@ -173,7 +173,7 @@ export default function TelegramBotPage() {
       loadUsageStats();
       listTags().then(res=> { if (res?.success) setAvailableTags(res.data || []); }).catch(()=>{});
     }
-  }, [token]);
+  }, [token, permissionsLoading]);
 
   async function loadUsageStats() {
     try {
@@ -239,7 +239,7 @@ export default function TelegramBotPage() {
   }
 
   async function loadBotInfo() {
-    if (!token || (permissions && !hasActiveSubscription)) return; // Don't try if not subscribed
+    if (!token || permissionsLoading || !hasActiveSubscription) return; // Don't try if not subscribed
     try {
       const res = await telegramBotInfo(token);
       console.log('Bot info response:', res); // Debug log
@@ -446,7 +446,7 @@ export default function TelegramBotPage() {
     if (!chatId || !promoteMemberId) return;
     try {
       setLoading(true);
-      const res = await telegramBotPromoteMember(token, chatId, promoteMemberId, permissions);
+      const res = await telegramBotPromoteMember(token, chatId, promoteMemberId, promotionPermissions);
       if (res.success) {
         showSuccess("تم ترقية العضو بنجاح!");
         setPromoteMemberId("");
@@ -1101,7 +1101,7 @@ export default function TelegramBotPage() {
                 onClick={saveBotSettingsUI}
                 className="primary-button px-10"
               >
-                حفظ الإعدادات الفنية
+                حفظ الإعدادات 
               </Button>
             </div>
           </CardContent>
@@ -1718,8 +1718,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_manage_chat}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_chat: e.target.checked }))}
+                      checked={promotionPermissions.can_manage_chat}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_manage_chat: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">إدارة المحادثة (وصول كامل)</span>
@@ -1727,8 +1727,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_delete_messages}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_delete_messages: e.target.checked }))}
+                      checked={promotionPermissions.can_delete_messages}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_delete_messages: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">حذف الرسائل</span>
@@ -1736,8 +1736,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_restrict_members}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_restrict_members: e.target.checked }))}
+                      checked={promotionPermissions.can_restrict_members}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_restrict_members: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">تقييد الأعضاء</span>
@@ -1745,8 +1745,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_promote_members}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_promote_members: e.target.checked }))}
+                      checked={promotionPermissions.can_promote_members}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_promote_members: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">ترقية الأعضاء</span>
@@ -1754,8 +1754,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_invite_users}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_invite_users: e.target.checked }))}
+                      checked={promotionPermissions.can_invite_users}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_invite_users: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">دعوة المستخدمين</span>
@@ -1772,8 +1772,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_change_info}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_change_info: e.target.checked }))}
+                      checked={promotionPermissions.can_change_info}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_change_info: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">تغيير معلومات المحادثة</span>
@@ -1781,8 +1781,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_pin_messages}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_pin_messages: e.target.checked }))}
+                      checked={promotionPermissions.can_pin_messages}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_pin_messages: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">تثبيت الرسائل</span>
@@ -1790,8 +1790,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_manage_video_chats}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_video_chats: e.target.checked }))}
+                      checked={promotionPermissions.can_manage_video_chats}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_manage_video_chats: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">إدارة المحادثات المرئية</span>
@@ -1799,8 +1799,8 @@ export default function TelegramBotPage() {
                   <label className="flex items-center space-x-3 p-3 bg-gray-800/30 rounded-lg border border-gray-700 hover:bg-gray-800/50 transition-colors">
                     <input
                       type="checkbox"
-                      checked={permissions.can_manage_topics}
-                    onChange={(e) => setPermissions((prev: any) => ({ ...prev, can_manage_topics: e.target.checked }))}
+                      checked={promotionPermissions.can_manage_topics}
+                    onChange={(e) => setPromotionPermissions((prev: any) => ({ ...prev, can_manage_topics: e.target.checked }))}
                       className="w-4 h-4 rounded border-gray-600"
                     />
                     <span className="text-sm text-white font-medium">إدارة المواضيع (المنتديات)</span>
