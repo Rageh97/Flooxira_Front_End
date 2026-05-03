@@ -176,6 +176,7 @@ export default function TicketsPage() {
     widgetSecondaryColor: "#764ba2",
     widgetSize: 70,
     hideTooltip: false,
+    requireVisitorInfo: false,
   });
   const [widgetIconPreview, setWidgetIconPreview] = useState<string>("");
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -675,6 +676,7 @@ export default function TicketsPage() {
           widgetSecondaryColor: data.settings.widgetSecondaryColor || "#764ba2",
           widgetSize: data.settings.widgetSize || 70,
           hideTooltip: data.settings.hideTooltip || false,
+          requireVisitorInfo: data.settings.requireVisitorInfo || false,
         });
         // إضافة timestamp للأيقونة لتجنب مشكلة التخزين المؤقت
         const iconUrl = data.settings.widgetIconUrl || "";
@@ -2297,6 +2299,24 @@ export default function TicketsPage() {
                     />
                   </div>
                   <p className="text-[10px] text-yellow-500">سيؤدي هذا لإخفاء الرسالة الصغيرة التي تظهر بجانب الأيقونة</p>
+                </div>
+
+                <div className="space-y-3 p-4 border border-primary rounded-xl bg-secondry/30 flex flex-col justify-center">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="require-visitor-info" className="text-sm font-medium text-gray-300 cursor-pointer">
+                      طلب الاسم ورقم الهاتف فقط قبل بدء المحادثة
+                    </label>
+                    <Switch
+                      id="require-visitor-info"
+                      checked={widgetSettings.requireVisitorInfo || false}
+                      onCheckedChange={(checked) =>
+                        setWidgetSettings({
+                          ...widgetSettings,
+                          requireVisitorInfo: checked,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
               </div>
 
