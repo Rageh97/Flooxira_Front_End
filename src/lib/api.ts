@@ -1335,10 +1335,18 @@ export async function stopTelegramBot(token: string) {
 }
 
 export async function sendTelegramMessage(token: string, chatId: string, message: string) {
-  return apiFetch<{ success: boolean; message: string }>("/api/telegram/send", {
+  return apiFetch<{ success: boolean; message: string }>("/api/telegram-bot/send", {
     method: "POST",
     authToken: token,
-    body: JSON.stringify({ chatId, message })
+    body: JSON.stringify({ chatId, text: message })
+  });
+}
+
+export async function markTelegramChatAsRead(token: string, chatId: string) {
+  return apiFetch<{ success: boolean }>("/api/telegram-bot/mark-read", {
+    method: "POST",
+    authToken: token,
+    body: JSON.stringify({ chatId })
   });
 }
 

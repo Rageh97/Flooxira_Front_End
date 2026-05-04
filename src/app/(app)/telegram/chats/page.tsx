@@ -10,6 +10,7 @@ import {
   telegramBotGetStatus,
   telegramBotPause,
   telegramBotResume,
+  markTelegramChatAsRead
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { EmojiPickerModal } from "@/components/AnimatedEmoji";
@@ -24,6 +25,7 @@ type Contact = {
   chatType: string;
   chatTitle: string;
   messageCount: number | string;
+  unreadCount?: number;
   lastMessageTime: string;
   isEscalated?: boolean;
 };
@@ -304,6 +306,19 @@ export default function TelegramChatsPage() {
     }
   }
 
+  async function handleMarkRead(chatIdToMark: string) {
+    if (!token || !chatIdToMark) return;
+    try {
+      await markTelegramChatAsRead(token, chatIdToMark);
+      // Update local state to clear unread count
+      setContacts(prev => prev.map(c => 
+        c.chatId.toString() === chatIdToMark ? { ...c, unreadCount: 0 } : c
+      ));
+    } catch (err) {
+      console.error('Failed to mark chat as read:', err);
+    }
+  }
+
   async function handleSend() {
     if (!canManageTelegram() && !permissionsLoading) {
       showError("يرجى ترقية اشتراكك لتتمكن من إرسال الرسائل");
@@ -487,6 +502,9 @@ export default function TelegramChatsPage() {
                     onClick={() => {
                       setActiveChatId(c.chatId.toString());
                       setIsMobileChatOpen(true);
+                      if (c.unreadCount && c.unreadCount > 0) {
+                        handleMarkRead(c.chatId.toString());
+                      }
                     }}
                     title={String(title)}
                   >
@@ -503,7 +521,14 @@ export default function TelegramChatsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate text-white flex items-center justify-between gap-2">
                         <span>{title}</span>
-                        {c.isEscalated && <span className="text-[9px] bg-yellow-500/20 text-yellow-300 px-1 rounded">تحويل</span>}
+                        <div className="flex items-center gap-1">
+                          {c.unreadCount && c.unreadCount > 0 ? (
+                            <span className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                              {c.unreadCount}
+                            </span>
+                          ) : null}
+                          {c.isEscalated && <span className="text-[9px] bg-yellow-500/20 text-yellow-300 px-1 rounded">تحويل</span>}
+                        </div>
                       </div>
                       <div className="text-[11px] text-white flex justify-between gap-2 opacity-70">
                         <span className="capitalize">{c.chatType}</span>

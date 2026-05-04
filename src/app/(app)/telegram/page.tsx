@@ -1198,7 +1198,14 @@ export default function TelegramBotPage() {
                     <div>
                       <div className="flex items-center gap-2">
                         <div className="text-white font-medium">{c.chatTitle || 'User'}</div>
-                        {c.isEscalated && <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">تحويل لموظف</span>}
+                        <div className="flex items-center gap-1">
+                          {c.unreadCount && c.unreadCount > 0 ? (
+                            <span className="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                              {c.unreadCount}
+                            </span>
+                          ) : null}
+                          {c.isEscalated && <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-500/30">تحويل لموظف</span>}
+                        </div>
                       </div>
                     <div className="text-gray-400 text-xs">{c.chatType} • {c.chatId}</div>
                   </div>
