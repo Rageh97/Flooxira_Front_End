@@ -28,14 +28,14 @@ type Subscription = {
     isActive: boolean;
     liveChatAiEnabled?: boolean;
   };
-  plan: {
+  plan?: {
     id: number;
     name: string;
     priceCents: number;
     interval: 'monthly' | 'yearly';
     features: any;
     permissions: any;
-  };
+  } | null;
   aiCreditsUsed?: number;
   telegramAiCreditsUsed?: number;
 };
