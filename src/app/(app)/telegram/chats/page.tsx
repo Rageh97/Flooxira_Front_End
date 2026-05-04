@@ -202,6 +202,12 @@ export default function TelegramChatsPage() {
     }
   }, [messageText]);
 
+  // Mark chat as read whenever active chat changes
+  useEffect(() => {
+    if (!token || !activeChatId) return;
+    handleMarkRead(activeChatId);
+  }, [activeChatId, token]);
+
   useEffect(() => {
     if (!token || !activeChatId) return;
     
@@ -603,13 +609,22 @@ export default function TelegramChatsPage() {
                 ▶ استئناف
               </button>
             ) : (
-              <button 
-                onClick={handlePauseBot}
-                className="bg-orange-600 hover:bg-orange-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
-                title="إيقاف البوت"
-              >
-                ⏸ إيقاف
-              </button>
+              <>
+                <button 
+                  onClick={handlePauseBot}
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
+                  title="إيقاف البوت مؤقتاً"
+                >
+                  ⏸ إيقاف مؤقت
+                </button>
+                <button 
+                  onClick={handlePermanentStop}
+                  className="bg-red-600 hover:bg-red-700 text-white text-[10px] px-2 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap"
+                  title="إيقاف البوت بشكل دائم"
+                >
+                  ⛔ إيقاف دائم
+                </button>
+              </>
             )}
             
             {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
