@@ -208,8 +208,8 @@ export default function AppLayout({ children }: PropsWithChildren) {
     // إذا كان المستخدم موظفاً، نتحقق من الصلاحيات
     if (user.role === 'employee') {
       const restrictedRoutes = [
-        // الصفحات المحجوبة تماماً عن الموظفين
-        { path: '/employees', allowed: false },
+        // الصفحات المحجوبة تماماً عن الموظفين (ما لم يكن لديهم صلاحية)
+        { path: '/employees', allowed: !!permissions.canManageEmployees },
         { path: '/plans', allowed: false },
         { path: '/my-subscription', allowed: false },
         { path: '/my-subscription-requests', allowed: false },
@@ -267,8 +267,11 @@ export default function AppLayout({ children }: PropsWithChildren) {
         if (commonPages.includes(item.href)) return true;
 
         // 2. Hidden administration pages (explicitly rejected for employees)
-        const adminPages = ['/employees', '/plans', '/my-subscription', '/my-subscription-requests', '/settings', '/admin'];
+        const adminPages = ['/plans', '/my-subscription', '/my-subscription-requests', '/settings', '/admin'];
         if (adminPages.includes(item.href)) return false;
+
+        // 3. Employees page - only if they have canManageEmployees permission
+        if (item.href === '/employees') return !!permissions?.canManageEmployees;
 
         // 3. Functional tools based on specific permissions (Strict opt-in)
         if (item.href === '/ask-ai') return !!permissions?.canUseAI;

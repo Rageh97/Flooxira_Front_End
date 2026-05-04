@@ -31,7 +31,10 @@ import {
   syncTelegramGroups,
   getBotSettings,
   updateBotSettings,
-  getUsageStats
+  getUsageStats,
+  telegramBotGetStatus,
+  telegramBotPause,
+  telegramBotResume
 } from "@/lib/api";
 import { 
   Select, 
@@ -119,6 +122,8 @@ export default function TelegramBotPage() {
     can_manage_direct_messages: false
   });
   const [usageStats, setUsageStats] = useState<any>(null);
+  const [botPaused, setBotPaused] = useState<boolean>(false);
+  const [pauseTimeRemaining, setPauseTimeRemaining] = useState<number>(0);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("auth_token") || "" : "";
   const { tutorials, getTutorialByCategory, incrementViews } = useTutorials();
@@ -171,9 +176,23 @@ export default function TelegramBotPage() {
       loadBotSettingsUI();
       loadCampaigns(); // Load campaigns on initial load
       loadUsageStats();
+      loadBotStatus();
       listTags().then(res=> { if (res?.success) setAvailableTags(res.data || []); }).catch(()=>{});
     }
   }, [token, permissionsLoading]);
+
+  async function loadBotStatus() {
+    try {
+      const res = await telegramBotGetStatus(token);
+      if (res.success) {
+        setBotPaused(res.isPaused);
+        if (res.pausedUntil) {
+          const remaining = Math.max(0, Math.ceil((new Date(res.pausedUntil).getTime() - Date.now()) / 60000));
+          setPauseTimeRemaining(remaining);
+        }
+      }
+    } catch {}
+  }
 
   async function loadUsageStats() {
     try {
@@ -1812,6 +1831,59 @@ export default function TelegramBotPage() {
                     />
                     <span className="text-sm text-white font-medium">إدارة المواضيع (المنتديات)</span>
                   </label>
+                </div>
+              </div>
+
+              {/* Global Pause/Resume Buttons */}
+              <div className="bg-[#01191060] rounded-lg p-4 border border-gray-700 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col">
+                  <span className="text-white font-medium">التحكم في نشاط البوت (عن الجميع)</span>
+                  <span className="text-gray-400 text-xs">إيقاف أو استئناف رد البوت التلقائي لجميع العملاء</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {botPaused ? (
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          await telegramBotResume(token);
+                          setBotPaused(false);
+                          showSuccess("تم استئناف البوت بنجاح");
+                        } catch (e: any) { showError(e.message); }
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      استئناف البوت الآن
+                    </Button>
+                  ) : (
+                    <>
+                      <Button 
+                        onClick={async () => {
+                          try {
+                            const res = await telegramBotPause(token, 30);
+                            setBotPaused(true);
+                            setPauseTimeRemaining(30);
+                            showSuccess(res.message);
+                          } catch (e: any) { showError(e.message); }
+                        }}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                      >
+                        إيقاف مؤقت (30 دقيقة)
+                      </Button>
+                      <Button 
+                        onClick={async () => {
+                          try {
+                            const res = await telegramBotPause(token, 525600);
+                            setBotPaused(true);
+                            setPauseTimeRemaining(525600);
+                            showSuccess(res.message);
+                          } catch (e: any) { showError(e.message); }
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        إيقاف دائم عن الجميع
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

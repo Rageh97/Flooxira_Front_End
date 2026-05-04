@@ -48,7 +48,7 @@ export default function TelegramChatsPage() {
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "";
   const { user, loading } = useAuth();
   const { showSuccess, showError } = useToast();
-  const { canManageTelegram, permissionsLoading } = usePermissions();
+  const { canManageTelegram, loading: permissionsLoading } = usePermissions();
   const router = useRouter();
   
   // All state and refs at the top
@@ -159,6 +159,18 @@ export default function TelegramChatsPage() {
       } else {
         showError(res.message || 'فشل في إيقاف البوت');
       }
+    } catch (err: any) {
+      showError(err.message || 'فشل في إيقاف البوت');
+    }
+  }
+
+  async function handlePermanentStop() {
+    if (!token) return;
+    try {
+      const res = await telegramBotPause(token, 525600); // 1 year (permanent enough)
+      setBotPaused(true);
+      setPauseTimeRemaining(525600);
+      showSuccess(res.message || 'تم إيقاف البوت بشكل دائم');
     } catch (err: any) {
       showError(err.message || 'فشل في إيقاف البوت');
     }
@@ -626,20 +638,33 @@ export default function TelegramChatsPage() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M8 5v14l11-7z" fill="currentColor"/>
                 </svg>
-                استئناف البوت {pauseTimeRemaining > 0 && `(${pauseTimeRemaining} دقيقة)`}
+                استئناف البوت (عن الجميع) {pauseTimeRemaining > 0 && pauseTimeRemaining < 500000 && `(${pauseTimeRemaining} دقيقة)`}
               </button>
             ) : (
-              <button 
-                onClick={handlePauseBot}
-                className="bg-orange-600 hover:bg-orange-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1"
-                title="إيقاف البوت مؤقتاً"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
-                  <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
-                </svg>
-                إيقاف البوت
-              </button>
+              <>
+                <button 
+                  onClick={handlePauseBot}
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1"
+                  title="إيقاف البوت مؤقتاً عن الجميع"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="6" y="4" width="4" height="16" fill="currentColor"/>
+                    <rect x="14" y="4" width="4" height="16" fill="currentColor"/>
+                  </svg>
+                  إيقاف مؤقت (الجميع)
+                </button>
+                <button 
+                  onClick={handlePermanentStop}
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1"
+                  title="إيقاف البوت بشكل دائم عن الجميع"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" fill="currentColor"/>
+                    <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z" fill="currentColor"/>
+                  </svg>
+                  إيقاف دائم (الجميع)
+                </button>
+              </>
             )}
             
             {contacts.find(c => c.chatId.toString() === activeChatId)?.isEscalated && (
