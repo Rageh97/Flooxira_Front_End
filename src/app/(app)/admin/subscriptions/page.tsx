@@ -426,9 +426,9 @@ export default function SubscriptionsAdminPage() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="text-center">
-                            <p className="text-sm font-medium text-white">{subscription.plan.name}</p>
+                            <p className="text-sm font-medium text-white">{subscription.plan?.name || 'باقة مخصصة'}</p>
                             <p className="text-xs text-gray-300">
-                              {subscription.plan.interval === 'monthly' ? 'شهري' : 'سنوي'}
+                              {subscription.plan?.interval === 'monthly' ? 'شهري' : subscription.plan?.interval === 'yearly' ? 'سنوي' : '-'}
                             </p>
                           </div>
                         </td>
@@ -436,7 +436,7 @@ export default function SubscriptionsAdminPage() {
                           <div className="flex items-center justify-center space-x-1 rtl:space-x-reverse">
                             <DollarSign className="w-4 h-4 text-green-400" />
                             <span className="text-sm font-medium text-white">
-                              {formatPrice(subscription.plan.priceCents)}
+                              {formatPrice(subscription.plan?.priceCents || 0)}
                             </span>
                           </div>
                         </td>
@@ -481,7 +481,7 @@ export default function SubscriptionsAdminPage() {
                             {/* Telegram Status */}
                             {(() => {
                               const cu = getConnectedData(subscription.userId);
-                              const hasTelegram = subscription.plan.permissions?.canManageTelegram;
+                              const hasTelegram = subscription.plan?.permissions?.canManageTelegram;
                               if (!hasTelegram) return null;
 
                               return (
@@ -503,7 +503,7 @@ export default function SubscriptionsAdminPage() {
                             {/* Live Chat Status */}
                             {(() => {
                               const cu = getConnectedData(subscription.userId);
-                              const hasLiveChat = subscription.plan.permissions?.canUseLiveChat;
+                              const hasLiveChat = subscription.plan?.permissions?.canUseLiveChat;
                               if (!hasLiveChat) return null;
                               
                               const isUsed = cu?.liveChatUsed;
@@ -644,7 +644,7 @@ export default function SubscriptionsAdminPage() {
                     <span className="font-medium">المستخدم:</span> {selectedSubscription.user.name || selectedSubscription.user.email}
                   </p>
                   <p className="text-sm text-gray-300">
-                    <span className="font-medium">الباقة:</span> {selectedSubscription.plan.name}
+                    <span className="font-medium">الباقة:</span> {selectedSubscription.plan?.name || 'باقة مخصصة'}
                   </p>
                   <p className="text-sm text-gray-300">
                     <span className="font-medium">تاريخ الانتهاء الحالي:</span> {formatDate(selectedSubscription.expiresAt)}

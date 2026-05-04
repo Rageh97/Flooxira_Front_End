@@ -933,6 +933,15 @@ export async function getAllSubscriptions(token: string, page: number = 1, limit
     total: number;
     totalPages: number;
     currentPage: number;
+    stats?: {
+      total: number;
+      active: number;
+      expired: number;
+      cancelled: number;
+    };
+    activeCount?: number;
+    expiredCount?: number;
+    cancelledCount?: number;
   }>(`/api/admin/subscriptions?page=${page}&limit=${limit}&filter=${filter}`, { authToken: token });
 }
 
